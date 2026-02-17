@@ -1,1 +1,1 @@
-../../.claude-plugin/plugins/unity-mcp-server/agents/unity-helper.md
+../../.claude-plugin/plugins/unity-cli/agents/unity-helper.md
