@@ -2,6 +2,12 @@
 
 `unity-cli` リポジトリ向けの開発ガイドです。
 
+## プロジェクト概要
+
+`unity-cli` は [`unity-mcp-server`](https://github.com/akiojin/unity-mcp-server) の後継プロジェクトです。
+Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に置き換え、ネイティブ CLI として再設計しました。
+旧リポジトリ (`unity-mcp-server`) への機能追加は行いません。
+
 ## 基本方針
 
 - 実装は `unity-cli`（Rust CLI）を中心に行う

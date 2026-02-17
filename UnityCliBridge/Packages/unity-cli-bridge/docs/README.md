@@ -8,7 +8,7 @@ This package exposes editor operations (for example listing and modifying compon
 
 ## Installation
 
-- Open Unity Package Manager and choose “Add package from Git URL…”.
+- Open Unity Package Manager and choose "Add package from Git URL...".
 - Use this URL (UPM subfolder):
 
 ```
@@ -31,13 +31,17 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 MIT
 
-## Attribution Request
+## License Attribution
 
-When shipping an app that uses this package, please include attribution in credits/about/README.
+When redistributing this package or including it in published projects, the MIT license requires you to include the copyright and permission notice. A full attribution guide with templates is available at [`ATTRIBUTION.md`](../../../../ATTRIBUTION.md) in the repository root.
 
-Recommended text:
+Example attribution text:
 
-`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+```
+This product includes software developed by akiojin.
+unity-cli - https://github.com/akiojin/unity-cli
+Licensed under the MIT License.
+```
 
 ## Repository
 

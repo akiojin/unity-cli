@@ -17,13 +17,6 @@ English | [日本語](#日本語)
 | `UNITY_CLI_LSP_BIN` | (unset) | Explicit LSP executable path |
 | `UNITY_CLI_TOOLS_ROOT` | platform default | Root directory for downloaded tools |
 
-Backward-compatible aliases are still accepted:
-
-- `UNITY_MCP_MCP_HOST` / `UNITY_MCP_UNITY_HOST` -> `UNITY_CLI_HOST`
-- `UNITY_MCP_PORT` -> `UNITY_CLI_PORT`
-- `UNITY_MCP_COMMAND_TIMEOUT` / `UNITY_MCP_CONNECT_TIMEOUT` -> `UNITY_CLI_TIMEOUT_MS`
-- `UNITY_MCP_TOOLS_ROOT` -> `UNITY_CLI_TOOLS_ROOT`
-
 ### Minimal Example
 
 ```bash
@@ -43,6 +36,54 @@ Click `Apply & Restart` to restart the Unity listener.
 
 ---
 
+## Deprecation Policy / 廃止ポリシー
+
+### Overview / 概要
+
+The legacy `UNITY_MCP_*` environment variables are **deprecated since v0.1.0** and will be **removed in v1.0.0**.
+
+レガシーの `UNITY_MCP_*` 環境変数は **v0.1.0 で非推奨** となり、**v1.0.0 で削除** されます。
+
+When a deprecated variable is detected at runtime, a warning is emitted via the `tracing` logger:
+
+非推奨の環境変数が実行時に検出されると、`tracing` ロガー経由で警告が出力されます。
+
+```
+WARN Environment variable 'UNITY_MCP_PORT' is deprecated and will be removed in v1.0.0. Use 'UNITY_CLI_PORT' instead.
+```
+
+### Migration Table / 移行表
+
+| Deprecated Variable (非推奨) | Replacement (移行先) |
+| --- | --- |
+| `UNITY_MCP_MCP_HOST` | `UNITY_CLI_HOST` |
+| `UNITY_MCP_UNITY_HOST` | `UNITY_CLI_HOST` |
+| `UNITY_MCP_PORT` | `UNITY_CLI_PORT` |
+| `UNITY_MCP_COMMAND_TIMEOUT` | `UNITY_CLI_TIMEOUT_MS` |
+| `UNITY_MCP_CONNECT_TIMEOUT` | `UNITY_CLI_TIMEOUT_MS` |
+| `UNITY_MCP_TOOLS_ROOT` | `UNITY_CLI_TOOLS_ROOT` |
+
+### Behavior / 動作
+
+1. If a `UNITY_CLI_*` variable is set, it is always used (primary).
+2. If only a deprecated `UNITY_MCP_*` variable is set, its value is used **with a deprecation warning**.
+3. If neither is set, the built-in default value is used.
+
+---
+
+1. `UNITY_CLI_*` 変数が設定されている場合、常にそちらが優先されます。
+2. 非推奨の `UNITY_MCP_*` 変数のみが設定されている場合、その値が使用されますが **非推奨警告が出力されます**。
+3. どちらも設定されていない場合、組み込みのデフォルト値が使用されます。
+
+### Timeline / タイムライン
+
+| Version | Action |
+| --- | --- |
+| v0.1.0 | `UNITY_MCP_*` variables deprecated; runtime warnings added |
+| v1.0.0 | `UNITY_MCP_*` variables removed; only `UNITY_CLI_*` supported |
+
+---
+
 ## 日本語
 
 `unity-cli` はデフォルト設定のまま動作しますが、CIや複数インスタンス運用では以下の環境変数が有効です。
@@ -59,13 +100,6 @@ Click `Apply & Restart` to restart the Unity listener.
 | `UNITY_CLI_LSP_COMMAND` | 未設定 | LSP 実行コマンド |
 | `UNITY_CLI_LSP_BIN` | 未設定 | LSP 実行ファイルパス |
 | `UNITY_CLI_TOOLS_ROOT` | OS依存既定 | ツール配置ルート |
-
-後方互換として以下の `UNITY_MCP_*` も受け付けます。
-
-- `UNITY_MCP_MCP_HOST` / `UNITY_MCP_UNITY_HOST` -> `UNITY_CLI_HOST`
-- `UNITY_MCP_PORT` -> `UNITY_CLI_PORT`
-- `UNITY_MCP_COMMAND_TIMEOUT` / `UNITY_MCP_CONNECT_TIMEOUT` -> `UNITY_CLI_TIMEOUT_MS`
-- `UNITY_MCP_TOOLS_ROOT` -> `UNITY_CLI_TOOLS_ROOT`
 
 ### 最小例
 

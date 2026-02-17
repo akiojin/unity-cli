@@ -1,15 +1,20 @@
-#!/bin/sh
-set -e
+#!/usr/bin/env bash
+# .husky/pre-push — Run tests before pushing
+# Make executable: chmod +x .husky/pre-push
+
+set -euo pipefail
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 1
 
-echo "Running cargo test..."
+echo "=== pre-push: Running cargo test ==="
 cargo test
+echo "=== pre-push: cargo test passed ==="
 
 if [ -f "lsp/Server.Tests.csproj" ]; then
-  echo "Running LSP tests..."
+  echo "=== pre-push: Running dotnet test ==="
   dotnet test lsp/Server.Tests.csproj
+  echo "=== pre-push: dotnet test passed ==="
 fi
 
-echo "Pre-push checks passed."
+echo "=== pre-push: All checks passed ==="
