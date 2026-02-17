@@ -14,7 +14,7 @@ This document covers internal development workflow for `unity-cli`.
 ## Prerequisites
 
 | Tool | Version | Purpose |
-|------|---------|--------|
+| ------ | --------- | -------- |
 | Rust toolchain (stable) | latest | CLI build and test |
 | .NET SDK | 9.0 | LSP server build and test |
 | Unity Editor | 2022.3+ | E2E tests (requires live connection) |
@@ -100,7 +100,7 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 ### Test Scenarios
 
 | Scenario | Command | Verification |
-|----------|---------|-------------|
+| ---------- | --------- | ------------- |
 | system ping | `unity-cli system ping` | TCP connectivity check |
 | raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest"}'` | Scene creation |
 | tool list | `unity-cli tool list` | Tool listing |
@@ -112,7 +112,7 @@ Logs on failure are saved to `/tmp/unity-cli-e2e-*.log`.
 CI is defined in `.github/workflows/test.yml`.
 
 | Job | Trigger | Description |
-|-----|---------|-------------|
+| ----- | --------- | ------------- |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
 | Unity E2E Tests | manual (`workflow_dispatch`) | E2E test script |
@@ -145,7 +145,7 @@ Periodically verify that specs and docs match the current implementation.
 ### Check Targets
 
 | Directory / File | Contents |
-|------------------|----------|
+| ------------------ | ---------- |
 | `specs/` | Design specs (architecture, migration notes) |
 | `docs/` | Development guides, configuration reference |
 | `README.md` | Project overview |
@@ -200,7 +200,7 @@ Periodically verify that specs and docs match the current implementation.
 ## 前提条件
 
 | ツール | バージョン | 用途 |
-|--------|-----------|------|
+| -------- | ----------- | ------ |
 | Rust toolchain (stable) | latest | CLI 本体のビルド・テスト |
 | .NET SDK | 9.0 | LSP サーバーのビルド・テスト |
 | Unity Editor | 2022.3+ | E2E テスト (実機接続が必要) |
@@ -284,7 +284,7 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 ### テストシナリオ
 
 | シナリオ | コマンド | 確認内容 |
-|----------|---------|---------|
+| ---------- | --------- | --------- |
 | system ping | `unity-cli system ping` | Unity Editor との疎通確認 |
 | raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest"}'` | シーン作成の実行確認 |
 | tool list | `unity-cli tool list` | ツール一覧の取得確認 |
@@ -296,7 +296,7 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 CI は `.github/workflows/test.yml` で定義されています。
 
 | ジョブ | トリガー | 内容 |
-|--------|---------|------|
+| -------- | --------- | ------ |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
 | Unity E2E Tests | 手動 (`workflow_dispatch`) | E2E テストスクリプトの実行 |
@@ -320,7 +320,7 @@ E2E Tests は手動トリガーのみで、Unity Editor が起動しているラ
 ### チェック対象
 
 | ディレクトリ / ファイル | 内容 |
-|------------------------|------|
+| ------------------------ | ------ |
 | `specs/` | 設計仕様書（アーキテクチャ、移行記録） |
 | `docs/` | 開発ガイド、設定リファレンス |
 | `README.md` | プロジェクト概要 |
