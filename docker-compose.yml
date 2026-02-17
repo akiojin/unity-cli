@@ -1,0 +1,48 @@
+services:
+  unity-cli:
+    build:
+      context: .
+      args:
+        GH_TOKEN: ${GH_TOKEN:-}
+        GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    container_name: unity-cli
+    volumes:
+      - .:/unity-cli
+      - bash-history:/root/.bash_history_dir
+      - claude-config:/root/.claude
+      - codex-config:/root/.codex
+      - ${HOME:-~}/.codex:/root/.codex-host:ro
+    environment:
+      - NPM_USER
+      - NPM_EMAIL
+      - NPM_PASS
+      - GITHUB_TOKEN
+      - GITHUB_PERSONAL_ACCESS_TOKEN
+      - GITHUB_USERNAME
+      - GIT_USER_EMAIL
+      # bash_history
+      - HISTFILE=/root/.bash_history_dir/.bash_history
+      - HISTSIZE=5000
+      - HISTFILESIZE=200000
+      # Claude Code
+      - MAX_MCP_OUTPUT_TOKENS
+      - ENABLE_BACKGROUND_TASKS=1
+      - FORCE_AUTO_BACKGROUND_TASKS=1
+      # unity-cli -> Unity connection (Docker -> host Unity)
+      - UNITY_CLI_HOST=${UNITY_CLI_HOST:-host.docker.internal}
+      - UNITY_CLI_PORT=${UNITY_CLI_PORT:-6400}
+      # Compatibility aliases (optional)
+      - UNITY_MCP_MCP_HOST=${UNITY_MCP_MCP_HOST:-}
+      - UNITY_MCP_PORT=${UNITY_MCP_PORT:-}
+      # Unity project root (inside container)
+      - UNITY_PROJECT_ROOT=./UnityCliBridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    working_dir: /unity-cli
+
+volumes:
+  bash-history: {}
+  claude-config: {}
+  codex-config: {}

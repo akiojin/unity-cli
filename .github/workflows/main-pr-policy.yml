@@ -1,0 +1,36 @@
+name: Main PR Policy
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+jobs:
+  policy:
+    name: Main PR Policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR base/head
+        shell: bash
+        env:
+          BASE_REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$HEAD_REPO" != "$BASE_REPO" ]]; then
+            echo "::error::main へのPRはフォークからは受け付けません。develop 宛にPRを作成してください。"
+            exit 1
+          fi
+
+          if [[ "$HEAD_REF" == "develop" ]]; then
+            exit 0
+          fi
+
+          if [[ "$HEAD_REF" == release-please--* ]]; then
+            exit 0
+          fi
+
+          echo "::error::main への直接PRは禁止です。develop 宛にPRを作成してください。"
+          exit 1

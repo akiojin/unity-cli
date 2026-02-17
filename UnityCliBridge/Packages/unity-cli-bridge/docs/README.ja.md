@@ -29,6 +29,14 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 MIT
 
+## 表記のお願い
+
+このパッケージを利用したアプリを配布する場合、クレジット/About/README などへの表記をお願いします。
+
+推奨表記:
+
+`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+
 ## リポジトリ
 
 GitHub: https://github.com/akiojin/unity-cli

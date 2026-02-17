@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "build_index Contract",
+  "description": "MCP tool contract for background code index building",
+  "tool": "build_index",
+  "request": {
+    "type": "object",
+    "properties": {
+      "concurrency": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 64,
+        "default": 8,
+        "description": "Number of parallel LSP requests"
+      },
+      "retry": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 5,
+        "default": 2,
+        "description": "Number of retries for failed LSP requests"
+      },
+      "reportEvery": {
+        "type": "number",
+        "minimum": 1,
+        "default": 100,
+        "description": "Progress logging frequency (every N files)"
+      },
+      "throttleMs": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Optional delay (ms) after each file to slow down builds for testing"
+      },
+      "delayStartMs": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Optional delay (ms) before processing begins to hold the job in running state"
+      }
+    },
+    "required": []
+  },
+  "response": {
+    "oneOf": [
+      {
+        "title": "Success Response",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Code index build started in background"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^build-\\d+-[a-z0-9]{6}$",
+            "example": "build-1730188800000-abc123"
+          },
+          "checkStatus": {
+            "type": "string",
+            "example": "Use get_index_status to check progress"
+          }
+        },
+        "required": ["success", "message", "jobId", "checkStatus"]
+      },
+      {
+        "title": "Already Running Response",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "type": "string",
+            "const": "build_already_running"
+          },
+          "message": {
+            "type": "string",
+            "example": "Code index build is already in progress"
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^(build|watcher)-\\d+(-[a-z0-9]{6})?$",
+            "example": "build-1730188800000-existing"
+          }
+        },
+        "required": ["success", "error", "message", "jobId"]
+      }
+    ]
+  },
+  "examples": [
+    {
+      "title": "Start build with default parameters",
+      "request": {},
+      "response": {
+        "success": true,
+        "message": "Code index build started in background",
+        "jobId": "build-1730188800000-abc123",
+        "checkStatus": "Use get_index_status to check progress"
+      }
+    },
+    {
+      "title": "Start build with custom concurrency",
+      "request": {
+        "concurrency": 16
+      },
+      "response": {
+        "success": true,
+        "message": "Code index build started in background",
+        "jobId": "build-1730188805000-def456",
+        "checkStatus": "Use get_index_status to check progress"
+      }
+    },
+    {
+      "title": "Build already running",
+      "request": {},
+      "response": {
+        "success": false,
+        "error": "build_already_running",
+        "message": "Code index build is already in progress",
+        "jobId": "build-1730188800000-abc123"
+      }
+    }
+  ]
+}

@@ -476,7 +476,7 @@ fn normalize_rel_path(raw: &str) -> Option<String> {
         .split('/')
         .filter(|part| !part.is_empty())
         .collect::<Vec<_>>();
-    if parts.iter().any(|part| *part == "..") {
+    if parts.contains(&"..") {
         return None;
     }
 

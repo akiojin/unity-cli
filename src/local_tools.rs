@@ -145,7 +145,7 @@ fn local_search(params: &Value) -> Result<Value> {
         for entry in WalkDir::new(&dir)
             .follow_links(false)
             .into_iter()
-            .filter_entry(|entry| is_included_entry(entry))
+            .filter_entry(is_included_entry)
             .filter_map(|entry| entry.ok())
         {
             let p = entry.path();
@@ -736,7 +736,7 @@ fn normalize_rel_path(raw: &str) -> Option<String> {
         .split('/')
         .filter(|part| !part.is_empty())
         .collect::<Vec<_>>();
-    if parts.iter().any(|part| *part == "..") {
+    if parts.contains(&"..") {
         return None;
     }
 
@@ -753,7 +753,7 @@ fn collect_cs_files(root: &Path, dirs: &[PathBuf]) -> Vec<(String, PathBuf)> {
         for entry in WalkDir::new(dir)
             .follow_links(false)
             .into_iter()
-            .filter_entry(|entry| is_included_entry(entry))
+            .filter_entry(is_included_entry)
             .filter_map(|entry| entry.ok())
         {
             if !entry.file_type().is_file() {

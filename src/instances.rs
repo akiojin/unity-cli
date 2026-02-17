@@ -236,6 +236,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
     async fn list_instances_reports_up_for_reachable_port() {
         let _guard = env_lock().lock().expect("lock should succeed");
         let registry_path = temp_registry_path("instances-up");
@@ -264,6 +265,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
     async fn set_active_fails_for_unreachable_instance() {
         let _guard = env_lock().lock().expect("lock should succeed");
         let registry_path = temp_registry_path("instances-down");

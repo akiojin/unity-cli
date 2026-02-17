@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/twelvelabs/gh-repo-config/main/schema/branch-protection.json",
+  "_comment": "developブランチ: 全てのCIチェック必須",
+  "required_status_checks": {
+    "strict": true,
+    "checks": [
+      { "context": "Markdown, ESLint & Formatting" },
+      { "context": "Commit Message Lint" },
+      { "context": "Test & Coverage" },
+      { "context": "Package" }
+    ]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": null,
+  "restrictions": null,
+  "required_linear_history": false,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": false,
+  "lock_branch": false,
+  "allow_fork_syncing": false
+}

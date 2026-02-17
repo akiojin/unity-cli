@@ -1,0 +1,36 @@
+{
+  "name": "profiler_status",
+  "description": "Get current Unity Profiler recording status. Returns information about active session, elapsed time, and remaining time (if auto-stop is configured).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "isRecording": {
+        "type": "boolean",
+        "description": "True if profiling is currently running, false otherwise"
+      },
+      "sessionId": {
+        "type": ["string", "null"],
+        "description": "Current session ID (null if not recording)"
+      },
+      "startedAt": {
+        "type": ["string", "null"],
+        "description": "Start time in ISO 8601 format (null if not recording)"
+      },
+      "elapsedSec": {
+        "type": "number",
+        "description": "Elapsed time in seconds (0 if not recording)"
+      },
+      "remainingSec": {
+        "type": ["number", "null"],
+        "description": "Remaining time in seconds until auto-stop (null if maxDurationSec=0 or not recording)"
+      }
+    },
+    "required": ["isRecording", "elapsedSec"]
+  },
+  "errorCases": []
+}
