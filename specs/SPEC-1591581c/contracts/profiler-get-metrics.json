@@ -1,0 +1,85 @@
+{
+  "name": "profiler_get_metrics",
+  "description": "Get available profiler metrics or current metric values. Can list all available metrics by category, or query current values of specific metrics.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "listAvailable": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, return list of all available metrics grouped by category. If false, return current values of specified metrics."
+      },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Specific metrics to query (only used when listAvailable=false). Leave empty to get all current metric values. Examples: 'System Used Memory', 'Draw Calls Count'"
+      }
+    },
+    "required": []
+  },
+  "outputSchema": {
+    "oneOf": [
+      {
+        "description": "Response when listAvailable=true",
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "metrics": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "category": {"type": "string"},
+                      "name": {"type": "string"},
+                      "value": {"type": "number"},
+                      "unit": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Metrics grouped by category (Memory, Rendering, CPU, GC, etc.)"
+          }
+        },
+        "required": ["categories"]
+      },
+      {
+        "description": "Response when listAvailable=false",
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "category": {"type": "string"},
+                "name": {"type": "string"},
+                "value": {"type": "number"},
+                "unit": {"type": "string"}
+              }
+            },
+            "description": "Current values of requested metrics"
+          }
+        },
+        "required": ["metrics"]
+      }
+    ]
+  },
+  "errorCases": [
+    {
+      "code": "E_INVALID_METRICS",
+      "description": "One or more specified metrics are not available.",
+      "response": {
+        "error": "Invalid metrics: [list of invalid metrics]",
+        "code": "E_INVALID_METRICS"
+      }
+    }
+  ]
+}

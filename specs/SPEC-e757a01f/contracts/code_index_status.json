@@ -1,0 +1,273 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "get_index_status Contract",
+  "description": "MCP tool contract for code index status reporting (with background job support)",
+  "tool": "get_index_status",
+  "request": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "response": {
+    "oneOf": [
+      {
+        "title": "Success Response",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "totalFiles": {
+            "type": "number",
+            "description": "Total .cs files in project"
+          },
+          "indexedFiles": {
+            "type": "number",
+            "description": "Number of files indexed in SQLite"
+          },
+          "coverage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Index coverage ratio (0.0-1.0)"
+          },
+          "breakdown": {
+            "type": "object",
+            "properties": {
+              "assets": { "type": "number" },
+              "packages": { "type": "number" },
+              "packageCache": { "type": "number" },
+              "other": { "type": "number" }
+            },
+            "required": ["assets", "packages", "packageCache", "other"]
+          },
+          "index": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean",
+                "description": "true when the code index already contains symbols; false when an initial build is still running"
+              },
+              "rows": {
+                "type": "number",
+                "description": "Total symbols indexed"
+              },
+              "lastIndexedAt": {
+                "type": ["string", "null"],
+                "format": "date-time",
+                "description": "Timestamp of the most recent completed index build; null when no build has finished yet"
+              },
+              "buildJob": {
+                "type": "object",
+                "description": "Current or recently completed build job (optional)",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^(build|watcher)-\\d+(-[a-z0-9]{6})?$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["running", "completed", "failed"]
+                  },
+                  "progress": {
+                    "type": "object",
+                    "properties": {
+                      "processed": { "type": "number" },
+                      "total": { "type": "number" },
+                      "rate": { "type": "number", "description": "files/sec" }
+                    },
+                    "required": ["processed", "total", "rate"]
+                  },
+                  "startedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "completedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Present only when status=completed"
+                  },
+                  "failedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Present only when status=failed"
+                  },
+                  "result": {
+                    "type": "object",
+                    "description": "Present only when status=completed",
+                    "properties": {
+                      "updatedFiles": { "type": "number" },
+                      "removedFiles": { "type": "number" },
+                      "totalIndexedSymbols": { "type": "number" },
+                      "lastIndexedAt": { "type": "string", "format": "date-time" }
+                    },
+                    "required": ["updatedFiles", "removedFiles", "totalIndexedSymbols", "lastIndexedAt"]
+                  },
+                  "error": {
+                    "type": "string",
+                    "description": "Present only when status=failed"
+                  }
+                },
+                "required": ["id", "status", "progress", "startedAt"]
+              }
+            },
+            "required": ["ready", "rows", "lastIndexedAt"]
+          }
+        },
+        "required": ["success", "totalFiles", "indexedFiles", "coverage", "breakdown", "index"]
+      },
+      {
+        "title": "Index Not Built Response",
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": false
+          },
+          "error": {
+            "type": "string",
+            "const": "index_not_built"
+          },
+          "message": {
+            "type": "string",
+            "example": "Code index is not built. Please run UnityMCP.build_index first."
+          }
+        },
+        "required": ["success", "error", "message"]
+      }
+    ]
+  },
+  "examples": [
+    {
+      "title": "Initial build in progress (not yet ready)",
+      "request": {},
+      "response": {
+        "success": true,
+        "totalFiles": 1500,
+        "indexedFiles": 0,
+        "coverage": 0,
+        "breakdown": {
+          "assets": 500,
+          "packages": 800,
+          "packageCache": 150,
+          "other": 50
+        },
+        "index": {
+          "ready": false,
+          "rows": 0,
+          "lastIndexedAt": null,
+          "buildJob": {
+            "id": "build-1730188800000-abc123",
+            "status": "running",
+            "progress": {
+              "processed": 200,
+              "total": 1500,
+              "rate": 8.5
+            },
+            "startedAt": "2025-10-29T10:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "title": "Status with running job",
+      "request": {},
+      "response": {
+        "success": true,
+        "totalFiles": 1500,
+        "indexedFiles": 1200,
+        "coverage": 0.8,
+        "breakdown": {
+          "assets": 500,
+          "packages": 800,
+          "packageCache": 150,
+          "other": 50
+        },
+        "index": {
+          "ready": true,
+          "rows": 12000,
+          "lastIndexedAt": "2025-10-29T10:00:00Z",
+          "buildJob": {
+            "id": "build-1730188800000-abc123",
+            "status": "running",
+            "progress": {
+              "processed": 1200,
+              "total": 1500,
+              "rate": 12.5
+            },
+            "startedAt": "2025-10-29T10:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "title": "Status with completed job",
+      "request": {},
+      "response": {
+        "success": true,
+        "totalFiles": 1500,
+        "indexedFiles": 1500,
+        "coverage": 1.0,
+        "breakdown": {
+          "assets": 500,
+          "packages": 850,
+          "packageCache": 100,
+          "other": 50
+        },
+        "index": {
+          "ready": true,
+          "rows": 15500,
+          "lastIndexedAt": "2025-10-29T10:05:00Z",
+          "buildJob": {
+            "id": "build-1730188800000-abc123",
+            "status": "completed",
+            "progress": {
+              "processed": 1500,
+              "total": 1500,
+              "rate": 15.2
+            },
+            "startedAt": "2025-10-29T10:00:00Z",
+            "completedAt": "2025-10-29T10:05:00Z",
+            "result": {
+              "updatedFiles": 50,
+              "removedFiles": 0,
+              "totalIndexedSymbols": 15500,
+              "lastIndexedAt": "2025-10-29T10:05:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Status without build job (backward compatible)",
+      "request": {},
+      "response": {
+        "success": true,
+        "totalFiles": 1500,
+        "indexedFiles": 1500,
+        "coverage": 1.0,
+        "breakdown": {
+          "assets": 500,
+          "packages": 850,
+          "packageCache": 100,
+          "other": 50
+        },
+        "index": {
+          "ready": true,
+          "rows": 15500,
+          "lastIndexedAt": "2025-10-29T09:00:00Z"
+        }
+      }
+    },
+    {
+      "title": "Index not built",
+      "request": {},
+      "response": {
+        "success": false,
+        "error": "index_not_built",
+        "message": "Code index is not built. Please run UnityMCP.build_index first."
+      }
+    }
+  ]
+}

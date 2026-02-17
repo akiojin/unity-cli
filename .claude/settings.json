@@ -1,0 +1,191 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__unity-cli__system_ping",
+      "mcp__unity-cli__system_refresh_assets",
+      "mcp__unity-cli__system_get_command_stats",
+      "mcp__unity-cli__gameobject_create",
+      "mcp__unity-cli__gameobject_find",
+      "mcp__unity-cli__gameobject_modify",
+      "mcp__unity-cli__gameobject_delete",
+      "mcp__unity-cli__gameobject_get_hierarchy",
+      "mcp__unity-cli__scene_create",
+      "mcp__unity-cli__scene_load",
+      "mcp__unity-cli__scene_save",
+      "mcp__unity-cli__scene_list",
+      "mcp__unity-cli__scene_info_get",
+      "mcp__unity-cli__analysis_gameobject_details_get",
+      "mcp__unity-cli__analysis_scene_contents_analyze",
+      "mcp__unity-cli__analysis_component_values_get",
+      "mcp__unity-cli__analysis_component_find",
+      "mcp__unity-cli__analysis_object_references_get",
+      "mcp__unity-cli__get_animator_state",
+      "mcp__unity-cli__get_animator_runtime_info",
+      "mcp__unity-cli__input_actions_state_get",
+      "mcp__unity-cli__input_actions_asset_analyze",
+      "mcp__unity-cli__playmode_play",
+      "mcp__unity-cli__playmode_pause",
+      "mcp__unity-cli__playmode_stop",
+      "mcp__unity-cli__playmode_get_state",
+      "mcp__unity-cli__playmode_wait_for_state",
+      "mcp__unity-cli__ui_find_elements",
+      "mcp__unity-cli__ui_click_element",
+      "mcp__unity-cli__ui_get_element_state",
+      "mcp__unity-cli__ui_set_element_value",
+      "mcp__unity-cli__ui_simulate_input",
+      "mcp__unity-cli__input_system_control",
+      "mcp__unity-cli__input_keyboard",
+      "mcp__unity-cli__input_mouse",
+      "mcp__unity-cli__input_gamepad",
+      "mcp__unity-cli__input_touch",
+      "mcp__unity-cli__input_action_map_create",
+      "mcp__unity-cli__input_action_map_remove",
+      "mcp__unity-cli__input_action_add",
+      "mcp__unity-cli__input_action_remove",
+      "mcp__unity-cli__input_binding_add",
+      "mcp__unity-cli__input_binding_remove",
+      "mcp__unity-cli__input_binding_remove_all",
+      "mcp__unity-cli__input_binding_composite_create",
+      "mcp__unity-cli__input_control_schemes_manage",
+      "mcp__unity-cli__asset_prefab_create",
+      "mcp__unity-cli__asset_prefab_modify",
+      "mcp__unity-cli__asset_prefab_instantiate",
+      "mcp__unity-cli__asset_material_create",
+      "mcp__unity-cli__asset_material_modify",
+      "mcp__unity-cli__asset_prefab_open",
+      "mcp__unity-cli__asset_prefab_exit_mode",
+      "mcp__unity-cli__asset_prefab_save",
+      "mcp__unity-cli__asset_import_settings_manage",
+      "mcp__unity-cli__asset_database_manage",
+      "mcp__unity-cli__asset_dependency_analyze",
+      "mcp__unity-cli__addressables_manage",
+      "mcp__unity-cli__addressables_build",
+      "mcp__unity-cli__addressables_analyze",
+      "mcp__unity-cli__menu_item_execute",
+      "mcp__unity-cli__console_clear",
+      "mcp__unity-cli__console_read",
+      "mcp__unity-cli__screenshot_capture",
+      "mcp__unity-cli__screenshot_analyze",
+      "mcp__unity-cli__video_capture_start",
+      "mcp__unity-cli__video_capture_stop",
+      "mcp__unity-cli__video_capture_status",
+      "mcp__unity-cli__video_capture_for",
+      "mcp__unity-cli__profiler_start",
+      "mcp__unity-cli__profiler_stop",
+      "mcp__unity-cli__profiler_status",
+      "mcp__unity-cli__profiler_get_metrics",
+      "mcp__unity-cli__list_packages",
+      "mcp__unity-cli__read",
+      "mcp__unity-cli__search",
+      "mcp__unity-cli__edit_structured",
+      "mcp__unity-cli__edit_snippet",
+      "mcp__unity-cli__find_refs",
+      "mcp__unity-cli__find_symbol",
+      "mcp__unity-cli__get_symbols",
+      "mcp__unity-cli__get_index_status",
+      "mcp__unity-cli__update_index",
+      "mcp__unity-cli__build_index",
+      "mcp__unity-cli__rename_symbol",
+      "mcp__unity-cli__create_class",
+      "mcp__unity-cli__remove_symbol",
+      "mcp__unity-cli__component_add",
+      "mcp__unity-cli__component_remove",
+      "mcp__unity-cli__component_modify",
+      "mcp__unity-cli__component_list",
+      "mcp__unity-cli__component_get_types",
+      "mcp__unity-cli__component_field_set",
+      "mcp__unity-cli__compilation_get_state",
+      "mcp__unity-cli__test_run",
+      "mcp__unity-cli__test_get_status",
+      "mcp__unity-cli__editor_tags_manage",
+      "mcp__unity-cli__editor_layers_manage",
+      "mcp__unity-cli__editor_selection_manage",
+      "mcp__unity-cli__editor_windows_manage",
+      "mcp__unity-cli__editor_tools_manage",
+      "mcp__unity-cli__editor_quit",
+      "mcp__unity-cli__settings_get",
+      "mcp__unity-cli__settings_update",
+      "mcp__unity-cli__package_manage",
+      "mcp__unity-cli__package_registry_config",
+      "mcp__unity-cli__search_tools"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7",
+    "google-search",
+    "markitdown",
+    "unity-cli"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-git-branch-ops.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-cd-command.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-cs-edit-tools.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-cs-edit-tools.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/auto-suggest-claude-md-hook.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "scripts/auto-suggest-claude-md-hook.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "drawio@akiojin-skills": true,
+    "unity-cli@unity-cli": true,
+    "github@akiojin-skills": true,
+    "speckit@akiojin-skills": true
+  }
+}

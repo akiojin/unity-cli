@@ -1,0 +1,9 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "unity-cli",
+  "version": "0.1.0",
+  "description": "Claude Code plugin providing skills for Rust-based unity-cli workflows.",
+  "skills": [
+    "skills/unity-cli-usage/SKILL.md"
+  ]
+}

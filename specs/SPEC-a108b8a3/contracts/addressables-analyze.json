@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Addressables Analysis Contract",
+  "description": "JSON-RPC contract for Unity Addressables dependency analysis operations",
+  "command": "addressables_analyze",
+  "actions": {
+    "analyze_duplicates": {
+      "description": "Analyze and find duplicate assets across groups",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "analyze_duplicates"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Number of results per page",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset for pagination",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AnalysisReport"
+          },
+          "pagination": {
+            "$ref": "#/definitions/Pagination"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "analyze_dependencies": {
+      "description": "Analyze dependencies for a specific asset",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "analyze_dependencies"
+          },
+          "assetPath": {
+            "type": "string",
+            "description": "Asset path to analyze",
+            "pattern": "^Assets/.+"
+          }
+        },
+        "required": ["action", "assetPath"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AnalysisReport"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "analyze_unused": {
+      "description": "Find unused assets (not referenced by any Addressable entry)",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "analyze_unused"
+          },
+          "pageSize": {
+            "type": "integer",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AnalysisReport"
+          },
+          "pagination": {
+            "$ref": "#/definitions/Pagination"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    }
+  },
+  "definitions": {
+    "AnalysisReport": {
+      "type": "object",
+      "properties": {
+        "duplicates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DuplicateEntry"
+          },
+          "description": "List of duplicate assets found across groups"
+        },
+        "unused": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of unused asset paths"
+        },
+        "dependencies": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Dependency map: key=assetPath, value=array of dependent asset paths"
+        }
+      },
+      "required": ["duplicates", "unused", "dependencies"]
+    },
+    "DuplicateEntry": {
+      "type": "object",
+      "properties": {
+        "assetPath": {
+          "type": "string",
+          "description": "Asset path that is duplicated"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of group names containing this asset",
+          "minItems": 2
+        }
+      },
+      "required": ["assetPath", "groups"]
+    },
+    "Pagination": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pageSize": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total number of items",
+          "minimum": 0
+        },
+        "hasMore": {
+          "type": "boolean",
+          "description": "Whether there are more items beyond this page"
+        }
+      },
+      "required": ["offset", "pageSize", "total", "hasMore"]
+    }
+  }
+}

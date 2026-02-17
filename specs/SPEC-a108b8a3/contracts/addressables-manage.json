@@ -1,0 +1,448 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Addressables Management Contract",
+  "description": "JSON-RPC contract for Unity Addressables asset and group management operations",
+  "command": "addressables_manage",
+  "actions": {
+    "add_entry": {
+      "description": "Add an asset as Addressable entry",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "add_entry"
+          },
+          "assetPath": {
+            "type": "string",
+            "description": "Asset path starting with Assets/",
+            "pattern": "^Assets/.+",
+            "minLength": 8
+          },
+          "address": {
+            "type": "string",
+            "description": "Addressable name (unique within project)",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "groupName": {
+            "type": "string",
+            "description": "Target group name",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "labels": {
+            "type": "array",
+            "description": "Optional labels to add",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        },
+        "required": ["action", "assetPath", "address", "groupName"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressableEntry"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "remove_entry": {
+      "description": "Remove an Addressable entry",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "remove_entry"
+          },
+          "assetPath": {
+            "type": "string",
+            "description": "Asset path to remove",
+            "pattern": "^Assets/.+"
+          }
+        },
+        "required": ["action", "assetPath"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["success", "message"]
+      }
+    },
+    "set_address": {
+      "description": "Change the address name of an entry",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "set_address"
+          },
+          "assetPath": {
+            "type": "string",
+            "pattern": "^Assets/.+"
+          },
+          "newAddress": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": ["action", "assetPath", "newAddress"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressableEntry"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "add_label": {
+      "description": "Add a label to an entry",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "add_label"
+          },
+          "assetPath": {
+            "type": "string",
+            "pattern": "^Assets/.+"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["action", "assetPath", "label"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressableEntry"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "remove_label": {
+      "description": "Remove a label from an entry",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "remove_label"
+          },
+          "assetPath": {
+            "type": "string",
+            "pattern": "^Assets/.+"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["action", "assetPath", "label"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressableEntry"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "list_entries": {
+      "description": "List all Addressable entries (with pagination)",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "list_entries"
+          },
+          "groupName": {
+            "type": "string",
+            "description": "Filter by group name (optional)"
+          },
+          "pageSize": {
+            "type": "integer",
+            "description": "Number of entries per page",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Offset for pagination",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AddressableEntry"
+            }
+          },
+          "pagination": {
+            "$ref": "#/definitions/Pagination"
+          }
+        },
+        "required": ["success", "data", "pagination"]
+      }
+    },
+    "list_groups": {
+      "description": "List all Addressables groups (with pagination)",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "list_groups"
+          },
+          "pageSize": {
+            "type": "integer",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AddressablesGroup"
+            }
+          },
+          "pagination": {
+            "$ref": "#/definitions/Pagination"
+          }
+        },
+        "required": ["success", "data", "pagination"]
+      }
+    },
+    "create_group": {
+      "description": "Create a new Addressables group",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "create_group"
+          },
+          "groupName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": ["action", "groupName"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressablesGroup"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    },
+    "remove_group": {
+      "description": "Remove an Addressables group (must be empty)",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "remove_group"
+          },
+          "groupName": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["action", "groupName"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["success", "message"]
+      }
+    },
+    "move_entry": {
+      "description": "Move an entry to a different group",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "move_entry"
+          },
+          "assetPath": {
+            "type": "string",
+            "pattern": "^Assets/.+"
+          },
+          "targetGroupName": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["action", "assetPath", "targetGroupName"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/AddressableEntry"
+          }
+        },
+        "required": ["success", "data"]
+      }
+    }
+  },
+  "definitions": {
+    "AddressableEntry": {
+      "type": "object",
+      "properties": {
+        "guid": {
+          "type": "string",
+          "description": "Unity asset GUID"
+        },
+        "assetPath": {
+          "type": "string",
+          "description": "Asset path starting with Assets/"
+        },
+        "address": {
+          "type": "string",
+          "description": "Addressable name"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Labels attached to this entry"
+        },
+        "groupName": {
+          "type": "string",
+          "description": "Parent group name"
+        }
+      },
+      "required": ["guid", "assetPath", "address", "labels", "groupName"]
+    },
+    "AddressablesGroup": {
+      "type": "object",
+      "properties": {
+        "groupName": {
+          "type": "string",
+          "description": "Group name"
+        },
+        "buildPath": {
+          "type": "string",
+          "description": "Build output path"
+        },
+        "loadPath": {
+          "type": "string",
+          "description": "Load path at runtime"
+        },
+        "entriesCount": {
+          "type": "integer",
+          "description": "Number of entries in this group",
+          "minimum": 0
+        }
+      },
+      "required": ["groupName", "buildPath", "loadPath", "entriesCount"]
+    },
+    "Pagination": {
+      "type": "object",
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pageSize": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total number of items",
+          "minimum": 0
+        },
+        "hasMore": {
+          "type": "boolean",
+          "description": "Whether there are more items beyond this page"
+        }
+      },
+      "required": ["offset", "pageSize", "total", "hasMore"]
+    }
+  }
+}

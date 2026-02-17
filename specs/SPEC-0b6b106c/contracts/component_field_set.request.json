@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComponentFieldSetRequest",
+  "type": "object",
+  "required": ["componentType", "fieldPath"],
+  "properties": {
+    "scope": {
+      "type": "string",
+      "enum": ["auto", "scene", "prefabStage", "prefabAsset"]
+    },
+    "gameObjectPath": { "type": "string" },
+    "prefabAssetPath": { "type": "string" },
+    "prefabObjectPath": { "type": "string" },
+    "componentType": { "type": "string" },
+    "componentIndex": { "type": "integer", "minimum": 0 },
+    "fieldPath": { "type": "string" },
+    "serializedPropertyPath": { "type": "string" },
+    "value": {},
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "auto","bool","int","long","float","double","string","color",
+        "vector2","vector3","vector4","vector2Int","vector3Int","quaternion",
+        "rect","rectInt","bounds","boundsInt","enum","objectReference","array","json","null"
+      ]
+    },
+    "enumValue": { "type": "string" },
+    "objectReference": {
+      "type": "object",
+      "properties": {
+        "assetPath": { "type": "string" },
+        "guid": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "runtime": { "type": "boolean" },
+    "dryRun": { "type": "boolean" },
+    "applyPrefabChanges": { "type": "boolean" },
+    "createUndo": { "type": "boolean" },
+    "markSceneDirty": { "type": "boolean" }
+  },
+  "if": {
+    "properties": { "scope": { "const": "prefabAsset" } },
+    "required": ["scope"]
+  },
+  "then": {
+    "required": ["prefabAssetPath"]
+  },
+  "else": {
+    "if": {
+      "not": {
+        "anyOf": [
+          { "required": ["gameObjectPath"] },
+          { "required": ["prefabAssetPath"] }
+        ]
+      }
+    },
+    "then": {
+      "errorMessage": "Either gameObjectPath or prefabAssetPath is required",
+      "required": ["gameObjectPath"]
+    }
+  }
+}

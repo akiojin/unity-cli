@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "unity-cli",
+  "version": "1.0.0",
+  "description": "Claude Code skills for unity-cli command workflows and Unity CLI Bridge operations.",
+  "owner": {
+    "name": "akiojin",
+    "url": "https://github.com/akiojin"
+  },
+  "plugins": [
+    {
+      "name": "unity-cli",
+      "description": "Claude Code plugin for Rust-based unity-cli workflows.",
+      "version": "1.0.0",
+      "source": "./.claude-plugin/plugins/unity-cli",
+      "category": "development"
+    }
+  ]
+}

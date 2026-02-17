@@ -122,7 +122,7 @@ fn parse_json(bytes: &[u8]) -> Result<Value> {
     if trimmed.is_empty() {
         return Err(anyhow!("Unity response was empty"));
     }
-    Ok(serde_json::from_str(trimmed).context("Unity response was not valid JSON")?)
+    serde_json::from_str(trimmed).context("Unity response was not valid JSON")
 }
 
 fn normalize_response(response: Value) -> Result<Value> {

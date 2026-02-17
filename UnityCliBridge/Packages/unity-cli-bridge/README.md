@@ -31,6 +31,14 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 MIT
 
+## Attribution Request
+
+When shipping an app that uses this package, please include attribution in credits/about/README.
+
+Recommended text:
+
+`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+
 ## Repository
 
 GitHub: https://github.com/akiojin/unity-cli

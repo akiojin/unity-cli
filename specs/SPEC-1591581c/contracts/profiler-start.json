@@ -1,0 +1,82 @@
+{
+  "name": "profiler_start",
+  "description": "Start Unity Profiler recording session. Records CPU, memory, rendering, and GC metrics. Data can be saved to .data file for later analysis in Unity Profiler Window.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": ["normal", "deep"],
+        "default": "normal",
+        "description": "Profiling mode. 'normal' for standard profiling, 'deep' for deep profiling (more detailed but higher overhead)"
+      },
+      "recordToFile": {
+        "type": "boolean",
+        "default": true,
+        "description": "Save profiling data to .data file in .unity/capture/ directory. Set to false for real-time metrics only."
+      },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Specific metrics to record. Leave empty to record all available metrics. Examples: 'System Used Memory', 'Draw Calls Count', 'GC Allocated In Frame'"
+      },
+      "maxDurationSec": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Auto-stop profiling after N seconds. Set to 0 for unlimited recording (manual stop required)."
+      }
+    },
+    "required": []
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "description": "Unique session identifier (GUID format without hyphens)"
+      },
+      "startedAt": {
+        "type": "string",
+        "description": "Start time in ISO 8601 format (UTC)"
+      },
+      "isRecording": {
+        "type": "boolean",
+        "description": "Always true on success"
+      },
+      "outputPath": {
+        "type": ["string", "null"],
+        "description": "Path to .data file (null if recordToFile=false)"
+      }
+    },
+    "required": ["sessionId", "startedAt", "isRecording"]
+  },
+  "errorCases": [
+    {
+      "code": "E_ALREADY_RUNNING",
+      "description": "A profiling session is already running. Stop current session before starting a new one.",
+      "response": {
+        "error": "A profiling session is already running.",
+        "code": "E_ALREADY_RUNNING",
+        "sessionId": "existing-session-id"
+      }
+    },
+    {
+      "code": "E_INVALID_MODE",
+      "description": "Invalid mode specified. Must be 'normal' or 'deep'.",
+      "response": {
+        "error": "Invalid mode. Must be 'normal' or 'deep'.",
+        "code": "E_INVALID_MODE"
+      }
+    },
+    {
+      "code": "E_INVALID_METRICS",
+      "description": "One or more specified metrics are not available in the current Unity version.",
+      "response": {
+        "error": "Invalid metrics: [list of invalid metrics]",
+        "code": "E_INVALID_METRICS"
+      }
+    }
+  ]
+}

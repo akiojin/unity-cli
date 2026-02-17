@@ -1,0 +1,85 @@
+name: unity-cli Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag to release (example: v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test unity-cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run tests
+        run: cargo test --all-targets
+
+  lsp-test:
+    name: Test LSP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Run LSP tests
+        run: dotnet test lsp/Server.Tests.csproj
+
+  build:
+    name: Build ${{ matrix.asset_suffix }}
+    needs: [test, lsp-test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_suffix: linux-x64
+            ext: ""
+          - os: macos-latest
+            asset_suffix: macos-arm64
+            ext: ""
+          - os: windows-latest
+            asset_suffix: windows-x64
+            ext: ".exe"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release
+          mkdir -p dist
+          cp "target/release/unity-cli${{ matrix.ext }}" "dist/unity-cli-${{ matrix.asset_suffix }}${{ matrix.ext }}"
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-cli-${{ matrix.asset_suffix }}
+          path: dist/unity-cli-${{ matrix.asset_suffix }}${{ matrix.ext }}
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Publish assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: dist/**/unity-cli-*

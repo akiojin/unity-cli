@@ -1,10 +1,10 @@
 # unity-cli
 
-Rust-based CLI for Unity Editor automation via the Unity TCP protocol.
+Rust-based CLI for Unity Editor automation over Unity TCP.
 
 ## Install
 
-From crates.io (after publish):
+From crates.io:
 
 ```bash
 cargo install unity-cli
@@ -16,46 +16,27 @@ From GitHub:
 cargo install --git https://github.com/akiojin/unity-cli.git unity-cli
 ```
 
-## Goals
-
-- Replace the old Node.js runtime with a native Rust CLI
-- Keep command execution compatible with existing Unity command types
-- Provide a practical subcommand UX for common workflows
-
 ## Quick Start
 
 ```bash
-cd unity-cli
-cargo run -- system ping
+unity-cli system ping
+unity-cli scene create MainScene
+unity-cli raw create_gameobject --json '{"name":"Player"}'
 ```
 
-Call any Unity command directly:
+## Command Groups
 
-```bash
-cargo run -- raw create_scene --json '{"sceneName":"MainScene"}'
-```
+- `system`
+- `scene`
+- `instances`
+- `tool`
+- `raw`
 
-List and switch active instances:
+Use `raw` for full command coverage when no typed subcommand exists.
 
-```bash
-cargo run -- instances list --ports 6400,6401
-cargo run -- instances set-active localhost:6401
-```
+## Local Tools (Rust-side)
 
-## Command Overview
-
-- `raw <tool> --json '{...}'`: direct command execution (fallback for all 108 tools)
-- `tool list`: list all supported tool names (108)
-- `tool call <tool> --json '{...}'`: explicit alias of `raw`
-- `tool <tool> --json '{...}'`: direct named tool invocation (validated against catalog)
-- `system ping [--message text]`
-- `scene create <scene_name> [--path ...] [--load-scene ...] [--add-to-build-settings ...]`
-- `instances list [--ports csv] [--host host]`
-- `instances set-active <host:port>`
-
-## Local Tool Execution (Rust-side)
-
-The following tool names are executed locally without Unity TCP roundtrip:
+These tools run locally:
 
 - `read`
 - `search`
@@ -66,63 +47,54 @@ The following tool names are executed locally without Unity TCP roundtrip:
 - `find_symbol`
 - `find_refs`
 
-### Script/Index workflow
-
-```bash
-export UNITY_PROJECT_ROOT=/path/to/UnityProject
-cargo run -- --output json tool build_index --json '{"excludePackageCache":true}'
-cargo run -- --output json tool find_symbol --json '{"name":"MyClass","kind":"class","exact":true}'
-cargo run -- --output json tool find_refs --json '{"name":"MyClass","pageSize":20}'
-cargo run -- --output json tool update_index --json '{"paths":["Assets/Scripts/MyClass.cs"]}'
-```
-
 ## Unity Package (UPM)
 
-`unity-cli` ships the Unity-side bridge package in this repository:
+Unity-side bridge package:
 
 - `UnityCliBridge/Packages/unity-cli-bridge`
 
-Install from Git URL in Unity Package Manager:
+Install URL:
 
 ```text
 https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge
 ```
 
-## LSP (Bundled)
+## LSP
 
-The C# LSP implementation is bundled in:
+Bundled C# LSP source:
 
 - `lsp/Program.cs`
 - `lsp/Server.csproj`
 
-Run LSP tests:
+Test command:
 
 ```bash
 dotnet test lsp/Server.Tests.csproj
 ```
 
-## Repository Split / Release
-
-- Subtree export script: `scripts/export-unity-cli-subtree.sh`
-- Release workflow (GitHub Actions): `.github/workflows/unity-cli-release.yml`
-- Detailed steps: `unity-cli/RELEASE.md`
-
 ## Environment Variables
 
-- `UNITY_CLI_HOST` (fallback: `UNITY_MCP_MCP_HOST`, `UNITY_MCP_UNITY_HOST`)
-- `UNITY_CLI_PORT` (fallback: `UNITY_MCP_PORT`)
-- `UNITY_CLI_TIMEOUT_MS` (fallback: `UNITY_MCP_COMMAND_TIMEOUT`)
-- `UNITY_CLI_LSP_MODE` (`off` | `auto` | `required`, default: `off`)
-- `UNITY_CLI_LSP_COMMAND` (explicit LSP executable command)
-- `UNITY_CLI_LSP_BIN` (explicit LSP executable path)
+- `UNITY_PROJECT_ROOT`
+- `UNITY_CLI_HOST`
+- `UNITY_CLI_PORT`
+- `UNITY_CLI_TIMEOUT_MS`
+- `UNITY_CLI_LSP_MODE` (`off` | `auto` | `required`)
+- `UNITY_CLI_LSP_COMMAND`
+- `UNITY_CLI_LSP_BIN`
 
-## Output Modes
+Backward-compatible `UNITY_MCP_*` aliases are also accepted.
 
-- Default: text
-- JSON: `--output json`
+## Development
 
-Example:
+- Contributing: `CONTRIBUTING.md`
+- Development guide: `docs/development.md`
+- Release guide: `RELEASE.md`
 
-```bash
-cargo run -- --output json system ping
-```
+## License
+
+MIT (`LICENSE`)
+
+If you build an app using `unity-cli`, please include attribution (credits/about/README).
+Recommended:
+
+`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`

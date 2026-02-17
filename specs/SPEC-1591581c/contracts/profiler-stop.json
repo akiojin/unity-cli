@@ -1,0 +1,76 @@
+{
+  "name": "profiler_stop",
+  "description": "Stop Unity Profiler recording and save data to .data file. Returns profiling session summary including duration, frame count, and optionally recorded metrics.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "description": "Optional session ID to stop. If not provided, stops the current active session."
+      }
+    },
+    "required": []
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string",
+        "description": "Session identifier that was stopped"
+      },
+      "outputPath": {
+        "type": ["string", "null"],
+        "description": "Path to saved .data file (null if recordToFile was false)"
+      },
+      "duration": {
+        "type": "number",
+        "description": "Recording duration in seconds"
+      },
+      "frameCount": {
+        "type": "number",
+        "description": "Number of frames recorded"
+      },
+      "metrics": {
+        "type": ["array", "null"],
+        "items": {
+          "type": "object",
+          "properties": {
+            "category": {"type": "string"},
+            "name": {"type": "string"},
+            "value": {"type": "number"},
+            "unit": {"type": "string"}
+          }
+        },
+        "description": "Recorded metrics (only if recordToFile=false)"
+      }
+    },
+    "required": ["sessionId", "duration", "frameCount"]
+  },
+  "errorCases": [
+    {
+      "code": "E_NOT_RECORDING",
+      "description": "No profiling session is currently running.",
+      "response": {
+        "error": "No profiling session is currently running.",
+        "code": "E_NOT_RECORDING"
+      }
+    },
+    {
+      "code": "E_INVALID_SESSION",
+      "description": "Specified session ID does not match the current session.",
+      "response": {
+        "error": "Invalid session ID. Current session: [current-session-id]",
+        "code": "E_INVALID_SESSION",
+        "sessionId": "current-session-id"
+      }
+    },
+    {
+      "code": "E_FILE_IO",
+      "description": "Failed to save .data file due to file system error.",
+      "response": {
+        "error": "Failed to save profiling data: [error message]",
+        "code": "E_FILE_IO"
+      }
+    }
+  ]
+}

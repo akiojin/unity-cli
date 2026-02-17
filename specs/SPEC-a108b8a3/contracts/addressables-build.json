@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Addressables Build Contract",
+  "description": "JSON-RPC contract for Unity Addressables build operations",
+  "command": "addressables_build",
+  "actions": {
+    "build": {
+      "description": "Build Addressables content",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "build"
+          },
+          "buildTarget": {
+            "type": "string",
+            "description": "Optional build target (e.g., StandaloneWindows64)",
+            "enum": [
+              "StandaloneWindows64",
+              "StandaloneWindows",
+              "StandaloneLinux64",
+              "StandaloneOSX",
+              "iOS",
+              "Android",
+              "WebGL"
+            ]
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/definitions/BuildResult"
+          }
+        },
+        "required": ["success", "data"]
+      },
+      "timeout": 300000,
+      "note": "Build operations can take several minutes depending on project size"
+    },
+    "clean_build": {
+      "description": "Clean Addressables build cache",
+      "request": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "const": "clean_build"
+          }
+        },
+        "required": ["action"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["success", "message"]
+      }
+    }
+  },
+  "definitions": {
+    "BuildResult": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "description": "Whether the build succeeded"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Build duration in seconds",
+          "minimum": 0
+        },
+        "outputPath": {
+          "type": "string",
+          "description": "Output directory path (absolute)"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Error messages (empty if successful)"
+        }
+      },
+      "required": ["success", "duration", "outputPath", "errors"]
+    }
+  }
+}

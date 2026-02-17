@@ -1,0 +1,71 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  rust:
+    name: Rust Format & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  docs:
+    name: Markdown & Commitlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Markdownlint
+        run: >
+          pnpm exec markdownlint
+          README.md
+          CONTRIBUTING.md
+          CLAUDE.md
+          RELEASE.md
+          docs/README.md
+          docs/configuration.md
+          docs/development.md
+          docs/tools.md
+          docs/benchmark-results.md
+          docs/benchmark-results.ja.md
+          docs/troubleshooting/README.md
+          docs/troubleshooting/capabilities-none.md
+          UnityCliBridge/Packages/unity-cli-bridge/**/*.md
+          .github/workflows/README.md
+          --config .markdownlint.json
+          --ignore-path .markdownlintignore
+      - name: Validate commit messages
+        if: github.event_name == 'pull_request'
+        run: >
+          pnpm exec commitlint
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose

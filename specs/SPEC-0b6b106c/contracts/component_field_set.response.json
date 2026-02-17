@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ComponentFieldSetResponse",
+  "type": "object",
+  "required": ["success", "scope", "serializedPropertyPath"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "scope": {
+      "type": "string",
+      "enum": ["scene", "prefabStage", "prefabAsset"]
+    },
+    "gameObjectPath": { "type": "string" },
+    "prefabAssetPath": { "type": "string" },
+    "serializedPropertyPath": { "type": "string" },
+    "previousValue": {},
+    "appliedValue": {},
+    "requiresSave": { "type": "boolean" },
+    "dryRun": { "type": "boolean" },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "error": { "type": "string" }
+  }
+}

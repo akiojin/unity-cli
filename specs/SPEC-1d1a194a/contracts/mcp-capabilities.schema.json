@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Server Capabilities",
+  "description": "MCP SDK v0.6.1準拠のServerCapabilities型定義",
+  "type": "object",
+  "properties": {
+    "tools": {
+      "type": "object",
+      "properties": {
+        "listChanged": {
+          "type": "boolean",
+          "description": "ツール一覧変更通知のサポート"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "subscribe": {
+          "type": "boolean",
+          "description": "リソース購読機能のサポート"
+        },
+        "listChanged": {
+          "type": "boolean",
+          "description": "リソース一覧変更通知のサポート"
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "properties": {
+        "listChanged": {
+          "type": "boolean",
+          "description": "プロンプト一覧変更通知のサポート"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "comment": "unity-cli v2.40.3: toolsのみサポート",
+      "tools": {
+        "listChanged": true
+      }
+    },
+    {
+      "comment": "すべてのcapabilityをサポートする場合",
+      "tools": {
+        "listChanged": true
+      },
+      "resources": {
+        "subscribe": false,
+        "listChanged": true
+      },
+      "prompts": {
+        "listChanged": false
+      }
+    }
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,55 @@
+name: Auto Merge PR
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (
+        github.event.pull_request.base.ref == 'develop' ||
+        (
+          github.event.pull_request.base.ref == 'main' &&
+          startsWith(github.event.pull_request.head.ref, 'release-please--')
+        )
+      )
+    steps:
+      - name: Enable auto-merge (with retry)
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          for i in $(seq 1 60); do
+            echo "Attempt $i: enable auto-merge for #$PR_NUMBER"
+
+            if gh pr merge "$PR_NUMBER" --auto --merge --repo "$REPO"; then
+              echo "Auto-merge enabled"
+              exit 0
+            fi
+
+            mergeable=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json mergeable --jq .mergeable || echo "UNKNOWN")
+            if [ "$mergeable" = "CONFLICTING" ]; then
+              echo "PR has merge conflicts; cannot auto-merge" >&2
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Failed to enable auto-merge after 10 minutes" >&2
+          exit 1

@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+echo "Running cargo test..."
+cargo test
+
+if [ -f "lsp/Server.Tests.csproj" ]; then
+  echo "Running LSP tests..."
+  dotnet test lsp/Server.Tests.csproj
+fi
+
+echo "Pre-push checks passed."
