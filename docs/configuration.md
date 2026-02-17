@@ -55,7 +55,7 @@ WARN Environment variable 'UNITY_MCP_PORT' is deprecated and will be removed in 
 ### Migration Table / 移行表
 
 | Deprecated Variable (非推奨) | Replacement (移行先) |
-|---|---|
+| --- | --- |
 | `UNITY_MCP_MCP_HOST` | `UNITY_CLI_HOST` |
 | `UNITY_MCP_UNITY_HOST` | `UNITY_CLI_HOST` |
 | `UNITY_MCP_PORT` | `UNITY_CLI_PORT` |
@@ -78,7 +78,7 @@ WARN Environment variable 'UNITY_MCP_PORT' is deprecated and will be removed in 
 ### Timeline / タイムライン
 
 | Version | Action |
-|---|---|
+| --- | --- |
 | v0.1.0 | `UNITY_MCP_*` variables deprecated; runtime warnings added |
 | v1.0.0 | `UNITY_MCP_*` variables removed; only `UNITY_CLI_*` supported |
 
