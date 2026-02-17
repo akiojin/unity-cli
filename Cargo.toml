@@ -1,0 +1,41 @@
+[package]
+name = "unity-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Rust CLI for Unity Editor automation over the Unity TCP protocol"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/akiojin/unity-cli"
+homepage = "https://github.com/akiojin/unity-cli"
+documentation = "https://github.com/akiojin/unity-cli#readme"
+keywords = ["unity", "cli", "automation", "editor"]
+categories = ["command-line-utilities", "development-tools"]
+include = [
+    "src/**",
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "RELEASE.md",
+    "lsp/**",
+    "UnityCliBridge/**",
+]
+
+[[bin]]
+name = "unity-cli"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+dirs = "6.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tokio = { version = "1.48", features = ["macros", "net", "io-util", "rt-multi-thread", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+regex = "1.12"
+walkdir = "2.5"
+
+[dev-dependencies]
+tempfile = "3.23"
