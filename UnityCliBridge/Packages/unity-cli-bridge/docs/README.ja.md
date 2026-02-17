@@ -6,7 +6,7 @@
 
 ## インストール
 
-- Unity Package Manager で「Add package from Git URL…」を選択します。
+- Unity Package Manager で「Add package from Git URL...」を選択します。
 - 次の URL（UPM サブフォルダ指定）を使用します。
 
 ```
@@ -29,13 +29,17 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 MIT
 
-## 表記のお願い
+## ライセンス帰属表示
 
-このパッケージを利用したアプリを配布する場合、クレジット/About/README などへの表記をお願いします。
+本パッケージを再配布したり公開プロジェクトに含める場合、MIT ライセンスでは著作権表示と許諾表示の同梱が求められます。テンプレート付きの帰属表示ガイドがリポジトリルートの [`ATTRIBUTION.md`](../../../../ATTRIBUTION.md) にあります。
 
-推奨表記:
+帰属表示の記載例:
 
-`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+```
+本製品には akiojin が開発したソフトウェアが含まれています。
+unity-cli - https://github.com/akiojin/unity-cli
+MIT License に基づきライセンスされています。
+```
 
 ## リポジトリ
 

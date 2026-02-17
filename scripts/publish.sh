@@ -49,6 +49,23 @@ if ! command -v node >/dev/null 2>&1; then
   exit 2
 fi
 
+# ──────────────────────────────────────────────
+# Pre-publish validation
+# ──────────────────────────────────────────────
+
+echo "[step] pre-publish validation"
+
+# Clean working tree check
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "[error] Git working tree is not clean. Commit or stash changes before releasing." >&2
+  exit 1
+fi
+
+if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+  echo "[error] Untracked files detected. Commit or remove them before releasing." >&2
+  exit 1
+fi
+
 # 事前情報
 CUR_VER=$(node -p "require('./package.json').version")
 echo "[info] current version: $CUR_VER"
@@ -60,6 +77,10 @@ npm version "$LEVEL" -m "chore(release): v%s" >/dev/null
 NEW_VER=$(node -p "require('./package.json').version")
 TAG="v$NEW_VER"
 echo "[info] new version: $NEW_VER (tag: $TAG)"
+
+# ──────────────────────────────────────────────
+# Version sync across all packages
+# ──────────────────────────────────────────────
 
 # Unity パッケージの version を同期
 echo "[step] sync Unity UPM package version -> $NEW_VER"
@@ -103,6 +124,23 @@ sync_props() {
 
 sync_props "lsp/Directory.Build.props" "$NEW_VER"
 
+# ──────────────────────────────────────────────
+# Run tests before publishing
+# ──────────────────────────────────────────────
+
+echo "[step] running cargo test..."
+cargo test || { echo "[error] cargo test failed. Fix test failures before releasing." >&2; exit 1; }
+
+echo "[step] running dotnet test lsp/Server.Tests.csproj..."
+dotnet test lsp/Server.Tests.csproj || { echo "[error] dotnet test failed. Fix test failures before releasing." >&2; exit 1; }
+
+echo "[step] running cargo publish --dry-run..."
+cargo publish --dry-run || { echo "[error] cargo publish --dry-run failed. Fix packaging issues before releasing." >&2; exit 1; }
+
+# ──────────────────────────────────────────────
+# Commit and tag
+# ──────────────────────────────────────────────
+
 # 変更ファイルをコミット（npmが自動コミットしない場合の保険）
 git add package.json \
         UnityCliBridge/Packages/unity-cli-bridge/package.json \
@@ -117,6 +155,10 @@ if git rev-parse -q --verify "$TAG" >/dev/null; then
 else
   git tag -a "$TAG" -m "$TAG"
 fi
+
+# ──────────────────────────────────────────────
+# Push
+# ──────────────────────────────────────────────
 
 # リモート接続確認
 if ! git ls-remote --exit-code "$REMOTE" >/dev/null 2>&1; then
