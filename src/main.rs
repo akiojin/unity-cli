@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod instances;
 mod local_tools;
+mod lsp;
 mod tool_catalog;
 mod transport;
 

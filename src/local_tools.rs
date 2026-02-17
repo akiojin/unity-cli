@@ -228,11 +228,15 @@ fn local_list_packages() -> Result<Value> {
 }
 
 fn local_get_symbols(params: &Value) -> Result<Value> {
+    let root = project_root()?;
+    if let Some(result) = crate::lsp::maybe_execute("get_symbols", params, &root) {
+        return result;
+    }
+
     let path = params
         .get("path")
         .and_then(Value::as_str)
         .ok_or_else(|| anyhow!("get_symbols requires `path`"))?;
-    let root = project_root()?;
     let rel = normalize_rel_path(path)
         .ok_or_else(|| anyhow!("path must start with Assets/ or Packages/"))?;
 
@@ -253,6 +257,10 @@ fn local_get_symbols(params: &Value) -> Result<Value> {
 
 fn local_build_index(params: &Value) -> Result<Value> {
     let root = project_root()?;
+    if let Some(result) = crate::lsp::maybe_execute("build_index", params, &root) {
+        return result;
+    }
+
     let exclude_package_cache = params
         .get("excludePackageCache")
         .and_then(Value::as_bool)
@@ -411,6 +419,11 @@ fn local_update_index(params: &Value) -> Result<Value> {
 }
 
 fn local_find_symbol(params: &Value) -> Result<Value> {
+    let root = project_root()?;
+    if let Some(result) = crate::lsp::maybe_execute("find_symbol", params, &root) {
+        return result;
+    }
+
     let name = params
         .get("name")
         .and_then(Value::as_str)
@@ -426,7 +439,6 @@ fn local_find_symbol(params: &Value) -> Result<Value> {
         .and_then(Value::as_bool)
         .unwrap_or(false);
 
-    let root = project_root()?;
     let index = match load_index_if_exists(&root) {
         Ok(Some(index)) if index_is_ready(&index) => index,
         Ok(_) => {
@@ -513,6 +525,10 @@ fn local_find_refs(params: &Value) -> Result<Value> {
         .clamp(0, 20) as usize;
 
     let root = project_root()?;
+    if let Some(result) = crate::lsp::maybe_execute("find_refs", params, &root) {
+        return result;
+    }
+
     let index = match load_index_if_exists(&root) {
         Ok(Some(index)) if index_is_ready(&index) => index,
         Ok(_) => {
