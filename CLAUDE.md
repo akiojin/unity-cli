@@ -8,6 +8,15 @@
 Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に置き換え、ネイティブ CLI として再設計しました。
 旧リポジトリ (`unity-mcp-server`) への機能追加は行いません。
 
+## スキルアーキテクチャ
+
+旧 `unity-mcp-server` の 108 個の MCP ツールを **Claude Code Skill** に変換。
+スキルはオンデマンドで読み込まれ、LLM コンテキストを肥大化させない。
+内部的には `unity-cli` コマンド（型付きサブコマンド or `raw`）を呼び出す。
+
+- スキル定義: `.claude-plugin/plugins/unity-cli/skills/`
+- プラグインマニフェスト: `.claude-plugin/plugins/unity-cli/plugin.json`
+
 ## 基本方針
 
 - 実装は `unity-cli`（Rust CLI）を中心に行う
