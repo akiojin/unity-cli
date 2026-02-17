@@ -1,34 +1,76 @@
 name: Test
 
 on:
-  pull_request:
-    branches: [develop, main]
   push:
-    branches: [develop, main]
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop, "feature/**"]
+  workflow_dispatch:
 
 jobs:
-  rust:
-    name: Rust Tests
+  rust-test:
+    name: Rust Tests (required)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-      - name: Run Rust tests
-        run: cargo test --all-targets
+      - uses: actions/checkout@v4
 
-  lsp:
-    name: LSP Tests
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run cargo test
+        run: cargo test
+
+  lsp-test:
+    name: LSP Tests (required)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup .NET
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
-      - name: Run LSP tests
+          dotnet-version: "9.0.x"
+
+      - name: Run dotnet test
         run: dotnet test lsp/Server.Tests.csproj
+
+  unity-e2e:
+    name: Unity E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    # NOTE: Unity Editor must be running on the runner for E2E tests to pass.
+    # This job is manual-only (workflow_dispatch) because it requires a live
+    # Unity Editor instance connected via TCP.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build unity-cli
+        run: cargo build --release
+
+      - name: Run E2E scenarios
+        id: e2e
+        run: |
+          chmod +x scripts/e2e-test.sh
+          scripts/e2e-test.sh
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            /tmp/unity-cli-e2e-*.log
+          retention-days: 7
