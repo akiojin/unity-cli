@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:VisualElement name="UITK_Container">
+    <ui:Label name="UITK_Status" text="UITK Status" />
+    <ui:Button name="UITK_Button" text="UITK Button" />
+    <ui:Toggle name="UITK_Toggle" label="UITK Toggle" value="false" />
+    <ui:Slider name="UITK_Slider" lowValue="0" highValue="10" value="5" label="UITK Slider" />
+    <ui:TextField name="UITK_TextField" label="UITK TextField" value="" />
+    <ui:DropdownField name="UITK_Dropdown" label="UITK Dropdown" />
+  </ui:VisualElement>
+</ui:UXML>

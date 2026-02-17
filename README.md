@@ -89,6 +89,7 @@ Backward-compatible `UNITY_MCP_*` aliases are also accepted.
 - Contributing: `CONTRIBUTING.md`
 - Development guide: `docs/development.md`
 - Release guide: `RELEASE.md`
+- Unity test project: `UnityCliBridge/TestProject`
 
 ## License
 

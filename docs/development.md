@@ -8,6 +8,7 @@ This document covers internal development workflow for `unity-cli`.
 
 - CLI runtime: Rust (`src/`)
 - Unity bridge package: `UnityCliBridge/Packages/unity-cli-bridge`
+- Unity test project: `UnityCliBridge/TestProject`
 - C# LSP: `lsp/`
 - Spec workflow: `.specify/` + `specs/`
 
@@ -21,6 +22,9 @@ cargo test --all-targets
 
 # C# LSP
 dotnet test lsp/Server.Tests.csproj
+
+# Unity (EditMode tests)
+unity -batchmode -nographics -projectPath UnityCliBridge/TestProject -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
 ```
 
 ## TDD Flow
@@ -59,6 +63,7 @@ Detailed steps: `RELEASE.md`.
 
 - CLI本体: Rust (`src/`)
 - Unity連携パッケージ: `UnityCliBridge/Packages/unity-cli-bridge`
+- Unityテストプロジェクト: `UnityCliBridge/TestProject`
 - C# LSP: `lsp/`
 - Specワークフロー: `.specify/` + `specs/`
 
@@ -72,6 +77,9 @@ cargo test --all-targets
 
 # C# LSP
 dotnet test lsp/Server.Tests.csproj
+
+# Unity（EditModeテスト）
+unity -batchmode -nographics -projectPath UnityCliBridge/TestProject -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
 ```
 
 ## TDDフロー
