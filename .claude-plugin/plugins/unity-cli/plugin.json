@@ -4,6 +4,21 @@
   "version": "0.1.0",
   "description": "Claude Code plugin providing skills for Rust-based unity-cli workflows.",
   "skills": [
-    "skills/unity-cli-usage/SKILL.md"
+    "skills/unity-cli-usage/SKILL.md",
+    "skills/unity-scene-create/SKILL.md",
+    "skills/unity-scene-inspect/SKILL.md",
+    "skills/unity-gameobject-edit/SKILL.md",
+    "skills/unity-prefab-workflow/SKILL.md",
+    "skills/unity-asset-management/SKILL.md",
+    "skills/unity-addressables/SKILL.md",
+    "skills/unity-csharp-navigate/SKILL.md",
+    "skills/unity-csharp-edit/SKILL.md",
+    "skills/unity-playmode-testing/SKILL.md",
+    "skills/unity-input-system/SKILL.md",
+    "skills/unity-ui-automation/SKILL.md",
+    "skills/unity-editor-tools/SKILL.md"
+  ],
+  "agents": [
+    "agents/unity-helper.md"
   ]
 }

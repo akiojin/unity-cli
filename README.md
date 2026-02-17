@@ -35,6 +35,28 @@ unity-cli raw create_gameobject --json '{"name":"Player"}'
 
 Use `raw` for full command coverage when no typed subcommand exists.
 
+## Skills Architecture
+
+`unity-cli` provides 13 Claude Code Skills that invoke CLI commands on demand, replacing the old MCP tool definitions:
+
+| Skill | Domain |
+| --- | --- |
+| `unity-cli-usage` | CLI basics and raw command reference |
+| `unity-scene-create` | Scene and GameObject creation |
+| `unity-scene-inspect` | Scene hierarchy analysis |
+| `unity-gameobject-edit` | GameObject and Component editing |
+| `unity-prefab-workflow` | Prefab lifecycle management |
+| `unity-asset-management` | Asset and Material operations |
+| `unity-addressables` | Addressables build and analysis |
+| `unity-csharp-navigate` | C# code exploration (LSP) |
+| `unity-csharp-edit` | C# code editing and refactoring |
+| `unity-playmode-testing` | PlayMode, testing, and input simulation |
+| `unity-input-system` | Input System configuration |
+| `unity-ui-automation` | UI element interaction |
+| `unity-editor-tools` | Editor utilities and profiler |
+
+Skills are distributed as a Claude Code plugin (`.claude-plugin/plugins/unity-cli/`).
+
 ## Local Tools (Rust-side)
 
 These tools run locally:
