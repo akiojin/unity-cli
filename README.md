@@ -104,7 +104,7 @@ See [RELEASE.md](RELEASE.md) for the full release guide.
 ## Environment Variables
 
 | Variable | Description | Default |
-|---|---|---|
+| --- | --- | --- |
 | `UNITY_PROJECT_ROOT` | Directory containing `Assets/` and `Packages/` | auto-detect |
 | `UNITY_CLI_HOST` | Unity Editor host | `localhost` |
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
