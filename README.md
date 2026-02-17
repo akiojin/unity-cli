@@ -1,6 +1,7 @@
 # unity-cli
 
 Rust-based CLI for Unity Editor automation over Unity TCP.
+Successor to [`unity-mcp-server`](https://github.com/akiojin/unity-mcp-server) — rewritten from Node.js/MCP to native Rust.
 
 ## Install
 
@@ -72,29 +73,57 @@ Test command:
 dotnet test lsp/Server.Tests.csproj
 ```
 
-## Environment Variables
-
-- `UNITY_PROJECT_ROOT`
-- `UNITY_CLI_HOST`
-- `UNITY_CLI_PORT`
-- `UNITY_CLI_TIMEOUT_MS`
-- `UNITY_CLI_LSP_MODE` (`off` | `auto` | `required`)
-- `UNITY_CLI_LSP_COMMAND`
-- `UNITY_CLI_LSP_BIN`
-
-Backward-compatible `UNITY_MCP_*` aliases are also accepted.
-
 ## Development
 
-- Contributing: `CONTRIBUTING.md`
-- Development guide: `docs/development.md`
-- Release guide: `RELEASE.md`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributing guide.
+
+```bash
+cargo test                              # Rust tests
+dotnet test lsp/Server.Tests.csproj     # LSP tests
+./scripts/e2e-test.sh                   # Unity E2E (requires running Unity Editor)
+./scripts/benchmark.sh                  # Performance benchmarks
+```
+
+Docker-based verification:
+
+```bash
+docker build -t unity-cli-dev .
+docker run --rm unity-cli-dev
+```
+
+## Release
+
+Release script and CI workflow handle validation, build, and publish:
+
+```bash
+./scripts/publish.sh 0.2.0
+```
+
+See [RELEASE.md](RELEASE.md) for the full release guide.
+
+## Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `UNITY_PROJECT_ROOT` | Directory containing `Assets/` and `Packages/` | auto-detect |
+| `UNITY_CLI_HOST` | Unity Editor host | `localhost` |
+| `UNITY_CLI_PORT` | Unity Editor port | `6400` |
+| `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
+| `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`) | `off` |
+| `UNITY_CLI_LSP_COMMAND` | Explicit LSP executable command | - |
+| `UNITY_CLI_LSP_BIN` | Explicit LSP executable path | - |
+
+`UNITY_MCP_*` variables are deprecated since v0.1.0 and will be removed in v1.0.0. See [docs/configuration.md](docs/configuration.md) for the migration guide.
+
+## Output Modes
+
+- Default: text
+- JSON: `--output json`
+
+```bash
+cargo run -- --output json system ping
+```
 
 ## License
 
-MIT (`LICENSE`)
-
-If you build an app using `unity-cli`, please include attribution (credits/about/README).
-Recommended:
-
-`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+MIT - See [ATTRIBUTION.md](ATTRIBUTION.md) for attribution templates when redistributing.

@@ -19,6 +19,15 @@ cd unity-cli
 pnpm install --frozen-lockfile
 ```
 
+### Docker (Optional)
+
+You can use Docker without installing Rust / .NET locally.
+
+```bash
+docker build -t unity-cli-dev .
+docker run --rm unity-cli-dev
+```
+
 ## Validation Commands
 
 ```bash
@@ -27,6 +36,48 @@ cargo clippy --all-targets -- -D warnings
 cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 ```
+
+### Running Tests
+
+#### Rust
+
+```bash
+cargo test
+```
+
+#### LSP (C# / .NET 9)
+
+```bash
+dotnet test lsp/Server.Tests.csproj
+```
+
+.NET SDK 9 が必要です。`dotnet --version` で 9.x を確認してください。
+
+### Pre-push Hook
+
+This repository includes a `.husky/pre-push` hook. To enable it:
+
+```bash
+chmod +x .husky/pre-push
+git config core.hooksPath .husky
+```
+
+The hook automatically runs `cargo test` and `dotnet test` before `git push`.
+If any test fails, the push is aborted.
+
+## CI
+
+To merge a Pull Request into main, the following CI checks must pass:
+
+- **Rust Tests (required)** — `cargo test`
+- **LSP Tests (required)** — `dotnet test lsp/Server.Tests.csproj`
+
+PRs with failing tests cannot be merged.
+
+## E2E Tests
+
+Unity E2E tests run via manual trigger (`workflow_dispatch`).
+See `docs/development.md` for instructions on running them locally.
 
 ## Branch Policy
 
@@ -91,6 +142,15 @@ cd unity-cli
 pnpm install --frozen-lockfile
 ```
 
+### Docker（任意）
+
+ローカルに Rust / .NET をインストールせずに Docker で検証できます。
+
+```bash
+docker build -t unity-cli-dev .
+docker run --rm unity-cli-dev
+```
+
 ## 検証コマンド
 
 ```bash
@@ -99,6 +159,32 @@ cargo clippy --all-targets -- -D warnings
 cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 ```
+
+### プッシュ前フック
+
+このリポジトリには `.husky/pre-push` フックが含まれています。有効にするには:
+
+```bash
+chmod +x .husky/pre-push
+git config core.hooksPath .husky
+```
+
+フックは `git push` の前に自動的に `cargo test` と `dotnet test` を実行します。
+テストが失敗した場合、push は中断されます。
+
+## CI / 継続的インテグレーション
+
+Pull Request を main にマージするには、以下の CI チェックがすべて成功する必要があります:
+
+- **Rust Tests (required)** — `cargo test`
+- **LSP Tests (required)** — `dotnet test lsp/Server.Tests.csproj`
+
+テストが失敗している PR はマージできません。
+
+## E2E テスト
+
+Unity 実機 E2E テストは手動トリガー (`workflow_dispatch`) で実行されます。
+ローカルでの実行方法は `docs/development.md` を参照してください。
 
 ## ブランチ運用
 
