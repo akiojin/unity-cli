@@ -33,17 +33,17 @@ impl RuntimeConfig {
 fn default_host() -> String {
     read_env_with_deprecation(
         &["UNITY_CLI_HOST"],
-        &[("UNITY_MCP_MCP_HOST", "UNITY_CLI_HOST"), ("UNITY_MCP_UNITY_HOST", "UNITY_CLI_HOST")],
+        &[
+            ("UNITY_MCP_MCP_HOST", "UNITY_CLI_HOST"),
+            ("UNITY_MCP_UNITY_HOST", "UNITY_CLI_HOST"),
+        ],
     )
     .unwrap_or_else(|| DEFAULT_HOST.to_string())
 }
 
 fn default_port() -> u16 {
-    read_env_u16_with_deprecation(
-        &["UNITY_CLI_PORT"],
-        &[("UNITY_MCP_PORT", "UNITY_CLI_PORT")],
-    )
-    .unwrap_or(DEFAULT_PORT)
+    read_env_u16_with_deprecation(&["UNITY_CLI_PORT"], &[("UNITY_MCP_PORT", "UNITY_CLI_PORT")])
+        .unwrap_or(DEFAULT_PORT)
 }
 
 fn default_timeout_ms() -> u64 {
@@ -136,7 +136,10 @@ mod tests {
     #[test]
     fn primary_key_takes_precedence_over_deprecated() {
         with_env_vars(
-            &[("UNITY_CLI_HOST", "primary-host"), ("UNITY_MCP_MCP_HOST", "deprecated-host")],
+            &[
+                ("UNITY_CLI_HOST", "primary-host"),
+                ("UNITY_MCP_MCP_HOST", "deprecated-host"),
+            ],
             || {
                 let value = read_env_with_deprecation(
                     &["UNITY_CLI_HOST"],
