@@ -41,7 +41,7 @@ Pre-publish validation script. Accepts a version argument without the `v` prefix
 Checks performed before publishing:
 
 | Step | Description |
-|------|-------------|
+| ------ | ------------- |
 | 1 | Git working tree is clean (no uncommitted or untracked files) |
 | 2 | Current branch is `main` |
 | 3 | `Cargo.toml` version matches the provided version |
@@ -60,7 +60,7 @@ Triggered by:
 Jobs:
 
 | Job | Description |
-|-----|-------------|
+| ----- | ------------- |
 | `validate` | Checks tag format, verifies Cargo.toml version, runs cargo test and dotnet test |
 | `build` | Matrix build for linux-x64, macos-arm64, windows-x64 |
 | `release` | Creates a GitHub Release and attaches the built binaries |
