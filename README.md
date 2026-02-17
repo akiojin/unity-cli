@@ -100,7 +100,7 @@ dotnet test lsp/Server.Tests.csproj
 - Contributing: `CONTRIBUTING.md`
 - Development guide: `docs/development.md`
 - Release guide: `RELEASE.md`
-- Unity test project: `UnityCliBridge/TestProject`
+- Unity test project: `UnityCliBridge`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributing guide.
 

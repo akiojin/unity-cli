@@ -1,6 +1,6 @@
 # Unity CLI Bridge Test Project
 
-This is the migrated Unity test project for `unity-cli`.
+This is the Unity test project for `unity-cli`.
 
 ## Purpose
 
@@ -11,19 +11,19 @@ This is the migrated Unity test project for `unity-cli`.
 
 The project uses the local package reference defined in `Packages/manifest.json`:
 
-- `com.akiojin.unity-cli-bridge`: `file:../../Packages/unity-cli-bridge`
+- `com.akiojin.unity-cli-bridge`: `file:unity-cli-bridge`
 
 ## Open in Unity
 
 Open this folder in Unity Hub:
 
-- `UnityCliBridge/TestProject`
+- `UnityCliBridge`
 
 ## Run EditMode Tests (batch)
 
 ```bash
 unity -batchmode -nographics \
-  -projectPath UnityCliBridge/TestProject \
+  -projectPath UnityCliBridge \
   -runTests -testPlatform editmode \
   -testResults test-results/editmode.xml \
   -quit
