@@ -4,10 +4,11 @@
   "required_status_checks": {
     "strict": true,
     "checks": [
-      { "context": "Markdown, ESLint & Formatting" },
-      { "context": "Commit Message Lint" },
-      { "context": "Test & Coverage" },
-      { "context": "Package" }
+      { "context": "Rust Format & Lint" },
+      { "context": "Markdown & Commitlint" },
+      { "context": "Rust Tests (required)" },
+      { "context": "LSP Tests (required)" },
+      { "context": "Verify specs/specs.md is up-to-date" }
     ]
   },
   "enforce_admins": false,
