@@ -11,6 +11,9 @@ From crates.io:
 cargo install unity-cli
 ```
 
+If you use repository skills, make sure `unity-cli` is installed in advance.  
+`unity-cli-usage` can bootstrap automatically by running `cargo install unity-cli` when `cargo` is available.
+
 From GitHub:
 
 ```bash

@@ -1,12 +1,36 @@
 ---
 name: unity-cli-usage
 description: Practical usage guide for the Rust-based unity-cli command set, including raw command fallback and instance switching.
-allowed-tools: Read, Grep, Glob
+allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # unity-cli Usage (Claude Code)
 
 Use `unity-cli` as the primary Unity automation interface.
+
+## Bootstrap (Required)
+
+Before running any Unity command, ensure `unity-cli` is available:
+
+```bash
+if ! command -v unity-cli >/dev/null 2>&1; then
+  if command -v cargo >/dev/null 2>&1; then
+    cargo install unity-cli
+    hash -r
+  elif [ -f Cargo.toml ] && grep -q '^name = "unity-cli"' Cargo.toml; then
+    echo "unity-cli is not installed globally. Use: cargo run -- <args>"
+  else
+    echo "Install Rust first: https://rustup.rs"
+    exit 1
+  fi
+fi
+```
+
+Then verify:
+
+```bash
+unity-cli --version
+```
 
 ## Preferred Order
 
