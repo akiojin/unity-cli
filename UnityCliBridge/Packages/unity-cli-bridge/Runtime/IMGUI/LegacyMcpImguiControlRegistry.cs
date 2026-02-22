@@ -6,7 +6,15 @@ using UnityEngine;
 
 namespace UnityMCPServer.Runtime.IMGUI
 {
-    // Compatibility bridge for legacy test scripts that still reference UnityMCPServer.* namespaces.
+    /// <summary>
+    /// Compatibility bridge for code that still references
+    /// <c>UnityMCPServer.Runtime.IMGUI.McpImguiControlRegistry</c>.
+    /// The implementation delegates to
+    /// <see cref="UnityCliBridge.Runtime.IMGUI.McpImguiControlRegistry"/> so migrated projects can keep
+    /// legacy namespace references during transition.
+    /// Remove only after all supported projects (including TestProject and downstream user projects)
+    /// no longer reference <c>UnityMCPServer.*</c> IMGUI registry types.
+    /// </summary>
     public static class McpImguiControlRegistry
     {
         public struct ControlSnapshot
