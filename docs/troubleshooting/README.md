@@ -21,7 +21,7 @@ English | [日本語](#日本語)
 
 | Symptom | Fix |
 | --- | --- |
-| LSP command not found | Set `UNITY_CLI_LSP_BIN` or `UNITY_CLI_LSP_COMMAND` |
+| LSP command not found | Run `unity-cli lsp install` and retry |
 | LSP timeout | Increase `UNITY_CLI_TIMEOUT_MS` and retry |
 | LSP required but unavailable | Use `UNITY_CLI_LSP_MODE=auto` during setup |
 
@@ -65,7 +65,7 @@ export UNITY_PROJECT_ROOT=/absolute/path/to/UnityCliBridge
 
 | 症状 | 対処 |
 | --- | --- |
-| LSP実行ファイルが見つからない | `UNITY_CLI_LSP_BIN` または `UNITY_CLI_LSP_COMMAND` を設定 |
+| LSP実行ファイルが見つからない | `unity-cli lsp install` を実行して再試行 |
 | LSPタイムアウト | `UNITY_CLI_TIMEOUT_MS` を延長 |
 | 必須LSPモードで失敗 | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用 |
 

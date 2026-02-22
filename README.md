@@ -137,8 +137,7 @@ See [RELEASE.md](RELEASE.md) for the full release guide.
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
 | `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`) | `off` |
-| `UNITY_CLI_LSP_COMMAND` | Explicit LSP executable command | - |
-| `UNITY_CLI_LSP_BIN` | Explicit LSP executable path | - |
+| `UNITY_CLI_TOOLS_ROOT` | Downloaded tools root directory | OS default |
 
 `UNITY_MCP_*` variables are deprecated since v0.1.0 and will be removed in v1.0.0. See [docs/configuration.md](docs/configuration.md) for the migration guide.
 
