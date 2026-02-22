@@ -188,6 +188,10 @@ Periodically verify that specs and docs match the current implementation.
 - After changes to environment variables or command structure
 - As a release checklist item
 
+## Baseline Policy
+
+The Unity-side codebase uses `unity-mcp-server` as its base copy. Differences are limited to changes required for the MCP → CLI migration. For the full policy and diff inventory, see [`specs/SPEC-83d9d7ee/baseline-policy.md`](../specs/SPEC-83d9d7ee/baseline-policy.md).
+
 ---
 
 ## 日本語
@@ -364,3 +368,7 @@ E2E Tests は手動トリガーのみで、Unity Editor が起動しているラ
 - 新機能追加・設計変更を含む PR をマージする前
 - 環境変数やコマンド体系に変更があった場合
 - リリース前のチェックリストの一項目として
+
+## ベースライン方針
+
+Unity 側コードベースは `unity-mcp-server` をベースコピーとし、差分は MCP→CLI 移行に必要な変更に限定します。方針の全文と差分一覧は [`specs/SPEC-83d9d7ee/baseline-policy.md`](../specs/SPEC-83d9d7ee/baseline-policy.md) を参照してください。
