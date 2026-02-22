@@ -38,7 +38,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("SelectionHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("SelectionHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -79,7 +79,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("SelectionHandler", $"Error getting selection: {e.Message}");
+                BridgeLogger.LogError("SelectionHandler", $"Error getting selection: {e.Message}");
                 return new { error = $"Failed to get selection: {e.Message}" };
             }
         }
@@ -145,7 +145,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("SelectionHandler", $"Error setting selection: {e.Message}");
+                BridgeLogger.LogError("SelectionHandler", $"Error setting selection: {e.Message}");
                 return new { error = $"Failed to set selection: {e.Message}" };
             }
         }
@@ -173,7 +173,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("SelectionHandler", $"Error clearing selection: {e.Message}");
+                BridgeLogger.LogError("SelectionHandler", $"Error clearing selection: {e.Message}");
                 return new { error = $"Failed to clear selection: {e.Message}" };
             }
         }
@@ -227,7 +227,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("SelectionHandler", $"Error getting selection details: {e.Message}");
+                BridgeLogger.LogError("SelectionHandler", $"Error getting selection details: {e.Message}");
                 return new { error = $"Failed to get selection details: {e.Message}" };
             }
         }

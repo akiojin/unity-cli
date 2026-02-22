@@ -86,7 +86,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("CompilationHandler", $"Error getting compilation state: {e.Message}");
+                BridgeLogger.LogError("CompilationHandler", $"Error getting compilation state: {e.Message}");
                 return new { error = $"Failed to get compilation state: {e.Message}" };
             }
         }
@@ -134,7 +134,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("CompilationHandler", $"SnapshotConsoleMessages failed: {ex.Message}");
+                BridgeLogger.LogWarning("CompilationHandler", $"SnapshotConsoleMessages failed: {ex.Message}");
             }
             return list;
         }
@@ -168,7 +168,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("CompilationHandler", $"GetConsoleCounts failed: {ex.Message}");
+                BridgeLogger.LogWarning("CompilationHandler", $"GetConsoleCounts failed: {ex.Message}");
             }
             return (err, warn, log);
         }
@@ -187,7 +187,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("CompilationHandler", $"GetLastAssemblyWriteTime failed: {ex.Message}");
+                BridgeLogger.LogWarning("CompilationHandler", $"GetLastAssemblyWriteTime failed: {ex.Message}");
                 return null;
             }
         }

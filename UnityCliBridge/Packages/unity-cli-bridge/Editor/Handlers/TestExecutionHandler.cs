@@ -117,7 +117,7 @@ namespace UnityCliBridge.Handlers
                 {
                     if (!UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene))
                     {
-                        McpLogger.LogWarning("TestExecutionHandler", "Failed to save scene before test execution. Scene save dialog may appear.");
+                        BridgeLogger.LogWarning("TestExecutionHandler", "Failed to save scene before test execution. Scene save dialog may appear.");
                     }
                 }
 
@@ -180,7 +180,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TestExecutionHandler", $"Error running tests: {e.Message}\\n{e.StackTrace}");
+                BridgeLogger.LogError("TestExecutionHandler", $"Error running tests: {e.Message}\\n{e.StackTrace}");
                 isTestRunning = false;
                 return new { error = $"Failed to run tests: {e.Message}" };
             }
@@ -299,7 +299,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TestExecutionHandler", $"Error getting test status: {e.Message}");
+                BridgeLogger.LogError("TestExecutionHandler", $"Error getting test status: {e.Message}");
                 return new { status = "error", error = $"Failed to get test status: {e.Message}" };
             }
         }
@@ -334,7 +334,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TestExecutionHandler", $"Error reading exported test results: {e.Message}");
+                BridgeLogger.LogError("TestExecutionHandler", $"Error reading exported test results: {e.Message}");
                 return new { status = "error", error = $"Failed to read test results: {e.Message}" };
             }
         }
@@ -393,7 +393,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("TestExecutionHandler", $"Failed to resolve export path '{exportPath}': {ex.Message}. Using default folder.");
+                BridgeLogger.LogWarning("TestExecutionHandler", $"Failed to resolve export path '{exportPath}': {ex.Message}. Using default folder.");
                 Directory.CreateDirectory(DefaultResultsFolder);
                 var fallback = Path.Combine(DefaultResultsFolder, $"TestResults_{testMode}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.json");
                 return Path.GetFullPath(fallback);
@@ -470,7 +470,7 @@ namespace UnityCliBridge.Handlers
                 }
                 catch (Exception ex)
                 {
-                    McpLogger.LogWarning("TestExecutionHandler", $"Failed to read test results file '{lastResultPath}': {ex.Message}");
+                    BridgeLogger.LogWarning("TestExecutionHandler", $"Failed to read test results file '{lastResultPath}': {ex.Message}");
                 }
             }
 
@@ -515,11 +515,11 @@ namespace UnityCliBridge.Handlers
                     Directory.CreateDirectory(dir);
                 }
                 File.WriteAllText(path, json);
-                McpLogger.Log("TestExecutionHandler", $"Persisted run state to {path} (status={status})");
+                BridgeLogger.Log("TestExecutionHandler", $"Persisted run state to {path} (status={status})");
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("TestExecutionHandler", $"Failed to persist run state: {ex.Message}");
+                BridgeLogger.LogWarning("TestExecutionHandler", $"Failed to persist run state: {ex.Message}");
             }
         }
 
@@ -531,12 +531,12 @@ namespace UnityCliBridge.Handlers
                 if (!File.Exists(path)) return null;
                 var json = File.ReadAllText(path);
                 var state = JsonConvert.DeserializeObject<PersistedRunState>(json);
-                McpLogger.Log("TestExecutionHandler", $"Loaded persisted run state from {path}: {state?.status} runId={state?.runId}");
+                BridgeLogger.Log("TestExecutionHandler", $"Loaded persisted run state from {path}: {state?.status} runId={state?.runId}");
                 return state;
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning("TestExecutionHandler", $"Failed to load run state: {ex.Message}");
+                BridgeLogger.LogWarning("TestExecutionHandler", $"Failed to load run state: {ex.Message}");
                 return null;
             }
         }
@@ -549,7 +549,7 @@ namespace UnityCliBridge.Handlers
                 if (File.Exists(path))
                 {
                     File.Delete(path);
-                    McpLogger.Log("TestExecutionHandler", $"Cleared persisted run state at {path}");
+                    BridgeLogger.Log("TestExecutionHandler", $"Cleared persisted run state at {path}");
                 }
             }
             catch { }
@@ -598,26 +598,26 @@ namespace UnityCliBridge.Handlers
                 runStartedAtUtc = DateTime.UtcNow;
                 runLastUpdateUtc = runStartedAtUtc;
                 TotalTests = CountTests(testsToRun);
-                McpLogger.Log("TestExecutionHandler", $"Starting test run with {TotalTests} tests");
+                BridgeLogger.Log("TestExecutionHandler", $"Starting test run with {TotalTests} tests");
             }
 
             public void RunFinished(ITestResultAdaptor result)
             {
                 isTestRunning = false;
                 runLastUpdateUtc = DateTime.UtcNow;
-                McpLogger.Log("TestExecutionHandler", $"Test run finished. Passed: {PassedTests.Count}, Failed: {FailedTests.Count}");
+                BridgeLogger.Log("TestExecutionHandler", $"Test run finished. Passed: {PassedTests.Count}, Failed: {FailedTests.Count}");
                 ExportResults(result);
                 RestoreEnterPlayModeOptions();
             }
 
             public void TestStarted(ITestAdaptor test)
             {
-                McpLogger.Log("TestExecutionHandler", $"Test started: {test.FullName}");
+                BridgeLogger.Log("TestExecutionHandler", $"Test started: {test.FullName}");
             }
 
             public void TestFinished(ITestResultAdaptor result)
             {
-                McpLogger.Log("TestExecutionHandler", $"Test finished: {result.Test.FullName} [{result.TestStatus}]");
+                BridgeLogger.Log("TestExecutionHandler", $"Test finished: {result.Test.FullName} [{result.TestStatus}]");
                 runLastUpdateUtc = DateTime.UtcNow;
 
                 var testResult = new TestResultData
@@ -711,7 +711,7 @@ namespace UnityCliBridge.Handlers
                 }
                 catch (Exception ex)
                 {
-                    McpLogger.LogError("TestExecutionHandler", $"Failed to export test results to '{exportPath}': {ex.Message}");
+                    BridgeLogger.LogError("TestExecutionHandler", $"Failed to export test results to '{exportPath}': {ex.Message}");
                 }
             }
 
