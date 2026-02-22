@@ -12,26 +12,26 @@ General editor operations, diagnostics, profiling, and project settings.
 
 ```bash
 unity-cli system ping
-unity-cli raw get_server_info --json '{}'
+unity-cli raw get_editor_info --json '{}'
+unity-cli raw get_editor_state --json '{}'
 unity-cli raw get_command_stats --json '{}'
-unity-cli raw search_tools --json '{"query":"scene"}'
 ```
 
 ## Project Settings
 
 ```bash
-unity-cli raw get_project_settings --json '{"category":"Player"}'
-unity-cli raw update_project_settings --json '{"category":"Player","settings":{"companyName":"MyStudio"}}'
+unity-cli raw get_project_settings --json '{"includePlayer":true}'
+unity-cli raw update_project_settings --json '{"confirmChanges":true,"player":{"companyName":"MyStudio"}}'
 ```
 
 ## Editor Operations
 
 ```bash
 unity-cli raw execute_menu_item --json '{"menuPath":"File/Save Project"}'
-unity-cli raw manage_windows --json '{"action":"list"}'
+unity-cli raw manage_windows --json '{"action":"get"}'
 unity-cli raw manage_selection --json '{"action":"get"}'
-unity-cli raw manage_selection --json '{"action":"set","objectPath":"/Player"}'
-unity-cli raw manage_tools --json '{"action":"list"}'
+unity-cli raw manage_selection --json '{"action":"set","objectPaths":["/Player"]}'
+unity-cli raw manage_tools --json '{"action":"get"}'
 unity-cli raw quit_editor --json '{}'
 ```
 
@@ -40,6 +40,7 @@ unity-cli raw quit_editor --json '{}'
 ```bash
 unity-cli raw read_console --json '{"count":20}'
 unity-cli raw clear_console --json '{}'
+unity-cli raw clear_logs --json '{}'
 ```
 
 ## Profiler
@@ -48,19 +49,19 @@ unity-cli raw clear_console --json '{}'
 unity-cli raw profiler_start --json '{}'
 unity-cli raw profiler_stop --json '{}'
 unity-cli raw profiler_status --json '{}'
-unity-cli raw profiler_get_metrics --json '{"category":"CPU"}'
+unity-cli raw profiler_get_metrics --json '{"listAvailable":true}'
 ```
 
 ## Package Manager
 
 ```bash
 unity-cli raw package_manager --json '{"action":"list"}'
-unity-cli raw package_manager --json '{"action":"add","packageId":"com.unity.inputsystem"}'
+unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity.inputsystem"}'
 unity-cli raw registry_config --json '{"action":"list"}'
 ```
 
 ## Tips
 
 - Use `system ping` as a health check before automation.
-- `search_tools` helps discover available raw commands.
-- Profiler categories: `CPU`, `GPU`, `Memory`, `Rendering`.
+- Use `tool list` to discover available raw commands.
+- Query profiler metrics with `listAvailable` before requesting specific metrics.

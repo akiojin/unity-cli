@@ -11,7 +11,7 @@ namespace UnityCliBridge.Helpers
     [InitializeOnLoad]
     public static class AssetEditingGuard
     {
-        private const string SentinelKey = "UnityMCP.AssetEditing.Active";
+        private const string SentinelKey = "UnityCli.AssetEditing.Active";
         private static int _depth;
 
         static AssetEditingGuard()

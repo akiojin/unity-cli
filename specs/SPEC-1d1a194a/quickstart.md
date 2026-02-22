@@ -15,7 +15,7 @@
 
 2. **Unity Editorを起動**:
    - Unity 2020.3 LTS以降を起動
-   - Unity MCP Serverパッケージがインストールされていることを確認
+   - Unity CLI Bridgeパッケージがインストールされていることを確認
 
 3. **Claude Codeで接続**:
    - Claude Codeを起動
@@ -165,11 +165,11 @@ npm run test:ci
 
 **原因**:
 - Unity Editorが起動していない
-- Unity MCP Serverパッケージがインストールされていない
+- Unity CLI Bridgeパッケージがインストールされていない
 
 **解決策**:
 1. Unity Editorを起動
-2. Unity Package ManagerからUnity MCP Serverパッケージをインストール
+2. Unity Package ManagerからUnity CLI Bridgeパッケージをインストール
 3. unity-cliを再起動
 
 ### 問題: assertRequestHandlerCapabilityエラー

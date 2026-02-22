@@ -15,7 +15,7 @@ using UnityCliBridge.Logging;
 namespace UnityCliBridge.Handlers
 {
     /// <summary>
-    /// Handles Unity Test Runner execution for automated testing via MCP
+    /// Handles Unity Test Runner execution for automated testing via the Unity CLI Bridge
     /// Implements SPEC-e7c9b50c: Unity Test Execution Feature
     /// </summary>
     public static class TestExecutionHandler

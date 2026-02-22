@@ -80,7 +80,7 @@
 - **FR-001**: `unity-cli` は Rust 実装として提供され、`raw`, `tool call`, `system ping`, `scene create`, `instances list`, `instances set-active` を実行できる必要がある。  
 - **FR-002**: Unity 通信は TCP 4byte length + JSON の既存フレーミング互換で送受信する必要がある。  
 - **FR-003**: 応答は `--output text|json` で切替可能で、JSONモードでは機械可読形式で出力する必要がある。  
-- **FR-004**: 設定は `UNITY_CLI_*` を優先しつつ `UNITY_MCP_*` 互換入力も受理する必要がある。  
+- **FR-004**: 設定は `UNITY_CLI_*` のみ受理し、legacy MCPプレフィックス変数はエラーとして扱う必要がある。
 - **FR-005**: インスタンス切替情報はローカルレジストリに保存し、`list` で active 状態を表示できる必要がある。  
 - **FR-006**: 仕様ドキュメントとして `spec.md`, `plan.md`, `tasks.md` を作成し、移行方針と作業順序を定義する必要がある。  
 - **FR-007**: TDD 準拠のため、少なくともパラメータ検証・TCP応答処理・インスタンス切替に対する自動テストを実装する必要がある。  

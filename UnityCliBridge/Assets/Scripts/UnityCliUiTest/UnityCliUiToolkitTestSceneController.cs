@@ -5,7 +5,7 @@ using UITK = UnityEngine.UIElements;
 
 namespace UnityCliBridge.TestScenes
 {
-    public sealed class UiToolkitTestSceneController : MonoBehaviour
+    public sealed class UnityCliUiToolkitTestSceneController : MonoBehaviour
     {
         private int clickCount;
 

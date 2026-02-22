@@ -230,7 +230,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6f246b1b177a443ebc5746b507bc5317, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityCliBridge.TestScenes.ImguiTestPanel
+  m_EditorClassIdentifier: Assembly-CSharp::UnityCliBridge.TestScenes.UnityCliImguiTestPanel
 --- !u!4 &1175090157
 Transform:
   m_ObjectHideFlags: 0

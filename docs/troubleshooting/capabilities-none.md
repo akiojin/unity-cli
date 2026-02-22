@@ -23,4 +23,4 @@ unity-cli --output json system ping
 echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 ```
 
-If you must keep old environment variables, set compatibility aliases (`UNITY_MCP_*`) together with `UNITY_CLI_*`.
+If you still have old scripts, replace all legacy MCP-prefixed environment variables with `UNITY_CLI_*` before running `unity-cli`.

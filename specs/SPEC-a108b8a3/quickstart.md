@@ -6,7 +6,7 @@
 
 1. Unity Editor起動済み
 2. Unity Addressablesパッケージ (`com.unity.addressables v2.7.4`) インストール済み
-3. MCP Server起動済み、Unity Editorと接続済み
+3. Unity CLI Bridge Server起動済み、Unity Editorと接続済み
 
 ## テストシナリオ（ユーザーストーリー検証）
 

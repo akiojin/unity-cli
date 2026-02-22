@@ -12,20 +12,20 @@ using UnityEngine.InputSystem.UI;
 
 namespace UnityCliBridge.TestScenes
 {
-    internal static class UiTestSceneGenerator
+    internal static class UnityCliUiTestSceneGenerator
     {
-        private const string MenuRoot = "Tools/MCP/UI Tests/";
+        private const string MenuRoot = "Tools/Unity CLI/UI Tests/";
 
         private const string ScenesFolder = "Assets/Scenes";
 
-        private const string UiTestRootFolder = "Assets/UiTest";
-        private const string UiToolkitFolder = "Assets/UiTest/UITK";
-        private const string UiToolkitUxmlPath = "Assets/UiTest/UITK/MCP_UITK_Test.uxml";
-        private const string UiToolkitPanelSettingsPath = "Assets/UiTest/UITK/MCP_UITK_TestPanelSettings.asset";
+        private const string UiTestRootFolder = "Assets/UnityCliUiTest";
+        private const string UiToolkitFolder = "Assets/UnityCliUiTest/UITK";
+        private const string UiToolkitUxmlPath = "Assets/UnityCliUiTest/UITK/UnityCli_UITK_Test.uxml";
+        private const string UiToolkitPanelSettingsPath = "Assets/UnityCliUiTest/UITK/UnityCli_UITK_TestPanelSettings.asset";
 
-        private const string UGuiScenePath = "Assets/Scenes/MCP_UI_UGUI_TestScene.unity";
-        private const string UiToolkitScenePath = "Assets/Scenes/MCP_UI_UITK_TestScene.unity";
-        private const string ImguiScenePath = "Assets/Scenes/MCP_UI_IMGUI_TestScene.unity";
+        private const string UGuiScenePath = "Assets/Scenes/UnityCli_UI_UGUI_TestScene.unity";
+        private const string UiToolkitScenePath = "Assets/Scenes/UnityCli_UI_UITK_TestScene.unity";
+        private const string ImguiScenePath = "Assets/Scenes/UnityCli_UI_IMGUI_TestScene.unity";
 
         [MenuItem(MenuRoot + "Generate All UI Test Scenes")]
         private static void GenerateAllUiScenes()
@@ -136,7 +136,7 @@ namespace UnityCliBridge.TestScenes
                 dropdown.value = 0;
             }
 
-            new GameObject("UGUI_TestController", typeof(UGuiTestSceneController));
+            new GameObject("UGUI_TestController", typeof(UnityCliUGuiTestSceneController));
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -166,7 +166,7 @@ namespace UnityCliBridge.TestScenes
             var doc = docGo.AddComponent<UITK.UIDocument>();
             doc.panelSettings = panelSettings;
             doc.visualTreeAsset = visualTree;
-            docGo.AddComponent<UiToolkitTestSceneController>();
+            docGo.AddComponent<UnityCliUiToolkitTestSceneController>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -179,7 +179,7 @@ namespace UnityCliBridge.TestScenes
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EnsureMainCamera();
 
-            new GameObject("IMGUI", typeof(ImguiTestPanel));
+            new GameObject("IMGUI", typeof(UnityCliImguiTestPanel));
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -192,7 +192,7 @@ namespace UnityCliBridge.TestScenes
             EnsureFolderExists(UiToolkitFolder);
 
             // Create UXML on disk (then import) so it becomes a VisualTreeAsset.
-            var fullUxmlPath = Path.Combine(Application.dataPath, "UiTest/UITK/MCP_UITK_Test.uxml");
+            var fullUxmlPath = Path.Combine(Application.dataPath, "UnityCliUiTest/UITK/UnityCli_UITK_Test.uxml");
             if (!File.Exists(fullUxmlPath))
             {
                 File.WriteAllText(fullUxmlPath, GetUiToolkitUxmlContent());

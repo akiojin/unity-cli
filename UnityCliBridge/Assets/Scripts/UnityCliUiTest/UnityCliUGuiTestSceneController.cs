@@ -7,7 +7,7 @@ using UnityEngine.InputSystem.UI;
 
 namespace UnityCliBridge.TestScenes
 {
-    public sealed class UGuiTestSceneController : MonoBehaviour
+    public sealed class UnityCliUGuiTestSceneController : MonoBehaviour
     {
         private int clickCount;
 

@@ -32,26 +32,26 @@ namespace UnityCliBridge.Handlers
     public static class MenuHandler
     {
         // Blacklist of dangerous menu items for safety
-        // Includes dialog-opening menus that cause MCP hanging
+        // Includes dialog-opening menus that can block bridge requests
         private static readonly HashSet<string> BlacklistedMenus = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             // Application control
             "File/Quit",
             
-            // Dialog-opening file operations (cause MCP hanging)
+            // Dialog-opening file operations (can block request handling)
             "File/Open Scene",
             "File/New Scene",
             "File/Save Scene As...",
             "File/Build Settings...",
             "File/Build And Run",
             
-            // Dialog-opening asset operations (cause MCP hanging)
+            // Dialog-opening asset operations (can block request handling)
             "Assets/Import New Asset...",
             "Assets/Import Package/Custom Package...",
             "Assets/Export Package...",
             "Assets/Delete",
             
-            // Dialog-opening preferences and settings (cause MCP hanging)
+            // Dialog-opening preferences and settings (can block request handling)
             "Edit/Preferences...",
             "Edit/Project Settings...",
             

@@ -1,7 +1,7 @@
 # Contract: Telemetry Configuration (SPEC-a28f3f95)
 
 ## 環境変数
-- `UNITY_MCP_TELEMETRY`: `on` | `off` (デフォルト off)
+- `UNITY_CLI_TELEMETRY`: `on` | `off` (デフォルト off)
 
 ## 起動ログ要件
 - `telemetry: off` または `telemetry: on -> <destinations>` を必ず1行出力。

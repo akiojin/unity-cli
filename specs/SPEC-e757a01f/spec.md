@@ -212,7 +212,7 @@
 
 #### US-9: 初回起動の高速化（未実装）
 
-**AS** Unity MCP Server新規ユーザー
+**AS** Unity CLI Bridge新規ユーザー
 **I WANT** 初回起動時にビルド待ち時間なくサーバーを使用したい
 **SO THAT** MCPクライアントのタイムアウトを回避できる
 
@@ -233,8 +233,8 @@
 - get_index_statusが成功することを確認
 
 **US-9.3: 環境変数による制御**
-- `UNITY_MCP_SKIP_NATIVE_BUILD=1` でネイティブビルドをスキップ
-- `UNITY_MCP_FORCE_NATIVE=1` でソースビルドを強制
+- `UNITY_CLI_SKIP_NATIVE_BUILD=1` でネイティブビルドをスキップ
+- `UNITY_CLI_FORCE_NATIVE=1` でソースビルドを強制
 
 ### 受け入れシナリオ
 
@@ -337,7 +337,7 @@
 - **FR-032**: システムは Assets/ または Packages/ 外のファイルを拒否する必要がある
 - **FR-033**: システムは編集後に空になったブロック（空のif文等）を検出し、警告を返す必要がある
 - **FR-034**: システムは編集結果のハッシュを返して edit_structured との併用時の重複適用を防ぐ必要がある
-- **FR-035**: システムは C# LSP バイナリを `~/.unity/tools/lsp/<rid>/`（または `UNITY_MCP_TOOLS_ROOT` で指定されたディレクトリ）に配置し、プロジェクトローカルの `./.unity/tools` に依存しない構成を保証する必要がある
+- **FR-035**: システムは C# LSP バイナリを `~/.unity/tools/lsp/<rid>/`（または `UNITY_CLI_TOOLS_ROOT` で指定されたディレクトリ）に配置し、プロジェクトローカルの `./.unity/tools` に依存しない構成を保証する必要がある
 
 ### バックグラウンドビルド機能要件（実装完了）
 
@@ -366,7 +366,7 @@
 - **FR-046**: システムはnpm パッケージに linux/darwin/win32 × x64/arm64 × Node18/20/22 向け better-sqlite3 バイナリを同梱する必要がある
 - **FR-047**: システムはインストール時に同梱バイナリを優先して展開し、30秒以内に完了する必要がある
 - **FR-048**: システムは未対応プラットフォームでは即座に WASM フォールバックに切り替わる必要がある
-- **FR-049**: システムは環境変数でネイティブビルド強制 (`UNITY_MCP_FORCE_NATIVE=1`) またはスキップ (`UNITY_MCP_SKIP_NATIVE_BUILD=1`) を制御できる必要がある
+- **FR-049**: システムは環境変数でネイティブビルド強制 (`UNITY_CLI_FORCE_NATIVE=1`) またはスキップ (`UNITY_CLI_SKIP_NATIVE_BUILD=1`) を制御できる必要がある
 - **FR-050**: システムはREADME（英/日）に初回体験と環境変数の説明を記載する必要がある
 
 ### 非機能要件

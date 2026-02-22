@@ -24,7 +24,7 @@ Claude CodeなどMCPクライアントで「Capabilities: none」と表示され
 ### 実装方針
 
 - デフォルト（カテゴリ指定なし）は従来互換で全ツール公開
-- `UNITY_MCP_TOOL_INCLUDE_CATEGORIES` と `UNITY_MCP_TOOL_EXCLUDE_CATEGORIES` を追加
+- `UNITY_CLI_TOOL_INCLUDE_CATEGORIES` と `UNITY_CLI_TOOL_EXCLUDE_CATEGORIES` を追加
 - includeで候補を絞り、excludeで最終除外する
 - 非公開ツール名の直接実行を`tools/call`で拒否し、`tools/list`の公開範囲と一致させる
 

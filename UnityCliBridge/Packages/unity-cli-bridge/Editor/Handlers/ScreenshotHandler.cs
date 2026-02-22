@@ -368,7 +368,7 @@ namespace UnityCliBridge.Handlers
                 JObject displaySettings = explorerSettings?["display"] as JObject;
                 
                 // Create temporary explorer camera
-                GameObject tempCameraObj = new GameObject("MCP_ExplorerCamera");
+                GameObject tempCameraObj = new GameObject("UnityCli_ExplorerCamera");
                 Camera explorerCamera = tempCameraObj.AddComponent<Camera>();
                 
                 try

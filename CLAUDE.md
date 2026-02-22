@@ -16,6 +16,8 @@ Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に
 
 - スキル定義: `.claude-plugin/plugins/unity-cli/skills/`
 - プラグインマニフェスト: `.claude-plugin/plugins/unity-cli/plugin.json`
+- Claude Code 配布: Marketplace プラグイン（`.claude-plugin/marketplace.json`）
+- Codex 配布: スキル形式（`.codex/skills/`、zip + `skill-installer`）
 
 ## 基本方針
 

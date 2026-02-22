@@ -237,7 +237,7 @@ namespace UnityCliBridge.Tests
         [Test]
         public void GetLastTestResults_ShouldReturnSummaryWhenExported()
         {
-            var tempPath = Path.Combine(Path.GetTempPath(), $"unitymcp-test-results-{Guid.NewGuid():N}.json");
+            var tempPath = Path.Combine(Path.GetTempPath(), $"unitycli-test-results-{Guid.NewGuid():N}.json");
             try
             {
                 var summary = new JObject
