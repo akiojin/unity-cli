@@ -11,7 +11,7 @@ When amending the constitution (`docs/constitution.md`), update all dependent do
 - [ ] `docs/constitution.md` (source of truth)
 - [ ] `.specify/memory/constitution.md` (mirror for Spec Kit / Claude commands)
 - [ ] `CLAUDE.md` references (if they point at old paths)
-- [ ] `docs/README.md` (docs index)
+- [ ] `README.md` (distribution/index guidance)
 - [ ] `templates/plan-template.md` and `.specify/templates/plan-template.md` (footer link/version)
 - [ ] `.claude/commands/speckit.plan.md` / `.claude/commands/speckit.analyze.md` / `.claude/commands/speckit.constitution.md`
 
@@ -46,7 +46,7 @@ When amending the constitution (`docs/constitution.md`), update all dependent do
 - [ ] `docs/constitution.md`（正）
 - [ ] `.specify/memory/constitution.md`（Spec Kit / Claude用ミラー）
 - [ ] `CLAUDE.md` の参照先（旧パスが残っていないか）
-- [ ] `docs/README.md`（導線）
+- [ ] `README.md`（導線）
 - [ ] `templates/plan-template.md` と `.specify/templates/plan-template.md`（フッターのリンク/バージョン）
 - [ ] `.claude/commands/speckit.plan.md` / `.claude/commands/speckit.analyze.md` / `.claude/commands/speckit.constitution.md`
 

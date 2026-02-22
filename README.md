@@ -37,7 +37,7 @@ Use `raw` for full command coverage when no typed subcommand exists.
 
 ## Skills Architecture
 
-`unity-cli` provides 13 Claude Code Skills that invoke CLI commands on demand, replacing the old MCP tool definitions:
+`unity-cli` provides 13 skills that invoke CLI commands on demand, replacing the old MCP tool definitions:
 
 | Skill | Domain |
 | --- | --- |
@@ -55,12 +55,14 @@ Use `raw` for full command coverage when no typed subcommand exists.
 | `unity-ui-automation` | UI element interaction |
 | `unity-editor-tools` | Editor utilities and profiler |
 
-Skills are distributed as a Claude Code plugin (`.claude-plugin/plugins/unity-cli/`).
-
 ## Skill Distribution
 
-- Claude Code: Marketplace plugin format (`.claude-plugin/marketplace.json`)
-- Codex: skill format under `.codex/skills/` (zip + `skill-installer` workflow)
+- Source of truth: `.claude-plugin/plugins/unity-cli/skills/`
+- Claude Code (official distribution): Marketplace plugin (`.claude-plugin/marketplace.json`)
+- Claude Code (repository-local test registration): `.claude/skills/` symlinks to source-of-truth skills
+- Codex (official in this repository): `.codex/skills/` symlinks to source-of-truth skills
+- Zip packaging is intentionally not provided in this repository
+- Legacy MCP skill names and compatibility aliases are intentionally not provided
 
 ## Local Tools (Rust-side)
 
