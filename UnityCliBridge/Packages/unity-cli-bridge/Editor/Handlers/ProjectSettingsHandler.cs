@@ -90,7 +90,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProjectSettingsHandler", $"Error getting project settings: {ex.Message}");
+                BridgeLogger.LogError("ProjectSettingsHandler", $"Error getting project settings: {ex.Message}");
                 return new { error = $"Failed to get project settings: {ex.Message}" };
             }
         }
@@ -176,7 +176,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProjectSettingsHandler", $"Error updating project settings: {ex.Message}");
+                BridgeLogger.LogError("ProjectSettingsHandler", $"Error updating project settings: {ex.Message}");
                 return new { error = $"Failed to update project settings: {ex.Message}" };
             }
         }

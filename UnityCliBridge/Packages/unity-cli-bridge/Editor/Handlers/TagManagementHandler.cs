@@ -45,7 +45,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TagManagementHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("TagManagementHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -69,7 +69,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TagManagementHandler", $"Error getting tags: {e.Message}");
+                BridgeLogger.LogError("TagManagementHandler", $"Error getting tags: {e.Message}");
                 return new { error = $"Failed to get tags: {e.Message}" };
             }
         }
@@ -129,7 +129,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TagManagementHandler", $"Error adding tag '{tagName}': {e.Message}");
+                BridgeLogger.LogError("TagManagementHandler", $"Error adding tag '{tagName}': {e.Message}");
                 return new { error = $"Failed to add tag: {e.Message}" };
             }
         }
@@ -163,7 +163,7 @@ namespace UnityCliBridge.Handlers
                 var gameObjectsWithTag = GameObject.FindGameObjectsWithTag(tagName);
                 if (gameObjectsWithTag.Length > 0)
                 {
-                    McpLogger.LogWarning("TagManagementHandler", $"Removing tag '{tagName}' while {gameObjectsWithTag.Length} GameObjects are still using it");
+                    BridgeLogger.LogWarning("TagManagementHandler", $"Removing tag '{tagName}' while {gameObjectsWithTag.Length} GameObjects are still using it");
                 }
 
                 // Remove the tag using SerializedObject approach
@@ -197,7 +197,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TagManagementHandler", $"Error removing tag '{tagName}': {e.Message}");
+                BridgeLogger.LogError("TagManagementHandler", $"Error removing tag '{tagName}': {e.Message}");
                 return new { error = $"Failed to remove tag: {e.Message}" };
             }
         }
@@ -249,7 +249,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("TagManagementHandler", $"Error getting tag usage: {e.Message}");
+                BridgeLogger.LogError("TagManagementHandler", $"Error getting tag usage: {e.Message}");
                 return new { error = $"Failed to get tag usage: {e.Message}" };
             }
         }

@@ -4,14 +4,14 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UGUI = UnityEngine.UI;
 using UITK = UnityEngine.UIElements;
-using UnityMCPServer.Runtime.IMGUI;
+using UnityCliBridge.Runtime.IMGUI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
 #endif
 
-namespace UnityMCPServer.TestScenes
+namespace UnityCliBridge.TestScenes
 {
-    public sealed class McpAllUiSystemsTestBootstrap : MonoBehaviour
+    public sealed class AllUiSystemsTestBootstrap : MonoBehaviour
     {
         private int uguiClicks;
         private int uitkClicks;
@@ -282,12 +282,12 @@ namespace UnityMCPServer.TestScenes
 
         private static void CreateImguiPanel()
         {
-            if (FindFirstObjectByType<McpImguiTestPanel>() != null)
+            if (FindFirstObjectByType<ImguiTestPanel>() != null)
             {
                 return;
             }
 
-            new GameObject("IMGUI_TestPanel", typeof(McpImguiTestPanel));
+            new GameObject("IMGUI_TestPanel", typeof(ImguiTestPanel));
         }
     }
 }

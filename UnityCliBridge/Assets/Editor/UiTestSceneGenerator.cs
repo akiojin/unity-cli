@@ -10,18 +10,18 @@ using UITK = UnityEngine.UIElements;
 using UnityEngine.InputSystem.UI;
 #endif
 
-namespace UnityMCPServer.TestScenes
+namespace UnityCliBridge.TestScenes
 {
-    internal static class McpUiTestSceneGenerator
+    internal static class UiTestSceneGenerator
     {
         private const string MenuRoot = "Tools/MCP/UI Tests/";
 
         private const string ScenesFolder = "Assets/Scenes";
 
-        private const string UiTestRootFolder = "Assets/McpUiTest";
-        private const string UiToolkitFolder = "Assets/McpUiTest/UITK";
-        private const string UiToolkitUxmlPath = "Assets/McpUiTest/UITK/MCP_UITK_Test.uxml";
-        private const string UiToolkitPanelSettingsPath = "Assets/McpUiTest/UITK/MCP_UITK_TestPanelSettings.asset";
+        private const string UiTestRootFolder = "Assets/UiTest";
+        private const string UiToolkitFolder = "Assets/UiTest/UITK";
+        private const string UiToolkitUxmlPath = "Assets/UiTest/UITK/MCP_UITK_Test.uxml";
+        private const string UiToolkitPanelSettingsPath = "Assets/UiTest/UITK/MCP_UITK_TestPanelSettings.asset";
 
         private const string UGuiScenePath = "Assets/Scenes/MCP_UI_UGUI_TestScene.unity";
         private const string UiToolkitScenePath = "Assets/Scenes/MCP_UI_UITK_TestScene.unity";
@@ -136,7 +136,7 @@ namespace UnityMCPServer.TestScenes
                 dropdown.value = 0;
             }
 
-            new GameObject("UGUI_TestController", typeof(McpUGuiTestSceneController));
+            new GameObject("UGUI_TestController", typeof(UGuiTestSceneController));
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -166,7 +166,7 @@ namespace UnityMCPServer.TestScenes
             var doc = docGo.AddComponent<UITK.UIDocument>();
             doc.panelSettings = panelSettings;
             doc.visualTreeAsset = visualTree;
-            docGo.AddComponent<McpUiToolkitTestSceneController>();
+            docGo.AddComponent<UiToolkitTestSceneController>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -179,7 +179,7 @@ namespace UnityMCPServer.TestScenes
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EnsureMainCamera();
 
-            new GameObject("IMGUI", typeof(McpImguiTestPanel));
+            new GameObject("IMGUI", typeof(ImguiTestPanel));
 
             EditorSceneManager.MarkSceneDirty(scene);
             EnsureFolderExists(ScenesFolder);
@@ -192,7 +192,7 @@ namespace UnityMCPServer.TestScenes
             EnsureFolderExists(UiToolkitFolder);
 
             // Create UXML on disk (then import) so it becomes a VisualTreeAsset.
-            var fullUxmlPath = Path.Combine(Application.dataPath, "McpUiTest/UITK/MCP_UITK_Test.uxml");
+            var fullUxmlPath = Path.Combine(Application.dataPath, "UiTest/UITK/MCP_UITK_Test.uxml");
             if (!File.Exists(fullUxmlPath))
             {
                 File.WriteAllText(fullUxmlPath, GetUiToolkitUxmlContent());

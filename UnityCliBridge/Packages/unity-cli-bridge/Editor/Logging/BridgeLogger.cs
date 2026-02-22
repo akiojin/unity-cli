@@ -6,7 +6,7 @@ namespace UnityCliBridge.Logging
     /// Centralized logging utility for Unity CLI Bridge.
     /// All log messages are prefixed with [unity-cli-bridge] for easy filtering.
     /// </summary>
-    public static class McpLogger
+    public static class BridgeLogger
     {
         private const string Prefix = "[unity-cli-bridge]";
 

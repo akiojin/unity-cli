@@ -46,7 +46,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -116,7 +116,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error getting dependencies for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error getting dependencies for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to get dependencies: {e.Message}" };
             }
         }
@@ -185,7 +185,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error getting dependents for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error getting dependents for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to get dependents: {e.Message}" };
             }
         }
@@ -233,7 +233,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error analyzing circular dependencies: {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error analyzing circular dependencies: {e.Message}");
                 return new { error = $"Failed to analyze circular dependencies: {e.Message}" };
             }
         }
@@ -330,7 +330,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error finding unused assets: {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error finding unused assets: {e.Message}");
                 return new { error = $"Failed to find unused assets: {e.Message}" };
             }
         }
@@ -400,7 +400,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error analyzing size impact for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error analyzing size impact for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to analyze size impact: {e.Message}" };
             }
         }
@@ -469,7 +469,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDependencyHandler", $"Error validating references: {e.Message}");
+                BridgeLogger.LogError("AssetDependencyHandler", $"Error validating references: {e.Message}");
                 return new { error = $"Failed to validate references: {e.Message}" };
             }
         }

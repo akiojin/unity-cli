@@ -141,7 +141,7 @@ namespace UnityCliBridge.Handlers
                 RecorderOptions.VerboseMode = true;
                 if (!startedOk)
                 {
-                    McpLogger.LogError("VideoCaptureHandler", "Recorder did not start (StartRecording returned false)");
+                    BridgeLogger.LogError("VideoCaptureHandler", "Recorder did not start (StartRecording returned false)");
                 }
                 s_LastCaptureTime = EditorApplication.timeSinceStartup;
                 EditorApplication.update -= OnEditorUpdate;
@@ -168,7 +168,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("VideoCaptureHandler", $"Start error: {ex.Message}");
+                BridgeLogger.LogError("VideoCaptureHandler", $"Start error: {ex.Message}");
                 return new { error = $"Failed to start recording: {ex.Message}", code = "E_UNKNOWN" };
             }
         }
@@ -196,7 +196,7 @@ namespace UnityCliBridge.Handlers
                 // stop recorder
                 if (s_RecorderController != null)
                 {
-                    try { s_RecorderController.StopRecording(); } catch (Exception e) { McpLogger.LogWarning("VideoCaptureHandler", $"Recorder stop warning: {e.Message}"); }
+                    try { s_RecorderController.StopRecording(); } catch (Exception e) { BridgeLogger.LogWarning("VideoCaptureHandler", $"Recorder stop warning: {e.Message}"); }
                 }
                 s_AutoStopping = false;
 
@@ -215,7 +215,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("VideoCaptureHandler", $"Stop error: {ex.Message}");
+                BridgeLogger.LogError("VideoCaptureHandler", $"Stop error: {ex.Message}");
                 return new { error = $"Failed to stop recording: {ex.Message}" };
             }
         }
@@ -243,7 +243,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("VideoCaptureHandler", $"Status error: {ex.Message}");
+                BridgeLogger.LogError("VideoCaptureHandler", $"Status error: {ex.Message}");
                 return new { error = $"Failed to get recording status: {ex.Message}" };
             }
         }

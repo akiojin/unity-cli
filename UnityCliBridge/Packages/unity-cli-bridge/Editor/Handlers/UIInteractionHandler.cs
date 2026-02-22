@@ -117,7 +117,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("UIInteractionHandler", $"Error in FindUIElements: {e.Message}");
+                BridgeLogger.LogError("UIInteractionHandler", $"Error in FindUIElements: {e.Message}");
                 return new { error = $"Failed to find UI elements: {e.Message}" };
             }
         }
@@ -203,7 +203,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("UIInteractionHandler", $"Error in ClickUIElement: {e.Message}");
+                BridgeLogger.LogError("UIInteractionHandler", $"Error in ClickUIElement: {e.Message}");
                 return new { error = $"Failed to click UI element: {e.Message}" };
             }
         }
@@ -245,7 +245,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("UIInteractionHandler", $"Error in GetUIElementState: {e.Message}");
+                BridgeLogger.LogError("UIInteractionHandler", $"Error in GetUIElementState: {e.Message}");
                 return new { error = $"Failed to get UI element state: {e.Message}" };
             }
         }
@@ -309,7 +309,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("UIInteractionHandler", $"Error in SetUIElementValue: {e.Message}");
+                BridgeLogger.LogError("UIInteractionHandler", $"Error in SetUIElementValue: {e.Message}");
                 return new { error = $"Failed to set UI element value: {e.Message}" };
             }
         }
@@ -474,7 +474,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("UIInteractionHandler", $"Error in SimulateUIInput: {e.Message}");
+                BridgeLogger.LogError("UIInteractionHandler", $"Error in SimulateUIInput: {e.Message}");
                 return new { error = $"Failed to simulate UI input: {e.Message}" };
             }
         }
@@ -915,7 +915,7 @@ namespace UnityCliBridge.Handlers
             var results = new List<object>();
             try
             {
-                var snapshot = UnityCliBridge.Runtime.IMGUI.McpImguiControlRegistry.GetSnapshot();
+                var snapshot = UnityCliBridge.Runtime.IMGUI.ImguiControlRegistry.GetSnapshot();
                 foreach (var ctrl in snapshot)
                 {
                     if (!string.IsNullOrEmpty(elementType) &&
@@ -943,7 +943,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogWarning("UIInteractionHandler", $"IMGUI registry unavailable: {e.Message}");
+                BridgeLogger.LogWarning("UIInteractionHandler", $"IMGUI registry unavailable: {e.Message}");
             }
 
             return results;
@@ -1427,7 +1427,7 @@ namespace UnityCliBridge.Handlers
                 warnings.Add("IMGUI position is not supported; ignored");
             }
 
-            if (UnityCliBridge.Runtime.IMGUI.McpImguiControlRegistry.TryInvokeClick(controlId, out var error))
+            if (UnityCliBridge.Runtime.IMGUI.ImguiControlRegistry.TryInvokeClick(controlId, out var error))
             {
                 return new
                 {
@@ -1444,7 +1444,7 @@ namespace UnityCliBridge.Handlers
 
         private static object SetImguiElementValue(string controlId, JToken value)
         {
-            if (UnityCliBridge.Runtime.IMGUI.McpImguiControlRegistry.TrySetValue(controlId, value, out var error))
+            if (UnityCliBridge.Runtime.IMGUI.ImguiControlRegistry.TrySetValue(controlId, value, out var error))
             {
                 return new { success = true, elementPath = $"{ImguiPrefix}{controlId}", uiSystem = "imgui", newValue = value?.ToString() };
             }
@@ -1454,7 +1454,7 @@ namespace UnityCliBridge.Handlers
 
         private static object GetImguiElementState(string controlId)
         {
-            if (UnityCliBridge.Runtime.IMGUI.McpImguiControlRegistry.TryGetState(controlId, out var state, out var error))
+            if (UnityCliBridge.Runtime.IMGUI.ImguiControlRegistry.TryGetState(controlId, out var state, out var error))
             {
                 return state;
             }

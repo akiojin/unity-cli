@@ -56,7 +56,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in SimulateKeyboardInput: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in SimulateKeyboardInput: {e.Message}");
                 return new { error = $"Failed to simulate keyboard input: {e.Message}" };
             }
         }
@@ -102,7 +102,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in SimulateMouseInput: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in SimulateMouseInput: {e.Message}");
                 return new { error = $"Failed to simulate mouse input: {e.Message}" };
             }
         }
@@ -151,7 +151,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in SimulateGamepadInput: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in SimulateGamepadInput: {e.Message}");
                 return new { error = $"Failed to simulate gamepad input: {e.Message}" };
             }
         }
@@ -197,7 +197,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in SimulateTouchInput: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in SimulateTouchInput: {e.Message}");
                 return new { error = $"Failed to simulate touch input: {e.Message}" };
             }
         }
@@ -298,7 +298,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in CreateInputSequence: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in CreateInputSequence: {e.Message}");
                 return new { error = $"Failed to create input sequence: {e.Message}" };
             }
         }
@@ -324,7 +324,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("InputSystemHandler", $"Error in GetCurrentInputState: {e.Message}");
+                BridgeLogger.LogError("InputSystemHandler", $"Error in GetCurrentInputState: {e.Message}");
                 return new { error = $"Failed to get input state: {e.Message}" };
             }
         }
@@ -348,7 +348,7 @@ namespace UnityCliBridge.Handlers
             if (virtualKeyboard == null || !virtualKeyboard.added)
             {
                 virtualKeyboard = InputSystem.AddDevice<Keyboard>("VirtualKeyboard");
-                McpLogger.Log("InputSystemHandler", " Created virtual keyboard device");
+                BridgeLogger.Log("InputSystemHandler", " Created virtual keyboard device");
             }
 
             return virtualKeyboard;
@@ -430,7 +430,7 @@ namespace UnityCliBridge.Handlers
             // Add key to pressed keys set
             if (pressedKeys.Add(key))
             {
-                McpLogger.Log("InputSystemHandler", $"Simulating key press: {keyName} ({keyboard.name})");
+                BridgeLogger.Log("InputSystemHandler", $"Simulating key press: {keyName} ({keyboard.name})");
                 
                 // Create new keyboard state with all pressed keys
                 var keyboardState = CreateKeyboardState();
@@ -483,7 +483,7 @@ namespace UnityCliBridge.Handlers
             // Remove key from pressed keys set
             if (pressedKeys.Remove(key))
             {
-                McpLogger.Log("InputSystemHandler", $"Simulating key release: {keyName} ({keyboard.name})");
+                BridgeLogger.Log("InputSystemHandler", $"Simulating key release: {keyName} ({keyboard.name})");
                 
                 // Create new keyboard state with remaining pressed keys
                 var keyboardState = CreateKeyboardState();
@@ -510,7 +510,7 @@ namespace UnityCliBridge.Handlers
                 return new { error = "text is required" };
             }
             
-            McpLogger.Log("InputSystemHandler", $"Simulating text input: \"{text}\" ({keyboard.name})");
+            BridgeLogger.Log("InputSystemHandler", $"Simulating text input: \"{text}\" ({keyboard.name})");
             
             // Use QueueTextEvent for text input (better for UI/TMP)
             foreach (char c in text)
@@ -537,7 +537,7 @@ namespace UnityCliBridge.Handlers
                 return new { error = "keys array is required" };
             }
             
-            McpLogger.Log("InputSystemHandler", $"Simulating key combo: {string.Join("+", keys)} ({keyboard.name})");
+            BridgeLogger.Log("InputSystemHandler", $"Simulating key combo: {string.Join("+", keys)} ({keyboard.name})");
             
             var normalizedKeys = new List<string>();
 
@@ -1432,7 +1432,7 @@ namespace UnityCliBridge.Handlers
                     }
                     catch (Exception e)
                     {
-                        McpLogger.LogError("InputSystemHandler", $"Error executing scheduled release: {e.Message}");
+                        BridgeLogger.LogError("InputSystemHandler", $"Error executing scheduled release: {e.Message}");
                     }
 
                     scheduledReleases.RemoveAt(i);

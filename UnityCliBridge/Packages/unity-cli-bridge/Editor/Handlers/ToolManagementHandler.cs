@@ -46,7 +46,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("ToolManagementHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("ToolManagementHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -88,7 +88,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("ToolManagementHandler", $"Error getting tools: {e.Message}");
+                BridgeLogger.LogError("ToolManagementHandler", $"Error getting tools: {e.Message}");
                 return new { error = $"Failed to get tools: {e.Message}" };
             }
         }
@@ -244,7 +244,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("ToolManagementHandler", $"Error activating tool '{toolName}': {e.Message}");
+                BridgeLogger.LogError("ToolManagementHandler", $"Error activating tool '{toolName}': {e.Message}");
                 return new { error = $"Failed to activate tool: {e.Message}" };
             }
         }
@@ -304,7 +304,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("ToolManagementHandler", $"Error deactivating tool '{toolName}': {e.Message}");
+                BridgeLogger.LogError("ToolManagementHandler", $"Error deactivating tool '{toolName}': {e.Message}");
                 return new { error = $"Failed to deactivate tool: {e.Message}" };
             }
         }
@@ -329,7 +329,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("ToolManagementHandler", $"Error refreshing tool cache: {e.Message}");
+                BridgeLogger.LogError("ToolManagementHandler", $"Error refreshing tool cache: {e.Message}");
                 return new { error = $"Failed to refresh tool cache: {e.Message}" };
             }
         }

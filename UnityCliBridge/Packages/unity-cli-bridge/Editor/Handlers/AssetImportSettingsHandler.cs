@@ -45,7 +45,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetImportSettingsHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -118,7 +118,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetImportSettingsHandler", $"Error getting import settings for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error getting import settings for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to get import settings: {e.Message}" };
             }
         }
@@ -226,7 +226,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetImportSettingsHandler", $"Error modifying import settings for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error modifying import settings for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to modify import settings: {e.Message}" };
             }
         }
@@ -348,7 +348,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetImportSettingsHandler", $"Error applying preset '{preset}' to '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error applying preset '{preset}' to '{assetPath}': {e.Message}");
                 return new { error = $"Failed to apply preset: {e.Message}" };
             }
         }
@@ -382,7 +382,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetImportSettingsHandler", $"Error reimporting '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error reimporting '{assetPath}': {e.Message}");
                 return new { error = $"Failed to reimport asset: {e.Message}" };
             }
         }
