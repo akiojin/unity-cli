@@ -13,8 +13,6 @@ English | [日本語](#日本語)
 | `UNITY_CLI_PORT` | `6400` | Unity TCP listener port |
 | `UNITY_CLI_TIMEOUT_MS` | `30000` | Command timeout (ms) |
 | `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
-| `UNITY_CLI_LSP_COMMAND` | (unset) | Explicit LSP command line |
-| `UNITY_CLI_LSP_BIN` | (unset) | Explicit LSP executable path |
 | `UNITY_CLI_TOOLS_ROOT` | platform default | Root directory for downloaded tools |
 
 ### Minimal Example
@@ -97,8 +95,6 @@ WARN Environment variable 'UNITY_MCP_PORT' is deprecated and will be removed in 
 | `UNITY_CLI_PORT` | `6400` | Unity TCP リスナーのポート |
 | `UNITY_CLI_TIMEOUT_MS` | `30000` | コマンドタイムアウト (ms) |
 | `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
-| `UNITY_CLI_LSP_COMMAND` | 未設定 | LSP 実行コマンド |
-| `UNITY_CLI_LSP_BIN` | 未設定 | LSP 実行ファイルパス |
 | `UNITY_CLI_TOOLS_ROOT` | OS依存既定 | ツール配置ルート |
 
 ### 最小例

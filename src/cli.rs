@@ -55,6 +55,14 @@ pub enum Command {
         #[command(subcommand)]
         command: InstancesCommand,
     },
+    Lsp {
+        #[command(subcommand)]
+        command: LspCommand,
+    },
+    Lspd {
+        #[command(subcommand)]
+        command: LspdCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -118,4 +126,19 @@ pub enum InstancesCommand {
         #[arg(long, value_name = "MS", default_value_t = 1000)]
         timeout_ms: u64,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum LspCommand {
+    Install,
+    Doctor,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum LspdCommand {
+    Start,
+    Stop,
+    Status,
+    #[command(hide = true)]
+    Serve,
 }
