@@ -8,7 +8,7 @@ This document covers internal development workflow for `unity-cli`.
 
 - CLI runtime: Rust (`src/`)
 - Unity bridge package: `UnityCliBridge/Packages/unity-cli-bridge`
-- Unity test project: `UnityCliBridge/TestProject`
+- Unity test project: `UnityCliBridge`
 - C# LSP: `lsp/`
 - Spec workflow: `.specify/` + `specs/`
 
@@ -58,7 +58,7 @@ cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 
 # Unity (EditMode tests)
-unity -batchmode -nographics -projectPath UnityCliBridge/TestProject -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
 ```
 
 ### Pre-push Hook
@@ -202,7 +202,7 @@ The Unity-side codebase uses `unity-mcp-server` as its base copy. Differences ar
 
 - CLI本体: Rust (`src/`)
 - Unity連携パッケージ: `UnityCliBridge/Packages/unity-cli-bridge`
-- Unityテストプロジェクト: `UnityCliBridge/TestProject`
+- Unityテストプロジェクト: `UnityCliBridge`
 - C# LSP: `lsp/`
 - Specワークフロー: `.specify/` + `specs/`
 
@@ -252,7 +252,7 @@ cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 
 # Unity（EditModeテスト）
-unity -batchmode -nographics -projectPath UnityCliBridge/TestProject -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
 ```
 
 ### プッシュ前フック
