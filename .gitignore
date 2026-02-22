@@ -94,6 +94,8 @@ CLAUDE.local.md
 
 .unity/
 UnityCliBridge/.unity/
+.mcp/
+UnityCliBridge/.mcp/
 .worktrees/
 
 *.local.json
