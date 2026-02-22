@@ -37,7 +37,7 @@ namespace UnityCliBridge.Core.Settings
             }
             catch (Exception e)
             {
-                McpLogger.LogWarning("UnityCliBridgeSettings", $"Failed to load settings, using defaults. {e.Message}");
+                BridgeLogger.LogWarning("UnityCliBridgeSettings", $"Failed to load settings, using defaults. {e.Message}");
             }
             return new UnityCliBridgeSettings();
         }

@@ -99,7 +99,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in AddComponent: {ex.Message}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in AddComponent: {ex.Message}");
                 return new { error = $"Failed to add component: {ex.Message}" };
             }
         }
@@ -181,7 +181,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in RemoveComponent: {ex.Message}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in RemoveComponent: {ex.Message}");
                 return new { error = $"Failed to remove component: {ex.Message}" };
             }
         }
@@ -276,7 +276,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in ModifyComponent: {ex.Message}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in ModifyComponent: {ex.Message}");
                 return new { error = $"Failed to modify component: {ex.Message}" };
             }
         }
@@ -594,7 +594,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in SetComponentField: {ex}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in SetComponentField: {ex}");
                 return new { error = $"Failed to set component field: {ex.Message}" };
             }
         }
@@ -661,7 +661,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in ListComponents: {ex.Message}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in ListComponents: {ex.Message}");
                 return new { error = $"Failed to list components: {ex.Message}" };
             }
         }
@@ -740,7 +740,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ComponentHandler", $"Error in GetComponentTypes: {ex.Message}");
+                BridgeLogger.LogError("ComponentHandler", $"Error in GetComponentTypes: {ex.Message}");
                 return new { error = $"Failed to get component types: {ex.Message}" };
             }
         }
@@ -877,7 +877,7 @@ namespace UnityCliBridge.Handlers
             catch (Exception ex)
             {
                 error = $"Invalid property value for '{propertyName}': {ex.Message}";
-                McpLogger.LogWarning("ComponentHandler", $"Failed to set property {propertyName}: {ex.Message}");
+                BridgeLogger.LogWarning("ComponentHandler", $"Failed to set property {propertyName}: {ex.Message}");
                 return false;
             }
         }

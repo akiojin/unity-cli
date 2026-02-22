@@ -3,7 +3,7 @@ namespace UnityCliBridge.Models
     /// <summary>
     /// Represents the connection status of the Unity CLI Bridge
     /// </summary>
-    public enum McpStatus
+    public enum BridgeStatus
     {
         /// <summary>
         /// MCP server is not configured

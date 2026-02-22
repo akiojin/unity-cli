@@ -39,7 +39,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("WindowManagementHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("WindowManagementHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -122,7 +122,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("WindowManagementHandler", $"Error getting windows: {e.Message}");
+                BridgeLogger.LogError("WindowManagementHandler", $"Error getting windows: {e.Message}");
                 return new { error = $"Failed to get windows: {e.Message}" };
             }
         }
@@ -188,7 +188,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("WindowManagementHandler", $"Error focusing window '{windowType}': {e.Message}");
+                BridgeLogger.LogError("WindowManagementHandler", $"Error focusing window '{windowType}': {e.Message}");
                 return new { error = $"Failed to focus window: {e.Message}" };
             }
         }
@@ -282,7 +282,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("WindowManagementHandler", $"Error getting window state for '{windowType}': {e.Message}");
+                BridgeLogger.LogError("WindowManagementHandler", $"Error getting window state for '{windowType}': {e.Message}");
                 return new { error = $"Failed to get window state: {e.Message}" };
             }
         }

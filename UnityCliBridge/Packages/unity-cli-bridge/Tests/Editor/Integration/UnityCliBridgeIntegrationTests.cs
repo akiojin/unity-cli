@@ -42,7 +42,7 @@ namespace UnityCliBridge.Tests.Integration
                 // Assert
                 Assert.IsTrue(completed == connectTask, "Connection should complete within timeout");
                 Assert.IsTrue(client.Connected, "Client should be connected");
-                Assert.AreEqual(McpStatus.Connected, Core.UnityCliBridge.Status, "MCP status should be Connected");
+                Assert.AreEqual(BridgeStatus.Connected, Core.UnityCliBridge.Status, "MCP status should be Connected");
             }
             finally
             {
@@ -198,8 +198,8 @@ namespace UnityCliBridge.Tests.Integration
             // Note: In actual Unity, the MCP might already be connected from previous tests
             // This test verifies that the status enum is working correctly
             Assert.IsTrue(
-                Core.UnityCliBridge.Status == McpStatus.Disconnected || 
-                Core.UnityCliBridge.Status == McpStatus.Connected,
+                Core.UnityCliBridge.Status == BridgeStatus.Disconnected || 
+                Core.UnityCliBridge.Status == BridgeStatus.Connected,
                 "Status should be either Disconnected or Connected"
             );
         }

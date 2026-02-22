@@ -96,7 +96,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in CreatePrefab: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in CreatePrefab: {e.Message}");
                 return new { error = $"Failed to create prefab: {e.Message}" };
             }
         }
@@ -187,7 +187,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in ModifyPrefab: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in ModifyPrefab: {e.Message}");
                 return new { error = $"Failed to modify prefab: {e.Message}" };
             }
         }
@@ -273,7 +273,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in InstantiatePrefab: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in InstantiatePrefab: {e.Message}");
                 return new { error = $"Failed to instantiate prefab: {e.Message}" };
             }
         }
@@ -377,7 +377,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in CreateMaterial: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in CreateMaterial: {e.Message}");
                 return new { error = $"Failed to create material: {e.Message}" };
             }
         }
@@ -464,7 +464,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in ModifyMaterial: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in ModifyMaterial: {e.Message}");
                 return new { error = $"Failed to modify material: {e.Message}" };
             }
         }
@@ -479,7 +479,7 @@ namespace UnityCliBridge.Handlers
                 // Check if property exists
                 if (!material.HasProperty(propertyName))
                 {
-                    McpLogger.LogWarning("AssetManagementHandler", $"Material does not have property: {propertyName}");
+                    BridgeLogger.LogWarning("AssetManagementHandler", $"Material does not have property: {propertyName}");
                     return false;
                 }
 
@@ -557,7 +557,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogWarning("AssetManagementHandler", $"Failed to set material property {propertyName}: {e.Message}");
+                BridgeLogger.LogWarning("AssetManagementHandler", $"Failed to set material property {propertyName}: {e.Message}");
                 return false;
             }
         }
@@ -693,7 +693,7 @@ namespace UnityCliBridge.Handlers
                 }
                 catch (Exception e)
                 {
-                    McpLogger.LogWarning("AssetManagementHandler", $"Failed to set {prop.Name} on {componentType}: {e.Message}");
+                    BridgeLogger.LogWarning("AssetManagementHandler", $"Failed to set {prop.Name} on {componentType}: {e.Message}");
                 }
             }
         }
@@ -801,7 +801,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in OpenPrefab: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in OpenPrefab: {e.Message}");
                 return new { error = $"Failed to open prefab: {e.Message}" };
             }
         }
@@ -859,7 +859,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in ExitPrefabMode: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in ExitPrefabMode: {e.Message}");
                 return new { error = $"Failed to exit prefab mode: {e.Message}" };
             }
         }
@@ -956,7 +956,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetManagementHandler", $"Error in SavePrefab: {e.Message}");
+                BridgeLogger.LogError("AssetManagementHandler", $"Error in SavePrefab: {e.Message}");
                 return new { error = $"Failed to save prefab: {e.Message}" };
             }
         }

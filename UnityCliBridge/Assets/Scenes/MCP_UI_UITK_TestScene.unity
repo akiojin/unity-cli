@@ -163,7 +163,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d47de26523e77c4b9d016ec08392cb0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityMCPServer.TestScenes.McpUiToolkitTestSceneController
+  m_EditorClassIdentifier: Assembly-CSharp::UnityCliBridge.TestScenes.UiToolkitTestSceneController
 --- !u!114 &1653158014
 MonoBehaviour:
   m_ObjectHideFlags: 0

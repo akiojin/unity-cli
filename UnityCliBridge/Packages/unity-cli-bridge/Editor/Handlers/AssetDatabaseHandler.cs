@@ -54,7 +54,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -106,7 +106,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error finding assets with filter '{filter}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error finding assets with filter '{filter}': {e.Message}");
                 return new { error = $"Failed to find assets: {e.Message}" };
             }
         }
@@ -178,7 +178,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error getting asset info for '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error getting asset info for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to get asset info: {e.Message}" };
             }
         }
@@ -222,7 +222,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error creating folder '{folderPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error creating folder '{folderPath}': {e.Message}");
                 return new { error = $"Failed to create folder: {e.Message}" };
             }
         }
@@ -259,7 +259,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error deleting asset '{assetPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error deleting asset '{assetPath}': {e.Message}");
                 return new { error = $"Failed to delete asset: {e.Message}" };
             }
         }
@@ -298,7 +298,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error moving asset from '{fromPath}' to '{toPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error moving asset from '{fromPath}' to '{toPath}': {e.Message}");
                 return new { error = $"Failed to move asset: {e.Message}" };
             }
         }
@@ -339,7 +339,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error copying asset from '{fromPath}' to '{toPath}': {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error copying asset from '{fromPath}' to '{toPath}': {e.Message}");
                 return new { error = $"Failed to copy asset: {e.Message}" };
             }
         }
@@ -365,7 +365,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error refreshing asset database: {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error refreshing asset database: {e.Message}");
                 return new { error = $"Failed to refresh asset database: {e.Message}" };
             }
         }
@@ -405,7 +405,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AssetDatabaseHandler", $" Error saving asset database: {e.Message}");
+                BridgeLogger.LogError("AssetDatabaseHandler", $" Error saving asset database: {e.Message}");
                 return new { error = $"Failed to save asset database: {e.Message}" };
             }
         }

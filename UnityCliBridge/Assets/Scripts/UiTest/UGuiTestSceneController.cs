@@ -5,9 +5,9 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem.UI;
 #endif
 
-namespace UnityMCPServer.TestScenes
+namespace UnityCliBridge.TestScenes
 {
-    public sealed class McpUGuiTestSceneController : MonoBehaviour
+    public sealed class UGuiTestSceneController : MonoBehaviour
     {
         private int clickCount;
 
