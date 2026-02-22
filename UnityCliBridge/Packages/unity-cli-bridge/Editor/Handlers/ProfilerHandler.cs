@@ -51,7 +51,7 @@ namespace UnityCliBridge.Handlers
                 var metricsCount = parameters["metrics"]?.ToObject<string[]>()?.Length ?? 0;
                 var maxDurationSec = parameters["maxDurationSec"]?.ToObject<double>() ?? 0;
 
-                McpLogger.Log("ProfilerHandler", $"Start] Starting profiling session: mode={mode}, recordToFile={recordToFile}, metrics={metricsCount}, maxDuration={maxDurationSec}s");
+                BridgeLogger.Log("ProfilerHandler", $"Start] Starting profiling session: mode={mode}, recordToFile={recordToFile}, metrics={metricsCount}, maxDuration={maxDurationSec}s");
 
                 // 1. Check if already recording
                 if (s_IsRecording)
@@ -154,7 +154,7 @@ namespace UnityCliBridge.Handlers
                 s_RecordToFile = recordToFile;
                 s_Metrics = metrics;
 
-                McpLogger.Log("ProfilerHandler", $"Start] Profiling session started successfully: sessionId={s_SessionId}, outputPath={s_OutputPath}");
+                BridgeLogger.Log("ProfilerHandler", $"Start] Profiling session started successfully: sessionId={s_SessionId}, outputPath={s_OutputPath}");
 
                 // 13. Return response
                 return new
@@ -167,7 +167,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProfilerHandler", $"Start] Exception: {ex}");
+                BridgeLogger.LogError("ProfilerHandler", $"Start] Exception: {ex}");
                 return new
                 {
                     error = $"Failed to start profiling: {ex.Message}",
@@ -183,7 +183,7 @@ namespace UnityCliBridge.Handlers
         {
             try
             {
-                McpLogger.Log("ProfilerHandler", $"Stop] Stopping profiling session: sessionId={s_SessionId ?? "none"}");
+                BridgeLogger.Log("ProfilerHandler", $"Stop] Stopping profiling session: sessionId={s_SessionId ?? "none"}");
 
                 var requestedSessionId = parameters["sessionId"]?.ToString();
 
@@ -254,7 +254,7 @@ namespace UnityCliBridge.Handlers
                     }
                     catch (Exception ex)
                     {
-                        McpLogger.LogError("ProfilerHandler", $"Stop] Failed to save .data file: {ex}");
+                        BridgeLogger.LogError("ProfilerHandler", $"Stop] Failed to save .data file: {ex}");
                         return new
                         {
                             error = $"Failed to save profiler data: {ex.Message}",
@@ -307,14 +307,14 @@ namespace UnityCliBridge.Handlers
                 s_LastAutoStopped = s_StopIsAuto;
                 s_StopIsAuto = false;
 
-                McpLogger.Log("ProfilerHandler", $"Stop] Profiling session stopped successfully: sessionId={sessionId}, duration={duration:F2}s, frameCount={frameCount}");
+                BridgeLogger.Log("ProfilerHandler", $"Stop] Profiling session stopped successfully: sessionId={sessionId}, duration={duration:F2}s, frameCount={frameCount}");
 
                 // 10. Return response
                 return s_LastStopResult;
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProfilerHandler", $"Stop] Exception: {ex}");
+                BridgeLogger.LogError("ProfilerHandler", $"Stop] Exception: {ex}");
                 return new
                 {
                     error = $"Failed to stop profiling: {ex.Message}",
@@ -362,7 +362,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProfilerHandler", $"GetStatus] Exception: {ex}");
+                BridgeLogger.LogError("ProfilerHandler", $"GetStatus] Exception: {ex}");
                 return new
                 {
                     error = $"Failed to get status: {ex.Message}",
@@ -482,7 +482,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ProfilerHandler", $"Exception: {ex}");
+                BridgeLogger.LogError("ProfilerHandler", $"Exception: {ex}");
                 return new
                 {
                     error = $"Failed to get metrics: {ex.Message}",

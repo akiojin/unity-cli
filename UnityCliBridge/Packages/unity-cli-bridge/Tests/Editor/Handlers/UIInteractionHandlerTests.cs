@@ -43,7 +43,7 @@ namespace UnityCliBridge.Tests
         public void FindUIElements_WithUiSystemImgui_ReturnsRegisteredControl()
         {
             var id = "IMGUI/TestButton_" + Guid.NewGuid().ToString("N");
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: id,
                 controlType: "Button",
                 rect: new Rect(0, 0, 100, 30),
@@ -135,7 +135,7 @@ namespace UnityCliBridge.Tests
             var id = "IMGUI/Click_" + Guid.NewGuid().ToString("N");
             int clicks = 0;
 
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: id,
                 controlType: "Button",
                 rect: new Rect(0, 0, 100, 30),
@@ -157,7 +157,7 @@ namespace UnityCliBridge.Tests
             var id = "IMGUI/Text_" + Guid.NewGuid().ToString("N");
             string value = "initial";
 
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: id,
                 controlType: "TextField",
                 rect: new Rect(0, 0, 100, 30),
@@ -184,7 +184,7 @@ namespace UnityCliBridge.Tests
             var id = "IMGUI/State_" + Guid.NewGuid().ToString("N");
             bool toggle = false;
 
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: id,
                 controlType: "Toggle",
                 rect: new Rect(0, 0, 100, 30),

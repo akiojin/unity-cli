@@ -33,7 +33,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PlayModeHandler", $"Error handling command {command}: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("PlayModeHandler", $"Error handling command {command}: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse($"Error handling command: {e.Message}");
             }
         }

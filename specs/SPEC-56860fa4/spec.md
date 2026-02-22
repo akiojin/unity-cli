@@ -39,8 +39,8 @@
 - UI Toolkit: `UnityCliBridge/Assets/Scenes/MCP_UI_UITK_TestScene.unity`（UIDocument + UXML、Edit Mode から配置が確認できる）
 - IMGUI: `UnityCliBridge/Assets/Scenes/MCP_UI_IMGUI_TestScene.unity`（OnGUI のテストパネル、Edit Mode から配置が確認できる）
 - uGUI/UI Toolkit/IMGUI 同居: `UnityCliBridge/Assets/Scenes/MCP_UI_AllSystems_TestScene.unity`
-  - 注: シーン上に静的配置はせず、`McpAllUiSystemsTestBootstrap` が **Play Mode** 開始時に uGUI/UI Toolkit/IMGUI を生成する（Edit Mode では見えない）
-    - 実装: `UnityCliBridge/Assets/Scripts/McpUiTest/McpAllUiSystemsTestBootstrap.cs`
+  - 注: シーン上に静的配置はせず、`AllUiSystemsTestBootstrap` が **Play Mode** 開始時に uGUI/UI Toolkit/IMGUI を生成する（Edit Mode では見えない）
+    - 実装: `UnityCliBridge/Assets/Scripts/UiTest/AllUiSystemsTestBootstrap.cs`
 - MCP経由のE2Eテスト（stdio / tools/call）: `unity-cli/tests/e2e/ui-automation-mcp-protocol.test.js`
 - UnityConnection直結のE2Eテスト（ツールハンドラ直呼び）: `unity-cli/tests/e2e/ui-automation-scenes.test.js`
 - 代表的な要素例:

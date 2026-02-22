@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UITK = UnityEngine.UIElements;
 
-namespace UnityMCPServer.TestScenes
+namespace UnityCliBridge.TestScenes
 {
-    public sealed class McpUiToolkitTestSceneController : MonoBehaviour
+    public sealed class UiToolkitTestSceneController : MonoBehaviour
     {
         private int clickCount;
 

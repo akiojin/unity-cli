@@ -33,7 +33,7 @@ namespace UnityCliBridge.Logging
             {
                 Application.logMessageReceived += HandleLog;
                 isCapturing = true;
-                McpLogger.Log("Log capture started");
+                BridgeLogger.Log("Log capture started");
             }
         }
 

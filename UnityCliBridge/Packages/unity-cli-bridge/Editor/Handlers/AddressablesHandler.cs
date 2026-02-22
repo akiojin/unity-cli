@@ -68,7 +68,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"Error handling {action}: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"Error handling {action}: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -147,7 +147,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"AddEntry error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"AddEntry error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -194,7 +194,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"RemoveEntry error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"RemoveEntry error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -244,7 +244,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"SetAddress error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"SetAddress error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -294,7 +294,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"AddLabel error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"AddLabel error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -344,7 +344,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"RemoveLabel error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"RemoveLabel error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -404,7 +404,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"ListEntries error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"ListEntries error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -437,7 +437,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"ListGroups error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"ListGroups error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -485,7 +485,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"CreateGroup error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"CreateGroup error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -532,7 +532,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"RemoveGroup error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"RemoveGroup error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -591,7 +591,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"MoveEntry error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"MoveEntry error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -624,18 +624,18 @@ namespace UnityCliBridge.Handlers
 
                 if (!string.IsNullOrEmpty(result.Error))
                 {
-                    McpLogger.LogError("AddressablesHandler", $"Build failed: {result.Error}");
+                    BridgeLogger.LogError("AddressablesHandler", $"Build failed: {result.Error}");
                 }
                 else
                 {
-                    McpLogger.Log("AddressablesHandler", $"Build completed successfully in {duration:F2}s. Output: {result.OutputPath}");
+                    BridgeLogger.Log("AddressablesHandler", $"Build completed successfully in {duration:F2}s. Output: {result.OutputPath}");
                 }
 
                 return CreateSuccessResponse(buildData);
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"Build error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"Build error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -649,7 +649,7 @@ namespace UnityCliBridge.Handlers
                 // Clean build cache
                 AddressableAssetSettings.CleanPlayerContent();
 
-                McpLogger.Log("AddressablesHandler", "Build cache cleared successfully");
+                BridgeLogger.Log("AddressablesHandler", "Build cache cleared successfully");
 
                 return new Dictionary<string, object>
                 {
@@ -659,7 +659,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"CleanBuild error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"CleanBuild error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -731,7 +731,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"AnalyzeDuplicates error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"AnalyzeDuplicates error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -777,7 +777,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"AnalyzeDependencies error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"AnalyzeDependencies error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -869,7 +869,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("AddressablesHandler", $"AnalyzeUnused error: {e.Message}\n{e.StackTrace}");
+                BridgeLogger.LogError("AddressablesHandler", $"AnalyzeUnused error: {e.Message}\n{e.StackTrace}");
                 return CreateErrorResponse(e.Message);
             }
         }
@@ -972,7 +972,7 @@ namespace UnityCliBridge.Handlers
     {
         public static object HandleCommand(string action, JObject parameters)
         {
-            McpLogger.LogWarning("AddressablesHandler", "Addressables未導入");
+            BridgeLogger.LogWarning("AddressablesHandler", "Addressables未導入");
             return new Dictionary<string, object>
             {
                 { "success", false },
