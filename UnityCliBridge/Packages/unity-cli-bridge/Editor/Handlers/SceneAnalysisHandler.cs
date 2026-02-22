@@ -896,13 +896,13 @@ namespace UnityCliBridge.Handlers
                 result["properties"] = properties;
                 
                 // Debug logging
-                McpLogger.Log("SceneAnalysis", $"GetComponentValues - Properties count: {properties.Count}");
+                BridgeLogger.Log("SceneAnalysis", $"GetComponentValues - Properties count: {properties.Count}");
                 if (properties.Count > 0)
                 {
                     var firstKey = properties.Keys.First();
-                    McpLogger.Log("SceneAnalysis", $"First property key: {firstKey}");
+                    BridgeLogger.Log("SceneAnalysis", $"First property key: {firstKey}");
                     var firstValue = properties[firstKey];
-                    McpLogger.Log("SceneAnalysis", $"First property value type: {firstValue?.GetType().Name ?? "null"}");
+                    BridgeLogger.Log("SceneAnalysis", $"First property value type: {firstValue?.GetType().Name ?? "null"}");
                 }
 
                 // Generate summary with detailed property names for debugging

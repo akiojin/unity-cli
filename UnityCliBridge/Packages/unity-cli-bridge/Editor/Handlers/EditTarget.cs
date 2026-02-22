@@ -1,0 +1,1 @@
+using System; namespace UnityCliBridge.Handlers { public class EditTarget { public int Foo() { return 1; } } }

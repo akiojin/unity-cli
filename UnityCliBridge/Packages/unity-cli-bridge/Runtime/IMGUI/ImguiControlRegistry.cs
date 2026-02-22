@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UnityCliBridge.Runtime.IMGUI
 {
-    public static class McpImguiControlRegistry
+    public static class ImguiControlRegistry
     {
         public struct ControlSnapshot
         {

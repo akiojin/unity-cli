@@ -49,7 +49,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -87,7 +87,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error getting layers: {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error getting layers: {e.Message}");
                 return new { error = $"Failed to get layers: {e.Message}" };
             }
         }
@@ -167,7 +167,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error adding layer '{layerName}': {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error adding layer '{layerName}': {e.Message}");
                 return new { error = $"Failed to add layer: {e.Message}" };
             }
         }
@@ -212,7 +212,7 @@ namespace UnityCliBridge.Handlers
                 
                 if (gameObjectsWithLayer.Length > 0)
                 {
-                    McpLogger.LogWarning("LayerManagementHandler", $"Removing layer '{layerName}' while {gameObjectsWithLayer.Length} GameObjects are still using it");
+                    BridgeLogger.LogWarning("LayerManagementHandler", $"Removing layer '{layerName}' while {gameObjectsWithLayer.Length} GameObjects are still using it");
                 }
 
                 // Remove the layer
@@ -242,7 +242,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error removing layer '{layerName}': {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error removing layer '{layerName}': {e.Message}");
                 return new { error = $"Failed to remove layer: {e.Message}" };
             }
         }
@@ -277,7 +277,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error getting layer by name '{layerName}': {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error getting layer by name '{layerName}': {e.Message}");
                 return new { error = $"Failed to get layer by name: {e.Message}" };
             }
         }
@@ -319,7 +319,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("LayerManagementHandler", $"Error getting layer by index {layerIndex}: {e.Message}");
+                BridgeLogger.LogError("LayerManagementHandler", $"Error getting layer by index {layerIndex}: {e.Message}");
                 return new { error = $"Failed to get layer by index: {e.Message}" };
             }
         }

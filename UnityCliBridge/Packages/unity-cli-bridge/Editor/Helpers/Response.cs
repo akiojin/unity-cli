@@ -139,7 +139,7 @@ namespace UnityCliBridge.Helpers
             }
             catch (System.Exception e)
             {
-                McpLogger.LogWarning("Response", $"Failed to get package version: {e.Message}");
+                BridgeLogger.LogWarning("Response", $"Failed to get package version: {e.Message}");
             }
             finally
             {

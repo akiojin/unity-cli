@@ -1,10 +1,10 @@
 using Newtonsoft.Json.Linq;
 using UnityEngine;
-using UnityMCPServer.Runtime.IMGUI;
+using UnityCliBridge.Runtime.IMGUI;
 
-namespace UnityMCPServer.TestScenes
+namespace UnityCliBridge.TestScenes
 {
-    public sealed class McpImguiTestPanel : MonoBehaviour
+    public sealed class ImguiTestPanel : MonoBehaviour
     {
         private int clickCount;
         private bool toggleValue;
@@ -26,7 +26,7 @@ namespace UnityMCPServer.TestScenes
             y += 100;
 
             var buttonRect = new Rect(x, y, w, h);
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/Button",
                 controlType: "Button",
                 rect: buttonRect,
@@ -41,7 +41,7 @@ namespace UnityMCPServer.TestScenes
             y += h + gap;
 
             var toggleRect = new Rect(x, y, w, h);
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/Toggle",
                 controlType: "Toggle",
                 rect: toggleRect,
@@ -53,7 +53,7 @@ namespace UnityMCPServer.TestScenes
             y += h + gap;
 
             var sliderRect = new Rect(x, y, w, h);
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/Slider",
                 controlType: "Slider",
                 rect: sliderRect,
@@ -71,7 +71,7 @@ namespace UnityMCPServer.TestScenes
             y += h + gap;
 
             var textRect = new Rect(x, y, w, h);
-            McpImguiControlRegistry.RegisterControl(
+            ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/TextField",
                 controlType: "TextField",
                 rect: textRect,

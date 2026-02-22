@@ -109,7 +109,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("MenuHandler", $"Error executing menu operation: {ex}");
+                BridgeLogger.LogError("MenuHandler", $"Error executing menu operation: {ex}");
                 return new
                 {
                     success = false,
@@ -160,13 +160,13 @@ namespace UnityCliBridge.Handlers
                     if (!executed)
                     {
                         // Menu item exists but couldn't be executed (might be disabled or context-dependent)
-                        McpLogger.LogWarning("MenuHandler", $"Menu item '{menuPath}' could not be executed - it may be disabled or context-dependent");
+                        BridgeLogger.LogWarning("MenuHandler", $"Menu item '{menuPath}' could not be executed - it may be disabled or context-dependent");
                     }
                 }
                 catch (Exception ex)
                 {
                     // Menu item might not exist
-                    McpLogger.LogWarning("MenuHandler", $"Failed to execute menu item '{menuPath}': {ex.Message}");
+                    BridgeLogger.LogWarning("MenuHandler", $"Failed to execute menu item '{menuPath}': {ex.Message}");
                     menuExists = false;
                     executed = false;
                 }
@@ -208,7 +208,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("MenuHandler", $"Error executing menu item '{menuPath}': {ex}");
+                BridgeLogger.LogError("MenuHandler", $"Error executing menu item '{menuPath}': {ex}");
                 return new
                 {
                     success = false,
@@ -447,7 +447,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("MenuHandler", $"Error getting available menus: {ex}");
+                BridgeLogger.LogError("MenuHandler", $"Error getting available menus: {ex}");
                 return new
                 {
                     success = false,
@@ -495,7 +495,7 @@ namespace UnityCliBridge.Handlers
             if (!string.IsNullOrEmpty(menuPath))
             {
                 BlacklistedMenus.Add(menuPath);
-                McpLogger.Log("MenuHandler", $"Added '{menuPath}' to blacklist");
+                BridgeLogger.Log("MenuHandler", $"Added '{menuPath}' to blacklist");
             }
         }
 
@@ -510,7 +510,7 @@ namespace UnityCliBridge.Handlers
                 bool removed = BlacklistedMenus.Remove(menuPath);
                 if (removed)
                 {
-                    McpLogger.Log("MenuHandler", $"Removed '{menuPath}' from blacklist");
+                    BridgeLogger.Log("MenuHandler", $"Removed '{menuPath}' from blacklist");
                 }
                 return removed;
             }
