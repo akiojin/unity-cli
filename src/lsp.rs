@@ -4,11 +4,15 @@ use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::mpsc::{self, Receiver};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use serde_json::{json, Value};
+
+use crate::lsp_manager;
+use crate::lspd;
 
 const MAX_HEADER_BYTES: usize = 16 * 1024;
 const DEFAULT_TIMEOUT_MS: u64 = 60_000;
@@ -24,6 +28,16 @@ enum LspMode {
 struct LspCommand {
     program: String,
     args: Vec<String>,
+}
+
+struct CachedSession {
+    project_root: PathBuf,
+    session: LspSession,
+}
+
+fn session_cache() -> &'static Mutex<Option<CachedSession>> {
+    static CACHE: OnceLock<Mutex<Option<CachedSession>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(None))
 }
 
 pub fn maybe_execute(
@@ -43,7 +57,7 @@ pub fn maybe_execute(
         return None;
     }
 
-    let result = execute(tool_name, params, project_root);
+    let result = execute_via_daemon(tool_name, params, project_root);
     match (mode, result) {
         (_, Ok(value)) => Some(Ok(value)),
         (LspMode::Required, Err(error)) => Some(Err(error)),
@@ -52,18 +66,99 @@ pub fn maybe_execute(
     }
 }
 
-fn execute(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
-    let mut session = LspSession::start(project_root)?;
-    let value = match tool_name {
-        "get_symbols" => handle_get_symbols(&mut session, project_root, params),
-        "find_symbol" => handle_find_symbol(&mut session, project_root, params),
-        "find_refs" => handle_find_refs(&mut session, project_root, params),
-        "build_index" => handle_build_index(&mut session, project_root, params),
-        _ => Err(anyhow!("Unsupported LSP tool: {tool_name}")),
-    };
+fn execute_via_daemon(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
+    let _ = lsp_manager::ensure_local(false)?;
 
-    let _ = session.shutdown();
-    value
+    match lspd::call_tool(tool_name, params, project_root) {
+        Ok(value) => Ok(value),
+        Err(first_error) if is_daemon_transport_error(&first_error) => {
+            let _ = lspd::start_background()?;
+            lspd::call_tool(tool_name, params, project_root)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn is_daemon_transport_error(error: &anyhow::Error) -> bool {
+    let text = error.to_string().to_ascii_lowercase();
+    [
+        "failed to connect",
+        "connection refused",
+        "no such file or directory",
+        "returned empty response",
+        "broken pipe",
+        "timed out",
+    ]
+    .iter()
+    .any(|needle| text.contains(needle))
+}
+
+pub fn execute_direct(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
+    let first = execute_once(tool_name, params, project_root);
+    match first {
+        Ok(value) => Ok(value),
+        Err(error) if is_retryable_session_error(&error) => {
+            reset_cached_session();
+            execute_once(tool_name, params, project_root)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn execute_once(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
+    let canonical_root = canonical_project_root(project_root);
+    let mut cache = session_cache()
+        .lock()
+        .map_err(|_| anyhow!("Failed to lock LSP session cache"))?;
+
+    let should_restart = match cache.as_mut() {
+        Some(cached) => cached.project_root != canonical_root || !cached.session.is_running(),
+        None => true,
+    };
+    if should_restart {
+        *cache = Some(CachedSession {
+            project_root: canonical_root.clone(),
+            session: LspSession::start(&canonical_root)?,
+        });
+    }
+
+    let cached = cache
+        .as_mut()
+        .ok_or_else(|| anyhow!("Failed to initialize cached LSP session"))?;
+
+    match tool_name {
+        "get_symbols" => handle_get_symbols(&mut cached.session, &canonical_root, params),
+        "find_symbol" => handle_find_symbol(&mut cached.session, &canonical_root, params),
+        "find_refs" => handle_find_refs(&mut cached.session, &canonical_root, params),
+        "build_index" => handle_build_index(&mut cached.session, &canonical_root, params),
+        _ => Err(anyhow!("Unsupported LSP tool: {tool_name}")),
+    }
+}
+
+fn canonical_project_root(project_root: &Path) -> PathBuf {
+    project_root
+        .canonicalize()
+        .unwrap_or_else(|_| project_root.to_path_buf())
+}
+
+fn reset_cached_session() {
+    if let Ok(mut cache) = session_cache().lock() {
+        *cache = None;
+    }
+}
+
+fn is_retryable_session_error(error: &anyhow::Error) -> bool {
+    let text = error.to_string().to_ascii_lowercase();
+    [
+        "lsp process ended before response",
+        "lsp request timed out",
+        "failed to write lsp",
+        "failed to read lsp",
+        "broken pipe",
+        "connection reset",
+    ]
+    .iter()
+    .any(|needle| text.contains(needle))
 }
 
 fn handle_get_symbols(
@@ -542,100 +637,15 @@ fn lsp_mode() -> LspMode {
 }
 
 fn lsp_timeout() -> Duration {
-    let timeout_ms = env::var("UNITY_CLI_LSP_REQUEST_TIMEOUT_MS")
-        .ok()
-        .and_then(|value| value.trim().parse::<u64>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(DEFAULT_TIMEOUT_MS);
-    Duration::from_millis(timeout_ms)
-}
-
-fn detect_rid() -> &'static str {
-    if cfg!(target_os = "windows") {
-        if cfg!(target_arch = "aarch64") {
-            "win-arm64"
-        } else {
-            "win-x64"
-        }
-    } else if cfg!(target_os = "macos") {
-        if cfg!(target_arch = "aarch64") {
-            "osx-arm64"
-        } else {
-            "osx-x64"
-        }
-    } else if cfg!(target_arch = "aarch64") {
-        "linux-arm64"
-    } else {
-        "linux-x64"
-    }
+    Duration::from_millis(DEFAULT_TIMEOUT_MS)
 }
 
 fn resolve_lsp_command() -> Result<LspCommand> {
-    if let Ok(raw) = env::var("UNITY_CLI_LSP_COMMAND") {
-        let parts = raw
-            .split_whitespace()
-            .map(|value| value.to_string())
-            .collect::<Vec<_>>();
-        if let Some((program, args)) = parts.split_first() {
-            return Ok(LspCommand {
-                program: program.clone(),
-                args: args.to_vec(),
-            });
-        }
-    }
-
-    if let Ok(bin) = env::var("UNITY_CLI_LSP_BIN") {
-        let trimmed = bin.trim();
-        if !trimmed.is_empty() {
-            return Ok(LspCommand {
-                program: trimmed.to_string(),
-                args: Vec::new(),
-            });
-        }
-    }
-
-    let tools_root = env::var("UNITY_CLI_TOOLS_ROOT")
-        .ok()
-        .or_else(|| env::var("UNITY_MCP_TOOLS_ROOT").ok())
-        .map(PathBuf::from)
-        .or_else(|| dirs::home_dir().map(|home| home.join(".unity/tools")))
-        .ok_or_else(|| anyhow!("Unable to resolve LSP tools root"))?;
-
-    let rid = detect_rid();
-    let executable = if cfg!(target_os = "windows") {
-        "server.exe"
-    } else {
-        "server"
-    };
-
-    for family in ["lsp", "unity-cli-lsp"] {
-        let candidate = tools_root.join(family).join(rid).join(executable);
-        if candidate.exists() {
-            return Ok(LspCommand {
-                program: candidate.to_string_lossy().to_string(),
-                args: Vec::new(),
-            });
-        }
-    }
-
-    let local_project = PathBuf::from("lsp/Server.csproj");
-    if local_project.exists() {
-        return Ok(LspCommand {
-            program: "dotnet".to_string(),
-            args: vec![
-                "run".to_string(),
-                "--project".to_string(),
-                local_project.to_string_lossy().to_string(),
-                "--configuration".to_string(),
-                "Release".to_string(),
-                "--no-launch-profile".to_string(),
-            ],
-        });
-    }
-
-    Err(anyhow!(
-        "LSP command not found. Set UNITY_CLI_LSP_COMMAND, UNITY_CLI_LSP_BIN, or install ~/.unity/tools/lsp/{rid}/{executable}"
-    ))
+    let binary = lsp_manager::ensure_local(false)?;
+    Ok(LspCommand {
+        program: binary.to_string_lossy().to_string(),
+        args: Vec::new(),
+    })
 }
 
 struct LspSession {
@@ -725,21 +735,19 @@ impl LspSession {
         self.wait_response(id)
     }
 
-    fn shutdown(&mut self) -> Result<()> {
-        let _ = self.request("shutdown", json!({}));
-        let _ = self.write_message(&json!({
-            "jsonrpc": "2.0",
-            "method": "exit"
-        }));
-        self.terminate()
-    }
-
     fn terminate(&mut self) -> Result<()> {
         if self.child.try_wait()?.is_none() {
             let _ = self.child.kill();
             let _ = self.child.wait();
         }
         Ok(())
+    }
+
+    fn is_running(&mut self) -> bool {
+        self.child
+            .try_wait()
+            .map(|status| status.is_none())
+            .unwrap_or(false)
     }
 
     fn next_request_id(&mut self) -> u64 {
@@ -883,6 +891,9 @@ fn read_message(reader: &mut BufReader<ChildStdout>) -> Result<Option<Value>> {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::anyhow;
+
+    use super::is_retryable_session_error;
     use super::normalize_rel_path;
 
     #[test]
@@ -905,5 +916,17 @@ mod tests {
     fn normalize_rel_path_rejects_parent_traversal() {
         assert!(normalize_rel_path("Assets/../Secrets.cs").is_none());
         assert!(normalize_rel_path("../../Secrets.cs").is_none());
+    }
+
+    #[test]
+    fn retryable_session_error_detects_transport_failures() {
+        let error = anyhow!("Failed to write LSP payload: Broken pipe");
+        assert!(is_retryable_session_error(&error));
+    }
+
+    #[test]
+    fn retryable_session_error_ignores_argument_errors() {
+        let error = anyhow!("find_symbol requires `name`");
+        assert!(!is_retryable_session_error(&error));
     }
 }
