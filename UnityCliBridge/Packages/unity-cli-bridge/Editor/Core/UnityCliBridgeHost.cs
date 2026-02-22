@@ -41,8 +41,8 @@ namespace UnityCliBridge.Core
         private static object lastEditorStateData = null;
         
         
-        private static McpStatus _status = McpStatus.NotConfigured;
-        public static McpStatus Status
+        private static BridgeStatus _status = BridgeStatus.NotConfigured;
+        public static BridgeStatus Status
         {
             get => _status;
             private set
@@ -50,7 +50,7 @@ namespace UnityCliBridge.Core
                 if (_status != value)
                 {
                     _status = value;
-                    McpLogger.Log($"Status changed to: {value}");
+                    BridgeLogger.Log($"Status changed to: {value}");
                 }
             }
         }
@@ -66,7 +66,12 @@ namespace UnityCliBridge.Core
         /// </summary>
         static UnityCliBridge()
         {
-            McpLogger.Log("Initializing...");
+            if (ShouldSkipStartupForCurrentProcess())
+            {
+                return;
+            }
+
+            BridgeLogger.Log("Initializing...");
             EditorApplication.update += ProcessCommandQueue;
             EditorApplication.quitting += Shutdown;
             AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
@@ -93,12 +98,31 @@ namespace UnityCliBridge.Core
                 currentPort = port;
                 bindAddress = ResolveBindAddress(host);
 
-                McpLogger.Log($"Project Settings loaded: host={host}, bind={bindAddress}, port={currentPort}");
+                BridgeLogger.Log($"Project Settings loaded: host={host}, bind={bindAddress}, port={currentPort}");
             }
             catch (Exception ex)
             {
-                McpLogger.LogWarning($"Project Settings load error: {ex.Message}. Using defaults.");
+                BridgeLogger.LogWarning($"Project Settings load error: {ex.Message}. Using defaults.");
             }
+        }
+
+        private static bool ShouldSkipStartupForCurrentProcess()
+        {
+            if (!Application.isBatchMode)
+            {
+                return false;
+            }
+
+            var commandLine = Environment.CommandLine ?? string.Empty;
+            if (commandLine.IndexOf("AssetImportWorker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                commandLine.IndexOf("-adb2", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                commandLine.IndexOf("-batchMode", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                BridgeLogger.Log("Skipping TCP listener startup in AssetImportWorker/batch process.");
+                return true;
+            }
+
+            return false;
         }
 
         private static IPAddress ResolveBindAddress(string host)
@@ -152,26 +176,26 @@ namespace UnityCliBridge.Core
                 tcpListener.Start();
                 Interlocked.Exchange(ref activeClientCount, 0);
                 
-                Status = McpStatus.Disconnected;
-                McpLogger.Log($"TCP listener binding on {bindAddress}:{currentPort} (host={currentHost})");
+                Status = BridgeStatus.Disconnected;
+                BridgeLogger.Log($"TCP listener binding on {bindAddress}:{currentPort} (host={currentHost})");
                 
                 // Start accepting connections asynchronously
                 listenerTask = Task.Run(() => AcceptConnectionsAsync(cancellationTokenSource.Token));
             }
             catch (SocketException ex)
             {
-                Status = McpStatus.Error;
-                McpLogger.LogError($"Failed to start TCP listener on port {currentPort}: {ex.Message}");
+                Status = BridgeStatus.Error;
+                BridgeLogger.LogError($"Failed to start TCP listener on port {currentPort}: {ex.Message}");
                 
                 if (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
                 {
-                    McpLogger.LogError($"Port {currentPort} is already in use. Please ensure no other instance is running.");
+                    BridgeLogger.LogError($"Port {currentPort} is already in use. Please ensure no other instance is running.");
                 }
             }
             catch (Exception ex)
             {
-                Status = McpStatus.Error;
-                McpLogger.LogError($"Unexpected error starting TCP listener: {ex}");
+                Status = BridgeStatus.Error;
+                BridgeLogger.LogError($"Unexpected error starting TCP listener: {ex}");
             }
         }
         
@@ -195,12 +219,12 @@ namespace UnityCliBridge.Core
                     commandQueue.Clear();
                 }
                 
-                Status = McpStatus.Disconnected;
-                McpLogger.Log("TCP listener stopped");
+                Status = BridgeStatus.Disconnected;
+                BridgeLogger.Log("TCP listener stopped");
             }
             catch (Exception ex)
             {
-                McpLogger.LogError($"Error stopping TCP listener: {ex}");
+                BridgeLogger.LogError($"Error stopping TCP listener: {ex}");
             }
         }
         
@@ -217,8 +241,8 @@ namespace UnityCliBridge.Core
                     if (tcpClient != null)
                     {
                         Interlocked.Increment(ref activeClientCount);
-                        Status = McpStatus.Connected;
-                        McpLogger.Log($"Client connected from {tcpClient.Client.RemoteEndPoint}");
+                        Status = BridgeStatus.Connected;
+                        BridgeLogger.Log($"Client connected from {tcpClient.Client.RemoteEndPoint}");
                         
                         // Handle client in a separate task
                         _ = Task.Run(() => HandleClientAsync(tcpClient, cancellationToken));
@@ -233,7 +257,7 @@ namespace UnityCliBridge.Core
                 {
                     if (!cancellationToken.IsCancellationRequested)
                     {
-                        McpLogger.LogError($"Error accepting connection: {ex}");
+                        BridgeLogger.LogError($"Error accepting connection: {ex}");
                     }
                 }
             }
@@ -361,7 +385,7 @@ namespace UnityCliBridge.Core
             {
                 if (!cancellationToken.IsCancellationRequested && !IsExpectedDisconnect(ex))
                 {
-                    McpLogger.LogError($"Client handler error: {ex}");
+                    BridgeLogger.LogError($"Client handler error: {ex}");
                 }
             }
             finally
@@ -369,7 +393,7 @@ namespace UnityCliBridge.Core
                 var dropped = RemoveQueuedCommandsForClient(client);
                 if (dropped > 0)
                 {
-                    McpLogger.LogWarning($"Dropped {dropped} queued command(s) for disconnected client {clientLabel}");
+                    BridgeLogger.LogWarning($"Dropped {dropped} queued command(s) for disconnected client {clientLabel}");
                 }
 
                 client?.Close();
@@ -381,9 +405,9 @@ namespace UnityCliBridge.Core
                 }
                 if (remainingClients == 0)
                 {
-                    Status = McpStatus.Disconnected;
+                    Status = BridgeStatus.Disconnected;
                 }
-                McpLogger.Log($"Client disconnected: {clientLabel}");
+                BridgeLogger.Log($"Client disconnected: {clientLabel}");
             }
         }
         
@@ -413,7 +437,7 @@ namespace UnityCliBridge.Core
             }
             catch (Exception ex)
             {
-                try { McpLogger.LogError($"Send error: {ex}"); } catch { }
+                try { BridgeLogger.LogError($"Send error: {ex}"); } catch { }
                 return false;
             }
         }
@@ -446,7 +470,7 @@ namespace UnityCliBridge.Core
                 {
                     var commandId = command?.Id ?? "(unknown)";
                     var commandType = command?.Type ?? "(unknown)";
-                    McpLogger.LogWarning($"Skipping command {commandId}:{commandType} because client stream is not writable");
+                    BridgeLogger.LogWarning($"Skipping command {commandId}:{commandType} because client stream is not writable");
                     return;
                 }
 
@@ -973,7 +997,7 @@ namespace UnityCliBridge.Core
             }
             catch (Exception ex)
             {
-                McpLogger.LogError($"Error processing command {command}: {ex}");
+                BridgeLogger.LogError($"Error processing command {command}: {ex}");
                 
                 try
                 {
@@ -1164,7 +1188,7 @@ namespace UnityCliBridge.Core
         /// </summary>
         private static void Shutdown()
         {
-            McpLogger.Log("Shutting down...");
+            BridgeLogger.Log("Shutting down...");
             StopTcpListener();
             EditorApplication.update -= ProcessCommandQueue;
             EditorApplication.quitting -= Shutdown;
@@ -1199,7 +1223,7 @@ namespace UnityCliBridge.Core
         /// </summary>
         public static void Restart()
         {
-            McpLogger.Log("Restarting...");
+            BridgeLogger.Log("Restarting...");
             TryLoadProjectSettingsAndApply();
             StopTcpListener();
             StartTcpListener();
@@ -1212,7 +1236,7 @@ namespace UnityCliBridge.Core
         {
             if (newPort < 1024 || newPort > 65535)
             {
-                McpLogger.LogError($"Invalid port number: {newPort}. Must be between 1024 and 65535.");
+                BridgeLogger.LogError($"Invalid port number: {newPort}. Must be between 1024 and 65535.");
                 return;
             }
             

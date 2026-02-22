@@ -51,7 +51,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -105,7 +105,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error listing registries: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error listing registries: {e.Message}");
                 return new { error = $"Failed to list registries: {e.Message}" };
             }
         }
@@ -222,7 +222,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error adding OpenUPM: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error adding OpenUPM: {e.Message}");
                 return new { error = $"Failed to add OpenUPM registry: {e.Message}" };
             }
         }
@@ -334,7 +334,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error adding Unity NuGet: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error adding Unity NuGet: {e.Message}");
                 return new { error = $"Failed to add Unity NuGet registry: {e.Message}" };
             }
         }
@@ -393,7 +393,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error removing registry: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error removing registry: {e.Message}");
                 return new { error = $"Failed to remove registry: {e.Message}" };
             }
         }
@@ -469,7 +469,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("RegistryConfigHandler", $" Error adding scope: {e.Message}");
+                BridgeLogger.LogError("RegistryConfigHandler", $" Error adding scope: {e.Message}");
                 return new { error = $"Failed to add scope: {e.Message}" };
             }
         }

@@ -62,7 +62,7 @@ namespace UnityCliBridge.Handlers
                 Type logEntriesType = typeof(EditorApplication).Assembly.GetType("UnityEditor.LogEntries");
                 if (logEntriesType == null)
                 {
-                    McpLogger.LogError("ConsoleHandler", "Could not find internal type UnityEditor.LogEntries");
+                    BridgeLogger.LogError("ConsoleHandler", "Could not find internal type UnityEditor.LogEntries");
                     return;
                 }
 
@@ -78,7 +78,7 @@ namespace UnityCliBridge.Handlers
                 Type logEntryType = typeof(EditorApplication).Assembly.GetType("UnityEditor.LogEntry");
                 if (logEntryType == null)
                 {
-                    McpLogger.LogError("ConsoleHandler", "Could not find internal type UnityEditor.LogEntry");
+                    BridgeLogger.LogError("ConsoleHandler", "Could not find internal type UnityEditor.LogEntry");
                     return;
                 }
 
@@ -90,7 +90,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ConsoleHandler", $"Failed to initialize reflection: {ex}");
+                BridgeLogger.LogError("ConsoleHandler", $"Failed to initialize reflection: {ex}");
             }
         }
 
@@ -129,7 +129,7 @@ namespace UnityCliBridge.Handlers
                 {
                     // Note: Unity doesn't provide native selective clearing
                     // This is a placeholder for the response structure
-                    McpLogger.LogWarning("ConsoleHandler", "Selective log preservation is not fully implemented in Unity's console API");
+                    BridgeLogger.LogWarning("ConsoleHandler", "Selective log preservation is not fully implemented in Unity's console API");
                 }
 
                 // Clear the console
@@ -158,7 +158,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ConsoleHandler", $"Error clearing console: {ex}");
+                BridgeLogger.LogError("ConsoleHandler", $"Error clearing console: {ex}");
                 return new
                 {
                     success = false,
@@ -337,7 +337,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                McpLogger.LogError("ConsoleHandler", $"Error reading logs: {ex}");
+                BridgeLogger.LogError("ConsoleHandler", $"Error reading logs: {ex}");
                 return new
                 {
                     success = false,
@@ -450,7 +450,7 @@ namespace UnityCliBridge.Handlers
                 if (message.Contains("InputSystemActions") &&
                     (message.Contains(".Disable() has not been called") || message.Contains("This will cause a leak")))
                 {
-                    McpLogger.Log("ConsoleHandler", $"Debug - Assert message detected: '{message.Split('\n')[0]}', Mode bits: 0x{mode:X8}");
+                    BridgeLogger.Log("ConsoleHandler", $"Debug - Assert message detected: '{message.Split('\n')[0]}', Mode bits: 0x{mode:X8}");
                 }
             }
             
@@ -463,7 +463,7 @@ namespace UnityCliBridge.Handlers
                 {
                     if (_debugModeBits)
                     {
-                        McpLogger.Log("ConsoleHandler", $"Stack trace indicates Assert (UnityEngine.Debug:Assert found), Mode: 0x{mode:X8}");
+                        BridgeLogger.Log("ConsoleHandler", $"Stack trace indicates Assert (UnityEngine.Debug:Assert found), Mode: 0x{mode:X8}");
                     }
                     return LogType.Assert;
                 }
@@ -477,7 +477,7 @@ namespace UnityCliBridge.Handlers
                 {
                     if (_debugModeBits)
                     {
-                        McpLogger.Log("ConsoleHandler", $"Message contains Assert stack trace, Mode: 0x{mode:X8}");
+                        BridgeLogger.Log("ConsoleHandler", $"Message contains Assert stack trace, Mode: 0x{mode:X8}");
                     }
                     return LogType.Assert;
                 }
@@ -492,7 +492,7 @@ namespace UnityCliBridge.Handlers
                 {
                     if (_debugModeBits)
                     {
-                        McpLogger.Log("ConsoleHandler", $"Message pattern indicates Assert, Mode: 0x{mode:X8}");
+                        BridgeLogger.Log("ConsoleHandler", $"Message pattern indicates Assert, Mode: 0x{mode:X8}");
                     }
                     return LogType.Assert;
                 }
@@ -525,7 +525,7 @@ namespace UnityCliBridge.Handlers
                 {
                     if (_debugModeBits)
                     {
-                        McpLogger.Log("ConsoleHandler", $"Reclassifying Error as Assert based on message, Mode: 0x{mode:X8}");
+                        BridgeLogger.Log("ConsoleHandler", $"Reclassifying Error as Assert based on message, Mode: 0x{mode:X8}");
                     }
                     return LogType.Assert;
                 }

@@ -51,7 +51,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error handling {action}: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error handling {action}: {e.Message}");
                 return new { error = e.Message };
             }
         }
@@ -124,7 +124,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error searching packages: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error searching packages: {e.Message}");
                 return new { error = $"Failed to search packages: {e.Message}" };
             }
         }        
@@ -213,7 +213,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error listing packages: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error listing packages: {e.Message}");
                 return new { error = $"Failed to list packages: {e.Message}" };
             }
         }
@@ -244,7 +244,7 @@ namespace UnityCliBridge.Handlers
                     }
                 }
                 
-                McpLogger.Log("PackageManagerHandler", $"Installing package: {packageIdentifier}");
+                BridgeLogger.Log("PackageManagerHandler", $"Installing package: {packageIdentifier}");
                 
                 addRequest = Client.Add(packageIdentifier);
                 
@@ -278,7 +278,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error installing package: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error installing package: {e.Message}");
                 return new { error = $"Failed to install package: {e.Message}" };
             }
         }
@@ -297,7 +297,7 @@ namespace UnityCliBridge.Handlers
                     return new { error = "Package name is required" };
                 }
                 
-                McpLogger.Log("PackageManagerHandler", $"Removing package: {packageName}");
+                BridgeLogger.Log("PackageManagerHandler", $"Removing package: {packageName}");
                 
                 removeRequest = Client.Remove(packageName);
                 
@@ -326,7 +326,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error removing package: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error removing package: {e.Message}");
                 return new { error = $"Failed to remove package: {e.Message}" };
             }
         }
@@ -393,7 +393,7 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                McpLogger.LogError("PackageManagerHandler", $"Error getting package info: {e.Message}");
+                BridgeLogger.LogError("PackageManagerHandler", $"Error getting package info: {e.Message}");
                 return new { error = $"Failed to get package info: {e.Message}" };
             }
         }
