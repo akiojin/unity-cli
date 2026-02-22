@@ -3,6 +3,8 @@ mod config;
 mod instances;
 mod local_tools;
 mod lsp;
+mod lsp_manager;
+mod lspd;
 mod tool_catalog;
 mod transport;
 
@@ -15,7 +17,8 @@ use serde_json::{json, Value};
 use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
-    Cli, Command, InstancesCommand, OutputFormat, RawArgs, SceneCommand, SystemCommand, ToolCommand,
+    Cli, Command, InstancesCommand, LspCommand, LspdCommand, OutputFormat, RawArgs, SceneCommand,
+    SystemCommand, ToolCommand,
 };
 use crate::config::RuntimeConfig;
 use crate::instances::{list_instances, set_active_instance};
@@ -130,6 +133,33 @@ async fn run() -> Result<()> {
                         result.active_id
                     );
                 }
+            }
+        },
+        Command::Lsp { command } => match command {
+            LspCommand::Install => {
+                let value = lsp_manager::install_latest()?;
+                print_value(&value, cli.output)?;
+            }
+            LspCommand::Doctor => {
+                let value = lsp_manager::doctor()?;
+                print_value(&value, cli.output)?;
+            }
+        },
+        Command::Lspd { command } => match command {
+            LspdCommand::Start => {
+                let value = lspd::start_background()?;
+                print_value(&value, cli.output)?;
+            }
+            LspdCommand::Stop => {
+                let value = lspd::stop()?;
+                print_value(&value, cli.output)?;
+            }
+            LspdCommand::Status => {
+                let value = lspd::status()?;
+                print_value(&value, cli.output)?;
+            }
+            LspdCommand::Serve => {
+                lspd::serve_forever()?;
             }
         },
     }
