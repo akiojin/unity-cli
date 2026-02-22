@@ -146,7 +146,7 @@ LLMエージェントが、Addressablesの依存関係を分析し、重複ア�
 
 この機能は以下に依存します:
 
-- Unity MCP Serverサーバー（既存）
+- Unity CLI Bridgeサーバー（既存）
 - Unity Editorとの双方向通信機能（既存）
 - Unity Addressablesパッケージ（com.unity.addressables）
 

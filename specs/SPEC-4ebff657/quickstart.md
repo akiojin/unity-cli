@@ -1,12 +1,12 @@
 # Quickstart: Unity メニュー起動 & サンプル
 
 ## メニュー起動
-1. Unity 上部メニュー `MCP Server → Start` をクリック。
+1. Unity 上部メニュー `Unity CLI Bridge Server → Start` をクリック。
 2. ウィンドウで transport/port/telemetry を設定し、Start を押す。
 3. ステータスが "Running" になり、ヘルスチェックが OK と表示される。
 
 ## 停止
-- `MCP Server → Stop` をクリック。ステータスが Stopped になり、プロセス終了ログが出る。
+- `Unity CLI Bridge Server → Stop` をクリック。ステータスが Stopped になり、プロセス終了ログが出る。
 
 ## サンプル実行
 - Scene サンプル: `Run Sample (Scene)` → デモオブジェクト生成後、ログに結果。

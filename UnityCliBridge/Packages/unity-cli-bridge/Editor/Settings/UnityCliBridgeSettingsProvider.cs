@@ -40,17 +40,17 @@ namespace UnityCliBridge.Settings
             EditorGUILayout.LabelField("TCP Listener", EditorStyles.boldLabel);
             
             EditorGUILayout.PropertyField(_serializedSettings.FindProperty("unityHost"), new GUIContent("Host"));
-            EditorGUILayout.LabelField("", "CLI env: UNITY_CLI_HOST (compat: UNITY_MCP_UNITY_HOST)", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("", "CLI env: UNITY_CLI_HOST", EditorStyles.miniLabel);
             
             EditorGUILayout.PropertyField(_serializedSettings.FindProperty("port"), new GUIContent("Port"));
-            EditorGUILayout.LabelField("", "CLI env: UNITY_CLI_PORT (compat: UNITY_MCP_PORT)", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("", "CLI env: UNITY_CLI_PORT", EditorStyles.miniLabel);
 
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
                 "These settings control where Unity listens for CLI TCP connections.\n" +
                 "unity-cli connects using UNITY_CLI_HOST and UNITY_CLI_PORT.\n" +
-                "Backward-compatible UNITY_MCP_* variables are also accepted.",
+                "Only UNITY_CLI_* environment variables are supported.",
                 MessageType.Info);
 
             EditorGUILayout.Space();
@@ -87,15 +87,12 @@ namespace UnityCliBridge.Settings
             DrawEnvVarRow("UNITY_CLI_HOST", "Unity TCP host (default: localhost)");
             DrawEnvVarRow("UNITY_CLI_PORT", "Unity TCP port (default: 6400)");
             DrawEnvVarRow("UNITY_CLI_TIMEOUT_MS", "Command timeout milliseconds");
-            DrawEnvVarRow("UNITY_MCP_UNITY_HOST", "Compatibility alias for host");
-            DrawEnvVarRow("UNITY_MCP_PORT", "Compatibility alias for port");
             
             EditorGUILayout.Space(4);
             
             // Logging & Diagnostics
             EditorGUILayout.LabelField("Logging", EditorStyles.miniBoldLabel);
             DrawEnvVarRow("UNITY_CLI_LOG_LEVEL", "debug|info|warn|error (optional)");
-            DrawEnvVarRow("UNITY_MCP_LOG_LEVEL", "Compatibility alias for log level");
             
             EditorGUILayout.Space(4);
             
@@ -111,7 +108,7 @@ namespace UnityCliBridge.Settings
             DrawEnvVarRow("UNITY_CLI_LSP_REQUEST_TIMEOUT_MS", "LSP timeout ms (default: 60000)");
             DrawEnvVarRow("UNITY_CLI_TELEMETRY_ENABLED", "true|false (default: false)");
             DrawEnvVarRow("UNITY_PROJECT_ROOT", "Unity project path (auto-detected)");
-            
+
             EditorGUI.indentLevel--;
         }
 

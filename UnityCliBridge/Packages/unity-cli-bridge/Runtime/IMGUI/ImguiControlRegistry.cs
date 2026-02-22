@@ -34,7 +34,7 @@ namespace UnityCliBridge.Runtime.IMGUI
         private const int StaleFrameThreshold = 240;
 
         /// <summary>
-        /// Register an IMGUI control that can be discovered / operated by MCP tools.
+        /// Register an IMGUI control that can be discovered / operated by automation tools.
         /// Call this from OnGUI (Layout/Repaint).
         /// </summary>
         public static void RegisterControl(

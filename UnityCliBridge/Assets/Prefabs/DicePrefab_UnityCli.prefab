@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 1830297006787860774}
   - component: {fileID: 8288271102033349348}
   m_Layer: 0
-  m_Name: DicePrefab_MCP
+  m_Name: DicePrefab_UnityCli
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

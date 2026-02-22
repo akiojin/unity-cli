@@ -131,7 +131,7 @@
           },
           "message": {
             "type": "string",
-            "example": "Code index is not built. Please run UnityMCP.build_index first."
+            "example": "Code index is not built. Please run unity-cli raw build_index first."
           }
         },
         "required": ["success", "error", "message"]
@@ -266,7 +266,7 @@
       "response": {
         "success": false,
         "error": "index_not_built",
-        "message": "Code index is not built. Please run UnityMCP.build_index first."
+        "message": "Code index is not built. Please run unity-cli raw build_index first."
       }
     }
   ]

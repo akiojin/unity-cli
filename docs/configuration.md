@@ -34,53 +34,19 @@ Click `Apply & Restart` to restart the Unity listener.
 
 ---
 
-## Deprecation Policy / 廃止ポリシー
+## Unsupported Legacy Variables / 旧変数は未サポート
 
-### Overview / 概要
+Legacy MCP-prefixed variables are not accepted by `unity-cli`.
 
-The legacy `UNITY_MCP_*` environment variables are **deprecated since v0.1.0** and will be **removed in v1.0.0**.
+MCPプレフィックスの旧環境変数は `unity-cli` では受け付けません。
 
-レガシーの `UNITY_MCP_*` 環境変数は **v0.1.0 で非推奨** となり、**v1.0.0 で削除** されます。
+If any legacy MCP-prefixed variable is present, `unity-cli` returns an error and exits.
 
-When a deprecated variable is detected at runtime, a warning is emitted via the `tracing` logger:
+旧MCPプレフィックス変数が検出された場合、`unity-cli` はエラー終了します。
 
-非推奨の環境変数が実行時に検出されると、`tracing` ロガー経由で警告が出力されます。
+Use only `UNITY_CLI_*` variables in all environments.
 
-```
-WARN Environment variable 'UNITY_MCP_PORT' is deprecated and will be removed in v1.0.0. Use 'UNITY_CLI_PORT' instead.
-```
-
-### Migration Table / 移行表
-
-| Deprecated Variable (非推奨) | Replacement (移行先) |
-| --- | --- |
-| `UNITY_MCP_MCP_HOST` | `UNITY_CLI_HOST` |
-| `UNITY_MCP_UNITY_HOST` | `UNITY_CLI_HOST` |
-| `UNITY_MCP_PORT` | `UNITY_CLI_PORT` |
-| `UNITY_MCP_COMMAND_TIMEOUT` | `UNITY_CLI_TIMEOUT_MS` |
-| `UNITY_MCP_CONNECT_TIMEOUT` | `UNITY_CLI_TIMEOUT_MS` |
-| `UNITY_MCP_TOOLS_ROOT` | `UNITY_CLI_TOOLS_ROOT` |
-
-### Behavior / 動作
-
-1. If a `UNITY_CLI_*` variable is set, it is always used (primary).
-2. If only a deprecated `UNITY_MCP_*` variable is set, its value is used **with a deprecation warning**.
-3. If neither is set, the built-in default value is used.
-
----
-
-1. `UNITY_CLI_*` 変数が設定されている場合、常にそちらが優先されます。
-2. 非推奨の `UNITY_MCP_*` 変数のみが設定されている場合、その値が使用されますが **非推奨警告が出力されます**。
-3. どちらも設定されていない場合、組み込みのデフォルト値が使用されます。
-
-### Timeline / タイムライン
-
-| Version | Action |
-| --- | --- |
-| v0.1.0 | `UNITY_MCP_*` variables deprecated; runtime warnings added |
-| v1.0.0 | `UNITY_MCP_*` variables removed; only `UNITY_CLI_*` supported |
-
----
+すべての環境で `UNITY_CLI_*` のみを使用してください。
 
 ## 日本語
 

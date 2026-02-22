@@ -1,7 +1,7 @@
 # Research: Unity メニュー起動とサンプル (SPEC-4ebff657)
 
 ## 決定
-- メニューは `MCP Server/Start`, `Stop`, `Run Sample (Scene)`, `Run Sample (Addressables)` を追加。
+- メニューは `Unity CLI Bridge Server/Start`, `Stop`, `Run Sample (Scene)`, `Run Sample (Addressables)` を追加。
 - EditorWindow で状態表示とトグル (HTTP/stdio, Telemetry on/off) を持たせ、設定は EditorPrefs に保存。
 - 外部起動は `ProcessStartInfo` で `npx @akiojin/unity-cli` を呼び、ログを Unity コンソールへストリーミング。
 - サンプルは既存シーンに影響を与えないよう一時 GameObject/Addressables グループを作成し、実行後にクリーンアップ。

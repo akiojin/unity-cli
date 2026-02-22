@@ -20,6 +20,7 @@ Create scenes, GameObjects, and attach components via `unity-cli`.
 ```bash
 # Scene management
 unity-cli scene create <name> --path Assets/Scenes/
+unity-cli raw create_scene --json '{"sceneName":"MyScene","path":"Assets/Scenes/","loadScene":true}'
 unity-cli raw load_scene --json '{"scenePath":"Assets/Scenes/MyScene.unity"}'
 unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/MyScene.unity"}'
 

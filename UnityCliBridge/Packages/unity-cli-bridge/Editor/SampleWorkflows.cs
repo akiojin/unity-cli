@@ -9,8 +9,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 public static class SampleWorkflows
 {
-    private const string TempRootName = "MCP_Sample_Temp";
-    private const string TempAddressablePath = "Assets/MCP_Addressable_Sample.prefab";
+    private const string TempRootName = "UnityCliBridge_Sample_Temp";
+    private const string TempAddressablePath = "Assets/UnityCliBridge_Addressable_Sample.prefab";
 
     public static void RunSceneSample()
     {
@@ -21,7 +21,7 @@ public static class SampleWorkflows
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cube.transform.SetParent(root.transform);
         cube.transform.position = new Vector3(0, 0.5f, 0);
-        Debug.Log("[MCP Sample] Created demo cube under MCP_Sample_Temp");
+        Debug.Log("[UnityCliBridge Sample] Created demo cube under UnityCliBridge_Sample_Temp");
     }
 
     public static void RunAddressablesSample()
@@ -30,23 +30,23 @@ public static class SampleWorkflows
         var settings = AddressableAssetSettingsDefaultObject.GetSettings(false);
         if (settings == null)
         {
-            Debug.LogWarning("[MCP Sample] Addressables settings not found");
+            Debug.LogWarning("[UnityCliBridge Sample] Addressables settings not found");
             return;
         }
-        var group = settings.groups.FirstOrDefault(g => g != null && g.name == "MCP_Sample_Temp")
-                   ?? settings.CreateGroup("MCP_Sample_Temp", false, false, false, null);
+        var group = settings.groups.FirstOrDefault(g => g != null && g.name == "UnityCliBridge_Sample_Temp")
+                   ?? settings.CreateGroup("UnityCliBridge_Sample_Temp", false, false, false, null);
 
         if (File.Exists(TempAddressablePath)) File.Delete(TempAddressablePath);
         if (File.Exists(TempAddressablePath + ".meta")) File.Delete(TempAddressablePath + ".meta");
 
-        var tempGO = new GameObject("MCP_Addressable_Sample");
+        var tempGO = new GameObject("UnityCliBridge_Addressable_Sample");
         PrefabUtility.SaveAsPrefabAsset(tempGO, TempAddressablePath);
         var entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(TempAddressablePath), group);
-        entry.address = "mcp/sample";
+        entry.address = "unity-cli/sample";
         AssetDatabase.SaveAssets();
-        Debug.Log("[MCP Sample] Registered Addressable entry mcp/sample in MCP_Sample_Temp group");
+        Debug.Log("[UnityCliBridge Sample] Registered Addressable entry unity-cli/sample in UnityCliBridge_Sample_Temp group");
 #else
-        Debug.LogWarning("[MCP Sample] Addressables package not enabled; sample skipped");
+        Debug.LogWarning("[UnityCliBridge Sample] Addressables package not enabled; sample skipped");
 #endif
     }
 
@@ -58,10 +58,10 @@ public static class SampleWorkflows
         var settings = AddressableAssetSettingsDefaultObject.GetSettings(false);
         if (settings != null)
         {
-          var group = settings.groups.FirstOrDefault(g => g != null && g.name == "MCP_Sample_Temp");
+          var group = settings.groups.FirstOrDefault(g => g != null && g.name == "UnityCliBridge_Sample_Temp");
           if (group != null)
           {
-              var entry = group.entries.FirstOrDefault(e => e.address == "mcp/sample");
+              var entry = group.entries.FirstOrDefault(e => e.address == "unity-cli/sample");
               if (entry != null) settings.RemoveAssetEntry(entry.guid);
               settings.RemoveGroup(group);
           }

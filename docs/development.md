@@ -160,7 +160,7 @@ Periodically verify that specs and docs match the current implementation.
 1. **Legacy name residuals**: Search for unintentional `MCP` or old project name references.
 
    ```bash
-   grep -rn "unity-mcp-server\|UNITY_MCP\|UnityMcpBridge" specs/ docs/ README.md \
+   grep -rni "mcp" specs/ docs/ README.md \
      | grep -v migration-notes.md \
      | grep -v configuration.md
    ```
@@ -343,7 +343,7 @@ E2E Tests は手動トリガーのみで、Unity Editor が起動しているラ
 1. **旧名称の残留確認**: 以下のコマンドで `MCP` や旧プロジェクト名の残留をチェックします。
 
    ```bash
-   grep -rn "unity-mcp-server\|UNITY_MCP\|UnityMcpBridge" specs/ docs/ README.md \
+   grep -rni "mcp" specs/ docs/ README.md \
      | grep -v migration-notes.md \
      | grep -v configuration.md
    ```

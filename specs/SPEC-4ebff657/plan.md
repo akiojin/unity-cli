@@ -4,7 +4,7 @@
 **入力**: `/specs/SPEC-4ebff657/spec.md` の機能仕様
 
 ## 概要
-Unity エディタメニューに MCP Server の Start/Stop と HTTP/stdio/Telemetry 設定切替を追加し、非開発者が GUI で操作できるようにする。導入直後に試せるシーン操作・Addressables 登録のサンプルワークフローを同梱する。
+Unity エディタメニューに Unity CLI Bridge Server の Start/Stop と HTTP/stdio/Telemetry 設定切替を追加し、非開発者が GUI で操作できるようにする。導入直後に試せるシーン操作・Addressables 登録のサンプルワークフローを同梱する。
 
 ## 技術コンテキスト
 **言語/バージョン**: C# (Unity 2020.3+), Node.js 側 CLI 呼び出しをラップ

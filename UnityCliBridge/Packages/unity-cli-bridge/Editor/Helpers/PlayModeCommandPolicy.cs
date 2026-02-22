@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityCliBridge.Helpers
 {
     /// <summary>
-    /// Decides which MCP commands are safe to execute during Play Mode.
+    /// Decides which Unity CLI Bridge commands are safe to execute during Play Mode.
     /// We allow read-only/status/log/simulation; we block heavy write/refresh/import/scene-modifying operations.
     /// </summary>
     public static class PlayModeCommandPolicy

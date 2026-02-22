@@ -12,6 +12,11 @@ English | [日本語](#日本語)
 - Troubleshooting: `docs/troubleshooting/README.md`
 - Constitution: `docs/constitution.md`
 
+## Skill Distribution
+
+- Claude Code: Marketplace plugin in `.claude-plugin/marketplace.json`
+- Codex: skill assets in `.codex/skills/` (zip distribution via skill-installer)
+
 ## Maintainer Notes
 
 - Spec templates: `.specify/templates/`

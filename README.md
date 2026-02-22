@@ -57,6 +57,11 @@ Use `raw` for full command coverage when no typed subcommand exists.
 
 Skills are distributed as a Claude Code plugin (`.claude-plugin/plugins/unity-cli/`).
 
+## Skill Distribution
+
+- Claude Code: Marketplace plugin format (`.claude-plugin/marketplace.json`)
+- Codex: skill format under `.codex/skills/` (zip + `skill-installer` workflow)
+
 ## Local Tools (Rust-side)
 
 These tools run locally:
@@ -139,7 +144,7 @@ See [RELEASE.md](RELEASE.md) for the full release guide.
 | `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`) | `off` |
 | `UNITY_CLI_TOOLS_ROOT` | Downloaded tools root directory | OS default |
 
-`UNITY_MCP_*` variables are deprecated since v0.1.0 and will be removed in v1.0.0. See [docs/configuration.md](docs/configuration.md) for the migration guide.
+Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only. See [docs/configuration.md](docs/configuration.md).
 
 ## Output Modes
 

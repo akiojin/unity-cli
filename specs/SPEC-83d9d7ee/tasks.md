@@ -21,7 +21,7 @@
 - [x] T008 [US1] `unity-cli` のサブコマンド (`raw/tool/system/scene/instances`) を実装
 - [x] T009 [US1] Unity TCP transport 実装（framed送受信 + fallback JSONパース）
 - [x] T010 [US2] ローカルインスタンスレジストリ実装（list/set-active）
-- [x] T011 [US1] `UNITY_CLI_*` + `UNITY_MCP_*` 互換の設定解決を実装
+- [x] T011 [US1] `UNITY_CLI_*` + `UNITY_CLI_*` 互換の設定解決を実装
 
 ## Phase 4: 移行導線とスキル
 
@@ -49,7 +49,7 @@
 
 - [x] T025 [US4] `.claude-plugin/.claude/.codex/skills/.github/.husky/.specify/configs/docs/scripts/specs/templates` を `unity-cli` 向けに移行し、`unity-mcp-server` 依存表記を整理
 - [x] T026 [US4] CI/Hook/チェックを Rust + LSP 前提へ更新（`test.yml`, `lint.yml`, `.specify/scripts/checks`, `.husky`）
-- [x] T027 [US4] Docker 設定を `UNITY_CLI_*` 主体に更新し、互換 `UNITY_MCP_*` を明示
+- [x] T027 [US4] Docker 設定を `UNITY_CLI_*` 主体に更新し、互換 `UNITY_CLI_*` を明示
 - [x] T028 [US4] ライセンス運用を更新し、MIT保持 + 利用アプリへの表記推奨文を `README/CONTRIBUTING/UPM README` に追加
 - [x] T029 [US4] 検証を実施（`cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --all-targets`, `pnpm run lint:md`。`dotnet test` は CI 実施対象として維持）
 

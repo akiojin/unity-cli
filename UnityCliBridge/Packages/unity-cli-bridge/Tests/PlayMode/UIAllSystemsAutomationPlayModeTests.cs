@@ -132,13 +132,13 @@ namespace UnityCliBridge.Tests.PlayMode
         private void EnsureBootstrap()
         {
             // Avoid hard reference to Assembly-CSharp: locate by name at runtime.
-            var bootstrapType = FindType("UnityCliBridge.TestScenes.AllUiSystemsTestBootstrap");
+            var bootstrapType = FindType("UnityCliBridge.TestScenes.UnityCliAllUiSystemsTestBootstrap");
             if (bootstrapType == null)
             {
-                Assert.Ignore("AllUiSystemsTestBootstrap not found (scene asset/scripts not present in this environment).");
+                Assert.Ignore("UnityCliAllUiSystemsTestBootstrap not found (scene asset/scripts not present in this environment).");
             }
 
-            var go = new GameObject("MCP_UI_TestBootstrap");
+            var go = new GameObject("UnityCli_UI_TestBootstrap");
             go.AddComponent(bootstrapType);
             _created.Add(go);
         }

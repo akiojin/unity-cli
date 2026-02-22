@@ -6,12 +6,12 @@ namespace UnityCliBridge.Models
     public enum BridgeStatus
     {
         /// <summary>
-        /// MCP server is not configured
+        /// Unity CLI Bridge listener is not configured
         /// </summary>
         NotConfigured,
         
         /// <summary>
-        /// Disconnected from MCP server
+        /// Disconnected from the Unity CLI Bridge listener
         /// </summary>
         Disconnected,
         
@@ -21,7 +21,7 @@ namespace UnityCliBridge.Models
         Connecting,
         
         /// <summary>
-        /// Successfully connected to MCP server
+        /// Successfully connected to the Unity CLI Bridge listener
         /// </summary>
         Connected,
         

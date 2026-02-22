@@ -75,7 +75,7 @@ namespace UnityCliBridge.Handlers
                 // Client.Search(keyword) expects exact package ID match, not keyword search
                 searchRequest = Client.SearchAll();
 
-                // Wait for search to complete (synchronously for MCP)
+                // Wait for search to complete (synchronous request path)
                 while (!searchRequest.IsCompleted)
                 {
                     System.Threading.Thread.Sleep(10);

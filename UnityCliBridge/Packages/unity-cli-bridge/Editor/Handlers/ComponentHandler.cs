@@ -668,7 +668,7 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>
         /// Gets available component types in the current Unity project.
-        /// Intended for discovery/autocomplete in MCP clients.
+        /// Intended for discovery/autocomplete in automation clients.
         /// </summary>
         public static object GetComponentTypes(JObject parameters)
         {

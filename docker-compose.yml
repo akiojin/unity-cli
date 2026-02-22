@@ -31,9 +31,6 @@ services:
       # unity-cli -> Unity connection (Docker -> host Unity)
       - UNITY_CLI_HOST=${UNITY_CLI_HOST:-host.docker.internal}
       - UNITY_CLI_PORT=${UNITY_CLI_PORT:-6400}
-      # Compatibility aliases (optional)
-      - UNITY_MCP_MCP_HOST=${UNITY_MCP_MCP_HOST:-}
-      - UNITY_MCP_PORT=${UNITY_MCP_PORT:-}
       # Unity project root (inside container)
       - UNITY_PROJECT_ROOT=./UnityCliBridge
     extra_hosts:

@@ -1756,7 +1756,7 @@ namespace UnityCliBridge.Handlers
             catch { }
 
             warnings?.Add("No EventSystem found; created a temporary EventSystem for UI interaction");
-            var go = new GameObject("MCP_EventSystem");
+            var go = new GameObject("UnityCli_EventSystem");
             go.hideFlags = HideFlags.HideInHierarchy;
             return go.AddComponent<EventSystem>();
         }

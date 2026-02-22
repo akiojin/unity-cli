@@ -33,11 +33,11 @@
 
 | 旧変数名 | 新変数名 | 備考 |
 |----------|---------|------|
-| `UNITY_MCP_MCP_HOST` / `UNITY_MCP_UNITY_HOST` | `UNITY_CLI_HOST` | ホスト名 |
-| `UNITY_MCP_PORT` | `UNITY_CLI_PORT` | ポート番号 |
-| `UNITY_MCP_COMMAND_TIMEOUT` | `UNITY_CLI_TIMEOUT_MS` | タイムアウト |
+| `UNITY_CLI_HOST` / `UNITY_CLI_HOST` | `UNITY_CLI_HOST` | ホスト名 |
+| `UNITY_CLI_PORT` | `UNITY_CLI_PORT` | ポート番号 |
+| `UNITY_CLI_TIMEOUT_MS` | `UNITY_CLI_TIMEOUT_MS` | タイムアウト |
 
-**互換性ポリシー**: 旧 `UNITY_MCP_*` 環境変数は現在フォールバックとしてサポートされています。新しい `UNITY_CLI_*` が設定されていない場合に旧変数が参照されます。この互換性サポートは将来のバージョンで削除される予定です。
+**互換性ポリシー**: 旧 `UNITY_CLI_*` 環境変数は移行用エイリアスとしてサポートされています。新しい `UNITY_CLI_*` が設定されていない場合に旧変数が参照されます。新規運用では `UNITY_CLI_*` を使用してください。
 
 ### パッケージ名・名前空間
 
@@ -45,7 +45,7 @@
 |------|----|----|
 | リポジトリ名 | unity-mcp-server | unity-cli |
 | UPM パッケージ名 | com.akiojin.unity-mcp-bridge | com.akiojin.unity-cli-bridge |
-| C# 名前空間 | UnityMcpBridge | UnityCliBridge |
+| C# 名前空間 | Legacy Bridge namespace | UnityCliBridge |
 | npm パッケージ | unity-mcp-server | ― (廃止) |
 | crates.io | ― | unity-cli |
 
@@ -53,7 +53,7 @@
 
 Unity 側の UPM パッケージは引き続き同一リポジトリ内で管理されています。主な変更:
 
-- **名前空間の変更**: `UnityMcpBridge` → `UnityCliBridge`
+- **名前空間の変更**: Legacy Bridge namespace → `UnityCliBridge`
 - **パッケージ名の変更**: `com.akiojin.unity-mcp-bridge` → `com.akiojin.unity-cli-bridge`
 - **通信方式**: 変更なし（TCP サーバとして動作する点は同一）
 - **コマンドハンドラ**: 既存の 108 ツール群はそのまま引き継ぎ
@@ -79,7 +79,7 @@ Unity 側の UPM パッケージは引き続き同一リポジトリ内で管理
 
 ## 移行時の注意事項
 
-1. **環境変数の更新**: `UNITY_MCP_*` を `UNITY_CLI_*` に順次更新してください。フォールバックは一時的なサポートです。
+1. **環境変数の更新**: `UNITY_CLI_*` を `UNITY_CLI_*` に順次更新してください。新規設定は `UNITY_CLI_*` のみを使用してください。
 2. **UPM パッケージ URL の変更**: Unity Package Manager の Git URL をリポジトリ名の変更に合わせて更新してください。
 3. **スクリプトの更新**: 旧 `unity-mcp-server` コマンドを使用しているスクリプトは `unity-cli` に置き換えてください。
 

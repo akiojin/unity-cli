@@ -146,8 +146,8 @@
 
 #### 3. 環境変数制御
 
-- `UNITY_MCP_SKIP_NATIVE_BUILD=1`: ネイティブビルドスキップ
-- `UNITY_MCP_FORCE_NATIVE=1`: ソースビルド強制
+- `UNITY_CLI_SKIP_NATIVE_BUILD=1`: ネイティブビルドスキップ
+- `UNITY_CLI_FORCE_NATIVE=1`: ソースビルド強制
 
 ### 実装予定ファイル
 

@@ -636,9 +636,9 @@ namespace GigaTestNamespace
             }
         }
 
-        public int MCP_ScriptToolProbe()
+        public int UnityCli_ScriptToolProbe()
         {
-            // MCP structured edit test: return a distinct value
+            // Structured edit test: return a distinct value
             return 12345;
         }
         #endregion

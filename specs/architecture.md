@@ -114,7 +114,7 @@ CLI 側                        Unity Editor 側
 | `UNITY_CLI_LSP_BIN` | LSP 実行ファイルパス | ― |
 | `UNITY_PROJECT_ROOT` | Unity プロジェクトルート | ― |
 
-**互換性環境変数（非推奨）**: 旧 `UNITY_MCP_*` 系の環境変数はフォールバックとして一時的にサポートされていますが、将来のバージョンで削除予定です。詳細は [migration-notes.md](./migration-notes.md) を参照してください。
+**互換性環境変数**: 旧 `UNITY_CLI_*` 系の環境変数は移行用エイリアスとしてサポートされています。新規設定は `UNITY_CLI_*` を利用してください。詳細は [migration-notes.md](./migration-notes.md) を参照してください。
 
 ## ビルドと配布
 

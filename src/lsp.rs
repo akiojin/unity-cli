@@ -333,7 +333,7 @@ fn handle_find_refs(
         .unwrap_or(5)
         .clamp(1, 100) as usize;
 
-    let response = session.request("mcp/referencesByName", json!({ "name": name }))?;
+    let response = session.request("unitycli/referencesByName", json!({ "name": name }))?;
     let mut refs = response.as_array().cloned().unwrap_or_default();
 
     refs.sort_by(|a, b| {
@@ -447,7 +447,7 @@ fn handle_build_index(
         request_params.insert("outputPath".to_string(), output_path.clone());
     }
 
-    let result = session.request("mcp/buildCodeIndex", Value::Object(request_params))?;
+    let result = session.request("unitycli/buildCodeIndex", Value::Object(request_params))?;
     let success = result
         .get("success")
         .and_then(Value::as_bool)

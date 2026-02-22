@@ -37,8 +37,7 @@ namespace UnityCliBridge.Helpers
                     var assetPathCandidates = new string[]
                     {
                         "Packages/com.akiojin.unity-cli-bridge/package.json",
-                        "Packages/unity-cli-bridge/package.json", // embedded in this repo
-                        "Packages/com.unity.editor-mcp/package.json" // legacy
+                        "Packages/unity-cli-bridge/package.json" // embedded in this repo
                     };
 
                     foreach (var assetPath in assetPathCandidates)
@@ -61,10 +60,8 @@ namespace UnityCliBridge.Helpers
                 {
                     "Packages/com.akiojin.unity-cli-bridge/package.json",
                     "Packages/unity-cli-bridge/package.json",
-                    "Packages/com.unity.editor-mcp/package.json",
                     Path.Combine(Application.dataPath, "../Packages/com.akiojin.unity-cli-bridge/package.json"),
-                    Path.Combine(Application.dataPath, "../Packages/unity-cli-bridge/package.json"),
-                    Path.Combine(Application.dataPath, "../Packages/com.unity.editor-mcp/package.json")
+                    Path.Combine(Application.dataPath, "../Packages/unity-cli-bridge/package.json")
                 };
 
                 foreach (var path in possiblePaths)
@@ -92,7 +89,7 @@ namespace UnityCliBridge.Helpers
                 {
                     var projectRoot = Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
                     var packageCacheRoot = Path.GetFullPath(Path.Combine(projectRoot, "Library/PackageCache"));
-                    var ids = new string[] { "com.akiojin.unity-cli-bridge", "com.unity.editor-mcp" };
+                    var ids = new string[] { "com.akiojin.unity-cli-bridge" };
 
                     foreach (var id in ids)
                     {
@@ -125,10 +122,12 @@ namespace UnityCliBridge.Helpers
                 if (assembly != null)
                 {
                     var location = assembly.Location;
-                    if (!string.IsNullOrEmpty(location) && (location.Contains("com.akiojin.unity-cli-bridge") || location.Contains("com.unity.editor-mcp")))
+                    if (!string.IsNullOrEmpty(location) && location.Contains("com.akiojin.unity-cli-bridge"))
                     {
                         // Try to extract version from path if it contains version info
-                        var match = System.Text.RegularExpressions.Regex.Match(location, @"com\.(akiojin\.unity-cli-bridge|unity\.editor-mcp)@([0-9]+\.[0-9]+\.[0-9]+)");
+                        var match = System.Text.RegularExpressions.Regex.Match(
+                            location,
+                            @"com\.(akiojin\.unity-cli-bridge)@([0-9]+\.[0-9]+\.[0-9]+)");
                         if (match.Success)
                         {
                             _cachedPackageVersion = match.Groups[2].Value;

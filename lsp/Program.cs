@@ -11,7 +11,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-// Minimal LSP over stdio: initialize / initialized / shutdown / exit / documentSymbol / workspace/symbol / mcp/referencesByName / mcp/renameByNamePath / mcp/replaceSymbolBody / mcp/insertBeforeSymbol / mcp/insertAfterSymbol / mcp/removeSymbol
+// Minimal LSP over stdio: initialize / initialized / shutdown / exit / documentSymbol / workspace/symbol / unitycli/referencesByName / unitycli/renameByNamePath / unitycli/replaceSymbolBody / unitycli/insertBeforeSymbol / unitycli/insertAfterSymbol / unitycli/removeSymbol
 // This is a lightweight PoC that parses each file independently using Roslyn SyntaxTree.
 
 LspLogger.Info("Starting...");
@@ -183,19 +183,19 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result });
             return;
         }
-        if (method == "mcp/ping")
+        if (method == "unitycli/ping")
         {
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = new { ok = true } });
             return;
         }
-        if (method == "mcp/referencesByName")
+        if (method == "unitycli/referencesByName")
         {
             var symName = root.GetProperty("params").GetProperty("name").GetString() ?? "";
             var list = await ReferencesByNameAsync(symName);
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = list });
             return;
         }
-        if (method == "mcp/renameByNamePath")
+        if (method == "unitycli/renameByNamePath")
         {
             var p = root.GetProperty("params");
             var relative = p.GetProperty("relative").GetString() ?? "";
@@ -206,7 +206,7 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = resp });
             return;
         }
-        if (method == "mcp/replaceSymbolBody")
+        if (method == "unitycli/replaceSymbolBody")
         {
             var p = root.GetProperty("params");
             var relative = p.GetProperty("relative").GetString() ?? "";
@@ -217,7 +217,7 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = resp });
             return;
         }
-        if (method == "mcp/insertBeforeSymbol" || method == "mcp/insertAfterSymbol")
+        if (method == "unitycli/insertBeforeSymbol" || method == "unitycli/insertAfterSymbol")
         {
             var p = root.GetProperty("params");
             var relative = p.GetProperty("relative").GetString() ?? "";
@@ -229,7 +229,7 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = resp });
             return;
         }
-        if (method == "mcp/validateTextEdits")
+        if (method == "unitycli/validateTextEdits")
         {
             var p = root.GetProperty("params");
             var relative = p.GetProperty("relative").GetString() ?? "";
@@ -238,7 +238,7 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result });
             return;
         }
-        if (method == "mcp/removeSymbol")
+        if (method == "unitycli/removeSymbol")
         {
             var p = root.GetProperty("params");
             var relative = p.GetProperty("relative").GetString() ?? p.GetProperty("path").GetString() ?? "";
@@ -250,7 +250,7 @@ sealed class LspServer
             await WriteMessageAsync(new { jsonrpc = "2.0", id = id.GetInt32(), result = resp });
             return;
         }
-        if (method == "mcp/buildCodeIndex")
+        if (method == "unitycli/buildCodeIndex")
         {
             string? outputPath = null;
             if (root.TryGetProperty("params", out var param) && param.ValueKind == JsonValueKind.Object)
@@ -1320,7 +1320,7 @@ sealed class LspServer
     {
         if (string.IsNullOrWhiteSpace(outputPath))
         {
-            return Path.Combine(_rootDir, ".mcp", "code-index.json");
+            return Path.Combine(_rootDir, ".unity", "code-index.json");
         }
 
         if (Path.IsPathRooted(outputPath))

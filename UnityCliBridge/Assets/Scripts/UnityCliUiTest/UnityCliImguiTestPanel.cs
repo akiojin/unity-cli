@@ -4,7 +4,7 @@ using UnityCliBridge.Runtime.IMGUI;
 
 namespace UnityCliBridge.TestScenes
 {
-    public sealed class ImguiTestPanel : MonoBehaviour
+    public sealed class UnityCliImguiTestPanel : MonoBehaviour
     {
         private int clickCount;
         private bool toggleValue;
@@ -83,4 +83,3 @@ namespace UnityCliBridge.TestScenes
         }
     }
 }
-

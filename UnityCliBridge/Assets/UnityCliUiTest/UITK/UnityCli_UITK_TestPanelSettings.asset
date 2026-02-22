@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 19101, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: MCP_UITK_TestPanelSettings
+  m_Name: UnityCli_UITK_TestPanelSettings
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.PanelSettings
   themeUss: {fileID: -4733365628477956816, guid: 614b74a4755582a48be46c24889a756c, type: 3}
   m_DisableNoThemeWarning: 0

@@ -28,11 +28,11 @@ Node側パッケージとUnity側パッケージのversionが一致しない場�
 
 **この優先度の理由**: 互換性が崩れると誤動作の原因になりうるため、CI/本番運用では早期失敗が有効。
 
-**独立テスト**: `UNITY_MCP_VERSION_MISMATCH=error` の場合に、最初の検出でエラー（識別可能なcode）になり、以後のコマンドも同様に失敗すること。
+**独立テスト**: `UNITY_CLI_VERSION_MISMATCH=error` の場合に、最初の検出でエラー（識別可能なcode）になり、以後のコマンドも同様に失敗すること。
 
 **受け入れシナリオ**:
 
-1. **前提** `UNITY_MCP_VERSION_MISMATCH=error`、**実行** 任意のコマンドを実行、**結果** version不一致を理由に失敗する
+1. **前提** `UNITY_CLI_VERSION_MISMATCH=error`、**実行** 任意のコマンドを実行、**結果** version不一致を理由に失敗する
 2. **前提** 不一致により失敗済み、**実行** 別コマンドを実行、**結果** 同じ理由で即時失敗する
 
 ---
@@ -43,11 +43,11 @@ Node側パッケージとUnity側パッケージのversionが一致しない場�
 
 **この優先度の理由**: デバッグ/検証用途での柔軟性を確保する。
 
-**独立テスト**: `UNITY_MCP_VERSION_MISMATCH=off` の場合に、不一致でも警告もエラーも出ないこと。
+**独立テスト**: `UNITY_CLI_VERSION_MISMATCH=off` の場合に、不一致でも警告もエラーも出ないこと。
 
 **受け入れシナリオ**:
 
-1. **前提** `UNITY_MCP_VERSION_MISMATCH=off`、**実行** 任意のコマンドを実行、**結果** version不一致でも警告・エラーが出ない
+1. **前提** `UNITY_CLI_VERSION_MISMATCH=off`、**実行** 任意のコマンドを実行、**結果** version不一致でも警告・エラーが出ない
 
 ---
 

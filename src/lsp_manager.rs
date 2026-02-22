@@ -12,7 +12,7 @@ use ureq::Agent;
 
 const DOWNLOAD_TIMEOUT_SECS: u64 = 30;
 const USER_AGENT_VALUE: &str = "unity-cli";
-const MANIFEST_REPOS: &[&str] = &["akiojin/unity-cli", "akiojin/unity-mcp-server"];
+const MANIFEST_REPOS: &[&str] = &["akiojin/unity-cli"];
 
 #[derive(Debug, Deserialize)]
 struct ReleaseInfo {
@@ -64,7 +64,6 @@ pub fn executable_name() -> &'static str {
 pub fn tools_root() -> Result<PathBuf> {
     env::var("UNITY_CLI_TOOLS_ROOT")
         .ok()
-        .or_else(|| env::var("UNITY_MCP_TOOLS_ROOT").ok())
         .map(|root| PathBuf::from(root.trim()))
         .or_else(|| dirs::home_dir().map(|home| home.join(".unity/tools")))
         .ok_or_else(|| anyhow!("Unable to resolve tools root"))

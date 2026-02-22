@@ -37,7 +37,6 @@ unity-cli raw remove_all_bindings --json '{"assetPath":"Assets/Input/Controls.in
 unity-cli raw analyze_input_actions_asset --json '{"assetPath":"Assets/Input/Controls.inputactions"}'
 unity-cli raw get_input_actions_state --json '{}'
 unity-cli raw manage_control_schemes --json '{"assetPath":"Assets/Input/Controls.inputactions","action":"list"}'
-unity-cli raw input_system_control --json '{"action":"enable","mapName":"Gameplay"}'
 ```
 
 ## Tips

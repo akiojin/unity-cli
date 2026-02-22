@@ -50,7 +50,7 @@ specs/SPEC-a28f3f95/
 - HTTP 実装方式: Node.js 標準 http vs fastify/express → シンプルさ優先で標準 http を選定。
 - ポート競合検知: server.listen エラーハンドリングで EADDRINUSE を捕捉し、再提案ポートを返す。
 - ヘルスチェック仕様: `GET /healthz` 200/JSON {status:"ok", mode:"http"}。
-- テレメトリ: デフォルト無効、環境変数 `UNITY_MCP_TELEMETRY=on/off` で切替、送信先なしを保証。
+- テレメトリ: デフォルト無効、環境変数 `UNITY_CLI_TELEMETRY=on/off` で切替、送信先なしを保証。
 
 ## Phase 1: 設計＆契約 (data-model.md, contracts/, quickstart.md)
 - data-model: ConnectionChannelSetting, TelemetrySetting のフィールド定義。

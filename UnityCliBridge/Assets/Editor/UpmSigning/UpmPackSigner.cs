@@ -6,7 +6,7 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
-namespace UnityMCPServer.Editor.UpmSigning
+namespace UnityCliBridge.Editor.UpmSigning
 {
     public static class UpmPackSigner
     {

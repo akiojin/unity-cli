@@ -10,8 +10,8 @@
 - LLM最適化: 設定名と説明を明瞭化し、READMEの表も更新して参照性を高める。
 
 ## 技術方針
-- Node 側は環境変数（例: `UNITY_MCP_MCP_HOST` / `UNITY_MCP_PORT`）で Unity 接続先を設定する。
-- Unity 側は Project Settings（Edit → Project Settings → Unity MCP Server）の Host/Port を待ち受けに使用する。
+- CLI 側は環境変数（例: `UNITY_CLI_HOST` / `UNITY_CLI_PORT`）で Unity 接続先を設定する。
+- Unity 側は Project Settings（Edit → Project Settings → Unity CLI Bridge）の Host/Port を待ち受けに使用する。
 - 旧 設定ファイル方式は廃止（移行は `docs/configuration.md` を参照）。
 
 ## オープンな質問

@@ -11,7 +11,7 @@ using UnityEngine.InputSystem.UI;
 
 namespace UnityCliBridge.TestScenes
 {
-    public sealed class AllUiSystemsTestBootstrap : MonoBehaviour
+    public sealed class UnityCliAllUiSystemsTestBootstrap : MonoBehaviour
     {
         private int uguiClicks;
         private int uitkClicks;
@@ -282,12 +282,12 @@ namespace UnityCliBridge.TestScenes
 
         private static void CreateImguiPanel()
         {
-            if (FindFirstObjectByType<ImguiTestPanel>() != null)
+            if (FindFirstObjectByType<UnityCliImguiTestPanel>() != null)
             {
                 return;
             }
 
-            new GameObject("IMGUI_TestPanel", typeof(ImguiTestPanel));
+            new GameObject("IMGUI_TestPanel", typeof(UnityCliImguiTestPanel));
         }
     }
 }

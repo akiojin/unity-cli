@@ -201,7 +201,7 @@ Phase 0リサーチにてScriptEditSnippetToolHandler.jsが既に実装済みと
 - [x] **T106** `unity-cli/scripts/ensure-better-sqlite3.mjs` - postinstallスクリプト実装
   - 実装: プラットフォーム・アーキテクチャ検出
   - 実装: prebuilt/better-sqlite3/からバイナリコピー
-  - 実装: 環境変数制御 (UNITY_MCP_SKIP_NATIVE_BUILD, UNITY_MCP_FORCE_NATIVE)
+  - 実装: 環境変数制御 (UNITY_CLI_SKIP_NATIVE_BUILD, UNITY_CLI_FORCE_NATIVE)
   - 実装: WASMフォールバック
 
 - [x] **T107** [P] `.github/workflows/prebuild.yml` - CI用ビルドワークフロー

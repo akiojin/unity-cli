@@ -24,7 +24,7 @@ unity-cli raw find_symbol --json '{"symbolName":"PlayerController"}'
 unity-cli raw find_refs --json '{"symbolName":"Health","filePath":"Assets/Scripts/Player.cs","line":15}'
 
 # Index management
-unity-cli raw get_index_status --json '{}'
+unity-cli raw build_index --json '{}'
 
 # Packages
 unity-cli raw list_packages --json '{}'

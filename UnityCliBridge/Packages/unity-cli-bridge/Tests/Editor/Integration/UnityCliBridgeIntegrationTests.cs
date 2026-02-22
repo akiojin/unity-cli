@@ -42,7 +42,7 @@ namespace UnityCliBridge.Tests.Integration
                 // Assert
                 Assert.IsTrue(completed == connectTask, "Connection should complete within timeout");
                 Assert.IsTrue(client.Connected, "Client should be connected");
-                Assert.AreEqual(BridgeStatus.Connected, Core.UnityCliBridge.Status, "MCP status should be Connected");
+                Assert.AreEqual(BridgeStatus.Connected, Core.UnityCliBridge.Status, "Bridge status should be Connected");
             }
             finally
             {
@@ -88,7 +88,7 @@ namespace UnityCliBridge.Tests.Integration
                 
                 if (completed != responseTask)
                 {
-                    Assert.Ignore("Unity MCP server did not respond to ping within the allotted timeout. Skipping integration test.");
+                    Assert.Ignore("Unity CLI Bridge listener did not respond to ping within the allotted timeout. Skipping integration test.");
                 }
                 
                 var bytesRead = await responseTask;
@@ -134,7 +134,7 @@ namespace UnityCliBridge.Tests.Integration
                 
                 if (completed != responseTask)
                 {
-                    Assert.Ignore("Unity MCP server did not respond to invalid JSON within the allotted timeout. Skipping integration test.");
+                    Assert.Ignore("Unity CLI Bridge listener did not respond to invalid JSON within the allotted timeout. Skipping integration test.");
                 }
                 
                 var bytesRead = await responseTask;
@@ -195,10 +195,10 @@ namespace UnityCliBridge.Tests.Integration
         public void UnityCliBridge_StatusShouldBeDisconnectedOnStartup()
         {
             // Assert - Check initial status
-            // Note: In actual Unity, the MCP might already be connected from previous tests
+            // Note: In actual Unity, the bridge might already be connected from previous tests
             // This test verifies that the status enum is working correctly
             Assert.IsTrue(
-                Core.UnityCliBridge.Status == BridgeStatus.Disconnected || 
+                Core.UnityCliBridge.Status == BridgeStatus.Disconnected ||
                 Core.UnityCliBridge.Status == BridgeStatus.Connected,
                 "Status should be either Disconnected or Connected"
             );
@@ -259,7 +259,7 @@ namespace UnityCliBridge.Tests.Integration
                 Thread.Sleep(200);
             }
 
-            Assert.Ignore("Unity MCP TCP listener is not reachable on the default port. Integration tests skipped.");
+            Assert.Ignore("Unity CLI Bridge TCP listener is not reachable on the default port. Integration tests skipped.");
         }
 
         private static bool IsServerReachable(int port)

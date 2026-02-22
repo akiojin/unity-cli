@@ -66,11 +66,6 @@ namespace UnityCliBridge.Core
         /// </summary>
         static UnityCliBridge()
         {
-            if (ShouldSkipStartupForCurrentProcess())
-            {
-                return;
-            }
-
             BridgeLogger.Log("Initializing...");
             EditorApplication.update += ProcessCommandQueue;
             EditorApplication.quitting += Shutdown;
@@ -490,7 +485,7 @@ namespace UnityCliBridge.Core
                 }
                 catch { }
                 
-                // During Play Mode, restrict heavy commands per policy to keep MCP responsive
+                // During Play Mode, restrict heavy commands per policy to keep the bridge responsive
                 if (Application.isPlaying && !PlayModeCommandPolicy.IsAllowed(command.Type))
                 {
                     var state = new {
@@ -1184,7 +1179,7 @@ namespace UnityCliBridge.Core
         }
         
         /// <summary>
-        /// Shuts down the MCP system
+        /// Shuts down the Unity CLI Bridge system
         /// </summary>
         private static void Shutdown()
         {
