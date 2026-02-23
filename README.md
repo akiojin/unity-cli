@@ -247,7 +247,7 @@ cargo test                              # Rust tests
 dotnet test lsp/Server.Tests.csproj     # LSP tests
 ./scripts/e2e-test.sh                   # Unity E2E (requires running Unity Editor)
 ./scripts/e2e-all-tools.sh              # Full 101-tool E2E (+ LSP perf check)
-./scripts/lsp-perf-check.sh             # LSP perf measurement + threshold check
+./scripts/lsp-perf-check.sh             # LSP perf (small + large file) + threshold check
 ./scripts/benchmark.sh                  # Performance benchmarks
 ```
 

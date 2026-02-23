@@ -12,11 +12,15 @@ UNITY_CLI=""
 RUNS=5
 WARMUP=1
 JSON_OUTPUT=0
+SKIP_LARGE=0
 
 # Thresholds (ms): can be overridden by env.
 THRESHOLD_GET_SYMBOLS_MS="${UNITY_CLI_LSP_PERF_GET_SYMBOLS_MS:-2500}"
 THRESHOLD_FIND_SYMBOL_MS="${UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS:-10000}"
 THRESHOLD_FIND_REFS_MS="${UNITY_CLI_LSP_PERF_FIND_REFS_MS:-4000}"
+THRESHOLD_GET_SYMBOLS_GIGA_MS="${UNITY_CLI_LSP_PERF_GET_SYMBOLS_GIGA_MS:-${UNITY_CLI_LSP_PERF_GET_SYMBOLS_LARGE_MS:-20000}}"
+THRESHOLD_FIND_SYMBOL_GIGA_MS="${UNITY_CLI_LSP_PERF_FIND_SYMBOL_GIGA_MS:-12000}"
+THRESHOLD_FIND_REFS_GIGA_MS="${UNITY_CLI_LSP_PERF_FIND_REFS_GIGA_MS:-20000}"
 
 usage() {
   cat <<EOF
@@ -27,6 +31,7 @@ Options:
   --project-root <path>    Unity project root (default: ./UnityCliBridge)
   --runs <n>               Measurement runs per case (default: 5)
   --warmup <n>             Warmup runs per case (default: 1)
+  --skip-large             Skip large-file LSP checks
   --json                   Output JSON summary
 EOF
 }
@@ -48,6 +53,10 @@ while [[ $# -gt 0 ]]; do
     --warmup)
       WARMUP="$2"
       shift 2
+      ;;
+    --skip-large)
+      SKIP_LARGE=1
+      shift
       ;;
     --json)
       JSON_OUTPUT=1
@@ -253,6 +262,12 @@ run_and_record "get_symbols" "get_symbols" '{"path":"Assets/Scripts/ButtonHandle
 run_and_record "find_symbol" "find_symbol" '{"name":"ButtonHandler","kind":"class","exact":true,"scope":"assets"}' "${THRESHOLD_FIND_SYMBOL_MS}"
 run_and_record "find_refs" "find_refs" '{"name":"ButtonHandler","scope":"assets","pageSize":20}' "${THRESHOLD_FIND_REFS_MS}"
 
+if [[ ${SKIP_LARGE} -eq 0 ]]; then
+  run_and_record "get_symbols_giga" "get_symbols" '{"path":"Assets/Scripts/GigaTestFile.cs"}' "${THRESHOLD_GET_SYMBOLS_GIGA_MS}"
+  run_and_record "find_symbol_giga" "find_symbol" '{"name":"GigaGameManager","kind":"class","exact":true,"scope":"assets"}' "${THRESHOLD_FIND_SYMBOL_GIGA_MS}"
+  run_and_record "find_refs_giga" "find_refs" '{"name":"InventoryItem","scope":"assets","pageSize":100}' "${THRESHOLD_FIND_REFS_GIGA_MS}"
+fi
+
 results_json="$(printf '%s\n' "${RESULTS[@]}" | jq -s '.')"
 summary_json="$(jq -nc \
   --arg unityCli "${UNITY_CLI}" \
@@ -262,6 +277,10 @@ summary_json="$(jq -nc \
   --argjson thresholdGetSymbols "${THRESHOLD_GET_SYMBOLS_MS}" \
   --argjson thresholdFindSymbol "${THRESHOLD_FIND_SYMBOL_MS}" \
   --argjson thresholdFindRefs "${THRESHOLD_FIND_REFS_MS}" \
+  --argjson thresholdGetSymbolsGiga "${THRESHOLD_GET_SYMBOLS_GIGA_MS}" \
+  --argjson thresholdFindSymbolGiga "${THRESHOLD_FIND_SYMBOL_GIGA_MS}" \
+  --argjson thresholdFindRefsGiga "${THRESHOLD_FIND_REFS_GIGA_MS}" \
+  --argjson skipLarge "${SKIP_LARGE}" \
   '{
     success: ($failed == 0),
     unity_cli: $unityCli,
@@ -269,8 +288,12 @@ summary_json="$(jq -nc \
     thresholds_ms: {
       get_symbols: $thresholdGetSymbols,
       find_symbol: $thresholdFindSymbol,
-      find_refs: $thresholdFindRefs
+      find_refs: $thresholdFindRefs,
+      get_symbols_giga: $thresholdGetSymbolsGiga,
+      find_symbol_giga: $thresholdFindSymbolGiga,
+      find_refs_giga: $thresholdFindRefsGiga
     },
+    skip_large: ($skipLarge == 1),
     failed_cases: $failed,
     results: $results
   }')"

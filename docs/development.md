@@ -179,7 +179,7 @@ scripts/e2e-all-tools.sh
 # Full coverage E2E with custom host/port
 scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
-# LSP perf check only
+# LSP perf check only (small + large files)
 scripts/lsp-perf-check.sh
 ```
 
@@ -298,6 +298,12 @@ These are guidance values and vary by host:
 
 # Tighter/faster run example
 UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
+
+# Large-file threshold override example
+UNITY_CLI_LSP_PERF_GET_SYMBOLS_GIGA_MS=10000 ./scripts/lsp-perf-check.sh --runs 3
+
+# Skip large-file checks (quick local loop)
+./scripts/lsp-perf-check.sh --skip-large --runs 3
 ```
 
 Regression policy:
@@ -585,7 +591,7 @@ scripts/e2e-all-tools.sh
 # 全機能E2E（ホスト・ポート指定）
 scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
-# LSP性能チェックのみ
+# LSP性能チェックのみ（小/大ファイル）
 scripts/lsp-perf-check.sh
 ```
 
@@ -704,6 +710,12 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 # 閾値を上書きして短縮実行
 UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
+
+# 大容量ファイルの閾値を上書き
+UNITY_CLI_LSP_PERF_GET_SYMBOLS_GIGA_MS=10000 ./scripts/lsp-perf-check.sh --runs 3
+
+# 大容量チェックを省略（ローカル高速確認）
+./scripts/lsp-perf-check.sh --skip-large --runs 3
 ```
 
 回帰判定方針:
