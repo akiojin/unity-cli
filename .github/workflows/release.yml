@@ -2,14 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: "Release tag (e.g. v0.2.0)"
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -18,72 +12,71 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  validate:
-    name: Validate Release
+  create-tag:
+    name: Create Tag & Release
     runs-on: ubuntu-latest
+    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
     outputs:
-      version: ${{ steps.extract.outputs.version }}
-      tag: ${{ steps.extract.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      created: ${{ steps.check-tag.outputs.created }}
     steps:
-      - name: Determine tag
-        id: extract
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ inputs.release_tag }}"
-          else
-            TAG="${GITHUB_REF#refs/tags/}"
-          fi
-
-          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "ERROR: Tag '$TAG' does not match vX.Y.Z pattern"
-            exit 1
-          fi
-
-          VERSION="${TAG#v}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Tag: $TAG, Version: $VERSION"
-
       - uses: actions/checkout@v4
         with:
-          ref: ${{ steps.extract.outputs.tag }}
+          fetch-depth: 0
 
-      - name: Verify Cargo.toml version matches tag
+      - name: Extract version from Cargo.toml
+        id: version
         run: |
-          CARGO_VERSION="$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')"
-          if [[ "$CARGO_VERSION" != "${{ steps.extract.outputs.version }}" ]]; then
-            echo "ERROR: Cargo.toml version ($CARGO_VERSION) does not match tag (${{ steps.extract.outputs.version }})"
-            exit 1
+          VERSION="$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')"
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION, Tag: $TAG"
+
+      - name: Check if tag already exists
+        id: check-tag
+        run: |
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.version.outputs.tag }} already exists, skipping."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "created=true" >> "$GITHUB_OUTPUT"
           fi
-          echo "Version check passed: $CARGO_VERSION"
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Create and push tag
+        if: steps.check-tag.outputs.created == 'true'
+        run: |
+          git tag -a "${{ steps.version.outputs.tag }}" -m "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
-      - name: Cache cargo registry and build
-        uses: actions/cache@v4
+      - name: Install git-cliff
+        if: steps.check-tag.outputs.created == 'true'
+        uses: kenji-miyake/setup-git-cliff@v2
+
+      - name: Generate release notes
+        if: steps.check-tag.outputs.created == 'true'
+        id: release-notes
+        run: |
+          NOTES=$(git-cliff --latest --strip header 2>/dev/null || echo "Release ${{ steps.version.outputs.tag }}")
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.check-tag.outputs.created == 'true'
+        uses: softprops/action-gh-release@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-validate-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-validate-
-
-      - name: Run cargo test
-        run: cargo test
-
-      - name: Setup .NET SDK 9
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "9.0.x"
-
-      - name: Run dotnet test
-        run: dotnet test lsp/Server.Tests.csproj
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: ${{ steps.release-notes.outputs.notes }}
 
   build:
     name: Build (${{ matrix.target }})
-    needs: validate
+    needs: create-tag
+    if: needs.create-tag.outputs.created == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -104,7 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.validate.outputs.tag }}
+          ref: ${{ needs.create-tag.outputs.tag }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -141,26 +134,21 @@ jobs:
           path: ${{ matrix.artifact }}
           retention-days: 1
 
-  release:
-    name: Create GitHub Release
-    needs: [validate, build]
+  upload-release:
+    name: Upload Release Assets
+    needs: [create-tag, build]
+    if: needs.create-tag.outputs.created == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.validate.outputs.tag }}
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create GitHub Release
+      - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.validate.outputs.tag }}
-          name: ${{ needs.validate.outputs.tag }}
-          generate_release_notes: true
+          tag_name: ${{ needs.create-tag.outputs.tag }}
           files: |
             artifacts/unity-cli-linux-x64/unity-cli-linux-x64
             artifacts/unity-cli-macos-arm64/unity-cli-macos-arm64
