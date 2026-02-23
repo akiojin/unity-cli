@@ -16,16 +16,16 @@ namespace UnityCliBridge.TestScenes
     {
         private const string MenuRoot = "Tools/Unity CLI/UI Tests/";
 
-        private const string ScenesFolder = "Assets/Scenes";
+        private const string ScenesFolder = "Assets/Scenes/Generated/UI";
 
         private const string UiTestRootFolder = "Assets/UnityCliUiTest";
         private const string UiToolkitFolder = "Assets/UnityCliUiTest/UITK";
         private const string UiToolkitUxmlPath = "Assets/UnityCliUiTest/UITK/UnityCli_UITK_Test.uxml";
         private const string UiToolkitPanelSettingsPath = "Assets/UnityCliUiTest/UITK/UnityCli_UITK_TestPanelSettings.asset";
 
-        private const string UGuiScenePath = "Assets/Scenes/UnityCli_UI_UGUI_TestScene.unity";
-        private const string UiToolkitScenePath = "Assets/Scenes/UnityCli_UI_UITK_TestScene.unity";
-        private const string ImguiScenePath = "Assets/Scenes/UnityCli_UI_IMGUI_TestScene.unity";
+        private const string UGuiScenePath = ScenesFolder + "/UnityCli_UI_UGUI_TestScene.unity";
+        private const string UiToolkitScenePath = ScenesFolder + "/UnityCli_UI_UITK_TestScene.unity";
+        private const string ImguiScenePath = ScenesFolder + "/UnityCli_UI_IMGUI_TestScene.unity";
 
         [MenuItem(MenuRoot + "Generate All UI Test Scenes")]
         private static void GenerateAllUiScenes()
@@ -286,4 +286,3 @@ namespace UnityCliBridge.TestScenes
         }
     }
 }
-

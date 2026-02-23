@@ -113,6 +113,12 @@ Generated E2E scenes are created under `UnityCliBridge/Assets/Scenes/Generated/E
 
 Logs on failure are saved to `/tmp/unity-cli-e2e-*.log`.
 
+### Scene Layout Policy
+
+- Stable tracked scenes stay in `UnityCliBridge/Assets/Scenes/` (`SampleScene` only).
+- Generated E2E scenes are created in `UnityCliBridge/Assets/Scenes/Generated/E2E/` and must not be committed.
+- UI manual test scenes (UGUI/UITK/IMGUI) are generated on demand via `Tools/Unity CLI/UI Tests/*` into `UnityCliBridge/Assets/Scenes/Generated/UI/`.
+
 ## CI Overview
 
 CI is defined in `.github/workflows/test.yml`.
@@ -306,6 +312,12 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 E2E で生成されるシーンは `UnityCliBridge/Assets/Scenes/Generated/E2E/` 配下に作成され、Git 追跡対象外です。
 
 失敗時はログが `/tmp/unity-cli-e2e-*.log` に保存されます。
+
+### シーン配置ポリシー
+
+- `UnityCliBridge/Assets/Scenes/` 直下は固定で追跡するシーン（`SampleScene` のみ）を配置する
+- E2E 生成シーンは `UnityCliBridge/Assets/Scenes/Generated/E2E/` に作成し、コミットしない
+- UI 手動検証シーン（UGUI/UITK/IMGUI）は `Tools/Unity CLI/UI Tests/*` で必要時に `UnityCliBridge/Assets/Scenes/Generated/UI/` へ生成する
 
 ## CI の概要
 
