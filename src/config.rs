@@ -14,16 +14,11 @@ const LEGACY_ENV_PREFIX: &str = concat!("UNITY_", "M", "CP_");
 pub enum UnitydMode {
     Off,
     Auto,
-    On,
 }
 
 impl UnitydMode {
     pub fn from_env() -> Self {
-        match read_env(&["UNITY_CLI_UNITYD"]).as_deref() {
-            Some("off") | Some("0") | Some("false") => Self::Off,
-            Some("on") | Some("1") | Some("true") => Self::On,
-            _ => Self::Auto,
-        }
+        Self::Auto
     }
 }
 
@@ -196,52 +191,19 @@ mod tests {
     }
 
     #[test]
-    fn unityd_mode_defaults_to_auto() {
+    fn unityd_mode_is_always_auto_without_env() {
         let _lock = ENV_LOCK.lock().unwrap();
         env::remove_var("UNITY_CLI_UNITYD");
         assert_eq!(UnitydMode::from_env(), UnitydMode::Auto);
     }
 
     #[test]
-    fn unityd_mode_off_from_env() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "off")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
-        });
-    }
-
-    #[test]
-    fn unityd_mode_on_from_env() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "on")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
-        });
-    }
-
-    #[test]
-    fn unityd_mode_false_means_off() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "false")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
-        });
-    }
-
-    #[test]
-    fn unityd_mode_true_means_on() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "true")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
-        });
-    }
-
-    #[test]
-    fn unityd_mode_zero_means_off() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "0")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
-        });
-    }
-
-    #[test]
-    fn unityd_mode_one_means_on() {
-        with_env_vars(&[("UNITY_CLI_UNITYD", "1")], || {
-            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
-        });
+    fn unityd_mode_ignores_env_values() {
+        for value in ["off", "on", "false", "true", "0", "1", "auto", "unexpected"] {
+            with_env_vars(&[("UNITY_CLI_UNITYD", value)], || {
+                assert_eq!(UnitydMode::from_env(), UnitydMode::Auto);
+            });
+        }
     }
 
     #[test]
