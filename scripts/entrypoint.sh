@@ -31,6 +31,7 @@ fi
 # GitHub CLI 認証（GITHUB_TOKEN が設定されている場合）
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     echo "$GITHUB_TOKEN" | gh auth login --with-token 2>/dev/null && \
+        gh auth setup-git && \
         echo "✅ GitHub CLI authenticated via GITHUB_TOKEN" || \
         echo "⚠️  GitHub CLI authentication failed"
 fi
