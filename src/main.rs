@@ -7,6 +7,7 @@ mod lsp_manager;
 mod lspd;
 mod tool_catalog;
 mod transport;
+mod unityd;
 
 use std::fs;
 use std::path::PathBuf;
@@ -18,9 +19,9 @@ use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
     Cli, Command, InstancesCommand, LspCommand, LspdCommand, OutputFormat, RawArgs, SceneCommand,
-    SystemCommand, ToolCommand,
+    SystemCommand, ToolCommand, UnitydCommand,
 };
-use crate::config::RuntimeConfig;
+use crate::config::{RuntimeConfig, UnitydMode};
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{is_known_tool, TOOL_NAMES};
 use crate::transport::UnityClient;
@@ -162,6 +163,27 @@ async fn run() -> Result<()> {
                 lspd::serve_forever()?;
             }
         },
+        Command::Unityd { command } => match command {
+            UnitydCommand::Start => {
+                let value = unityd::start_background()?;
+                print_value(&value, cli.output)?;
+            }
+            UnitydCommand::Stop => {
+                let value = unityd::stop()?;
+                print_value(&value, cli.output)?;
+            }
+            UnitydCommand::Status => {
+                let value = unityd::status()?;
+                print_value(&value, cli.output)?;
+            }
+            UnitydCommand::Serve => {
+                unityd::serve_forever().await?;
+            }
+        },
+        Command::Batch { json, stdin } => {
+            let value = execute_batch(&cli, json.as_deref(), *stdin).await?;
+            print_value(&value, cli.output)?;
+        }
     }
 
     Ok(())
@@ -178,6 +200,17 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
     }
 
     let config = RuntimeConfig::from_cli(cli)?;
+
+    // Try daemon first (fast path)
+    if config.unityd_mode != UnitydMode::Off {
+        match unityd::try_call_tool(tool_name, &params, &config).await {
+            Ok(value) => return Ok(value),
+            Err(error) if config.unityd_mode == UnitydMode::Auto && error.is_transport() => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+
+    // Direct TCP fallback
     let mut client = UnityClient::connect(&config).await.with_context(|| {
         format!(
             "Failed to connect to Unity at {}:{}",
@@ -185,6 +218,66 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
         )
     })?;
     client.call_tool(tool_name, params).await
+}
+
+async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Result<Value> {
+    let raw = if use_stdin {
+        let mut buf = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut buf)
+            .context("Failed to read batch JSON from stdin")?;
+        buf
+    } else if let Some(inline) = json_str {
+        inline.to_string()
+    } else {
+        return Err(anyhow!("Provide --json or --stdin for batch input"));
+    };
+
+    let commands: Vec<unityd::BatchItem> =
+        serde_json::from_str(&raw).context("Batch input must be a JSON array of {tool, params}")?;
+
+    if commands.is_empty() {
+        return Ok(json!([]));
+    }
+
+    let config = RuntimeConfig::from_cli(cli)?;
+
+    // Try daemon first
+    if config.unityd_mode != UnitydMode::Off {
+        match unityd::try_batch(commands, &config).await {
+            Ok(value) => return Ok(value),
+            Err(error) if config.unityd_mode == UnitydMode::Auto && error.is_transport() => {
+                // Cannot retry easily since commands were moved; re-parse
+                let commands2: Vec<unityd::BatchItem> = serde_json::from_str(&raw)
+                    .context("Batch input must be a JSON array of {tool, params}")?;
+                return execute_batch_direct(&config, commands2).await;
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+
+    execute_batch_direct(&config, commands).await
+}
+
+async fn execute_batch_direct(
+    config: &RuntimeConfig,
+    commands: Vec<unityd::BatchItem>,
+) -> Result<Value> {
+    let mut client = UnityClient::connect(config).await.with_context(|| {
+        format!(
+            "Failed to connect to Unity at {}:{}",
+            config.host, config.port
+        )
+    })?;
+
+    let mut results = Vec::with_capacity(commands.len());
+    for item in commands {
+        match client.call_tool(&item.tool, item.params).await {
+            Ok(value) => results.push(json!({ "ok": true, "result": value })),
+            Err(error) => results.push(json!({ "ok": false, "error": error.to_string() })),
+        }
+    }
+
+    Ok(Value::Array(results))
 }
 
 fn load_params(args: &RawArgs) -> Result<Value> {

@@ -268,7 +268,11 @@ fn request(request: DaemonRequest) -> Result<DaemonResponse> {
         payload.as_bytes(),
         "Failed to write daemon request",
     )?;
-    write_all_with_retry(&mut stream, b"\n", "Failed to write daemon request terminator")?;
+    write_all_with_retry(
+        &mut stream,
+        b"\n",
+        "Failed to write daemon request terminator",
+    )?;
     stream.flush().context("Failed to flush daemon request")?;
 
     let mut reader = BufReader::new(stream);
@@ -301,12 +305,12 @@ fn handle_stream(stream: &mut ServerStream) -> Result<ConnectionAction> {
     let (response, action) = handle_request(request)?;
     let payload =
         serde_json::to_string(&response).context("Failed to serialize daemon response payload")?;
-    write_all_with_retry(stream, payload.as_bytes(), "Failed to write daemon response")?;
     write_all_with_retry(
         stream,
-        b"\n",
-        "Failed to write daemon response terminator",
+        payload.as_bytes(),
+        "Failed to write daemon response",
     )?;
+    write_all_with_retry(stream, b"\n", "Failed to write daemon response terminator")?;
     stream.flush().context("Failed to flush daemon response")?;
     Ok(action)
 }
@@ -501,8 +505,7 @@ mod tests {
     #[test]
     fn write_all_with_retry_rejects_zero_byte_progress() {
         let mut writer = ZeroWriter;
-        let error =
-            write_all_with_retry(&mut writer, b"abc", "zero write").expect_err("must fail");
+        let error = write_all_with_retry(&mut writer, b"abc", "zero write").expect_err("must fail");
         assert!(error.to_string().contains("write returned 0 bytes"));
     }
 }

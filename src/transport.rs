@@ -250,6 +250,7 @@ mod tests {
             host: "127.0.0.1".to_string(),
             port,
             timeout: Duration::from_millis(500),
+            unityd_mode: crate::config::UnitydMode::Off,
         };
         let mut client = UnityClient::connect(&config)
             .await
@@ -280,6 +281,7 @@ mod tests {
             host: "127.0.0.1".to_string(),
             port,
             timeout: Duration::from_millis(500),
+            unityd_mode: crate::config::UnitydMode::Off,
         };
         let mut client = UnityClient::connect(&config)
             .await

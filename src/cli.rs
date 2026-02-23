@@ -63,6 +63,16 @@ pub enum Command {
         #[command(subcommand)]
         command: LspdCommand,
     },
+    Unityd {
+        #[command(subcommand)]
+        command: UnitydCommand,
+    },
+    Batch {
+        #[arg(long, value_name = "JSON")]
+        json: Option<String>,
+        #[arg(long)]
+        stdin: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -136,6 +146,15 @@ pub enum LspCommand {
 
 #[derive(Debug, Subcommand)]
 pub enum LspdCommand {
+    Start,
+    Stop,
+    Status,
+    #[command(hide = true)]
+    Serve,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UnitydCommand {
     Start,
     Stop,
     Status,
