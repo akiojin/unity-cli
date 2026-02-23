@@ -23,7 +23,7 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 - `Editor/`: CLI コマンドハンドラやエディタロジック。
 - `Tests/`: エディタ用テスト。
-- `docs/`: ドキュメント（英語 README と日本語 README を含む）。
+- `README.md` / `README.ja.md`: パッケージ概要と利用方法。
 
 ## ライセンス
 

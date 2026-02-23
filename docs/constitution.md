@@ -53,6 +53,43 @@
 - 憲章は実装より優先される
 - 例外は仕様書に理由を明記して承認を得る
 
+## 憲章更新チェックリスト
+
+憲章を更新した場合は、以下を必ず同期する。
+
+### 更新対象（必須）
+
+- `docs/constitution.md`（正本）
+- `.specify/memory/constitution.md`（Spec Kit用ミラー）
+- `CLAUDE.md`（参照先・運用ルール）
+- `README.md`（導線・配布説明）
+- `templates/plan-template.md`
+- `.specify/templates/plan-template.md`
+- `.claude/commands/speckit.plan.md`
+- `.claude/commands/speckit.analyze.md`
+- `.claude/commands/speckit.constitution.md`
+
+### 仕様テンプレに影響がある場合
+
+- `.specify/templates/spec-template.md`
+- `.specify/templates/tasks-template.md`
+- `templates/spec-template.md`
+- `templates/tasks-template.md`
+
+### バリデーション
+
+```bash
+# 憲章ミラー同期
+bash scripts/sync-constitution.sh
+bash scripts/sync-constitution.sh --check
+
+# 古い参照の確認
+rg -n "(^|\\s)/memory/constitution\\.md" -S --hidden .
+rg -n "(^|\\s)memory/constitution\\.md" -S --hidden .
+```
+
+更新時は、`docs/constitution.md` の version / 日付、および plan-template フッターの version を一致させる。
+
 **バージョン**: 2.0.0  
 **制定日**: 2025-10-17  
 **最終改定**: 2026-02-17
