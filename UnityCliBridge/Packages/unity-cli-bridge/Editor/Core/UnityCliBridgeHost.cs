@@ -438,25 +438,36 @@ namespace UnityCliBridge.Core
         }
         
         /// <summary>
-        /// Processes queued commands on the Unity main thread
+        /// Processes queued commands on the Unity main thread.
+        /// Drains all queued commands within a single frame for lower latency.
         /// </summary>
-        private static void ProcessCommandQueue()
+        private static async void ProcessCommandQueue()
         {
             if (isProcessingCommand) return;
-            (Command command, TcpClient client) item;
-            lock (queueLock)
+            isProcessingCommand = true;
+            try
             {
-                if (commandQueue.Count == 0) return;
-                item = commandQueue.Dequeue();
-                isProcessingCommand = true;
+                while (true)
+                {
+                    (Command command, TcpClient client) item;
+                    lock (queueLock)
+                    {
+                        if (commandQueue.Count == 0) break;
+                        item = commandQueue.Dequeue();
+                    }
+                    await ProcessCommandInternal(item.command, item.client);
+                }
             }
-            ProcessCommand(item.command, item.client);
+            finally
+            {
+                isProcessingCommand = false;
+            }
         }
         
         /// <summary>
         /// Processes a single command
         /// </summary>
-        private static async void ProcessCommand(Command command, TcpClient client)
+        private static async Task ProcessCommandInternal(Command command, TcpClient client)
         {
             NetworkStream responseStream = null;
             try
@@ -1017,7 +1028,6 @@ namespace UnityCliBridge.Core
             }
             finally
             {
-                isProcessingCommand = false;
             }
         }
 
