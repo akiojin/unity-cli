@@ -21,7 +21,7 @@ use crate::cli::{
     Cli, Command, InstancesCommand, LspCommand, LspdCommand, OutputFormat, RawArgs, SceneCommand,
     SystemCommand, ToolCommand, UnitydCommand,
 };
-use crate::config::{RuntimeConfig, UnitydMode};
+use crate::config::RuntimeConfig;
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{is_known_tool, TOOL_NAMES};
 use crate::transport::UnityClient;
@@ -201,13 +201,11 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
 
     let config = RuntimeConfig::from_cli(cli)?;
 
-    // Try daemon first (fast path)
-    if config.unityd_mode != UnitydMode::Off {
-        match unityd::try_call_tool(tool_name, &params, &config).await {
-            Ok(value) => return Ok(value),
-            Err(error) if config.unityd_mode == UnitydMode::Auto && error.is_transport() => {}
-            Err(error) => return Err(error.into()),
-        }
+    // Try daemon first (fast path).
+    match unityd::try_call_tool(tool_name, &params, &config).await {
+        Ok(value) => return Ok(value),
+        Err(error) if error.is_transport() => {}
+        Err(error) => return Err(error.into()),
     }
 
     // Direct TCP fallback
@@ -241,21 +239,17 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 
     let config = RuntimeConfig::from_cli(cli)?;
 
-    // Try daemon first
-    if config.unityd_mode != UnitydMode::Off {
-        match unityd::try_batch(commands, &config).await {
-            Ok(value) => return Ok(value),
-            Err(error) if config.unityd_mode == UnitydMode::Auto && error.is_transport() => {
-                // Cannot retry easily since commands were moved; re-parse
-                let commands2: Vec<unityd::BatchItem> = serde_json::from_str(&raw)
-                    .context("Batch input must be a JSON array of {tool, params}")?;
-                return execute_batch_direct(&config, commands2).await;
-            }
-            Err(error) => return Err(error.into()),
+    // Try daemon first.
+    match unityd::try_batch(commands, &config).await {
+        Ok(value) => return Ok(value),
+        Err(error) if error.is_transport() => {
+            // Cannot retry easily since commands were moved; re-parse.
+            let commands2: Vec<unityd::BatchItem> = serde_json::from_str(&raw)
+                .context("Batch input must be a JSON array of {tool, params}")?;
+            return execute_batch_direct(&config, commands2).await;
         }
+        Err(error) => return Err(error.into()),
     }
-
-    execute_batch_direct(&config, commands).await
 }
 
 async fn execute_batch_direct(

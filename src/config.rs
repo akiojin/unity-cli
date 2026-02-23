@@ -9,25 +9,11 @@ const DEFAULT_HOST: &str = "localhost";
 const DEFAULT_PORT: u16 = 6400;
 const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 const LEGACY_ENV_PREFIX: &str = concat!("UNITY_", "M", "CP_");
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnitydMode {
-    Off,
-    Auto,
-}
-
-impl UnitydMode {
-    pub fn from_env() -> Self {
-        Self::Auto
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct RuntimeConfig {
     pub host: String,
     pub port: u16,
     pub timeout: Duration,
-    pub unityd_mode: UnitydMode,
 }
 
 impl RuntimeConfig {
@@ -42,7 +28,6 @@ impl RuntimeConfig {
             host,
             port,
             timeout: Duration::from_millis(timeout_ms),
-            unityd_mode: UnitydMode::from_env(),
         })
     }
 }
@@ -60,6 +45,12 @@ fn default_timeout_ms() -> u64 {
 }
 
 fn fail_if_legacy_env_set() -> Result<()> {
+    if env::var_os("UNITY_CLI_UNITYD").is_some() {
+        bail!(
+            "Environment variable 'UNITY_CLI_UNITYD' has been removed. unityd is now always auto-managed."
+        );
+    }
+
     for (key, _) in env::vars_os() {
         if let Some(key_str) = key.to_str() {
             if key_str.starts_with(LEGACY_ENV_PREFIX) {
@@ -191,22 +182,6 @@ mod tests {
     }
 
     #[test]
-    fn unityd_mode_is_always_auto_without_env() {
-        let _lock = ENV_LOCK.lock().unwrap();
-        env::remove_var("UNITY_CLI_UNITYD");
-        assert_eq!(UnitydMode::from_env(), UnitydMode::Auto);
-    }
-
-    #[test]
-    fn unityd_mode_ignores_env_values() {
-        for value in ["off", "on", "false", "true", "0", "1", "auto", "unexpected"] {
-            with_env_vars(&[("UNITY_CLI_UNITYD", value)], || {
-                assert_eq!(UnitydMode::from_env(), UnitydMode::Auto);
-            });
-        }
-    }
-
-    #[test]
     fn fails_when_legacy_alias_is_set() {
         let legacy_key = concat!("UNITY_", "M", "CP_", "TEST_KEY");
         let _lock = ENV_LOCK.lock().unwrap();
@@ -223,5 +198,14 @@ mod tests {
         assert!(err.to_string().contains("UNITY_CLI_*"));
 
         env::remove_var(legacy_key);
+    }
+
+    #[test]
+    fn fails_when_removed_unityd_env_is_set() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "off")], || {
+            let err = fail_if_legacy_env_set().expect_err("removed env should be rejected");
+            assert!(err.to_string().contains("UNITY_CLI_UNITYD"));
+            assert!(err.to_string().contains("removed"));
+        });
     }
 }

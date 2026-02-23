@@ -8,6 +8,7 @@
 |----------|------|
 | [architecture.md](./architecture.md) | 現行アーキテクチャの概要・コンポーネント構成 |
 | [migration-notes.md](./migration-notes.md) | 旧 `unity-mcp-server`（Node.js）からの移行記録 |
+| [perf/README.md](./perf/README.md) | LSP性能履歴（速度・サイズ・トークン） |
 
 ## 経緯
 

@@ -247,7 +247,7 @@ cargo test                              # Rust tests
 dotnet test lsp/Server.Tests.csproj     # LSP tests
 ./scripts/e2e-test.sh                   # Unity E2E (requires running Unity Editor)
 ./scripts/e2e-all-tools.sh              # Full 101-tool E2E (+ LSP perf check)
-./scripts/lsp-perf-check.sh             # LSP perf (small + large file) + threshold check
+./scripts/lsp-perf-check.sh             # LSP perf + size/token metrics + history append
 ./scripts/benchmark.sh                  # Performance benchmarks
 ```
 
@@ -280,6 +280,7 @@ See [RELEASE.md](RELEASE.md) for the full release guide.
 | `UNITY_CLI_TOOLS_ROOT` | Downloaded tools root directory | OS default |
 
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only. See [docs/development.md](docs/development.md).
+`UNITY_CLI_UNITYD` has been removed; unityd is always auto-managed.
 
 ## Output Modes
 

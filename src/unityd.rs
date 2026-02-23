@@ -90,7 +90,6 @@ impl ConnectionPool {
                 host: host.to_string(),
                 port,
                 timeout,
-                unityd_mode: crate::config::UnitydMode::Off,
             };
             let client = UnityClient::connect(&config).await?;
             self.connections.insert(key.clone(), client);

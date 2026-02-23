@@ -19,6 +19,7 @@ This document covers internal development workflow for `unity-cli`.
 | Rust toolchain (stable) | latest | CLI build and test |
 | .NET SDK | 9.0 | LSP server build and test |
 | Unity Editor | 2022.3+ | E2E tests (requires live connection) |
+| Python + `tiktoken` | 3.9+ | LSP perf token measurement (`scripts/lsp-perf-check.sh`) |
 
 ### Installation
 
@@ -75,6 +76,7 @@ Unity setting path: `Edit -> Project Settings -> Unity CLI Bridge`
 - `Apply & Restart`: restarts Unity listener
 
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
+`UNITY_CLI_UNITYD` has been removed; unityd is always auto-managed.
 
 ## Tool Invocation & Discovery
 
@@ -182,7 +184,7 @@ scripts/e2e-all-tools.sh
 # Full coverage E2E with custom host/port
 scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
-# LSP perf check only (small + large files)
+# LSP perf check only (full case set + size/token metrics + history append)
 scripts/lsp-perf-check.sh
 ```
 
@@ -257,9 +259,10 @@ CI is defined in `.github/workflows/test.yml`.
 | ----- | --------- | ------------- |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
+| LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh` (full cases + history artifact) |
 | Unity E2E Tests | manual (`workflow_dispatch`) | E2E test script |
 
-Rust Tests and LSP Tests are required checks for PR merges.
+Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
 E2E Tests are manual-only and require a runner with Unity Editor.
 
 ## Capability Catalog
@@ -298,24 +301,19 @@ These are guidance values and vary by host:
 # JSON for CI/storage
 ./scripts/benchmark.sh --json
 
-# LSP perf measurement with thresholds
+# LSP perf measurement with thresholds + size/token metrics
 ./scripts/lsp-perf-check.sh
 
-# Tighter/faster run example
-UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
-
-# Large-file threshold override example
-UNITY_CLI_LSP_PERF_GET_SYMBOLS_GIGA_MS=10000 ./scripts/lsp-perf-check.sh --runs 3
-
-# Skip large-file checks (quick local loop)
-./scripts/lsp-perf-check.sh --skip-large --runs 3
+# Stored history file
+cat specs/perf/lsp-history.jsonl | tail -n 5
 ```
 
 Regression policy:
 
 1. Track JSON outputs over time.
-2. Flag regression when `help` or `tool_list` mean increases by 20%+ versus prior baseline.
-3. Exclude `system ping` from strict regression gate (depends on Unity availability and machine/network state).
+2. Keep `specs/perf/lsp-history.jsonl` as append-only history.
+3. Use recorded trends as baseline comparison input.
+4. Exclude `system ping` from strict regression gate (depends on Unity availability and machine/network state).
 
 ## Speckit Upgrade Runbook
 
@@ -438,6 +436,7 @@ The Unity-side codebase uses `unity-mcp-server` as its base copy. Differences ar
 | Rust toolchain (stable) | latest | CLI 本体のビルド・テスト |
 | .NET SDK | 9.0 | LSP サーバーのビルド・テスト |
 | Unity Editor | 2022.3+ | E2E テスト (実機接続が必要) |
+| Python + `tiktoken` | 3.9+ | LSP 性能計測時のトークン算出（`scripts/lsp-perf-check.sh`） |
 
 ### インストール
 
@@ -494,6 +493,7 @@ Unity 側設定: `Edit -> Project Settings -> Unity CLI Bridge`
 - `Apply & Restart`: Unity 側リスナー再起動
 
 旧 MCP プレフィックス環境変数は未サポートです。`UNITY_CLI_*` のみ使用してください。
+`UNITY_CLI_UNITYD` は廃止済みで、unityd は常時自動管理です。
 
 ## ツール呼び出しと探索
 
@@ -599,7 +599,7 @@ scripts/e2e-all-tools.sh
 # 全機能E2E（ホスト・ポート指定）
 scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
-# LSP性能チェックのみ（小/大ファイル）
+# LSP性能チェックのみ（全ケース + サイズ/トークン計測 + 履歴追記）
 scripts/lsp-perf-check.sh
 ```
 
@@ -674,9 +674,10 @@ CI は `.github/workflows/test.yml` で定義されています。
 | -------- | --------- | ------ |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
+| LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact） |
 | Unity E2E Tests | 手動 (`workflow_dispatch`) | E2E テストスクリプトの実行 |
 
-Rust Tests と LSP Tests は PR マージの必須チェックです。
+Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
 E2E Tests は手動トリガーのみで、Unity Editor が起動しているランナーが必要です。
 
 ## 機能カタログ
@@ -715,24 +716,19 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 # CI・保存向けJSON
 ./scripts/benchmark.sh --json
 
-# LSP性能計測 + 閾値チェック
+# LSP性能計測 + 閾値チェック + サイズ/トークン計測
 ./scripts/lsp-perf-check.sh
 
-# 閾値を上書きして短縮実行
-UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
-
-# 大容量ファイルの閾値を上書き
-UNITY_CLI_LSP_PERF_GET_SYMBOLS_GIGA_MS=10000 ./scripts/lsp-perf-check.sh --runs 3
-
-# 大容量チェックを省略（ローカル高速確認）
-./scripts/lsp-perf-check.sh --skip-large --runs 3
+# 保存済み履歴の確認
+cat specs/perf/lsp-history.jsonl | tail -n 5
 ```
 
 回帰判定方針:
 
 1. JSON 結果を継続保存する
-2. `help` / `tool_list` の平均値が前回比 20% 以上悪化で回帰候補とする
-3. `system ping` は Unity の可用性に依存するため厳密ゲートには含めない
+2. `specs/perf/lsp-history.jsonl` を追記履歴として維持する
+3. 履歴トレンドをベースライン比較に利用する
+4. `system ping` は Unity の可用性に依存するため厳密ゲートには含めない
 
 ## Speckit 更新手順（要約）
 

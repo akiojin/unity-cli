@@ -44,6 +44,58 @@ jobs:
       - name: Run dotnet test
         run: dotnet test lsp/Server.Tests.csproj
 
+  lsp-perf:
+    name: LSP Performance (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install perf dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          python3 -m pip install tiktoken
+
+      - name: Build unity-cli
+        run: cargo build --release
+
+      - name: Install LSP binary
+        run: ./target/release/unity-cli lsp install --output json
+
+      - name: Run LSP performance check
+        run: |
+          mkdir -p artifacts
+          ./scripts/lsp-perf-check.sh --unity-cli ./target/release/unity-cli --project-root ./UnityCliBridge --json | tee artifacts/lsp-perf-summary.json
+          cp specs/perf/lsp-history.jsonl artifacts/lsp-history.jsonl
+
+      - name: Upload LSP perf artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsp-perf-history
+          path: |
+            artifacts/lsp-perf-summary.json
+            artifacts/lsp-history.jsonl
+          retention-days: 30
+
   unity-e2e:
     name: Unity E2E Tests
     runs-on: ubuntu-latest
