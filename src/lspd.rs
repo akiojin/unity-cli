@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::ErrorKind;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -158,6 +159,9 @@ pub fn serve_forever() -> Result<()> {
     loop {
         match listener.accept() {
             Ok((mut stream, _)) => {
+                stream
+                    .set_nonblocking(false)
+                    .context("Failed to configure blocking daemon stream")?;
                 last_activity = Instant::now();
                 let action = handle_stream(&mut stream)?;
                 if matches!(action, ConnectionAction::Stop) {
@@ -259,12 +263,16 @@ fn request(request: DaemonRequest) -> Result<DaemonResponse> {
     let mut stream = connect_client()?;
     let payload =
         serde_json::to_string(&request).context("Failed to serialize daemon request payload")?;
-    stream
-        .write_all(payload.as_bytes())
-        .context("Failed to write daemon request")?;
-    stream
-        .write_all(b"\n")
-        .context("Failed to write daemon request terminator")?;
+    write_all_with_retry(
+        &mut stream,
+        payload.as_bytes(),
+        "Failed to write daemon request",
+    )?;
+    write_all_with_retry(
+        &mut stream,
+        b"\n",
+        "Failed to write daemon request terminator",
+    )?;
     stream.flush().context("Failed to flush daemon request")?;
 
     let mut reader = BufReader::new(stream);
@@ -297,14 +305,37 @@ fn handle_stream(stream: &mut ServerStream) -> Result<ConnectionAction> {
     let (response, action) = handle_request(request)?;
     let payload =
         serde_json::to_string(&response).context("Failed to serialize daemon response payload")?;
-    stream
-        .write_all(payload.as_bytes())
-        .context("Failed to write daemon response")?;
-    stream
-        .write_all(b"\n")
-        .context("Failed to write daemon response terminator")?;
+    write_all_with_retry(
+        stream,
+        payload.as_bytes(),
+        "Failed to write daemon response",
+    )?;
+    write_all_with_retry(stream, b"\n", "Failed to write daemon response terminator")?;
     stream.flush().context("Failed to flush daemon response")?;
     Ok(action)
+}
+
+fn write_all_with_retry<W: Write>(writer: &mut W, mut data: &[u8], context: &str) -> Result<()> {
+    while !data.is_empty() {
+        match writer.write(data) {
+            Ok(0) => {
+                return Err(anyhow!("{context}: write returned 0 bytes"));
+            }
+            Ok(written) => {
+                data = &data[written..];
+            }
+            Err(error)
+                if error.kind() == ErrorKind::WouldBlock
+                    || error.kind() == ErrorKind::Interrupted =>
+            {
+                thread::sleep(Duration::from_millis(1));
+            }
+            Err(error) => {
+                return Err(error).with_context(|| context.to_string());
+            }
+        }
+    }
+    Ok(())
 }
 
 #[cfg(unix)]
@@ -413,5 +444,68 @@ fn cleanup_stale_files() {
         if let Ok(path) = socket_path() {
             let _ = fs::remove_file(path);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::write_all_with_retry;
+    use std::io::{self, Write};
+
+    struct FlakyWriter {
+        out: Vec<u8>,
+        writes: usize,
+    }
+
+    impl FlakyWriter {
+        fn new() -> Self {
+            Self {
+                out: Vec::new(),
+                writes: 0,
+            }
+        }
+    }
+
+    impl Write for FlakyWriter {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.writes += 1;
+            if self.writes % 2 == 1 {
+                return Err(io::Error::new(io::ErrorKind::WouldBlock, "simulated"));
+            }
+            let n = buf.len().min(7);
+            self.out.extend_from_slice(&buf[..n]);
+            Ok(n)
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    struct ZeroWriter;
+
+    impl Write for ZeroWriter {
+        fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
+            Ok(0)
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn write_all_with_retry_handles_would_block_and_partial_writes() {
+        let mut writer = FlakyWriter::new();
+        let payload = vec![b'x'; 256];
+        write_all_with_retry(&mut writer, &payload, "test write").expect("write should succeed");
+        assert_eq!(writer.out, payload);
+    }
+
+    #[test]
+    fn write_all_with_retry_rejects_zero_byte_progress() {
+        let mut writer = ZeroWriter;
+        let error = write_all_with_retry(&mut writer, b"abc", "zero write").expect_err("must fail");
+        assert!(error.to_string().contains("write returned 0 bytes"));
     }
 }
