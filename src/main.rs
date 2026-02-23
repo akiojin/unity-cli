@@ -241,14 +241,14 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 
     // Try daemon first.
     match unityd::try_batch(commands, &config).await {
-        Ok(value) => return Ok(value),
+        Ok(value) => Ok(value),
         Err(error) if error.is_transport() => {
             // Cannot retry easily since commands were moved; re-parse.
             let commands2: Vec<unityd::BatchItem> = serde_json::from_str(&raw)
                 .context("Batch input must be a JSON array of {tool, params}")?;
-            return execute_batch_direct(&config, commands2).await;
+            execute_batch_direct(&config, commands2).await
         }
-        Err(error) => return Err(error.into()),
+        Err(error) => Err(error.into()),
     }
 }
 
