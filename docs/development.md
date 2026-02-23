@@ -57,6 +57,7 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 | `UNITY_CLI_PORT` | `6400` | Unity TCP listener port |
 | `UNITY_CLI_TIMEOUT_MS` | `30000` | Command timeout (ms) |
 | `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
+| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` | `600` | Daemon idle timeout (seconds) |
 | `UNITY_CLI_TOOLS_ROOT` | platform default | Root directory for downloaded tools |
 
 Minimal setup:
@@ -90,6 +91,8 @@ Typed examples:
 - `unity-cli instances set-active --name "<instance>"`
 - `unity-cli tool list`
 - `unity-cli tool call <tool_name> --json '{...}'`
+- `unity-cli unityd start` / `stop` / `status`
+- `unity-cli batch --json '[{"tool":"ping","params":{}},{"tool":"get_editor_state","params":{}}]'`
 
 Raw example:
 
@@ -283,6 +286,8 @@ These are guidance values and vary by host:
 | `unity-cli --help` | ~2-5 ms | Local startup only |
 | `unity-cli tool list` | ~2-5 ms | Local list generation |
 | `unity-cli system ping` | ~10-50 ms | Requires running Unity Editor |
+| `unity-cli system ping` (via unityd) | ~5-20 ms | Daemon keeps TCP connection open |
+| `unity-cli batch` (5 commands) | ~25-100 ms | Single IPC round-trip via daemon |
 
 ### Run
 
@@ -471,6 +476,7 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 | `UNITY_CLI_PORT` | `6400` | Unity TCP リスナーのポート |
 | `UNITY_CLI_TIMEOUT_MS` | `30000` | コマンドタイムアウト (ms) |
 | `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
+| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` | `600` | デーモンアイドルタイムアウト（秒） |
 | `UNITY_CLI_TOOLS_ROOT` | OS依存既定 | ツール配置ルート |
 
 最小設定:
@@ -504,6 +510,8 @@ typed 例:
 - `unity-cli instances set-active --name "<instance>"`
 - `unity-cli tool list`
 - `unity-cli tool call <tool_name> --json '{...}'`
+- `unity-cli unityd start` / `stop` / `status`
+- `unity-cli batch --json '[{"tool":"ping","params":{}},{"tool":"get_editor_state","params":{}}]'`
 
 raw 例:
 
@@ -695,6 +703,8 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 | `unity-cli --help` | ~2-5 ms | ローカル起動時間のみ |
 | `unity-cli tool list` | ~2-5 ms | ローカル一覧生成 |
 | `unity-cli system ping` | ~10-50 ms | Unity Editor 起動時のみ |
+| `unity-cli system ping` (unityd経由) | ~5-20 ms | デーモンがTCP接続を保持 |
+| `unity-cli batch` (5コマンド) | ~25-100 ms | デーモン経由の単一IPCラウンドトリップ |
 
 ### 実行
 

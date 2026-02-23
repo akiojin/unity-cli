@@ -41,3 +41,8 @@ ureq = { version = "2.12", features = ["json"] }
 
 [dev-dependencies]
 tempfile = "3.23"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
