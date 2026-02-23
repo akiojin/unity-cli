@@ -170,11 +170,17 @@ E2E tests require a running Unity Editor with TCP server active.
 # Build
 cargo build --release
 
-# Default (127.0.0.1:8080)
+# Smoke E2E (default 127.0.0.1:6400)
 scripts/e2e-test.sh
 
-# Custom host and port
-scripts/e2e-test.sh --host 192.168.1.10 --port 9090
+# Full coverage E2E (all tools + LSP perf check)
+scripts/e2e-all-tools.sh
+
+# Full coverage E2E with custom host/port
+scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
+
+# LSP perf check only
+scripts/lsp-perf-check.sh
 ```
 
 ### Test Scenarios
@@ -286,6 +292,12 @@ These are guidance values and vary by host:
 
 # JSON for CI/storage
 ./scripts/benchmark.sh --json
+
+# LSP perf measurement with thresholds
+./scripts/lsp-perf-check.sh
+
+# Tighter/faster run example
+UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
 ```
 
 Regression policy:
@@ -564,11 +576,17 @@ E2E テストは Unity Editor が起動している環境で実行します。
 # ビルド
 cargo build --release
 
-# デフォルト (127.0.0.1:8080)
+# スモークE2E（デフォルト 127.0.0.1:6400）
 scripts/e2e-test.sh
 
-# ホスト・ポートを指定
-scripts/e2e-test.sh --host 192.168.1.10 --port 9090
+# 全機能E2E（全ツール + LSP性能チェック）
+scripts/e2e-all-tools.sh
+
+# 全機能E2E（ホスト・ポート指定）
+scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
+
+# LSP性能チェックのみ
+scripts/lsp-perf-check.sh
 ```
 
 ### テストシナリオ
@@ -680,6 +698,12 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 # CI・保存向けJSON
 ./scripts/benchmark.sh --json
+
+# LSP性能計測 + 閾値チェック
+./scripts/lsp-perf-check.sh
+
+# 閾値を上書きして短縮実行
+UNITY_CLI_LSP_PERF_FIND_SYMBOL_MS=3000 ./scripts/lsp-perf-check.sh --runs 3
 ```
 
 回帰判定方針:
