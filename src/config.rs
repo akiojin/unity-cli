@@ -10,11 +10,29 @@ const DEFAULT_PORT: u16 = 6400;
 const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 const LEGACY_ENV_PREFIX: &str = concat!("UNITY_", "M", "CP_");
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnitydMode {
+    Off,
+    Auto,
+    On,
+}
+
+impl UnitydMode {
+    pub fn from_env() -> Self {
+        match read_env(&["UNITY_CLI_UNITYD"]).as_deref() {
+            Some("off") | Some("0") | Some("false") => Self::Off,
+            Some("on") | Some("1") | Some("true") => Self::On,
+            _ => Self::Auto,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct RuntimeConfig {
     pub host: String,
     pub port: u16,
     pub timeout: Duration,
+    pub unityd_mode: UnitydMode,
 }
 
 impl RuntimeConfig {
@@ -29,6 +47,7 @@ impl RuntimeConfig {
             host,
             port,
             timeout: Duration::from_millis(timeout_ms),
+            unityd_mode: UnitydMode::from_env(),
         })
     }
 }
@@ -177,22 +196,70 @@ mod tests {
     }
 
     #[test]
+    fn unityd_mode_defaults_to_auto() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        env::remove_var("UNITY_CLI_UNITYD");
+        assert_eq!(UnitydMode::from_env(), UnitydMode::Auto);
+    }
+
+    #[test]
+    fn unityd_mode_off_from_env() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "off")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
+        });
+    }
+
+    #[test]
+    fn unityd_mode_on_from_env() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "on")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
+        });
+    }
+
+    #[test]
+    fn unityd_mode_false_means_off() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "false")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
+        });
+    }
+
+    #[test]
+    fn unityd_mode_true_means_on() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "true")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
+        });
+    }
+
+    #[test]
+    fn unityd_mode_zero_means_off() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "0")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::Off);
+        });
+    }
+
+    #[test]
+    fn unityd_mode_one_means_on() {
+        with_env_vars(&[("UNITY_CLI_UNITYD", "1")], || {
+            assert_eq!(UnitydMode::from_env(), UnitydMode::On);
+        });
+    }
+
+    #[test]
     fn fails_when_legacy_alias_is_set() {
-        for legacy_key in [concat!("UNITY_", "M", "CP_", "TEST_KEY")] {
-            let _lock = ENV_LOCK.lock().unwrap();
-            env::remove_var("UNITY_CLI_HOST");
-            env::remove_var("UNITY_CLI_PORT");
-            env::remove_var("UNITY_CLI_TIMEOUT_MS");
-            env::set_var(legacy_key, "legacy-value");
+        let legacy_key = concat!("UNITY_", "M", "CP_", "TEST_KEY");
+        let _lock = ENV_LOCK.lock().unwrap();
+        env::remove_var("UNITY_CLI_HOST");
+        env::remove_var("UNITY_CLI_PORT");
+        env::remove_var("UNITY_CLI_TIMEOUT_MS");
+        env::set_var(legacy_key, "legacy-value");
 
-            let err = fail_if_legacy_env_set().expect_err("legacy env should be rejected");
-            assert!(
-                err.to_string().contains(legacy_key),
-                "error should mention legacy key"
-            );
-            assert!(err.to_string().contains("UNITY_CLI_*"));
+        let err = fail_if_legacy_env_set().expect_err("legacy env should be rejected");
+        assert!(
+            err.to_string().contains(legacy_key),
+            "error should mention legacy key"
+        );
+        assert!(err.to_string().contains("UNITY_CLI_*"));
 
-            env::remove_var(legacy_key);
-        }
+        env::remove_var(legacy_key);
     }
 }
