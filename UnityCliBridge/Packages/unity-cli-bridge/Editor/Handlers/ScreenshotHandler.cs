@@ -576,27 +576,62 @@ namespace UnityCliBridge.Handlers
             try
             {
                 string imagePath = parameters["imagePath"]?.ToString();
+                string base64Data = parameters["base64Data"]?.ToString();
                 string analysisType = parameters["analysisType"]?.ToString() ?? "basic"; // basic, ui, content
                 
-                if (string.IsNullOrEmpty(imagePath))
+                if (string.IsNullOrEmpty(imagePath) && string.IsNullOrEmpty(base64Data))
                 {
-                    return new { error = "imagePath is required" };
+                    return new { error = "Either imagePath or base64Data is required" };
                 }
                 
-                if (!File.Exists(imagePath))
+                byte[] imageBytes;
+                string imageSource;
+                
+                if (!string.IsNullOrEmpty(imagePath))
                 {
-                    return new { error = $"Image file not found: {imagePath}" };
+                    if (!File.Exists(imagePath))
+                    {
+                        return new { error = $"Image file not found: {imagePath}" };
+                    }
+                    
+                    imageBytes = File.ReadAllBytes(imagePath);
+                    imageSource = imagePath;
+                }
+                else
+                {
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(base64Data) &&
+                            base64Data.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int commaIndex = base64Data.IndexOf(',');
+                            if (commaIndex >= 0 && commaIndex < base64Data.Length - 1)
+                            {
+                                base64Data = base64Data.Substring(commaIndex + 1);
+                            }
+                        }
+                        
+                        imageBytes = Convert.FromBase64String(base64Data ?? string.Empty);
+                        imageSource = "base64Data";
+                    }
+                    catch (FormatException)
+                    {
+                        return new { error = "base64Data is not valid Base64" };
+                    }
                 }
                 
-                // Load the image
-                byte[] imageBytes = File.ReadAllBytes(imagePath);
                 Texture2D texture = new Texture2D(2, 2);
-                texture.LoadImage(imageBytes);
+                if (!texture.LoadImage(imageBytes))
+                {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                    return new { error = "Failed to decode image data" };
+                }
                 
                 var analysis = new
                 {
                     success = true,
                     imagePath = imagePath,
+                    imageSource = imageSource,
                     width = texture.width,
                     height = texture.height,
                     format = texture.format.ToString(),
@@ -619,6 +654,7 @@ namespace UnityCliBridge.Handlers
                     {
                         analysis.success,
                         analysis.imagePath,
+                        analysis.imageSource,
                         analysis.width,
                         analysis.height,
                         analysis.format,

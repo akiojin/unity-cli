@@ -77,6 +77,7 @@ PRs with failing tests cannot be merged.
 ## E2E Tests
 
 Unity E2E tests run via manual trigger (`workflow_dispatch`).
+Generated E2E scenes are written to `UnityCliBridge/Assets/Scenes/Generated/E2E/` (gitignored).
 See `docs/development.md` for instructions on running them locally.
 
 ## Branch Policy

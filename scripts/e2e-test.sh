@@ -7,7 +7,11 @@ set -euo pipefail
 HOST="127.0.0.1"
 PORT="8080"
 UNITY_CLI="./target/release/unity-cli"
-LOG="/tmp/unity-cli-e2e-$(date +%Y%m%d-%H%M%S).log"
+RUN_ID="$(date +%Y%m%d-%H%M%S)"
+LOG="/tmp/unity-cli-e2e-${RUN_ID}.log"
+GENERATED_SCENE_DIR="Assets/Scenes/Generated/E2E/"
+E2E_SCENE_NAME="E2ETest_${RUN_ID}"
+E2E_SCENE_JSON="{\"sceneName\":\"${E2E_SCENE_NAME}\",\"path\":\"${GENERATED_SCENE_DIR}\"}"
 PASSED=0
 FAILED=0
 
@@ -32,6 +36,7 @@ echo "  Host: $HOST"
 echo "  Port: $PORT"
 echo "  CLI:  $UNITY_CLI"
 echo "  Log:  $LOG"
+echo "  Scene: ${GENERATED_SCENE_DIR}${E2E_SCENE_NAME}.unity"
 echo ""
 
 run_test() {
@@ -53,7 +58,7 @@ run_test "system ping" \
   "$UNITY_CLI" system ping --host "$HOST" --port "$PORT"
 
 run_test "raw create_scene" \
-  "$UNITY_CLI" raw create_scene --json '{"sceneName":"E2ETest"}' --host "$HOST" --port "$PORT"
+  "$UNITY_CLI" raw create_scene --json "$E2E_SCENE_JSON" --host "$HOST" --port "$PORT"
 
 run_test "tool list" \
   "$UNITY_CLI" tool list --host "$HOST" --port "$PORT"

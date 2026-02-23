@@ -106,8 +106,10 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 | Scenario | Command | Verification |
 | ---------- | --------- | ------------- |
 | system ping | `unity-cli system ping` | TCP connectivity check |
-| raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest"}'` | Scene creation |
+| raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest_YYYYmmdd-HHMMSS","path":"Assets/Scenes/Generated/E2E/"}'` | Scene creation |
 | tool list | `unity-cli tool list` | Tool listing |
+
+Generated E2E scenes are created under `UnityCliBridge/Assets/Scenes/Generated/E2E/` and are ignored by Git.
 
 Logs on failure are saved to `/tmp/unity-cli-e2e-*.log`.
 
@@ -298,8 +300,10 @@ scripts/e2e-test.sh --host 192.168.1.10 --port 9090
 | シナリオ | コマンド | 確認内容 |
 | ---------- | --------- | --------- |
 | system ping | `unity-cli system ping` | Unity Editor との疎通確認 |
-| raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest"}'` | シーン作成の実行確認 |
+| raw create_scene | `unity-cli raw create_scene --json '{"sceneName":"E2ETest_YYYYmmdd-HHMMSS","path":"Assets/Scenes/Generated/E2E/"}'` | シーン作成の実行確認 |
 | tool list | `unity-cli tool list` | ツール一覧の取得確認 |
+
+E2E で生成されるシーンは `UnityCliBridge/Assets/Scenes/Generated/E2E/` 配下に作成され、Git 追跡対象外です。
 
 失敗時はログが `/tmp/unity-cli-e2e-*.log` に保存されます。
 

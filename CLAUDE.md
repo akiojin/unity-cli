@@ -29,6 +29,12 @@ Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に
 - C# のシンボル編集・検索は `lsp/` 前提で設計する
 - Node ベースの `unity-mcp-server` 実装は保守対象外
 
+## LLM向けE2E実行ルール
+
+- LLM が E2E を実行・更新する前に、必ず `docs/development.md` の `E2E Tests` / `E2E テスト` セクションを参照する
+- E2E で生成するシーンは `UnityCliBridge/Assets/Scenes/Generated/E2E/` 配下を使用する
+- 上記生成シーンは `.gitignore` 対象のため、E2E実行結果としてコミットしない
+
 ## 品質ゲート
 
 変更前後で以下を満たすこと:
