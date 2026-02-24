@@ -28,9 +28,5 @@ jobs:
             exit 0
           fi
 
-          if [[ "$HEAD_REF" == release-please--* ]]; then
-            exit 0
-          fi
-
           echo "::error::main への直接PRは禁止です。develop 宛にPRを作成してください。"
           exit 1
