@@ -21,7 +21,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.check-tag.outputs.created }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -100,7 +100,7 @@ jobs:
             artifact: unity-cli-windows-x64.exe
             binary: unity-cli.exe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
@@ -133,6 +133,57 @@ jobs:
           Copy-Item "target/${{ matrix.target }}/release/${{ matrix.binary }}" "${{ matrix.artifact }}"
 
       - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+          retention-days: 1
+
+  build-lsp:
+    name: Build LSP (${{ matrix.rid }})
+    needs: create-tag
+    if: needs.create-tag.outputs.created == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+            artifact: csharp-lsp-linux-x64
+          - rid: osx-arm64
+            os: macos-latest
+            artifact: csharp-lsp-osx-arm64
+          - rid: win-x64
+            os: windows-latest
+            artifact: csharp-lsp-win-x64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag }}
+
+      - name: Setup .NET SDK 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish LSP server
+        run: >
+          dotnet publish lsp/Server.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+
+      - name: Rename artifact (Unix)
+        if: runner.os != 'Windows'
+        run: cp lsp/bin/Release/net9.0/${{ matrix.rid }}/publish/Server ${{ matrix.artifact }}
+
+      - name: Rename artifact (Windows)
+        if: runner.os == 'Windows'
+        run: Copy-Item "lsp/bin/Release/net9.0/${{ matrix.rid }}/publish/Server.exe" "${{ matrix.artifact }}"
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
@@ -141,14 +192,36 @@ jobs:
 
   upload-release:
     name: Upload Release Assets
-    needs: [create-tag, build]
+    needs: [create-tag, build, build-lsp]
     if: needs.create-tag.outputs.created == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
+
+      - name: Generate LSP manifest
+        env:
+          TAG: ${{ needs.create-tag.outputs.tag }}
+          VERSION: ${{ needs.create-tag.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          manifest="{\"version\":\"${VERSION}\",\"assets\":{"
+          first=true
+          for file in artifacts/csharp-lsp-*/csharp-lsp-*; do
+            name="$(basename "$file")"
+            # extract RID from artifact name: csharp-lsp-linux-x64 -> linux-x64
+            rid="${name#csharp-lsp-}"
+            sha="$(sha256sum "$file" | cut -d' ' -f1)"
+            url="https://github.com/${REPO}/releases/download/${TAG}/${name}"
+            if [ "$first" = true ]; then first=false; else manifest="${manifest},"; fi
+            manifest="${manifest}\"${rid}\":{\"url\":\"${url}\",\"sha256\":\"${sha}\"}"
+          done
+          manifest="${manifest}}}"
+          echo "$manifest" | python3 -m json.tool > artifacts/csharp-lsp-manifest.json
+          echo "Generated manifest:"
+          cat artifacts/csharp-lsp-manifest.json
 
       - name: Upload assets to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -158,3 +231,7 @@ jobs:
             artifacts/unity-cli-linux-x64/unity-cli-linux-x64
             artifacts/unity-cli-macos-arm64/unity-cli-macos-arm64
             artifacts/unity-cli-windows-x64.exe/unity-cli-windows-x64.exe
+            artifacts/csharp-lsp-linux-x64/csharp-lsp-linux-x64
+            artifacts/csharp-lsp-osx-arm64/csharp-lsp-osx-arm64
+            artifacts/csharp-lsp-win-x64/csharp-lsp-win-x64
+            artifacts/csharp-lsp-manifest.json
