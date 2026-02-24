@@ -158,12 +158,12 @@ jobs:
             os: windows-latest
             artifact: csharp-lsp-win-x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
       - name: Setup .NET SDK 9
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 9.0.x
 
@@ -184,7 +184,7 @@ jobs:
         run: Copy-Item "lsp/bin/Release/net9.0/${{ matrix.rid }}/publish/Server.exe" "${{ matrix.artifact }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
