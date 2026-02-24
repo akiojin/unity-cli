@@ -21,7 +21,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.check-tag.outputs.created }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -95,7 +95,7 @@ jobs:
             artifact: unity-cli-windows-x64.exe
             binary: unity-cli.exe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
