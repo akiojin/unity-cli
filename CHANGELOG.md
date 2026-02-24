@@ -1,3 +1,18 @@
+## [0.1.2] - 2026-02-24
+
+### 🐛 Bug Fixes
+
+- *(release)* Include linux-arm64 LSP server binary in release pipeline
+
+### ⚙️ Miscellaneous Tasks
+
+- *(deps)* Bump the npm_and_yarn group with 5 updates
+- *(deps)* Bump actions/checkout from 4 to 6
+- *(deps)* Bump actions/setup-node from 4 to 6
+- *(deps)* Bump actions/upload-artifact from 4 to 6
+- *(deps)* Bump actions/download-artifact from 4 to 7
+- *(deps)* Bump actions/setup-dotnet from 4 to 5
+
 ## [0.1.1] - 2026-02-24
 
 ### 🐛 Bug Fixes
