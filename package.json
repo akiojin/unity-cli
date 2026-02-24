@@ -14,12 +14,12 @@
     "test": "npm run test:rust && npm run test:lsp"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.1",
-    "@commitlint/config-conventional": "^20.4.1",
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
     "@eslint/js": "^10.0.1",
-    "@google/gemini-cli": "^0.28.2",
-    "@openai/codex": "^0.101.0",
-    "eslint": "^10.0.0",
+    "@google/gemini-cli": "^0.29.7",
+    "@openai/codex": "^0.104.0",
+    "eslint": "^10.0.2",
     "globals": "^17.3.0",
     "markdownlint-cli": "^0.47.0",
     "prettier": "^3.8.1"
