@@ -1,6 +1,12 @@
-# Changelog
+## [0.1.1] - 2026-02-24
 
-All notable changes to this project will be documented in this file.
+### 🐛 Bug Fixes
+
+- *(ci)* Align action versions in build-lsp job
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Add LSP server build and manifest to release pipeline
 
 ## [0.1.0] - 2026-02-23
 
