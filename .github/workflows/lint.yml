@@ -37,7 +37,7 @@ jobs:
         with:
           run_install: false
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: pnpm
@@ -63,7 +63,9 @@ jobs:
           --config .markdownlint.json
           --ignore-path .markdownlintignore
       - name: Validate commit messages
-        if: github.event_name == 'pull_request'
+        if: >-
+          github.event_name == 'pull_request'
+          && github.event.pull_request.base.ref != 'main'
         run: >
           pnpm exec commitlint
           --from ${{ github.event.pull_request.base.sha }}

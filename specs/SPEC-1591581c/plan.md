@@ -45,7 +45,7 @@ Unity Profilerパフォーマンス計測機能をMCPツールとして提供す
 - Unity Editor (エディタ専用機能)
 
 **プロジェクトタイプ**:
-- 既存プロジェクト拡張（Unity MCP Server）
+- 既存プロジェクト拡張（Unity CLI Bridge）
 
 **パフォーマンス目標**:
 - リアルタイムメトリクス取得: <1秒
@@ -72,11 +72,11 @@ Unity Profilerパフォーマンス計測機能をMCPツールとして提供す
 - パターン回避? 既存のHandlerパターン踏襲（実証済み） ✅
 
 **アーキテクチャ**:
-- すべての機能をライブラリとして? MCP Serverアーキテクチャ遵守 ✅
+- すべての機能をライブラリとして? Unity CLI Bridge Serverアーキテクチャ遵守 ✅
 - ライブラリリスト:
   - `unity-cli`: MCPツール公開
   - `unity-cli`: Unity Editor拡張
-- ライブラリごとのCLI: 既存のMCP Server CLI ✅
+- ライブラリごとのCLI: 既存のUnity CLI Bridge Server CLI ✅
 - ライブラリドキュメント: 既存のREADME.md/CLAUDE.md拡張 ✅
 
 **テスト (妥協不可)**:
@@ -420,7 +420,7 @@ describe('Profiler Integration Tests', () => {
 
 ## 前提条件
 - Unity Editor起動中
-- MCP Server接続済み
+- Unity CLI Bridge Server接続済み
 
 ## 基本的な使い方
 

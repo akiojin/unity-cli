@@ -15,7 +15,7 @@ npx @akiojin/unity-cli --http 6401 || \
 
 ## テレメトリ設定
 - 既定: 送信なし（外向き通信ゼロ）。
-- 明示的に有効化: `UNITY_MCP_TELEMETRY=on npx @akiojin/unity-cli --http`
+- 明示的に有効化: `UNITY_CLI_TELEMETRY=on npx @akiojin/unity-cli --http`
 - 無効化確認: 起動ログに `telemetry: off` 表示、ネットワークキャプチャで送信 0 件。
 
 ## 併用 (stdio + HTTP)

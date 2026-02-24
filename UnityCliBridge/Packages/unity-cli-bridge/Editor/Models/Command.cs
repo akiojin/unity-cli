@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 namespace UnityCliBridge.Models
 {
     /// <summary>
-    /// Represents a command received from the MCP server
+    /// Represents a command received by the Unity CLI Bridge listener
     /// </summary>
     [Serializable]
     public class Command

@@ -10,7 +10,7 @@
 ### II. Rust優先
 - CLIコアは Rust で実装する
 - 性能回帰を許容しない（速度・起動時間・メモリ）
-- 設定は `UNITY_CLI_*` を主とし、必要時のみ `UNITY_MCP_*` 互換を維持する
+- 設定は `UNITY_CLI_*` のみをサポートし、旧MCP系の環境変数は受け付けない
 
 ### III. TDD（妥協不可）
 - RED -> GREEN -> REFACTOR を必須とする

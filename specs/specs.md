@@ -31,7 +31,7 @@
 | 要件ID | タイトル | ステータス | 作成日 |
 |---|---|---|---|
 | `SPEC-1ac96646` | [4層リリースフロー（feature → develop → release/* → main）](SPEC-1ac96646/spec.md) | 実装完了 | 2025-11-07 |
-| `SPEC-83d9d7ee` | [Rust版 unity-cli 置換とTDD整備](SPEC-83d9d7ee/spec.md) | 実装完了 | 2026-02-17   |
+| `SPEC-83d9d7ee` | [Rust版 unity-cli 置換・UPM統合・TDD整備](SPEC-83d9d7ee/spec.md) | 実装完了 | 2026-02-17   |
 | `SPEC-f9db125c` | [Node/Unityパッケージversion不一致検出](SPEC-f9db125c/spec.md) | 実装完了 | 2025-12-17 |
 
 ### 完了 (16件)
@@ -61,4 +61,10 @@
 |---|---|---|---|
 | `SPEC-a99caa4b` | SPEC-a99caa4b | 未設定 | - |
 | `SPEC-e9854a10` | SPEC-e9854a10 | 未設定 | - |
+
+### 実装中 (1件)
+
+| 要件ID | タイトル | ステータス | 作成日 |
+|---|---|---|---|
+| `SPEC-a7206673` | [CLI実行効率の最適化](SPEC-a7206673/spec.md) | 実装中 | 2026-02-23 |
 

@@ -94,6 +94,8 @@ CLAUDE.local.md
 
 .unity/
 UnityCliBridge/.unity/
+.mcp/
+UnityCliBridge/.mcp/
 .worktrees/
 
 *.local.json
@@ -108,5 +110,10 @@ lsp/out/
 # Generated test files for code index scalability testing
 UnityCliBridge/Assets/Scripts/Generated/
 UnityCliBridge/Assets/Scripts/Generated.meta
+
+# Generated Unity scenes for E2E smoke tests
+UnityCliBridge/Assets/Scenes/Generated/
+UnityCliBridge/Assets/Scenes/Generated.meta
+
 UnityCliBridge/UnityCliBridge.slnx
 

@@ -1,6 +1,6 @@
 # Unity CLI Bridge
 
-Read this in Japanese: [docs/README.ja.md](./docs/README.ja.md)
+Read this in Japanese: [README.ja.md](./README.ja.md)
 
 Unity Editor bridge package for `unity-cli` automation workflows.
 
@@ -25,19 +25,23 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 - `Editor/`: CLI command handlers and editor-side logic.
 - `Tests/`: Editor test sources.
-- `docs/`: Documentation, including this README and the Japanese translation.
+- `README.md` / `README.ja.md`: Package overview and usage.
 
 ## License
 
 MIT
 
-## Attribution Request
+## License Attribution
 
-When shipping an app that uses this package, please include attribution in credits/about/README.
+When redistributing this package or including it in published projects, the MIT license requires you to include the copyright and permission notice. A full attribution guide with templates is available at [`ATTRIBUTION.md`](../../../../ATTRIBUTION.md) in the repository root.
 
-Recommended text:
+Example attribution text:
 
-`This product uses unity-cli (https://github.com/akiojin/unity-cli), licensed under MIT.`
+```
+This product includes software developed by akiojin.
+unity-cli - https://github.com/akiojin/unity-cli
+Licensed under the MIT License.
+```
 
 ## Repository
 

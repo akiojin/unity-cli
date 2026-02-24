@@ -82,7 +82,7 @@ namespace UnityCliBridge.Handlers
                     }
                     catch (Exception)
                     {
-                        McpLogger.LogWarning("GameObjectHandler", $"Invalid tag: {tag}");
+                        BridgeLogger.LogWarning("GameObjectHandler", $"Invalid tag: {tag}");
                     }
                 }
                 
@@ -334,7 +334,7 @@ namespace UnityCliBridge.Handlers
                     if (!string.IsNullOrEmpty(tag) && tag != obj.tag)
                     {
                         try { obj.tag = tag; modified = true; }
-                        catch (Exception) { McpLogger.LogWarning("GameObjectHandler", $"Invalid tag: {tag}"); }
+                        catch (Exception) { BridgeLogger.LogWarning("GameObjectHandler", $"Invalid tag: {tag}"); }
                     }
 
                     int? layer = parameters["layer"]?.ToObject<int>();
@@ -593,7 +593,7 @@ namespace UnityCliBridge.Handlers
                         return new { error = $"GameObject not found at path: {rootPath}" };
                     }
                     
-                    McpLogger.Log("GameObjectHandler", $"GetHierarchy: Using rootPath={rootPath}, maxObjects={maxObjects}, getting children at depth 0");
+                    BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Using rootPath={rootPath}, maxObjects={maxObjects}, getting children at depth 0");
                     
                     // When rootPath is specified, start from its children (depth 0 = direct children)
                     foreach (Transform child in rootObject.transform)
@@ -604,7 +604,7 @@ namespace UnityCliBridge.Handlers
                         // Check if we've hit the object limit
                         if (objectCounter.MaxObjects > 0 && objectCounter.CurrentCount >= objectCounter.MaxObjects)
                         {
-                            McpLogger.Log("GameObjectHandler", $"GetHierarchy: Hit object limit at {objectCounter.CurrentCount} objects");
+                            BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Hit object limit at {objectCounter.CurrentCount} objects");
                             break;
                         }
                         
@@ -612,11 +612,11 @@ namespace UnityCliBridge.Handlers
                         if (node != null)
                         {
                             hierarchy.Add(node);
-                            McpLogger.Log("GameObjectHandler", $"GetHierarchy: Added child node: {child.name}, Current count: {objectCounter.CurrentCount}");
+                            BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Added child node: {child.name}, Current count: {objectCounter.CurrentCount}");
                         }
                         else
                         {
-                            McpLogger.Log("GameObjectHandler", $"GetHierarchy: Node was null for: {child.name}, Breaking loop");
+                            BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Node was null for: {child.name}, Breaking loop");
                             break;
                         }
                     }
@@ -630,7 +630,7 @@ namespace UnityCliBridge.Handlers
                     {
                         // In prefab mode, use prefab root
                         GameObject prefabRoot = prefabStage.prefabContentsRoot;
-                        McpLogger.Log("GameObjectHandler", $"GetHierarchy: Prefab mode - using prefab root: {prefabRoot.name}");
+                        BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Prefab mode - using prefab root: {prefabRoot.name}");
                         
                         var node = BuildHierarchyNode(prefabRoot, 0, maxDepth, includeInactive, includeComponents, includeTransform, includeTags, includeLayers, nameOnly, objectCounter);
                         if (node != null)
@@ -642,7 +642,7 @@ namespace UnityCliBridge.Handlers
                     {
                         // Get root GameObjects from the scene
                         GameObject[] rootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-                        McpLogger.Log("GameObjectHandler", $"GetHierarchy: No rootPath, using scene roots. maxObjects={maxObjects}, rootObjects.Length={rootObjects.Length}");
+                        BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: No rootPath, using scene roots. maxObjects={maxObjects}, rootObjects.Length={rootObjects.Length}");
                         
                         foreach (var root in rootObjects)
                         {
@@ -652,7 +652,7 @@ namespace UnityCliBridge.Handlers
                             // Check if we've hit the object limit
                             if (objectCounter.MaxObjects > 0 && objectCounter.CurrentCount >= objectCounter.MaxObjects)
                             {
-                                McpLogger.Log("GameObjectHandler", $"GetHierarchy: Hit object limit at {objectCounter.CurrentCount} objects");
+                                BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Hit object limit at {objectCounter.CurrentCount} objects");
                                 break;
                             }
 
@@ -660,11 +660,11 @@ namespace UnityCliBridge.Handlers
                             if (node != null)
                             {
                                 hierarchy.Add(node);
-                                McpLogger.Log("GameObjectHandler", $"GetHierarchy: Added root node: {root.name}, Current count: {objectCounter.CurrentCount}");
+                                BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Added root node: {root.name}, Current count: {objectCounter.CurrentCount}");
                             }
                             else
                             {
-                                McpLogger.Log("GameObjectHandler", $"GetHierarchy: Node was null for: {root.name}, Breaking loop");
+                                BridgeLogger.Log("GameObjectHandler", $"GetHierarchy: Node was null for: {root.name}, Breaking loop");
                                 break;
                             }
                         }

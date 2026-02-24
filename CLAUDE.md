@@ -2,12 +2,40 @@
 
 `unity-cli` リポジトリ向けの開発ガイドです。
 
+## プロジェクト概要
+
+`unity-cli` は [`unity-mcp-server`](https://github.com/akiojin/unity-mcp-server) の後継プロジェクトです。
+Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に置き換え、ネイティブ CLI として再設計しました。
+旧リポジトリ (`unity-mcp-server`) への機能追加は行いません。
+
+## スキルアーキテクチャ
+
+旧 `unity-mcp-server` の 108 個の MCP ツールを **Claude Code Skill** に変換。
+スキルはオンデマンドで読み込まれ、LLM コンテキストを肥大化させない。
+内部的には `unity-cli` コマンド（型付きサブコマンド or `raw`）を呼び出す。
+
+- スキル定義: `.claude-plugin/plugins/unity-cli/skills/`
+- プラグインマニフェスト: `.claude-plugin/plugins/unity-cli/plugin.json`
+- Claude Code 正式配布: Marketplace プラグイン（`.claude-plugin/marketplace.json`）
+- このリポジトリ内の Claude テスト登録: `.claude/skills/`（正本へのシンボリックリンク）
+- Codex 運用: `.codex/skills/`（正本へのシンボリックリンク）
+- zip 配布はこのリポジトリでは提供しない
+- 旧MCP由来のスキル名/互換エイリアスは提供しない
+
 ## 基本方針
 
 - 実装は `unity-cli`（Rust CLI）を中心に行う
 - Unity 側実装は `UnityCliBridge/Packages/unity-cli-bridge` を更新する
 - C# のシンボル編集・検索は `lsp/` 前提で設計する
 - Node ベースの `unity-mcp-server` 実装は保守対象外
+
+## LLM向けE2E実行ルール
+
+- LLM が E2E を実行・更新する前に、必ず `docs/development.md` の `E2E Tests` / `E2E テスト` セクションを参照する
+- E2E で生成するシーンは `UnityCliBridge/Assets/Scenes/Generated/E2E/` 配下を使用する
+- 上記生成シーンは `.gitignore` 対象のため、E2E実行結果としてコミットしない
+- ルート直下 (`UnityCliBridge/Assets/Scenes/`) の固定シーンは `SampleScene` のみとする
+- UI 検証シーンが必要な場合は `Tools/Unity CLI/UI Tests/*` で `UnityCliBridge/Assets/Scenes/Generated/UI/` に生成する
 
 ## 品質ゲート
 
