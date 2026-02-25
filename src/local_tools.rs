@@ -67,6 +67,13 @@ pub fn maybe_execute_local_tool(tool_name: &str, params: &Value) -> Option<Resul
         "update_index" => Some(local_update_index(params)),
         "find_symbol" => Some(local_find_symbol(params)),
         "find_refs" => Some(local_find_refs(params)),
+        "rename_symbol" => Some(local_lsp_write("rename_symbol", params)),
+        "replace_symbol_body" => Some(local_lsp_write("replace_symbol_body", params)),
+        "insert_before_symbol" => Some(local_lsp_write("insert_before_symbol", params)),
+        "insert_after_symbol" => Some(local_lsp_write("insert_after_symbol", params)),
+        "remove_symbol" => Some(local_lsp_write("remove_symbol", params)),
+        "validate_text_edits" => Some(local_lsp_write("validate_text_edits", params)),
+        "create_class" => Some(local_create_class(params)),
         _ => None,
     }
 }
@@ -649,6 +656,104 @@ fn local_find_refs(params: &Value) -> Result<Value> {
     }
 
     Ok(response)
+}
+
+fn local_lsp_write(tool_name: &str, params: &Value) -> Result<Value> {
+    let root = project_root()?;
+    if let Some(result) = crate::lsp::maybe_execute(tool_name, params, &root) {
+        return result;
+    }
+
+    let mode = env::var("UNITY_CLI_LSP_MODE")
+        .ok()
+        .unwrap_or_else(|| "off".to_string())
+        .to_ascii_lowercase();
+    if mode == "auto" || mode == "required" {
+        return crate::lsp::execute_direct(tool_name, params, &root);
+    }
+
+    Err(anyhow!(
+        "{tool_name} requires LSP; set UNITY_CLI_LSP_MODE=auto or required"
+    ))
+}
+
+fn requires_unityengine_using(inherits: Option<&str>) -> bool {
+    matches!(inherits.map(str::trim), Some("MonoBehaviour"))
+}
+
+fn local_create_class(params: &Value) -> Result<Value> {
+    let name = params
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("create_class requires `name`"))?;
+    let namespace = params.get("namespace").and_then(Value::as_str);
+    let inherits = params.get("inherits").and_then(Value::as_str);
+    let folder = params
+        .get("folder")
+        .and_then(Value::as_str)
+        .unwrap_or("Assets/Scripts");
+    let path_override = params.get("path").and_then(Value::as_str);
+
+    if !name
+        .chars()
+        .next()
+        .map(|c| c.is_ascii_alphabetic() || c == '_')
+        .unwrap_or(false)
+    {
+        return Err(anyhow!("Invalid class name: {name}"));
+    }
+    if !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return Err(anyhow!("Invalid class name: {name}"));
+    }
+
+    let root = project_root()?;
+
+    let rel_path = if let Some(p) = path_override {
+        let normalized = normalize_rel_path(p)
+            .ok_or_else(|| anyhow!("path must start with Assets/ or Packages/"))?;
+        normalized
+    } else {
+        let normalized_folder = normalize_rel_path(folder)
+            .ok_or_else(|| anyhow!("folder must start with Assets/ or Packages/"))?;
+        format!("{normalized_folder}/{name}.cs")
+    };
+
+    let abs_path = root.join(&rel_path);
+    if abs_path.exists() {
+        return Err(anyhow!("File already exists: {rel_path}"));
+    }
+
+    let mut body = String::new();
+    if requires_unityengine_using(inherits) {
+        body.push_str("using UnityEngine;\n\n");
+    }
+
+    if let Some(ns) = namespace {
+        body.push_str(&format!("namespace {ns}\n{{\n"));
+    }
+
+    let indent = if namespace.is_some() { "    " } else { "" };
+    let base = inherits.map(|b| format!(" : {b}")).unwrap_or_default();
+
+    body.push_str(&format!(
+        "{indent}public class {name}{base}\n{indent}{{\n{indent}}}\n"
+    ));
+
+    if namespace.is_some() {
+        body.push_str("}\n");
+    }
+
+    if let Some(parent) = abs_path.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
+    }
+    fs::write(&abs_path, &body).with_context(|| format!("Failed to write file: {rel_path}"))?;
+
+    Ok(json!({
+        "success": true,
+        "path": rel_path,
+        "content": body
+    }))
 }
 
 fn project_root() -> Result<PathBuf> {
@@ -1414,5 +1519,132 @@ mod tests {
         );
 
         std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn create_class_generates_simple_class() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+
+        let value = maybe_execute_local_tool(
+            "create_class",
+            &json!({"name":"EnemyAI","folder":"Assets/Scripts/AI"}),
+        )
+        .expect("tool should be handled")
+        .expect("create_class should succeed");
+
+        assert_eq!(value["success"], true);
+        assert_eq!(value["path"], "Assets/Scripts/AI/EnemyAI.cs");
+        let content = value["content"].as_str().expect("content should be string");
+        assert!(!content.contains("using UnityEngine;"));
+        assert!(content.contains("public class EnemyAI"));
+
+        let file_content = std::fs::read_to_string(tmp.path().join("Assets/Scripts/AI/EnemyAI.cs"))
+            .expect("file should exist");
+        assert_eq!(file_content, content);
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn create_class_with_namespace_and_inherits() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+
+        let value = maybe_execute_local_tool(
+            "create_class",
+            &json!({
+                "name": "Player",
+                "namespace": "Game.Characters",
+                "inherits": "MonoBehaviour",
+                "folder": "Assets/Scripts"
+            }),
+        )
+        .expect("tool should be handled")
+        .expect("create_class should succeed");
+
+        assert_eq!(value["success"], true);
+        let content = value["content"].as_str().expect("content should be string");
+        assert!(content.contains("namespace Game.Characters"));
+        assert!(content.contains("using UnityEngine;"));
+        assert!(content.contains("public class Player : MonoBehaviour"));
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn create_class_rejects_existing_file() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        write_file(
+            &tmp.path().join("Assets/Scripts/Existing.cs"),
+            "public class Existing {}\n",
+        );
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+
+        let result = maybe_execute_local_tool(
+            "create_class",
+            &json!({"name":"Existing","folder":"Assets/Scripts"}),
+        )
+        .expect("tool should be handled");
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("File already exists"));
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn create_class_rejects_invalid_name() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+
+        let result = maybe_execute_local_tool(
+            "create_class",
+            &json!({"name":"123Invalid","folder":"Assets/Scripts"}),
+        )
+        .expect("tool should be handled");
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid class name"));
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn lsp_write_tools_require_lsp_mode() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+        std::env::set_var("UNITY_CLI_LSP_MODE", "off");
+
+        for tool in &[
+            "rename_symbol",
+            "replace_symbol_body",
+            "insert_before_symbol",
+            "insert_after_symbol",
+            "remove_symbol",
+            "validate_text_edits",
+        ] {
+            let result =
+                maybe_execute_local_tool(tool, &json!({})).expect("tool should be handled");
+            assert!(result.is_err(), "{tool} should fail when LSP is off");
+            assert!(
+                result.unwrap_err().to_string().contains("requires LSP"),
+                "{tool} should mention LSP requirement"
+            );
+        }
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
     }
 }
