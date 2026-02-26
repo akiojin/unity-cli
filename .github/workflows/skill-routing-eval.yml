@@ -1,0 +1,57 @@
+name: Skill Routing Eval
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  static-contract:
+    name: Static Skill Contract (required)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run static skill contract check
+        run: ./scripts/skill-eval/static-skill-contract-check.sh
+      - name: Upload static report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: skill-static-report-nightly
+          path: specs/perf/skill-static-report.json
+          retention-days: 30
+
+  llm-routing:
+    name: LLM Routing Eval (nightly)
+    runs-on: ubuntu-latest
+    needs: static-contract
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run LLM routing eval (if configured)
+        env:
+          SKILL_EVAL_RUNNER_CMD: ${{ secrets.SKILL_EVAL_RUNNER_CMD }}
+          SKILL_EVAL_MODEL: ${{ vars.SKILL_EVAL_MODEL }}
+        run: |
+          if [[ -z "${SKILL_EVAL_RUNNER_CMD:-}" ]]; then
+            echo "SKIP: secrets.SKILL_EVAL_RUNNER_CMD is not set."
+            exit 0
+          fi
+          ./scripts/skill-eval/llm-routing-eval.sh \
+            --runner-cmd "${SKILL_EVAL_RUNNER_CMD}" \
+            --model "${SKILL_EVAL_MODEL:-nightly}"
+      - name: Upload routing artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: skill-routing-eval
+          path: |
+            specs/perf/skill-routing-summary.json
+            specs/perf/skill-routing-history.jsonl
+            specs/perf/skill-routing-benchmark.jsonl
+          retention-days: 30

@@ -22,9 +22,9 @@ unity-cli raw get_editor_state --json '{}'
 ```bash
 unity-cli raw input_keyboard --json '{"key":"space","action":"press"}'
 unity-cli raw input_mouse --json '{"action":"click","button":"left","x":400,"y":300}'
-unity-cli raw input_gamepad --json '{"button":"buttonSouth","action":"press"}'
+unity-cli raw input_gamepad --json '{"action":"button","button":"a","buttonAction":"press"}'
 unity-cli raw input_touch --json '{"action":"tap","x":200,"y":400}'
-unity-cli raw create_input_sequence --json '{"name":"jump_once","actions":[{"type":"keyboard","action":"press","key":"space"}]}'
+unity-cli raw create_input_sequence --json '{"sequence":[{"type":"keyboard","params":{"action":"press","key":"space"}}],"delayBetween":100}'
 unity-cli raw get_current_input_state --json '{}'
 ```
 

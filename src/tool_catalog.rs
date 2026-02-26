@@ -85,6 +85,13 @@ pub const TOOL_NAMES: &[&str] = &[
     "search",
     "find_symbol",
     "get_symbols",
+    "rename_symbol",
+    "replace_symbol_body",
+    "insert_before_symbol",
+    "insert_after_symbol",
+    "remove_symbol",
+    "validate_text_edits",
+    "create_class",
     "get_project_settings",
     "update_project_settings",
     "get_command_stats",
@@ -112,7 +119,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 101);
+        assert_eq!(TOOL_NAMES.len(), 108);
     }
 
     #[test]
