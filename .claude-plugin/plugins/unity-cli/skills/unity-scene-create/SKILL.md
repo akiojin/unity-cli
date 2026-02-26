@@ -25,8 +25,8 @@ unity-cli raw load_scene --json '{"scenePath":"Assets/Scenes/MyScene.unity"}'
 unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/MyScene.unity"}'
 
 # GameObject creation
-unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"cube"}'
-unity-cli raw create_gameobject --json '{"name":"Empty","parent":"/Canvas"}'
+unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"Cube"}'
+unity-cli raw create_gameobject --json '{"name":"Empty","parentPath":"/Canvas"}'
 
 # Add components
 unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'

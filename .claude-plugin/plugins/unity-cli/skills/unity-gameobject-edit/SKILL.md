@@ -12,8 +12,8 @@ Modify existing GameObjects and their components.
 
 ```bash
 # Modify GameObject properties
-unity-cli raw modify_gameobject --json '{"gameObjectPath":"/Player","name":"Hero","isActive":true}'
-unity-cli raw delete_gameobject --json '{"gameObjectPath":"/OldObject"}'
+unity-cli raw modify_gameobject --json '{"path":"/Player","name":"Hero","active":true}'
+unity-cli raw delete_gameobject --json '{"path":"/OldObject"}'
 
 # Component operations
 unity-cli raw modify_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody","properties":{"mass":2.0}}'
@@ -24,7 +24,7 @@ unity-cli raw get_component_types --json '{}'
 
 # Tags & layers
 unity-cli raw manage_tags --json '{"action":"add","tagName":"Enemy"}'
-unity-cli raw manage_layers --json '{"action":"list"}'
+unity-cli raw manage_layers --json '{"action":"get"}'
 ```
 
 ## Tips

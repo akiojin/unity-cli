@@ -21,16 +21,16 @@ unity-cli raw find_gameobject --json '{"name":"Player"}'
 unity-cli raw find_by_component --json '{"componentType":"Camera"}'
 
 # Inspect details
-unity-cli raw get_gameobject_details --json '{"gameObjectPath":"/Player"}'
-unity-cli raw get_component_values --json '{"gameObjectPath":"/Player","componentType":"Transform"}'
-unity-cli raw get_object_references --json '{"gameObjectPath":"/Player"}'
+unity-cli raw get_gameobject_details --json '{"gameObjectName":"Player"}'
+unity-cli raw get_component_values --json '{"gameObjectName":"Player","componentType":"Transform"}'
+unity-cli raw get_object_references --json '{"gameObjectName":"Player"}'
 
 # Scene analysis
-unity-cli raw analyze_scene_contents --json '{"scenePath":"Assets/Scenes/Main.unity"}'
+unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 
 # Animator
-unity-cli raw get_animator_state --json '{"gameObjectPath":"/Player"}'
-unity-cli raw get_animator_runtime_info --json '{"gameObjectPath":"/Player"}'
+unity-cli raw get_animator_state --json '{"gameObjectName":"Player"}'
+unity-cli raw get_animator_runtime_info --json '{"gameObjectName":"Player"}'
 ```
 
 ## Tips
