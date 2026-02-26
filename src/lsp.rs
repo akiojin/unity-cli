@@ -47,7 +47,16 @@ pub fn maybe_execute(
 ) -> Option<Result<Value>> {
     if !matches!(
         tool_name,
-        "get_symbols" | "find_symbol" | "find_refs" | "build_index"
+        "get_symbols"
+            | "find_symbol"
+            | "find_refs"
+            | "build_index"
+            | "rename_symbol"
+            | "replace_symbol_body"
+            | "insert_before_symbol"
+            | "insert_after_symbol"
+            | "remove_symbol"
+            | "validate_text_edits"
     ) {
         return None;
     }
@@ -131,6 +140,20 @@ fn execute_once(tool_name: &str, params: &Value, project_root: &Path) -> Result<
         "find_symbol" => handle_find_symbol(&mut cached.session, &canonical_root, params),
         "find_refs" => handle_find_refs(&mut cached.session, &canonical_root, params),
         "build_index" => handle_build_index(&mut cached.session, &canonical_root, params),
+        "rename_symbol" => handle_rename_symbol(&mut cached.session, &canonical_root, params),
+        "replace_symbol_body" => {
+            handle_replace_symbol_body(&mut cached.session, &canonical_root, params)
+        }
+        "insert_before_symbol" => {
+            handle_insert_symbol(&mut cached.session, &canonical_root, params, false)
+        }
+        "insert_after_symbol" => {
+            handle_insert_symbol(&mut cached.session, &canonical_root, params, true)
+        }
+        "remove_symbol" => handle_remove_symbol(&mut cached.session, &canonical_root, params),
+        "validate_text_edits" => {
+            handle_validate_text_edits(&mut cached.session, &canonical_root, params)
+        }
         _ => Err(anyhow!("Unsupported LSP tool: {tool_name}")),
     }
 }
@@ -472,6 +495,232 @@ fn handle_build_index(
 
     response["raw"] = result;
     Ok(response)
+}
+
+fn require_relative_path(params: &Value, tool_name: &str) -> Result<String> {
+    let path = params
+        .get("relative")
+        .or_else(|| params.get("path"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("{tool_name} requires `relative`"))?;
+    normalize_rel_path(path).ok_or_else(|| anyhow!("path must start with Assets/ or Packages/"))
+}
+
+fn require_name_path(params: &Value, tool_name: &str) -> Result<String> {
+    params
+        .get("namePath")
+        .and_then(Value::as_str)
+        .map(String::from)
+        .ok_or_else(|| anyhow!("{tool_name} requires `namePath`"))
+}
+
+fn get_apply(params: &Value) -> bool {
+    params
+        .get("apply")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+fn handle_rename_symbol(
+    session: &mut LspSession,
+    project_root: &Path,
+    params: &Value,
+) -> Result<Value> {
+    let rel = require_relative_path(params, "rename_symbol")?;
+    let name_path = require_name_path(params, "rename_symbol")?;
+    let new_name = params
+        .get("newName")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("rename_symbol requires `newName`"))?;
+    let apply = get_apply(params);
+
+    let abs = project_root.join(&rel);
+    if !abs.exists() {
+        return Err(anyhow!("File not found: {rel}"));
+    }
+
+    let result = session.request(
+        "unitycli/renameByNamePath",
+        json!({
+            "relative": rel,
+            "namePath": name_path,
+            "newName": new_name,
+            "apply": apply
+        }),
+    )?;
+
+    Ok(wrap_lsp_write_result(result))
+}
+
+fn handle_replace_symbol_body(
+    session: &mut LspSession,
+    project_root: &Path,
+    params: &Value,
+) -> Result<Value> {
+    let rel = require_relative_path(params, "replace_symbol_body")?;
+    let name_path = require_name_path(params, "replace_symbol_body")?;
+    let body = params
+        .get("body")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("replace_symbol_body requires `body`"))?;
+    let apply = get_apply(params);
+
+    let abs = project_root.join(&rel);
+    if !abs.exists() {
+        return Err(anyhow!("File not found: {rel}"));
+    }
+
+    let result = session.request(
+        "unitycli/replaceSymbolBody",
+        json!({
+            "relative": rel,
+            "namePath": name_path,
+            "body": body,
+            "apply": apply
+        }),
+    )?;
+
+    Ok(wrap_lsp_write_result(result))
+}
+
+fn handle_insert_symbol(
+    session: &mut LspSession,
+    project_root: &Path,
+    params: &Value,
+    after: bool,
+) -> Result<Value> {
+    let tool_name = if after {
+        "insert_after_symbol"
+    } else {
+        "insert_before_symbol"
+    };
+    let rel = require_relative_path(params, tool_name)?;
+    let name_path = require_name_path(params, tool_name)?;
+    let text = params
+        .get("text")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("{tool_name} requires `text`"))?;
+    let apply = get_apply(params);
+
+    let abs = project_root.join(&rel);
+    if !abs.exists() {
+        return Err(anyhow!("File not found: {rel}"));
+    }
+
+    let method = if after {
+        "unitycli/insertAfterSymbol"
+    } else {
+        "unitycli/insertBeforeSymbol"
+    };
+
+    let result = session.request(
+        method,
+        json!({
+            "relative": rel,
+            "namePath": name_path,
+            "text": text,
+            "apply": apply
+        }),
+    )?;
+
+    Ok(wrap_lsp_write_result(result))
+}
+
+fn handle_remove_symbol(
+    session: &mut LspSession,
+    project_root: &Path,
+    params: &Value,
+) -> Result<Value> {
+    let rel = require_relative_path(params, "remove_symbol")?;
+    let name_path = require_name_path(params, "remove_symbol")?;
+    let apply = get_apply(params);
+    let fail_on_references = params.get("failOnReferences").and_then(Value::as_bool);
+    let remove_empty_file = params
+        .get("removeEmptyFile")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+
+    let abs = project_root.join(&rel);
+    if !abs.exists() {
+        return Err(anyhow!("File not found: {rel}"));
+    }
+
+    let request = build_remove_symbol_request(
+        &rel,
+        &name_path,
+        apply,
+        fail_on_references,
+        remove_empty_file,
+    );
+
+    let result = session.request("unitycli/removeSymbol", request)?;
+
+    Ok(wrap_lsp_write_result(result))
+}
+
+fn build_remove_symbol_request(
+    rel: &str,
+    name_path: &str,
+    apply: bool,
+    fail_on_references: Option<bool>,
+    remove_empty_file: bool,
+) -> Value {
+    let mut request = json!({
+        "relative": rel,
+        "namePath": name_path,
+        "apply": apply,
+        "removeEmptyFile": remove_empty_file
+    });
+    if let Some(value) = fail_on_references {
+        request["failOnReferences"] = json!(value);
+    }
+    request
+}
+
+fn handle_validate_text_edits(
+    session: &mut LspSession,
+    project_root: &Path,
+    params: &Value,
+) -> Result<Value> {
+    let rel = require_relative_path(params, "validate_text_edits")?;
+    let new_text = params
+        .get("newText")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow!("validate_text_edits requires `newText`"))?;
+
+    let abs = project_root.join(&rel);
+    if !abs.exists() {
+        return Err(anyhow!("File not found: {rel}"));
+    }
+
+    let result = session.request(
+        "unitycli/validateTextEdits",
+        json!({
+            "relative": rel,
+            "newText": new_text
+        }),
+    )?;
+
+    let mut response = json!({ "backend": "lsp" });
+    if let Some(diags) = result.get("diagnostics") {
+        response["diagnostics"] = diags.clone();
+        response["success"] = json!(true);
+    } else {
+        response["diagnostics"] = json!([]);
+        response["success"] = json!(true);
+    }
+    Ok(response)
+}
+
+fn wrap_lsp_write_result(result: Value) -> Value {
+    let mut response = result.clone();
+    if response.is_object() {
+        response
+            .as_object_mut()
+            .unwrap()
+            .insert("backend".to_string(), json!("lsp"));
+    }
+    response
 }
 
 fn collect_document_symbols(value: &Value, container: Option<&str>, out: &mut Vec<Value>) {
@@ -892,7 +1141,9 @@ fn read_message(reader: &mut BufReader<ChildStdout>) -> Result<Option<Value>> {
 #[cfg(test)]
 mod tests {
     use anyhow::anyhow;
+    use serde_json::Value;
 
+    use super::build_remove_symbol_request;
     use super::is_retryable_session_error;
     use super::normalize_rel_path;
 
@@ -928,5 +1179,32 @@ mod tests {
     fn retryable_session_error_ignores_argument_errors() {
         let error = anyhow!("find_symbol requires `name`");
         assert!(!is_retryable_session_error(&error));
+    }
+
+    #[test]
+    fn remove_symbol_request_omits_fail_on_references_when_unset() {
+        let request = build_remove_symbol_request(
+            "Assets/Scripts/Player.cs",
+            "Player/Foo",
+            false,
+            None,
+            false,
+        );
+        assert!(request.get("failOnReferences").is_none());
+    }
+
+    #[test]
+    fn remove_symbol_request_includes_fail_on_references_when_set() {
+        let request = build_remove_symbol_request(
+            "Assets/Scripts/Player.cs",
+            "Player/Foo",
+            true,
+            Some(false),
+            true,
+        );
+        assert_eq!(
+            request.get("failOnReferences").and_then(Value::as_bool),
+            Some(false)
+        );
     }
 }
