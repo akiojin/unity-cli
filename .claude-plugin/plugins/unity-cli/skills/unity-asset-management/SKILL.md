@@ -13,18 +13,18 @@ Manage the Unity Asset Database, create/modify materials, and control import set
 ```bash
 # Asset database
 unity-cli raw manage_asset_database --json '{"action":"refresh"}'
-unity-cli raw manage_asset_database --json '{"action":"import","assetPath":"Assets/Textures/hero.png"}'
+unity-cli raw manage_asset_database --json '{"action":"get_asset_info","assetPath":"Assets/Textures/hero.png"}'
 unity-cli raw refresh_assets --json '{}'
 
 # Materials
-unity-cli raw create_material --json '{"name":"HeroMat","shaderName":"Standard","savePath":"Assets/Materials/"}'
-unity-cli raw modify_material --json '{"assetPath":"Assets/Materials/HeroMat.mat","properties":{"_Color":{"r":1,"g":0,"b":0,"a":1}}}'
+unity-cli raw create_material --json '{"materialPath":"Assets/Materials/HeroMat.mat","shader":"Standard"}'
+unity-cli raw modify_material --json '{"materialPath":"Assets/Materials/HeroMat.mat","properties":{"_Color":{"r":1,"g":0,"b":0,"a":1}}}'
 
 # Import settings
-unity-cli raw manage_asset_import_settings --json '{"assetPath":"Assets/Textures/hero.png","settings":{"maxTextureSize":1024}}'
+unity-cli raw manage_asset_import_settings --json '{"action":"modify","assetPath":"Assets/Textures/hero.png","settings":{"maxTextureSize":1024}}'
 
 # Dependency analysis
-unity-cli raw analyze_asset_dependencies --json '{"assetPath":"Assets/Prefabs/Player.prefab"}'
+unity-cli raw analyze_asset_dependencies --json '{"action":"get_dependencies","assetPath":"Assets/Prefabs/Player.prefab","recursive":true}'
 ```
 
 ## Tips

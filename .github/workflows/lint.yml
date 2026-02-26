@@ -23,6 +23,23 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-targets -- -D warnings
 
+  skill-contract:
+    name: Skill Contract Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Run static skill contract check
+        run: ./scripts/skill-eval/static-skill-contract-check.sh
+      - name: Upload contract report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: skill-static-report
+          path: specs/perf/skill-static-report.json
+          retention-days: 14
+
   docs:
     name: Markdown & Commitlint
     runs-on: ubuntu-latest

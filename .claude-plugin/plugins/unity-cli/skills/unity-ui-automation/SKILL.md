@@ -12,8 +12,8 @@ Find, inspect, and interact with UI elements (uGUI / UI Toolkit).
 
 ```bash
 # Find UI elements
-unity-cli raw find_ui_elements --json '{"query":"Button","searchType":"name"}'
-unity-cli raw find_ui_elements --json '{"query":"UnityEngine.UI.Button","searchType":"type"}'
+unity-cli raw find_ui_elements --json '{"namePattern":"Start","includeInactive":true}'
+unity-cli raw find_ui_elements --json '{"elementType":"Button","includeInactive":true}'
 
 # Inspect state
 unity-cli raw get_ui_element_state --json '{"elementPath":"/Canvas/StartButton"}'
@@ -21,11 +21,11 @@ unity-cli raw get_ui_element_state --json '{"elementPath":"/Canvas/StartButton"}
 # Interact
 unity-cli raw click_ui_element --json '{"elementPath":"/Canvas/StartButton"}'
 unity-cli raw set_ui_element_value --json '{"elementPath":"/Canvas/NameInput","value":"Player1"}'
-unity-cli raw simulate_ui_input --json '{"elementPath":"/Canvas/Slider","inputType":"drag","value":0.75}'
+unity-cli raw simulate_ui_input --json '{"inputSequence":[{"type":"setvalue","params":{"elementPath":"/Canvas/Slider","value":"0.75"}}],"waitBetween":50}'
 ```
 
 ## Tips
 
-- Use `searchType` `name` or `type` to narrow results.
+- Use `namePattern` and `elementType` to narrow results.
 - `get_ui_element_state` returns visibility, interactability, and current value.
 - Combine with PlayMode testing for end-to-end UI tests.

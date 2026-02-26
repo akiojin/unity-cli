@@ -253,16 +253,18 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI Overview
 
-CI is defined in `.github/workflows/test.yml`.
+CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and `.github/workflows/skill-routing-eval.yml`.
 
 | Job | Trigger | Description |
 | ----- | --------- | ------------- |
+| Skill Contract Check (required) | push / PR | `scripts/skill-eval/static-skill-contract-check.sh` |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
 | LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh` (full cases + history artifact) |
+| Skill Routing Eval | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
 | Unity E2E Tests | manual (`workflow_dispatch`) | E2E test script |
 
-Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
+Skill Contract Check, Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
 E2E Tests are manual-only and require a runner with Unity Editor.
 
 ## Capability Catalog
@@ -314,6 +316,43 @@ Regression policy:
 2. Keep `specs/perf/lsp-history.jsonl` as append-only history.
 3. Use recorded trends as baseline comparison input.
 4. Exclude `system ping` from strict regression gate (depends on Unity availability and machine/network state).
+
+## Skill Accuracy Evaluation
+
+Benchmark and history files:
+
+- `specs/perf/skill-routing-benchmark.jsonl` (routing benchmark: 120 cases)
+- `specs/perf/skill-routing-history.jsonl` (append-only eval history)
+- `specs/perf/skill-static-report.json` (latest static contract report)
+
+Run static validation (required in PR CI):
+
+```bash
+./scripts/skill-eval/static-skill-contract-check.sh
+```
+
+Run routing eval with predictions:
+
+```bash
+./scripts/skill-eval/llm-routing-eval.sh \
+  --model local-debug \
+  --predictions /path/to/predictions.jsonl
+```
+
+Run routing eval with an external runner command:
+
+```bash
+./scripts/skill-eval/llm-routing-eval.sh \
+  --model nightly \
+  --runner-cmd '<your-runner-command>'
+```
+
+Current thresholds:
+
+- `top1 >= 0.90`
+- `top2 >= 0.98`
+- `tool_correct >= 0.92`
+- `payload_valid >= 0.95`
 
 ## Speckit Upgrade Runbook
 
@@ -668,16 +707,18 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI の概要
 
-CI は `.github/workflows/test.yml` で定義されています。
+CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
 
 | ジョブ | トリガー | 内容 |
 | -------- | --------- | ------ |
+| Skill Contract Check (required) | push / PR | `scripts/skill-eval/static-skill-contract-check.sh` |
 | Rust Tests (required) | push / PR | `cargo test` |
 | LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
 | LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact） |
+| Skill Routing Eval | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
 | Unity E2E Tests | 手動 (`workflow_dispatch`) | E2E テストスクリプトの実行 |
 
-Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
+Skill Contract Check / Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
 E2E Tests は手動トリガーのみで、Unity Editor が起動しているランナーが必要です。
 
 ## 機能カタログ
@@ -729,6 +770,43 @@ cat specs/perf/lsp-history.jsonl | tail -n 5
 2. `specs/perf/lsp-history.jsonl` を追記履歴として維持する
 3. 履歴トレンドをベースライン比較に利用する
 4. `system ping` は Unity の可用性に依存するため厳密ゲートには含めない
+
+## スキル精度評価
+
+ベンチマーク・履歴ファイル:
+
+- `specs/perf/skill-routing-benchmark.jsonl`（ルーティング評価ベンチマーク: 120ケース）
+- `specs/perf/skill-routing-history.jsonl`（追記専用の評価履歴）
+- `specs/perf/skill-static-report.json`（最新の静的契約チェック結果）
+
+静的検証（PR CI 必須）:
+
+```bash
+./scripts/skill-eval/static-skill-contract-check.sh
+```
+
+予測JSONを使ったルーティング評価:
+
+```bash
+./scripts/skill-eval/llm-routing-eval.sh \
+  --model local-debug \
+  --predictions /path/to/predictions.jsonl
+```
+
+外部ランナーコマンドを使ったルーティング評価:
+
+```bash
+./scripts/skill-eval/llm-routing-eval.sh \
+  --model nightly \
+  --runner-cmd '<your-runner-command>'
+```
+
+現在の閾値:
+
+- `top1 >= 0.90`
+- `top2 >= 0.98`
+- `tool_correct >= 0.92`
+- `payload_valid >= 0.95`
 
 ## Speckit 更新手順（要約）
 

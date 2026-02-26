@@ -117,3 +117,7 @@ UnityCliBridge/Assets/Scenes/Generated.meta
 
 UnityCliBridge/UnityCliBridge.slnx
 
+# Skill evaluation generated reports
+specs/perf/skill-static-report.json
+specs/perf/skill-routing-summary.json
+

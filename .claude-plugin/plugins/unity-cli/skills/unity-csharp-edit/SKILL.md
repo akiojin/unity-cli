@@ -40,8 +40,8 @@ unity-cli raw validate_text_edits --json '{"relative":"Assets/Scripts/Player.cs"
 unity-cli raw create_class --json '{"name":"EnemyAI","namespace":"Game.AI","inherits":"MonoBehaviour","folder":"Assets/Scripts/AI"}'
 
 # Read/search context
-unity-cli raw read --json '{"path":"Assets/Scripts/Player.cs","startLine":1,"endLine":120}'
-unity-cli raw search --json '{"pattern":"public void Jump","include":"Assets/**/*.cs"}'
+unity-cli raw read --json '{"path":"Assets/Scripts/Player.cs","startLine":1,"maxLines":120}'
+unity-cli raw search --json '{"pattern":"public void Jump","path":"Assets/Scripts"}'
 
 # Compilation
 unity-cli raw get_compilation_state --json '{}'
