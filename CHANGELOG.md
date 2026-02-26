@@ -1,3 +1,15 @@
+## [0.1.3] - 2026-02-26
+
+### 🐛 Bug Fixes
+
+- *(lsp)* Restore safe defaults and improve local tool errors
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* V0.1.2
+- Remove release-please references and enable auto-merge for develop→main
+- *(tools)* Register csharp write tools and docs
+
 ## [0.1.2] - 2026-02-24
 
 ### 🐛 Bug Fixes
