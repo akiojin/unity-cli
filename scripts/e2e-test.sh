@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-HOST="127.0.0.1"
-PORT="8080"
+HOST="${UNITY_CLI_HOST:-127.0.0.1}"
+PORT="${UNITY_CLI_PORT:-6400}"
 UNITY_CLI="./target/release/unity-cli"
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 LOG="/tmp/unity-cli-e2e-${RUN_ID}.log"

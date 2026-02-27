@@ -15,8 +15,12 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     vim \
     tmux \
+    python3-pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Python packages required by E2E / LSP perf scripts
+RUN pip3 install --break-system-packages tiktoken
 
 # Install Rust toolchain
 ENV CARGO_HOME=/root/.cargo

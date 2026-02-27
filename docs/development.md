@@ -125,7 +125,7 @@ Tool catalog sources:
 
 - Rust catalog: `src/tool_catalog.rs`
 - Local tool implementation: `src/local_tools.rs`
-- Snapshot list: `README.md` (`Full Capability Catalog (Snapshot)`)
+- Snapshot list: `docs/tools.md` (`Tool Catalog`)
 
 ## Local Commands
 
@@ -273,9 +273,9 @@ E2E Tests are manual-only and require a runner with Unity Editor.
 
 ## Capability Catalog
 
-The full current capability list (typed command groups + Unity Tool APIs) is maintained in `README.md` under:
+The full current capability list (typed command groups + Unity Tool APIs) is maintained in `docs/tools.md` under:
 
-- `Full Capability Catalog (Snapshot)`
+- `Tool Catalog`
 
 Regenerate command examples:
 
@@ -585,7 +585,7 @@ unity-cli tool call find_refs --json '{"name":"MyClass","pageSize":20}'
 
 - Rustツールカタログ: `src/tool_catalog.rs`
 - ローカルツール実装: `src/local_tools.rs`
-- スナップショット一覧: `README.md`（`Full Capability Catalog (Snapshot)`）
+- スナップショット一覧: `docs/tools.md`（`Tool Catalog`）
 
 ## ローカル実行コマンド
 
@@ -727,9 +727,9 @@ E2E Tests は手動トリガーのみで、Unity Editor が起動しているラ
 
 ## 機能カタログ
 
-最新の全機能一覧（typed コマンド群 + Unity Tool API 一覧）は `README.md` の以下を正本とします。
+最新の全機能一覧（typed コマンド群 + Unity Tool API 一覧）は `docs/tools.md` の以下を正本とします。
 
-- `Full Capability Catalog (Snapshot)`
+- `Tool Catalog`
 
 再生成コマンド例:
 
