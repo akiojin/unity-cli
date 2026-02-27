@@ -91,6 +91,10 @@ jobs:
             os: ubuntu-latest
             artifact: unity-cli-linux-x64
             binary: unity-cli
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: unity-cli-linux-arm64
+            binary: unity-cli
           - target: aarch64-apple-darwin
             os: macos-latest
             artifact: unity-cli-macos-arm64
@@ -109,6 +113,12 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
       - name: Cache cargo registry and build
         uses: actions/cache@v4
         with:
@@ -121,6 +131,8 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
 
       - name: Rename artifact (Unix)
         if: runner.os != 'Windows'
@@ -151,6 +163,9 @@ jobs:
           - rid: linux-x64
             os: ubuntu-latest
             artifact: csharp-lsp-linux-x64
+          - rid: linux-arm64
+            os: ubuntu-latest
+            artifact: csharp-lsp-linux-arm64
           - rid: osx-arm64
             os: macos-latest
             artifact: csharp-lsp-osx-arm64
@@ -229,9 +244,11 @@ jobs:
           tag_name: ${{ needs.create-tag.outputs.tag }}
           files: |
             artifacts/unity-cli-linux-x64/unity-cli-linux-x64
+            artifacts/unity-cli-linux-arm64/unity-cli-linux-arm64
             artifacts/unity-cli-macos-arm64/unity-cli-macos-arm64
             artifacts/unity-cli-windows-x64.exe/unity-cli-windows-x64.exe
             artifacts/csharp-lsp-linux-x64/csharp-lsp-linux-x64
+            artifacts/csharp-lsp-linux-arm64/csharp-lsp-linux-arm64
             artifacts/csharp-lsp-osx-arm64/csharp-lsp-osx-arm64
             artifacts/csharp-lsp-win-x64/csharp-lsp-win-x64
             artifacts/csharp-lsp-manifest.json
