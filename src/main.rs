@@ -458,6 +458,23 @@ mod tests {
     }
 
     #[test]
+    fn env_var_guard_restores_previous_value() {
+        std::env::set_var("UNITY_CLI_TEST_GUARD", "before");
+        {
+            let _guard = EnvVarGuard::set("UNITY_CLI_TEST_GUARD", "during");
+            assert_eq!(
+                std::env::var("UNITY_CLI_TEST_GUARD").ok().as_deref(),
+                Some("during")
+            );
+        }
+        assert_eq!(
+            std::env::var("UNITY_CLI_TEST_GUARD").ok().as_deref(),
+            Some("before")
+        );
+        std::env::remove_var("UNITY_CLI_TEST_GUARD");
+    }
+
+    #[test]
     fn parse_ports_deduplicates_values() {
         let parsed = parse_ports(&Some("6400, 6401,6400".to_string())).expect("ports should parse");
         assert_eq!(parsed, vec![6400, 6401]);
@@ -759,6 +776,7 @@ mod tests {
         assert!(format!("{err:#}").contains("Provide --json or --stdin"));
     }
 
+    #[allow(clippy::await_holding_lock)]
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_set_active_text_output_when_reachable() {
         let _guard = crate::test_env::env_lock()
@@ -796,6 +814,9 @@ mod tests {
         .await
         .expect("set-active text output should succeed for reachable instance");
 
-        accept_task.abort();
+        tokio::time::timeout(std::time::Duration::from_secs(1), accept_task)
+            .await
+            .expect("listener task should finish")
+            .expect("listener task should succeed");
     }
 }

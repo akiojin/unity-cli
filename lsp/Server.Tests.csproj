@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <IncludeTestAssembly>true</IncludeTestAssembly>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Program.cs" />

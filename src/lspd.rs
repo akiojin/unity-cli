@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::io::ErrorKind;
 use std::io::{BufRead, BufReader, Write};
@@ -154,7 +155,7 @@ pub fn serve_forever() -> Result<()> {
     write_pid_file()?;
 
     let mut last_activity = Instant::now();
-    let idle_timeout = Duration::from_secs(DAEMON_IDLE_TIMEOUT_SECS);
+    let idle_timeout = Duration::from_secs(daemon_idle_timeout_secs());
 
     loop {
         match listener.accept() {
@@ -411,6 +412,14 @@ fn is_would_block(error: &std::io::Error) -> bool {
     error.kind() == std::io::ErrorKind::WouldBlock
 }
 
+fn daemon_idle_timeout_secs() -> u64 {
+    env::var("UNITY_CLI_LSPD_IDLE_TIMEOUT")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(DAEMON_IDLE_TIMEOUT_SECS)
+}
+
 fn pid_file_path() -> Result<PathBuf> {
     Ok(lsp_manager::install_dir()?.join("lspd.pid"))
 }
@@ -642,7 +651,7 @@ mod tests {
 
     #[test]
     fn write_pid_file_and_cleanup_manage_files_under_tools_root() {
-        let _ = cleanup_stale_files();
+        cleanup_stale_files();
         let pid_path = pid_file_path().expect("pid file path should resolve");
         write_pid_file().expect("pid file write should succeed");
         assert!(pid_path.exists());
@@ -818,6 +827,7 @@ mod tests {
         let (_tools_root, _env) = prepare_tools_root();
         ensure_local_lsp_binary();
         cleanup_stale_files();
+        let _idle_env = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "1");
 
         let thread = std::thread::spawn(|| serve_forever().expect("serve_forever should stop"));
         let socket = socket_path().expect("socket path should resolve");
@@ -827,37 +837,22 @@ mod tests {
         }
         assert!(socket.exists(), "daemon socket should be created");
 
-        let _ = status().expect("status call should return while daemon is running");
-
-        let mut stop_sent = false;
-        let stop_deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-        while std::time::Instant::now() < stop_deadline {
-            match std::os::unix::net::UnixStream::connect(&socket) {
-                Ok(mut stream) => {
-                    stream
-                        .write_all(
-                            br#"{"type":"stop"}
-"#,
-                        )
-                        .expect("stop request should be written");
-                    let mut line = String::new();
-                    let mut reader = BufReader::new(stream);
-                    reader
-                        .read_line(&mut line)
-                        .expect("stop response should be readable");
-                    let value: serde_json::Value = serde_json::from_str(line.trim())
-                        .expect("stop response should be valid JSON");
-                    if value["ok"] == true {
-                        stop_sent = true;
-                        break;
-                    }
-                }
-                Err(_) => {
-                    std::thread::sleep(std::time::Duration::from_millis(20));
+        let mut running_seen = false;
+        let status_deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while std::time::Instant::now() < status_deadline {
+            if let Ok(value) = status() {
+                if value
+                    .get("running")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false)
+                {
+                    running_seen = true;
+                    break;
                 }
             }
+            std::thread::sleep(std::time::Duration::from_millis(20));
         }
-        assert!(stop_sent, "daemon did not accept stop request");
+        assert!(running_seen, "daemon did not respond to status");
 
         thread.join().expect("daemon thread should join");
         cleanup_stale_files();
@@ -867,5 +862,21 @@ mod tests {
         if socket.exists() {
             let _ = std::fs::remove_file(&socket);
         }
+    }
+
+    #[test]
+    fn daemon_idle_timeout_uses_env_override() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        std::env::remove_var("UNITY_CLI_LSPD_IDLE_TIMEOUT");
+        assert_eq!(daemon_idle_timeout_secs(), 600);
+
+        let _env = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "2");
+        assert_eq!(daemon_idle_timeout_secs(), 2);
+
+        drop(_env);
+        let _invalid = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "0");
+        assert_eq!(daemon_idle_timeout_secs(), 600);
     }
 }
