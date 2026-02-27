@@ -1266,9 +1266,15 @@ fn to_rel_project_path(root: &Path, path: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::maybe_execute_local_tool;
+    use super::{
+        build_snippet, collect_cs_files, extract_symbols_from_text, index_is_ready,
+        index_not_ready_response, maybe_execute_local_tool, normalize_rel_or_abs_path,
+        normalize_rel_path, path_matches_scope, requires_unityengine_using,
+        resolve_candidate_project_path, strip_csharp_comments, symbol_name_matches, IndexedFile,
+        SymbolIndex,
+    };
     use serde_json::json;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::sync::{Mutex, OnceLock};
 
     fn env_lock() -> &'static Mutex<()> {
@@ -1618,6 +1624,171 @@ mod tests {
             .contains("Invalid class name"));
 
         std::env::remove_var("UNITY_PROJECT_ROOT");
+    }
+
+    #[test]
+    fn helper_path_normalization_and_resolution_cover_edge_cases() {
+        let root = tempfile::tempdir().expect("temp dir should be created");
+        let root_path = root.path();
+        write_file(
+            &root_path.join("Assets/Scripts/Player.cs"),
+            "public class Player {}\n",
+        );
+
+        assert_eq!(
+            normalize_rel_path("./Assets/Scripts/Player.cs").as_deref(),
+            Some("Assets/Scripts/Player.cs")
+        );
+        assert!(normalize_rel_path("tmp/Player.cs").is_none());
+        assert!(normalize_rel_path("Assets/../Secret.cs").is_none());
+
+        let rel = normalize_rel_or_abs_path(root_path, "Assets/Scripts/Player.cs")
+            .expect("relative project path should normalize");
+        assert_eq!(rel, "Assets/Scripts/Player.cs");
+
+        let abs = root_path.join("Assets/Scripts/Player.cs");
+        let rel_abs = normalize_rel_or_abs_path(
+            root_path,
+            abs.to_str().expect("absolute path should be valid UTF-8"),
+        )
+        .expect("absolute path under root should normalize");
+        assert_eq!(rel_abs, "Assets/Scripts/Player.cs");
+
+        let outside = PathBuf::from("/tmp/local-tools-outside.cs");
+        let outside_result = normalize_rel_or_abs_path(
+            root_path,
+            outside
+                .to_str()
+                .expect("outside path should be valid UTF-8"),
+        );
+        assert!(outside_result.is_err());
+
+        assert!(resolve_candidate_project_path(root_path, "/etc/passwd").is_err());
+        assert!(resolve_candidate_project_path(root_path, "../bad.cs").is_err());
+        assert!(resolve_candidate_project_path(root_path, "Assets/Scripts/Player.cs").is_ok());
+    }
+
+    #[test]
+    fn helper_symbol_and_scope_predicates_work() {
+        assert!(symbol_name_matches("PlayerController", "Player", false));
+        assert!(!symbol_name_matches("PlayerController", "Player", true));
+        assert!(symbol_name_matches("Player", "Player", true));
+
+        assert!(path_matches_scope("Assets/Scripts/A.cs", "assets"));
+        assert!(path_matches_scope("Packages/com.demo/A.cs", "packages"));
+        assert!(path_matches_scope(
+            "Library/PackageCache/com.demo/A.cs",
+            "packages"
+        ));
+        assert!(!path_matches_scope("Assets/Scripts/A.cs", "packages"));
+    }
+
+    #[test]
+    fn helper_comment_and_snippet_processing_works() {
+        let mut in_block = false;
+        assert_eq!(
+            strip_csharp_comments("var a = 1; // trailing", &mut in_block).trim(),
+            "var a = 1;"
+        );
+        assert!(!in_block);
+
+        let first = strip_csharp_comments("/* begin", &mut in_block);
+        assert_eq!(first, "");
+        assert!(in_block);
+        let second = strip_csharp_comments("still comment */ int x = 1;", &mut in_block);
+        assert_eq!(second.trim(), "int x = 1;");
+        assert!(!in_block);
+
+        let lines = vec!["line 1", "line 2", "line 3", "line 4"];
+        let (short, short_truncated) = build_snippet(&lines, 1, 1, 100);
+        assert!(!short_truncated);
+        assert!(short.contains("line 2"));
+
+        let (long, long_truncated) = build_snippet(&lines, 1, 2, 8);
+        assert!(long_truncated);
+        assert!(long.ends_with("..."));
+    }
+
+    #[test]
+    fn extract_symbols_from_text_covers_major_symbol_kinds() {
+        let text = r#"
+namespace Demo.Game
+{
+    public class Player
+    {
+        public int Health;
+        public int Score { get; set; }
+        public Player() {}
+        public void Jump() {}
+        public void Loop()
+        {
+            if (true) { }
+        }
+    }
+}
+"#;
+        let symbols = extract_symbols_from_text("Assets/Scripts/Player.cs", text);
+        assert!(symbols
+            .iter()
+            .any(|s| s.name == "Player" && s.kind == "class"));
+        assert!(symbols
+            .iter()
+            .any(|s| s.name == "Health" && s.kind == "field"));
+        assert!(symbols
+            .iter()
+            .any(|s| s.name == "Score" && s.kind == "property"));
+        assert!(symbols
+            .iter()
+            .any(|s| s.name == "Jump" && s.kind == "method"));
+        assert!(symbols
+            .iter()
+            .any(|s| s.name == "Player" && s.kind == "method"));
+        assert!(!symbols.iter().any(|s| s.name == "if"));
+    }
+
+    #[test]
+    fn collect_cs_files_and_index_helpers_cover_readiness_branches() {
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        write_file(
+            &tmp.path().join("Assets/Scripts/Ok.cs"),
+            "public class Ok {}\n",
+        );
+        write_file(&tmp.path().join("Assets/Scripts/Note.txt"), "ignore\n");
+        write_file(
+            &tmp.path().join("Assets/.git/Hidden.cs"),
+            "public class Hidden {}\n",
+        );
+        write_file(
+            &tmp.path().join("Assets/obj/Build.cs"),
+            "public class Build {}\n",
+        );
+
+        let files = collect_cs_files(tmp.path(), &[tmp.path().join("Assets")]);
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].0, "Assets/Scripts/Ok.cs");
+
+        let empty = SymbolIndex::default();
+        assert!(!index_is_ready(&empty));
+
+        let mut ready = SymbolIndex::default();
+        ready.files.insert(
+            "Assets/Scripts/Ok.cs".to_string(),
+            IndexedFile {
+                signature: "sig".to_string(),
+                symbols: Vec::new(),
+            },
+        );
+        assert!(index_is_ready(&ready));
+
+        let not_ready = index_not_ready_response();
+        assert_eq!(not_ready["error"], "index_not_ready");
+    }
+
+    #[test]
+    fn requires_unityengine_using_only_for_monobehaviour() {
+        assert!(requires_unityengine_using(Some("MonoBehaviour")));
+        assert!(!requires_unityengine_using(Some("ScriptableObject")));
+        assert!(!requires_unityengine_using(None));
     }
 
     #[test]

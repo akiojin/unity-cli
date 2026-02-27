@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::io::ErrorKind;
 use std::io::{BufRead, BufReader, Write};
@@ -154,7 +155,7 @@ pub fn serve_forever() -> Result<()> {
     write_pid_file()?;
 
     let mut last_activity = Instant::now();
-    let idle_timeout = Duration::from_secs(DAEMON_IDLE_TIMEOUT_SECS);
+    let idle_timeout = Duration::from_secs(daemon_idle_timeout_secs());
 
     loop {
         match listener.accept() {
@@ -411,6 +412,14 @@ fn is_would_block(error: &std::io::Error) -> bool {
     error.kind() == std::io::ErrorKind::WouldBlock
 }
 
+fn daemon_idle_timeout_secs() -> u64 {
+    env::var("UNITY_CLI_LSPD_IDLE_TIMEOUT")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(DAEMON_IDLE_TIMEOUT_SECS)
+}
+
 fn pid_file_path() -> Result<PathBuf> {
     Ok(lsp_manager::install_dir()?.join("lspd.pid"))
 }
@@ -449,8 +458,102 @@ fn cleanup_stale_files() {
 
 #[cfg(test)]
 mod tests {
-    use super::write_all_with_retry;
-    use std::io::{self, Write};
+    use super::*;
+    use serde_json::json;
+    use std::io::{self, BufRead, BufReader, Write};
+    use tempfile::tempdir;
+
+    fn env_lock() -> &'static std::sync::Mutex<()> {
+        crate::test_env::env_lock()
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(previous) = &self.previous {
+                std::env::set_var(self.key, previous);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    fn prepare_tools_root() -> (tempfile::TempDir, EnvVarGuard) {
+        let dir = tempdir().expect("tempdir should succeed");
+        let env = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            dir.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        (dir, env)
+    }
+
+    fn ensure_local_lsp_binary() {
+        let binary = crate::lsp_manager::binary_path().expect("binary path should resolve");
+        if let Some(parent) = binary.parent() {
+            std::fs::create_dir_all(parent).expect("binary directory should be creatable");
+        }
+        std::fs::write(&binary, b"fake-lsp-binary").expect("fake binary should be writable");
+    }
+
+    #[cfg(unix)]
+    fn spawn_unix_server_once(response_json: &str) -> std::thread::JoinHandle<()> {
+        let path = socket_path().expect("socket path should resolve");
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("socket parent should exist");
+        }
+        if path.exists() {
+            let _ = std::fs::remove_file(&path);
+        }
+        let listener =
+            std::os::unix::net::UnixListener::bind(&path).expect("server socket should bind");
+        listener
+            .set_nonblocking(true)
+            .expect("server socket should be nonblocking");
+        let response = response_json.to_string();
+        std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
+            loop {
+                match listener.accept() {
+                    Ok((mut stream, _)) => {
+                        let mut line = String::new();
+                        let _ =
+                            BufReader::new(stream.try_clone().expect("stream clone should work"))
+                                .read_line(&mut line);
+                        stream
+                            .write_all(response.as_bytes())
+                            .expect("response write should succeed");
+                        stream
+                            .write_all(b"\n")
+                            .expect("response newline should be written");
+                        stream.flush().expect("response flush should succeed");
+                        break;
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        if std::time::Instant::now() >= deadline {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    Err(_) => break,
+                }
+            }
+            let _ = std::fs::remove_file(path);
+        })
+    }
 
     struct FlakyWriter {
         out: Vec<u8>,
@@ -507,5 +610,272 @@ mod tests {
         let mut writer = ZeroWriter;
         let error = write_all_with_retry(&mut writer, b"abc", "zero write").expect_err("must fail");
         assert!(error.to_string().contains("write returned 0 bytes"));
+    }
+
+    #[test]
+    fn handle_request_handles_ping_status_and_stop() {
+        let (ping_resp, ping_action) = handle_request(DaemonRequest::Ping).expect("ping must work");
+        assert!(ping_resp.ok);
+        assert_eq!(
+            ping_resp.result.as_ref().and_then(|v| v.get("pong")),
+            Some(&json!(true))
+        );
+        assert!(matches!(ping_action, ConnectionAction::Continue));
+
+        let (status_resp, status_action) =
+            handle_request(DaemonRequest::Status).expect("status must work");
+        assert!(status_resp.ok);
+        assert_eq!(
+            status_resp
+                .result
+                .as_ref()
+                .and_then(|v| v.get("running"))
+                .and_then(serde_json::Value::as_bool),
+            Some(true)
+        );
+        assert!(matches!(status_action, ConnectionAction::Continue));
+
+        let (stop_resp, stop_action) = handle_request(DaemonRequest::Stop).expect("stop must work");
+        assert!(stop_resp.ok);
+        assert!(matches!(stop_action, ConnectionAction::Stop));
+    }
+
+    #[test]
+    fn is_would_block_checks_error_kind() {
+        let would_block = io::Error::new(io::ErrorKind::WouldBlock, "simulated");
+        assert!(is_would_block(&would_block));
+
+        let other = io::Error::new(io::ErrorKind::ConnectionReset, "simulated");
+        assert!(!is_would_block(&other));
+    }
+
+    #[test]
+    fn write_pid_file_and_cleanup_manage_files_under_tools_root() {
+        cleanup_stale_files();
+        let pid_path = pid_file_path().expect("pid file path should resolve");
+        write_pid_file().expect("pid file write should succeed");
+        assert!(pid_path.exists());
+
+        cleanup_stale_files();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn handle_stream_round_trip_ping_request() {
+        let (mut client, mut server) =
+            std::os::unix::net::UnixStream::pair().expect("socket pair should be created");
+        client
+            .write_all(
+                br#"{"type":"ping"}
+"#,
+            )
+            .expect("request write should succeed");
+
+        let action = super::handle_stream(&mut server).expect("handle_stream should succeed");
+        assert!(matches!(action, ConnectionAction::Continue));
+
+        let mut reader = BufReader::new(client);
+        let mut line = String::new();
+        reader
+            .read_line(&mut line)
+            .expect("response line should be readable");
+        let response: serde_json::Value =
+            serde_json::from_str(line.trim()).expect("response should be valid JSON");
+        assert_eq!(response["ok"], true);
+        assert_eq!(response["result"]["pong"], true);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn handle_stream_rejects_invalid_json() {
+        let (mut client, mut server) =
+            std::os::unix::net::UnixStream::pair().expect("socket pair should be created");
+        client
+            .write_all(b"not-json\n")
+            .expect("request write should succeed");
+        let result = super::handle_stream(&mut server);
+        let message = match result {
+            Ok(_) => panic!("invalid JSON should fail"),
+            Err(error) => format!("{error:#}"),
+        };
+        assert!(message.contains("Invalid daemon request JSON"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn start_background_returns_already_running_when_status_is_true() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        ensure_local_lsp_binary();
+
+        let status_server = spawn_unix_server_once(r#"{"ok":true,"result":{"running":true}}"#);
+        let value = start_background().expect("start should return already-running response");
+        assert_eq!(value["running"], true);
+        assert_eq!(value["alreadyRunning"], true);
+        status_server.join().expect("status server should join");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ping_status_stop_and_call_tool_handle_daemon_responses() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+
+        let ping_ok = spawn_unix_server_once(r#"{"ok":true}"#);
+        ping().expect("ping should succeed");
+        ping_ok.join().expect("ping server should join");
+
+        let ping_fail = spawn_unix_server_once(r#"{"ok":false,"error":"bad ping"}"#);
+        let err = ping().expect_err("ping should fail when daemon reports error");
+        assert!(!format!("{err:#}").is_empty());
+        ping_fail.join().expect("ping server should join");
+
+        let status_ok = spawn_unix_server_once(r#"{"ok":true,"result":{"running":true}}"#);
+        let value = status().expect("status should succeed");
+        assert!(value.get("running").is_some());
+        status_ok.join().expect("status server should join");
+
+        let status_fail = spawn_unix_server_once(r#"{"ok":false,"error":"status failed"}"#);
+        let value = status().expect("status fallback should still succeed");
+        assert_eq!(value["running"], false);
+        status_fail.join().expect("status server should join");
+
+        let stop_ok = spawn_unix_server_once(r#"{"ok":true}"#);
+        let value = stop().expect("stop should succeed");
+        assert!(value.get("stopped").is_some());
+        stop_ok.join().expect("stop server should join");
+
+        let stop_fail = spawn_unix_server_once(r#"{"ok":false,"error":"cannot-stop"}"#);
+        match stop() {
+            Ok(value) => assert!(value.get("stopped").is_some()),
+            Err(err) => assert!(format!("{err:#}").contains("cannot-stop")),
+        }
+        stop_fail.join().expect("stop server should join");
+
+        let root = tempdir().expect("tempdir should succeed");
+        let tool_ok = spawn_unix_server_once(r#"{"ok":true,"result":{"ok":true}}"#);
+        match call_tool("get_symbols", &json!({}), root.path()) {
+            Ok(value) => assert_eq!(value["ok"], true),
+            Err(err) => assert!(!format!("{err:#}").is_empty()),
+        }
+        tool_ok.join().expect("tool server should join");
+
+        let tool_fail = spawn_unix_server_once(r#"{"ok":false,"error":"tool failed"}"#);
+        let err = call_tool("get_symbols", &json!({}), root.path())
+            .expect_err("tool call should fail when daemon reports failure");
+        assert!(!format!("{err:#}").is_empty());
+        tool_fail.join().expect("tool server should join");
+
+        cleanup_stale_files();
+        let value = stop().expect("stop should gracefully succeed when daemon is unavailable");
+        assert_eq!(value["stopped"], false);
+        assert_eq!(value["running"], false);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ping_reports_invalid_json_response() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+
+        let invalid = spawn_unix_server_once("not-json");
+        let err = ping().expect_err("invalid response JSON should fail");
+        let message = format!("{err:#}");
+        assert!(
+            message.contains("Invalid daemon response JSON")
+                || message.contains("Failed to read daemon response")
+                || message.contains("Failed to connect to lspd socket"),
+            "unexpected error: {message}"
+        );
+        invalid.join().expect("invalid server should join");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn handle_request_tool_branch_returns_error_payload_on_lsp_failure() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        ensure_local_lsp_binary();
+        let root = tempdir().expect("tempdir should succeed");
+
+        let (response, action) = handle_request(DaemonRequest::Tool {
+            tool_name: "get_symbols".to_string(),
+            params: json!({"path":"Assets/Missing.cs"}),
+            project_root: root.path().to_string_lossy().to_string(),
+        })
+        .expect("tool request should be handled");
+        assert!(!response.ok);
+        assert!(response.error.is_some());
+        assert!(matches!(action, ConnectionAction::Continue));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn serve_forever_accepts_stop_and_cleans_files() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        ensure_local_lsp_binary();
+        cleanup_stale_files();
+        let _idle_env = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "1");
+
+        let thread = std::thread::spawn(|| serve_forever().expect("serve_forever should stop"));
+        let socket = socket_path().expect("socket path should resolve");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while !socket.exists() && std::time::Instant::now() < deadline {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert!(socket.exists(), "daemon socket should be created");
+
+        let mut running_seen = false;
+        let status_deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while std::time::Instant::now() < status_deadline {
+            if let Ok(value) = status() {
+                if value
+                    .get("running")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false)
+                {
+                    running_seen = true;
+                    break;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert!(running_seen, "daemon did not respond to status");
+
+        thread.join().expect("daemon thread should join");
+        cleanup_stale_files();
+
+        let pid = pid_file_path().expect("pid path should resolve");
+        assert!(!pid.exists(), "pid file should be cleaned up");
+        if socket.exists() {
+            let _ = std::fs::remove_file(&socket);
+        }
+    }
+
+    #[test]
+    fn daemon_idle_timeout_uses_env_override() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        std::env::remove_var("UNITY_CLI_LSPD_IDLE_TIMEOUT");
+        assert_eq!(daemon_idle_timeout_secs(), 600);
+
+        let _env = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "2");
+        assert_eq!(daemon_idle_timeout_secs(), 2);
+
+        drop(_env);
+        let _invalid = EnvVarGuard::set("UNITY_CLI_LSPD_IDLE_TIMEOUT", "0");
+        assert_eq!(daemon_idle_timeout_secs(), 600);
     }
 }

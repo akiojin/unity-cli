@@ -204,15 +204,17 @@ fn unix_timestamp() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{list_instances, parse_id, set_active_instance};
+    use super::{
+        list_instances, load_registry, parse_id, registry_path, set_active_instance,
+        InstanceRecord, Registry,
+    };
     use std::path::PathBuf;
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::Mutex;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tokio::net::TcpListener;
 
     fn env_lock() -> &'static Mutex<()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(()))
+        crate::test_env::env_lock()
     }
 
     fn temp_registry_path(label: &str) -> PathBuf {
@@ -233,12 +235,63 @@ mod tests {
 
         let err = parse_id("invalid").expect_err("missing separator should fail");
         assert!(format!("{err:#}").contains("Expected host:port"));
+
+        let err = parse_id(":6400").expect_err("empty host should fail");
+        assert!(format!("{err:#}").contains("Invalid host"));
+
+        let err = parse_id("localhost:not-a-port").expect_err("invalid port should fail");
+        assert!(format!("{err:#}").contains("Invalid port"));
+    }
+
+    #[test]
+    fn registry_path_uses_env_and_creates_parent_directory() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry_file =
+            temp_registry_path("instances-registry-path").with_file_name("nested/instances.json");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_file);
+
+        let resolved = registry_path().expect("registry path should resolve");
+        assert_eq!(resolved, registry_file);
+        assert!(resolved
+            .parent()
+            .expect("registry file should have parent")
+            .exists());
+
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        if let Some(parent) = resolved.parent() {
+            let _ = std::fs::remove_dir_all(parent);
+        }
+    }
+
+    #[test]
+    fn load_registry_reconstructs_missing_ids() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry_path = temp_registry_path("instances-load");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        std::fs::write(
+            &registry_path,
+            r#"{"active_id":null,"entries":[{"id":"","host":"127.0.0.1","port":6400}]}"#,
+        )
+        .expect("fixture write should succeed");
+
+        let loaded = load_registry().expect("registry should load");
+        assert_eq!(loaded.entries.len(), 1);
+        assert_eq!(loaded.entries[0].id, "127.0.0.1:6400");
+
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        let _ = std::fs::remove_file(&registry_path);
     }
 
     #[tokio::test]
     #[allow(clippy::await_holding_lock)]
     async fn list_instances_reports_up_for_reachable_port() {
-        let _guard = env_lock().lock().expect("lock should succeed");
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-up");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
 
@@ -266,8 +319,30 @@ mod tests {
 
     #[tokio::test]
     #[allow(clippy::await_holding_lock)]
+    async fn list_instances_adds_default_port_when_no_entries_exist() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry_path = temp_registry_path("instances-default");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+
+        let statuses = list_instances("127.0.0.1", &[], 50)
+            .await
+            .expect("list should succeed");
+        assert_eq!(statuses.len(), 1);
+        assert_eq!(statuses[0].id, "127.0.0.1:6400");
+        assert_eq!(statuses[0].port, 6400);
+
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        let _ = std::fs::remove_file(&registry_path);
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
     async fn set_active_fails_for_unreachable_instance() {
-        let _guard = env_lock().lock().expect("lock should succeed");
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-down");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
 
@@ -288,5 +363,60 @@ mod tests {
 
         std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
         let _ = std::fs::remove_file(&registry_path);
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn set_active_succeeds_for_reachable_instance_and_tracks_previous() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry_path = temp_registry_path("instances-active");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+
+        let listener = TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .expect("listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should expose local addr")
+            .port();
+        let accept_task = tokio::spawn(async move {
+            for _ in 0..2 {
+                let _ = listener.accept().await;
+            }
+        });
+
+        let id = format!("127.0.0.1:{port}");
+        let first = set_active_instance(&id, 300)
+            .await
+            .expect("first set-active should succeed");
+        assert_eq!(first.active_id, id);
+        assert!(first.previous_id.is_none());
+
+        let second = set_active_instance(&id, 300)
+            .await
+            .expect("second set-active should succeed");
+        assert_eq!(second.previous_id.as_deref(), Some(id.as_str()));
+
+        accept_task.abort();
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        let _ = std::fs::remove_file(&registry_path);
+    }
+
+    #[test]
+    fn registry_round_trip_serialization_shape_is_supported() {
+        let registry = Registry {
+            active_id: Some("127.0.0.1:6400".to_string()),
+            entries: vec![InstanceRecord {
+                id: "127.0.0.1:6400".to_string(),
+                host: "127.0.0.1".to_string(),
+                port: 6400,
+            }],
+        };
+        let raw = serde_json::to_string(&registry).expect("registry should serialize");
+        let parsed: Registry = serde_json::from_str(&raw).expect("registry should deserialize");
+        assert_eq!(parsed.active_id.as_deref(), Some("127.0.0.1:6400"));
+        assert_eq!(parsed.entries[0].host, "127.0.0.1");
     }
 }

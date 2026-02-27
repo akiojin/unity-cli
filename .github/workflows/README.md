@@ -11,6 +11,8 @@
 - `test.yml`
   - `cargo test`
   - `dotnet test lsp/Server.Tests.csproj`
+  - `cargo llvm-cov` (Rust coverage gate, line >= 90%)
+  - `dotnet test ... /p:CollectCoverage=true` (LSP coverage gate, line >= 90%)
 - `unity-cli-release.yml`
   - triggers on `v*` tag
   - builds release binaries for Linux/macOS/Windows

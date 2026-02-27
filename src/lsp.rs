@@ -1141,11 +1141,144 @@ fn read_message(reader: &mut BufReader<ChildStdout>) -> Result<Option<Value>> {
 #[cfg(test)]
 mod tests {
     use anyhow::anyhow;
-    use serde_json::Value;
+    use serde_json::{json, Value};
+    use tempfile::tempdir;
 
-    use super::build_remove_symbol_request;
-    use super::is_retryable_session_error;
-    use super::normalize_rel_path;
+    #[cfg(unix)]
+    use std::fs;
+    #[cfg(unix)]
+    use std::io::BufReader;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
+    #[cfg(unix)]
+    use std::path::Path;
+    #[cfg(unix)]
+    use std::process::{Command, Stdio};
+    #[cfg(unix)]
+    use std::sync::{Mutex, OnceLock};
+
+    use super::{
+        build_remove_symbol_request, collect_document_symbols, execute_direct, file_uri, get_apply,
+        id_matches, is_retryable_session_error, kind_from_lsp, maybe_execute, normalize_rel_path,
+        path_matches_scope, read_message, ref_path, require_name_path, require_relative_path,
+        reset_cached_session, to_project_relative_or_raw, uri_to_rel_path, wrap_lsp_write_result,
+    };
+
+    #[cfg(unix)]
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    #[cfg(unix)]
+    struct EnvVarGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    #[cfg(unix)]
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    #[cfg(unix)]
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.previous {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    fn setup_fake_lsp_server(tools_root: &Path) -> std::path::PathBuf {
+        let install_dir = tools_root
+            .join("csharp-lsp")
+            .join(crate::lsp_manager::detect_rid());
+        fs::create_dir_all(&install_dir).expect("fake lsp install dir should be created");
+
+        let server_path = install_dir.join(crate::lsp_manager::executable_name());
+        let script = r#"#!/usr/bin/env python3
+import json
+import os
+import sys
+
+PLAYER_URI = os.environ["FAKE_LSP_PLAYER_URI"]
+OUTPUT_PATH = os.environ["FAKE_LSP_OUTPUT_PATH"]
+
+def read_message():
+    headers = {}
+    while True:
+        line = sys.stdin.buffer.readline()
+        if line == b"":
+            return None
+        if line in (b"\r\n", b"\n"):
+            break
+        if b":" in line:
+            key, value = line.decode("utf-8").split(":", 1)
+            headers[key.strip().lower()] = value.strip()
+
+    length = int(headers.get("content-length", "0"))
+    if length <= 0:
+        return None
+
+    payload = sys.stdin.buffer.read(length)
+    return json.loads(payload.decode("utf-8"))
+
+def send_message(value):
+    raw = json.dumps(value, separators=(",", ":")).encode("utf-8")
+    sys.stdout.buffer.write(f"Content-Length: {len(raw)}\r\n\r\n".encode("utf-8"))
+    sys.stdout.buffer.write(raw)
+    sys.stdout.buffer.flush()
+
+while True:
+    message = read_message()
+    if message is None:
+        break
+
+    method = message.get("method")
+    message_id = message.get("id")
+
+    if method == "initialize":
+        send_message({"jsonrpc": "2.0", "id": message_id, "result": {"capabilities": {"documentSymbolProvider": True}}})
+    elif method == "initialized":
+        continue
+    elif method == "textDocument/documentSymbol":
+        send_message({"jsonrpc":"2.0","id":message_id,"result":[{"name":"Player","kind":5,"range":{"start":{"line":0,"character":0}},"children":[{"name":"Move","kind":6,"range":{"start":{"line":2,"character":4}}}]}]})
+    elif method == "workspace/symbol":
+        send_message({"jsonrpc":"2.0","id":message_id,"result":[
+            {"name":"Player","kind":5,"location":{"uri":PLAYER_URI,"range":{"start":{"line":0,"character":0}}}},
+            {"name":"PlayerFactory","kind":5,"location":{"uri":PLAYER_URI,"range":{"start":{"line":5,"character":1}}}},
+            {"name":"Move","kind":6,"location":{"uri":PLAYER_URI,"range":{"start":{"line":2,"character":4}}}}
+        ]})
+    elif method == "unitycli/referencesByName":
+        send_message({"jsonrpc":"2.0","id":message_id,"result":[
+            {"path":PLAYER_URI,"line":4,"column":8,"snippet":"var a = new Player();"},
+            {"path":"Assets/Scripts/UserB.cs","line":7,"column":2,"snippet":"Player p;"}
+        ]})
+    elif method == "unitycli/buildCodeIndex":
+        send_message({"jsonrpc":"2.0","id":message_id,"result":{"success":True,"count":3,"outputPath":OUTPUT_PATH}})
+    elif method == "unitycli/validateTextEdits":
+        send_message({"jsonrpc":"2.0","id":message_id,"result":{"diagnostics":[{"severity":"warning","message":"sample"}]}})
+    elif method in ("unitycli/renameByNamePath","unitycli/replaceSymbolBody","unitycli/insertBeforeSymbol","unitycli/insertAfterSymbol","unitycli/removeSymbol"):
+        send_message({"jsonrpc":"2.0","id":message_id,"result":{"success":True,"applied":True}})
+    else:
+        send_message({"jsonrpc":"2.0","id":message_id,"result":{}})
+"#;
+        fs::write(&server_path, script).expect("fake lsp server script should be written");
+        let mut perms = fs::metadata(&server_path)
+            .expect("fake lsp metadata should be readable")
+            .permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&server_path, perms).expect("fake lsp should be executable");
+        server_path
+    }
 
     #[test]
     fn normalize_rel_path_accepts_assets_packages_and_library() {
@@ -1206,5 +1339,386 @@ mod tests {
             request.get("failOnReferences").and_then(Value::as_bool),
             Some(false)
         );
+    }
+
+    #[test]
+    fn normalize_rel_path_extracts_supported_prefix_from_absolute_like_input() {
+        assert_eq!(
+            normalize_rel_path("/tmp/workspace/Assets/Scripts/Test.cs").as_deref(),
+            Some("Assets/Scripts/Test.cs")
+        );
+    }
+
+    #[test]
+    fn kind_from_lsp_maps_known_values() {
+        assert_eq!(kind_from_lsp(3), "namespace");
+        assert_eq!(kind_from_lsp(5), "class");
+        assert_eq!(kind_from_lsp(23), "struct");
+        assert_eq!(kind_from_lsp(999), "unknown");
+    }
+
+    #[test]
+    fn path_matches_scope_filters_paths() {
+        assert!(path_matches_scope("Assets/Scripts/A.cs", "assets"));
+        assert!(!path_matches_scope("Packages/com.demo/A.cs", "assets"));
+        assert!(path_matches_scope("Packages/com.demo/A.cs", "embedded"));
+        assert!(path_matches_scope(
+            "Library/PackageCache/com.demo/A.cs",
+            "library"
+        ));
+        assert!(path_matches_scope("whatever", "all"));
+    }
+
+    #[test]
+    fn uri_and_ref_path_helpers_resolve_project_relative_paths() {
+        let root = tempdir().expect("tempdir should succeed");
+        let rel = "Assets/Scripts/Player.cs";
+        let abs = root.path().join(rel);
+
+        let uri = file_uri(&abs);
+        assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": uri })).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": rel })).as_deref(),
+            Some(rel)
+        );
+    }
+
+    #[test]
+    fn uri_to_rel_path_rejects_non_file_uris() {
+        let root = tempdir().expect("tempdir should succeed");
+        assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs").is_none());
+    }
+
+    #[test]
+    fn to_project_relative_or_raw_returns_relative_for_absolute_under_root() {
+        let root = tempdir().expect("tempdir should succeed");
+        let abs = root.path().join("Assets/Scripts/Enemy.cs");
+        let converted = to_project_relative_or_raw(
+            root.path(),
+            abs.to_str().expect("absolute path should be valid UTF-8"),
+        );
+        assert_eq!(converted, "Assets/Scripts/Enemy.cs");
+        assert_eq!(
+            to_project_relative_or_raw(root.path(), "Packages/com.demo/Foo.cs"),
+            "Packages/com.demo/Foo.cs"
+        );
+    }
+
+    #[test]
+    fn require_helpers_validate_expected_fields() {
+        let params = json!({
+            "path": "Assets/Scripts/Player.cs",
+            "namePath": "Player/Move"
+        });
+        assert_eq!(
+            require_relative_path(&params, "rename_symbol").expect("relative path should parse"),
+            "Assets/Scripts/Player.cs"
+        );
+        assert_eq!(
+            require_name_path(&params, "rename_symbol").expect("namePath should parse"),
+            "Player/Move"
+        );
+
+        let missing_name = require_name_path(&json!({}), "rename_symbol")
+            .expect_err("missing namePath should fail");
+        assert!(missing_name.to_string().contains("namePath"));
+        assert!(
+            require_relative_path(&json!({"relative": "tmp/Player.cs"}), "rename_symbol").is_err()
+        );
+    }
+
+    #[test]
+    fn get_apply_defaults_to_false() {
+        assert!(!get_apply(&json!({})));
+        assert!(get_apply(&json!({ "apply": true })));
+    }
+
+    #[test]
+    fn wrap_lsp_write_result_adds_backend_to_objects_only() {
+        let wrapped = wrap_lsp_write_result(json!({ "success": true }));
+        assert_eq!(wrapped["backend"], "lsp");
+        assert_eq!(wrap_lsp_write_result(json!(["x"])), json!(["x"]));
+    }
+
+    #[test]
+    fn collect_document_symbols_flattens_nested_symbols() {
+        let payload = json!([
+            {
+                "name": "Player",
+                "kind": 5,
+                "range": { "start": { "line": 1, "character": 2 } },
+                "children": [
+                    {
+                        "name": "Move",
+                        "kind": 6,
+                        "range": { "start": { "line": 3, "character": 4 } }
+                    }
+                ]
+            }
+        ]);
+
+        let mut symbols = Vec::new();
+        collect_document_symbols(&payload, None, &mut symbols);
+        assert_eq!(symbols.len(), 2);
+        assert_eq!(symbols[0]["name"], "Player");
+        assert_eq!(symbols[1]["container"], "Player");
+        assert_eq!(symbols[1]["kind"], "method");
+    }
+
+    #[test]
+    fn id_matches_accepts_number_and_string_id() {
+        assert!(id_matches(&json!({ "id": 7 }), 7));
+        assert!(id_matches(&json!({ "id": "7" }), 7));
+        assert!(!id_matches(&json!({ "id": "x" }), 7));
+        assert!(!id_matches(&json!({}), 7));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_message_returns_none_when_stream_is_empty() {
+        let mut child = Command::new("bash")
+            .arg("-lc")
+            .arg("true")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("child process should start");
+        let stdout = child.stdout.take().expect("stdout should be piped");
+        let mut reader = BufReader::new(stdout);
+        assert!(read_message(&mut reader)
+            .expect("read should succeed")
+            .is_none());
+        let _ = child.wait();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_message_parses_content_length_framed_json() {
+        let mut child = Command::new("bash")
+            .arg("-lc")
+            .arg("printf 'Content-Length: 8\\r\\n\\r\\n{\"id\":1}'")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("child process should start");
+        let stdout = child.stdout.take().expect("stdout should be piped");
+        let mut reader = BufReader::new(stdout);
+        let message = read_message(&mut reader)
+            .expect("message read should succeed")
+            .expect("message should exist");
+        assert_eq!(message["id"], 1);
+        let _ = child.wait();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_message_rejects_missing_content_length_header() {
+        let mut child = Command::new("bash")
+            .arg("-lc")
+            .arg("printf 'X-Test: 1\\r\\n\\r\\n{}'")
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("child process should start");
+        let stdout = child.stdout.take().expect("stdout should be piped");
+        let mut reader = BufReader::new(stdout);
+        let error = read_message(&mut reader).expect_err("missing Content-Length should fail");
+        assert!(error.to_string().contains("Content-Length"));
+        let _ = child.wait();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn execute_direct_covers_core_lsp_read_tools() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        reset_cached_session();
+
+        let tools_dir = tempdir().expect("tempdir should be created");
+        let project_dir = tempdir().expect("tempdir should be created");
+        let player_path = project_dir.path().join("Assets/Scripts/Player.cs");
+        let userb_path = project_dir.path().join("Assets/Scripts/UserB.cs");
+        fs::create_dir_all(
+            player_path
+                .parent()
+                .expect("player path should have parent directory"),
+        )
+        .expect("assets/scripts dir should be created");
+        fs::write(
+            &player_path,
+            "public class Player { public void Move() {} }\n",
+        )
+        .expect("player fixture should be written");
+        fs::write(&userb_path, "public class UserB { Player p; }\n")
+            .expect("user fixture should be written");
+
+        setup_fake_lsp_server(tools_dir.path());
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools_dir
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _out = EnvVarGuard::set(
+            "FAKE_LSP_OUTPUT_PATH",
+            project_dir
+                .path()
+                .join("Library/cache/index.json")
+                .to_str()
+                .expect("output path should be valid UTF-8"),
+        );
+
+        let symbols = execute_direct(
+            "get_symbols",
+            &json!({"path":"Assets/Scripts/Player.cs"}),
+            project_dir.path(),
+        )
+        .expect("get_symbols should succeed");
+        assert_eq!(symbols["success"], true);
+        assert_eq!(symbols["backend"], "lsp");
+        assert!(symbols["symbols"]
+            .as_array()
+            .expect("symbols should be an array")
+            .iter()
+            .any(|symbol| symbol["name"] == "Move"));
+
+        let find_symbol = execute_direct(
+            "find_symbol",
+            &json!({"name":"Player","kind":"class","scope":"assets","exact":true}),
+            project_dir.path(),
+        )
+        .expect("find_symbol should succeed");
+        assert_eq!(find_symbol["success"], true);
+        assert_eq!(find_symbol["total"], 1);
+
+        let refs = execute_direct(
+            "find_refs",
+            &json!({"name":"Player","pageSize":1,"maxBytes":65536}),
+            project_dir.path(),
+        )
+        .expect("find_refs should succeed");
+        assert_eq!(refs["success"], true);
+        assert_eq!(refs["truncated"], true);
+        assert!(refs.get("cursor").is_some());
+
+        let index = execute_direct("build_index", &json!({}), project_dir.path())
+            .expect("build_index should succeed");
+        assert_eq!(index["success"], true);
+        assert_eq!(index["indexedFiles"], 3);
+        assert_eq!(index["backend"], "lsp");
+        reset_cached_session();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn execute_direct_covers_lsp_write_tools() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        reset_cached_session();
+
+        let tools_dir = tempdir().expect("tempdir should be created");
+        let project_dir = tempdir().expect("tempdir should be created");
+        let player_path = project_dir.path().join("Assets/Scripts/Player.cs");
+        fs::create_dir_all(
+            player_path
+                .parent()
+                .expect("player path should have parent directory"),
+        )
+        .expect("assets/scripts dir should be created");
+        fs::write(
+            &player_path,
+            "public class Player { public void Move() {} }\n",
+        )
+        .expect("player fixture should be written");
+
+        setup_fake_lsp_server(tools_dir.path());
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools_dir
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _out = EnvVarGuard::set(
+            "FAKE_LSP_OUTPUT_PATH",
+            project_dir
+                .path()
+                .join("Library/cache/index.json")
+                .to_str()
+                .expect("output path should be valid UTF-8"),
+        );
+
+        let params = json!({
+            "relative":"Assets/Scripts/Player.cs",
+            "namePath":"Player/Move",
+            "newName":"Run",
+            "body":"{ return; }",
+            "text":"public void Added() {}",
+            "newText":"public class Player {}",
+            "apply": true
+        });
+
+        let rename = execute_direct("rename_symbol", &params, project_dir.path())
+            .expect("rename_symbol should succeed");
+        assert_eq!(rename["backend"], "lsp");
+        assert_eq!(rename["success"], true);
+
+        let replace = execute_direct("replace_symbol_body", &params, project_dir.path())
+            .expect("replace_symbol_body should succeed");
+        assert_eq!(replace["backend"], "lsp");
+
+        let before = execute_direct("insert_before_symbol", &params, project_dir.path())
+            .expect("insert_before_symbol should succeed");
+        assert_eq!(before["backend"], "lsp");
+
+        let after = execute_direct("insert_after_symbol", &params, project_dir.path())
+            .expect("insert_after_symbol should succeed");
+        assert_eq!(after["backend"], "lsp");
+
+        let remove = execute_direct("remove_symbol", &params, project_dir.path())
+            .expect("remove_symbol should succeed");
+        assert_eq!(remove["backend"], "lsp");
+
+        let validate = execute_direct("validate_text_edits", &params, project_dir.path())
+            .expect("validate_text_edits should succeed");
+        assert_eq!(validate["backend"], "lsp");
+        assert_eq!(validate["success"], true);
+        assert!(validate["diagnostics"].is_array());
+
+        reset_cached_session();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn maybe_execute_mode_gate_and_tool_filter_behave_as_expected() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let root = tempdir().expect("tempdir should be created");
+        let tools = tempdir().expect("tempdir should be created");
+        setup_fake_lsp_server(tools.path());
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let params = json!({"path":"Assets/Scripts/Player.cs"});
+
+        std::env::set_var("UNITY_CLI_LSP_MODE", "off");
+        assert!(maybe_execute("get_symbols", &params, root.path()).is_none());
+
+        std::env::set_var("UNITY_CLI_LSP_MODE", "auto");
+        assert!(maybe_execute("unsupported_tool", &params, root.path()).is_none());
+
+        std::env::set_var("UNITY_CLI_LSP_MODE", "required");
+        let required_result = maybe_execute("get_symbols", &params, root.path());
+        assert!(required_result.is_some());
+        assert!(required_result
+            .expect("required mode should return result")
+            .is_err());
+
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
     }
 }
