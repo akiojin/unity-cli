@@ -121,3 +121,7 @@ UnityCliBridge/UnityCliBridge.slnx
 specs/perf/skill-static-report.json
 specs/perf/skill-routing-summary.json
 
+# Local/generated histories
+history.txt
+specs/perf/lsp-history.jsonl
+
