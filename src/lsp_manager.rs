@@ -271,3 +271,194 @@ fn get_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T> {
         .into_json::<T>()
         .with_context(|| format!("Failed to parse JSON: {url}"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use tempfile::tempdir;
+
+    fn env_lock() -> &'static std::sync::Mutex<()> {
+        crate::test_env::env_lock()
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(value) = &self.previous {
+                std::env::set_var(self.key, value);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    fn unique_temp_path(label: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or(Duration::from_secs(0))
+            .as_nanos();
+        std::env::temp_dir().join(format!("unity-cli-lsp-manager-{label}-{nanos}"))
+    }
+
+    fn run_http_server_once(status: &str, body: &str) -> (String, thread::JoinHandle<()>) {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should expose local addr")
+            .port();
+        let status_line = status.to_string();
+        let body_text = body.to_string();
+        let handle = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept should succeed");
+            let mut buf = [0_u8; 1024];
+            let _ = stream.read(&mut buf);
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {len}\r\nConnection: close\r\n\r\n{body}",
+                status = status_line,
+                len = body_text.len(),
+                body = body_text
+            );
+            stream
+                .write_all(response.as_bytes())
+                .expect("response write should succeed");
+            stream.flush().expect("response flush should succeed");
+        });
+        (format!("http://127.0.0.1:{port}/"), handle)
+    }
+
+    #[test]
+    fn tools_root_prefers_unity_cli_tools_root_env() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let root = unique_temp_path("tools-root");
+        let root_with_spaces = format!("  {}  ", root.display());
+        let _env = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", &root_with_spaces);
+        let resolved = tools_root().expect("tools root should resolve");
+        assert_eq!(resolved, root);
+    }
+
+    #[test]
+    fn write_and_read_local_version_round_trip() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempdir().expect("tempdir should succeed");
+        let _env = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            dir.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+
+        write_local_version(" 1.2.3 ").expect("version write should succeed");
+        assert_eq!(read_local_version().as_deref(), Some("1.2.3"));
+    }
+
+    #[test]
+    fn read_local_version_returns_none_for_missing_or_blank_file() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempdir().expect("tempdir should succeed");
+        let _env = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            dir.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+
+        assert!(read_local_version().is_none());
+
+        let version_file = version_path().expect("version path should resolve");
+        if let Some(parent) = version_file.parent() {
+            fs::create_dir_all(parent).expect("version parent directory should be created");
+        }
+        fs::write(&version_file, "\n").expect("blank version marker should be writable");
+        assert!(read_local_version().is_none());
+    }
+
+    #[test]
+    fn ensure_local_uses_existing_binary_without_download() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempdir().expect("tempdir should succeed");
+        let _env = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            dir.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+
+        let binary = binary_path().expect("binary path should resolve");
+        if let Some(parent) = binary.parent() {
+            fs::create_dir_all(parent).expect("binary parent directory should be created");
+        }
+        fs::write(&binary, b"already-installed").expect("binary fixture should be writable");
+
+        let resolved = ensure_local(false).expect("existing binary should be reused");
+        assert_eq!(resolved, binary);
+    }
+
+    #[test]
+    fn sha256_file_matches_known_hash() {
+        let dir = tempdir().expect("tempdir should succeed");
+        let path = dir.path().join("payload.bin");
+        fs::write(&path, b"abc").expect("payload write should succeed");
+
+        let digest = sha256_file(&path).expect("checksum should be computed");
+        assert_eq!(
+            digest,
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn replace_file_atomic_overwrites_destination() {
+        let dir = tempdir().expect("tempdir should succeed");
+        let tmp = dir.path().join("server.tmp");
+        let dest = dir.path().join("server.bin");
+
+        fs::write(&tmp, b"new-binary").expect("tmp write should succeed");
+        fs::write(&dest, b"old-binary").expect("dest write should succeed");
+
+        replace_file_atomic(&tmp, &dest).expect("atomic replace should succeed");
+
+        let content = fs::read(&dest).expect("dest read should succeed");
+        assert_eq!(content, b"new-binary");
+        assert!(!tmp.exists());
+    }
+
+    #[test]
+    fn get_response_reports_http_status_errors() {
+        let (url, handle) = run_http_server_once("500 Internal Server Error", "{\"ok\":false}");
+        let error = get_response(&url).expect_err("HTTP 500 should fail");
+        handle.join().expect("server thread should complete");
+        assert!(error.to_string().contains("HTTP 500"));
+    }
+
+    #[test]
+    fn get_json_parses_http_body() {
+        let (url, handle) = run_http_server_once("200 OK", "{\"tag_name\":\"v1.2.3\"}");
+        let release: ReleaseInfo = get_json(&url).expect("JSON payload should parse");
+        handle.join().expect("server thread should complete");
+        assert_eq!(release.tag_name, "v1.2.3");
+    }
+}

@@ -44,6 +44,52 @@ jobs:
       - name: Run dotnet test
         run: dotnet test lsp/Server.Tests.csproj
 
+  rust-coverage:
+    name: Rust Coverage >= 90% (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run Rust coverage gate
+        run: |
+          cargo llvm-cov --all-targets --summary-only --fail-under-lines 90
+
+  lsp-coverage:
+    name: LSP Coverage >= 90% (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET SDK 9
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Run LSP coverage gate
+        run: |
+          dotnet test lsp/Server.Tests.csproj \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:Threshold=90 \
+            /p:ThresholdType=line \
+            /p:ThresholdStat=total
+
   lsp-perf:
     name: LSP Performance (required)
     runs-on: ubuntu-latest

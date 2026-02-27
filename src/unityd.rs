@@ -566,6 +566,81 @@ async fn handle_request(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{BufRead, BufReader, Write};
+    use tempfile::tempdir;
+
+    fn env_lock() -> &'static std::sync::Mutex<()> {
+        crate::test_env::env_lock()
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvVarGuard {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            if let Some(previous) = &self.previous {
+                std::env::set_var(self.key, previous);
+            } else {
+                std::env::remove_var(self.key);
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    fn spawn_unix_server_once(response_json: &str) -> std::thread::JoinHandle<()> {
+        let path = socket_path().expect("socket path should resolve");
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("socket parent should exist");
+        }
+        if path.exists() {
+            let _ = std::fs::remove_file(&path);
+        }
+        let listener =
+            std::os::unix::net::UnixListener::bind(&path).expect("server socket should bind");
+        listener
+            .set_nonblocking(true)
+            .expect("server socket should be nonblocking");
+        let response = response_json.to_string();
+        std::thread::spawn(move || {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
+            loop {
+                match listener.accept() {
+                    Ok((mut stream, _)) => {
+                        let mut line = String::new();
+                        let _ =
+                            BufReader::new(stream.try_clone().expect("stream clone should work"))
+                                .read_line(&mut line);
+                        stream
+                            .write_all(response.as_bytes())
+                            .expect("response write should succeed");
+                        stream
+                            .write_all(b"\n")
+                            .expect("response newline write should succeed");
+                        stream.flush().expect("response flush should succeed");
+                        break;
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        if std::time::Instant::now() >= deadline {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    Err(_) => break,
+                }
+            }
+            let _ = std::fs::remove_file(path);
+        })
+    }
 
     #[test]
     fn daemon_request_ping_round_trip() {
@@ -710,5 +785,311 @@ mod tests {
         let json = serde_json::to_string(&req).unwrap();
         let parsed: DaemonRequest = serde_json::from_str(&json).unwrap();
         assert!(matches!(parsed, DaemonRequest::Stop));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn status_stop_and_ping_handle_response_shapes() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime should build");
+        runtime.block_on(async {
+            let mut pool = ConnectionPool::new();
+            let (status_resp, status_action) = handle_request(DaemonRequest::Status, &mut pool)
+                .await
+                .expect("status request should succeed");
+            assert!(status_resp.ok);
+            assert_eq!(
+                status_resp
+                    .result
+                    .as_ref()
+                    .and_then(|v| v.get("running"))
+                    .and_then(serde_json::Value::as_bool),
+                Some(true)
+            );
+            assert!(matches!(status_action, ConnectionAction::Continue));
+
+            let (stop_resp, stop_action) = handle_request(DaemonRequest::Stop, &mut pool)
+                .await
+                .expect("stop request should succeed");
+            assert!(stop_resp.ok);
+            assert!(matches!(stop_action, ConnectionAction::Stop));
+
+            let (ping_resp, ping_action) = handle_request(DaemonRequest::Ping, &mut pool)
+                .await
+                .expect("ping request should succeed");
+            assert!(ping_resp.ok);
+            assert!(matches!(ping_action, ConnectionAction::Continue));
+        });
+
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        cleanup_stale_files();
+        let status_value = status().expect("status should return fallback when daemon is absent");
+        assert_eq!(status_value["running"], false);
+
+        let stop_value = stop().expect("stop should gracefully succeed when daemon is unavailable");
+        assert_eq!(stop_value["stopped"], false);
+        assert_eq!(stop_value["running"], false);
+
+        let ping_err = ping().expect_err("ping should fail when daemon is absent");
+        assert!(!format!("{ping_err:#}").is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn start_background_returns_already_running_when_status_reports_running() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+
+        let status_server = spawn_unix_server_once(r#"{"ok":true,"result":{"running":true}}"#);
+        let value = start_background().expect("start should return already running");
+        assert_eq!(value["alreadyRunning"], true);
+        assert_eq!(value["running"], true);
+        status_server.join().expect("status server should join");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_pid_and_cleanup_use_temp_home() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+
+        cleanup_stale_files();
+        write_pid_file().expect("pid file should be written");
+        let pid = pid_file_path().expect("pid path should resolve");
+        assert!(pid.exists());
+        cleanup_stale_files();
+        assert!(!pid.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn idle_timeout_env_override_and_invalid_values() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "42");
+        assert_eq!(idle_timeout_secs(), 42);
+        drop(_timeout);
+
+        let _invalid = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "0");
+        assert_eq!(idle_timeout_secs(), 600);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn serve_forever_exits_after_idle_timeout() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "1");
+
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime should build");
+        runtime
+            .block_on(serve_forever())
+            .expect("serve_forever should exit cleanly");
+
+        let socket = socket_path().expect("socket path should resolve");
+        let pid = pid_file_path().expect("pid path should resolve");
+        assert!(!socket.exists(), "socket should be cleaned up");
+        assert!(!pid.exists(), "pid should be cleaned up");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn try_call_tool_and_batch_map_daemon_errors() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        let config = RuntimeConfig {
+            host: "127.0.0.1".to_string(),
+            port: 9,
+            timeout: Duration::from_millis(20),
+        };
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime should build");
+
+        let tool_ok = spawn_unix_server_once(r#"{"ok":true,"result":{"answer":1}}"#);
+        match runtime.block_on(try_call_tool("ping", &json!({}), &config)) {
+            Ok(value) => assert_eq!(value["answer"], 1),
+            Err(err) => assert!(err.is_transport()),
+        }
+        tool_ok.join().expect("tool server should join");
+
+        let tool_failed = spawn_unix_server_once(r#"{"ok":false,"error":"tool failed"}"#);
+        let err = runtime
+            .block_on(try_call_tool("ping", &json!({}), &config))
+            .expect_err("tool call should fail");
+        assert!(err.is_transport() || err.to_string().contains("tool failed"));
+        tool_failed.join().expect("tool server should join");
+
+        cleanup_stale_files();
+        let err = runtime
+            .block_on(try_call_tool("ping", &json!({}), &config))
+            .expect_err("missing daemon should produce transport error");
+        assert!(err.is_transport());
+
+        let batch_ok = spawn_unix_server_once(r#"{"ok":true,"result":[{"ok":true}]}"#);
+        match runtime.block_on(try_batch(
+            vec![BatchItem {
+                tool: "ping".to_string(),
+                params: json!({}),
+            }],
+            &config,
+        )) {
+            Ok(value) => assert!(value.is_array()),
+            Err(err) => assert!(err.is_transport()),
+        }
+        batch_ok.join().expect("batch server should join");
+
+        let batch_failed = spawn_unix_server_once(r#"{"ok":false,"error":"batch failed"}"#);
+        let err = runtime
+            .block_on(try_batch(
+                vec![BatchItem {
+                    tool: "ping".to_string(),
+                    params: json!({}),
+                }],
+                &config,
+            ))
+            .expect_err("batch should fail");
+        assert!(err.is_transport() || err.to_string().contains("batch failed"));
+        batch_failed.join().expect("batch server should join");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn handle_request_and_stream_cover_tool_batch_and_json_errors() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime should build");
+        runtime.block_on(async {
+            let mut pool = ConnectionPool::new();
+            let (tool_response, tool_action) = handle_request(
+                DaemonRequest::Tool {
+                    tool_name: "ping".to_string(),
+                    params: json!({}),
+                    host: "127.0.0.1".to_string(),
+                    port: 9,
+                    timeout_ms: 20,
+                },
+                &mut pool,
+            )
+            .await
+            .expect("tool request should complete");
+            assert!(!tool_response.ok);
+            assert!(tool_response.error.is_some());
+            assert!(matches!(tool_action, ConnectionAction::Continue));
+
+            let (batch_response, batch_action) = handle_request(
+                DaemonRequest::Batch {
+                    commands: vec![BatchItem {
+                        tool: "ping".to_string(),
+                        params: json!({}),
+                    }],
+                    host: "127.0.0.1".to_string(),
+                    port: 9,
+                    timeout_ms: 20,
+                },
+                &mut pool,
+            )
+            .await
+            .expect("batch request should complete");
+            assert!(batch_response.ok);
+            let results = batch_response
+                .result
+                .as_ref()
+                .and_then(Value::as_array)
+                .expect("batch response should contain array");
+            assert_eq!(results[0]["ok"], false);
+            assert!(matches!(batch_action, ConnectionAction::Continue));
+
+            let (client, server) =
+                tokio::net::UnixStream::pair().expect("unix stream pair should be created");
+            drop(client);
+            let action = handle_async_stream(server, &mut pool)
+                .await
+                .expect("empty stream should continue");
+            assert!(matches!(action, ConnectionAction::Continue));
+
+            let (mut client, server) =
+                tokio::net::UnixStream::pair().expect("unix stream pair should be created");
+            tokio::io::AsyncWriteExt::write_all(
+                &mut client,
+                br#"{"type":"ping"}
+"#,
+            )
+            .await
+            .expect("request write should succeed");
+            let action = handle_async_stream(server, &mut pool)
+                .await
+                .expect("ping stream should succeed");
+            assert!(matches!(action, ConnectionAction::Continue));
+            let mut reader = tokio::io::BufReader::new(client);
+            let mut line = String::new();
+            tokio::io::AsyncBufReadExt::read_line(&mut reader, &mut line)
+                .await
+                .expect("response should be readable");
+            let response: Value =
+                serde_json::from_str(line.trim()).expect("response should be valid JSON");
+            assert_eq!(response["ok"], true);
+            assert_eq!(response["result"]["pong"], true);
+
+            let (mut client, server) =
+                tokio::net::UnixStream::pair().expect("unix stream pair should be created");
+            tokio::io::AsyncWriteExt::write_all(&mut client, b"not-json\n")
+                .await
+                .expect("request write should succeed");
+            let err = match handle_async_stream(server, &mut pool).await {
+                Ok(_) => panic!("invalid request should fail"),
+                Err(err) => err,
+            };
+            assert!(format!("{err:#}").contains("Invalid unityd request JSON"));
+        });
     }
 }

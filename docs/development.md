@@ -134,13 +134,17 @@ Tool catalog sources:
 cargo fmt
 cargo clippy --all-targets -- -D warnings
 cargo test --all-targets
+cargo llvm-cov --all-targets --summary-only --fail-under-lines 90
 
 # C# LSP
 dotnet test lsp/Server.Tests.csproj
+dotnet test lsp/Server.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90 /p:ThresholdType=line /p:ThresholdStat=total
 
 # Unity (EditMode tests)
 unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
 ```
+
+Rust coverage gate is enforced at repository level (all Rust targets, line >= 90%).
 
 ### Pre-push Hook
 

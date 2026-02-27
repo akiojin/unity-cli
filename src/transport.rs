@@ -181,7 +181,7 @@ fn parse_embedded_json(value: Value) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use super::UnityClient;
+    use super::{normalize_response, parse_embedded_json, parse_json, UnityClient};
     use crate::config::RuntimeConfig;
     use serde_json::{json, Value};
     use std::time::Duration;
@@ -293,5 +293,70 @@ mod tests {
         assert!(msg.contains("boom"));
         assert!(msg.contains("E_FAIL"));
         server.await.expect("server task should complete");
+    }
+
+    #[test]
+    fn parse_json_rejects_empty_and_non_utf8_payload() {
+        let empty = parse_json(b"   ").expect_err("empty payload should be rejected");
+        assert!(empty.to_string().contains("empty"));
+
+        let invalid_utf8 =
+            parse_json(&[0xFF, 0xFE, 0xFD]).expect_err("invalid UTF-8 should be rejected");
+        assert!(invalid_utf8.to_string().contains("UTF-8"));
+    }
+
+    #[test]
+    fn parse_json_accepts_trimmed_json() {
+        let parsed = parse_json(b"  {\"ok\":true}  ").expect("valid JSON should parse");
+        assert_eq!(parsed["ok"], true);
+    }
+
+    #[test]
+    fn normalize_response_handles_success_and_error_shapes() {
+        let result = normalize_response(json!({
+            "status": "success",
+            "result": "{\"count\":2}"
+        }))
+        .expect("success response should parse embedded JSON");
+        assert_eq!(result["count"], 2);
+
+        let from_data = normalize_response(json!({
+            "success": true,
+            "data": { "ok": true }
+        }))
+        .expect("data response should pass");
+        assert_eq!(from_data["ok"], true);
+
+        let status_error = normalize_response(json!({
+            "status": "error",
+            "code": "E_FAIL"
+        }))
+        .expect_err("status=error should fail");
+        assert!(status_error.to_string().contains("status=error"));
+
+        let explicit_error = normalize_response(json!({
+            "error": "boom",
+            "code": "E_BANG"
+        }))
+        .expect_err("explicit error should fail");
+        assert!(explicit_error.to_string().contains("boom"));
+        assert!(explicit_error.to_string().contains("E_BANG"));
+
+        let success_false = normalize_response(json!({
+            "success": false,
+            "code": "E_DOWN"
+        }))
+        .expect_err("success=false should fail");
+        assert!(success_false.to_string().contains("E_DOWN"));
+    }
+
+    #[test]
+    fn parse_embedded_json_keeps_plain_strings() {
+        assert_eq!(
+            parse_embedded_json(json!("{\"value\":1}")),
+            json!({ "value": 1 })
+        );
+        assert_eq!(parse_embedded_json(json!("not-json")), json!("not-json"));
+        assert_eq!(parse_embedded_json(json!({ "x": 1 })), json!({ "x": 1 }));
     }
 }
