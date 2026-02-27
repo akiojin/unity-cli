@@ -4,8 +4,8 @@
 
 set -u -o pipefail
 
-HOST="127.0.0.1"
-PORT="6400"
+HOST="${UNITY_CLI_HOST:-127.0.0.1}"
+PORT="${UNITY_CLI_PORT:-6400}"
 TIMEOUT_MS="120000"
 SKIP_QUIT=0
 SKIP_LSP_PERF=0
@@ -245,6 +245,20 @@ wait_for_play_state() {
   return 1
 }
 
+wait_for_tests_done() {
+  local max_tries=120
+  local i output status
+  for ((i = 1; i <= max_tries; i++)); do
+    output="$(invoke_tool "get_test_status" '{"includeTestResults":false}' 2>/dev/null || true)"
+    status="$(jq -r '.status // "unknown"' <<<"${output}" 2>/dev/null || echo "unknown")"
+    if [[ "${status}" != "running" ]]; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
 if ! "${UNITY_CLI}" system ping --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json >/dev/null 2>&1; then
   echo "ERROR: Unity connection failed (system ping)." >&2
   exit 1
@@ -400,6 +414,9 @@ sleep 1
 run_tool "profiler_status" '{}'
 run_tool "profiler_stop" '{}'
 run_tool "run_tests" '{"testMode":"EditMode","filter":"InputSystemHandlerTests"}'
+if ! wait_for_tests_done; then
+  record_failure "run_tests" "Test runner did not finish within timeout"
+fi
 run_tool "get_test_status" '{"includeTestResults":false}'
 run_tool "execute_menu_item" '{"action":"execute","menuPath":"Tools/Unity CLI/UI Tests/Generate UGUI Test Scene","safetyCheck":true}'
 run_tool "load_scene" "${json_load_ui_scene}"
