@@ -1,3 +1,30 @@
+## [0.2.0] - 2026-03-02
+
+### 🚀 Features
+
+- *(skills)* Add skill accuracy evaluation pipeline
+
+### 🐛 Bug Fixes
+
+- *(ci)* Stabilize lspd tests and lint failures
+
+### 📚 Documentation
+
+- *(claude)* Add workflow and task tracking templates
+- Restructure README and add multilingual docs
+
+### 🧪 Testing
+
+- Improve coverage to 90 percent
+- *(e2e)* Honor env host and wait for test completion
+- *(lspd)* Relax brittle daemon response assertions
+
+### ⚙️ Miscellaneous Tasks
+
+- *(release)* Add linux arm64 artifacts
+- *(docker)* Install tiktoken for perf scripts
+- *(git)* Ignore local history artifacts
+
 ## [0.1.3] - 2026-02-26
 
 ### 🐛 Bug Fixes
