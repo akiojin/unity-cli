@@ -99,6 +99,7 @@ namespace UnityCliBridge.Handlers
                     var workspaceRoot = ResolveWorkspaceRoot(projectRoot);
                     var captureDir = Path.Combine(workspaceRoot, ".unity", "capture");
                     s_OutputPath = Path.Combine(captureDir, $"profiler_{s_SessionId}_{timestamp}.data");
+                    s_OutputPath = s_OutputPath.Replace('\\', '/');
                     EnsureDirectory(s_OutputPath);
                 }
                 else
@@ -519,12 +520,12 @@ namespace UnityCliBridge.Handlers
                 var unityDir = Path.Combine(parentDir.FullName, ".unity");
                 if (Directory.Exists(unityDir))
                 {
-                    return parentDir.FullName;
+                    return parentDir.FullName.Replace('\\', '/');
                 }
             }
 
             // Fallback: use project root
-            return projectRoot;
+            return projectRoot.Replace('\\', '/');
         }
 
         /// <summary>
