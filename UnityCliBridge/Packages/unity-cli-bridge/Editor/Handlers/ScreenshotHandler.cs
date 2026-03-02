@@ -39,9 +39,12 @@ namespace UnityCliBridge.Handlers
                     string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
                     var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                     var wsParam = parameters["workspaceRoot"]?.ToString();
-                    string workspaceRoot = !string.IsNullOrEmpty(wsParam) ? wsParam : ResolveWorkspaceRoot(projectRoot);
+                    string workspaceRoot = (!string.IsNullOrEmpty(wsParam) && IsLocalPath(wsParam))
+                        ? wsParam
+                        : ResolveWorkspaceRoot(projectRoot);
                     var captureDir = Path.Combine(workspaceRoot, ".unity", "captures");
                     outputPath = Path.Combine(captureDir, $"image_{captureMode}_{timestamp}.png");
+                    outputPath = outputPath.Replace('\\', '/');
                 }
                 
                 // Ensure directory exists (support outside Assets)
@@ -89,14 +92,34 @@ namespace UnityCliBridge.Handlers
                 for (int i = 0; i < 3; i++)
                 {
                     var unityDir = Path.Combine(dir, ".unity");
-                    if (Directory.Exists(unityDir)) return dir;
+                    if (Directory.Exists(unityDir)) return dir.Replace('\\', '/');
                     var parent = Directory.GetParent(dir);
                     if (parent == null) break;
                     dir = parent.FullName;
                 }
             }
             catch { }
-            return projectRoot;
+            return projectRoot.Replace('\\', '/');
+        }
+
+
+        private static bool IsLocalPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                    System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                // Windows: "/foo" (UNC でない Unix 絶対パス) を拒否
+                if (path.StartsWith("/") && (path.Length < 2 || path[1] != '/'))
+                    return false;
+            }
+            else
+            {
+                // Unix: "C:\\..." や "D:/" などの Windows パスを拒否
+                if (path.Length >= 2 && char.IsLetter(path[0]) && path[1] == ':')
+                    return false;
+            }
+            return true;
         }
 
         private static bool PathsEqual(string a, string b)

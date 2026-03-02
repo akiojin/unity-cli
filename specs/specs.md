@@ -55,10 +55,11 @@
 | `SPEC-e7c9b50c` | [Unity Test Execution（ユニットテスト実行）機能](SPEC-e7c9b50c/spec.md) | 完了 | 2025-10-17 |
 | `SPEC-e8f7a2c1` | [シーン分析・デバッグ機能](SPEC-e8f7a2c1/spec.md) | 完了 | 2025-10-17 |
 
-### 未設定 (2件)
+### 未設定 (3件)
 
 | 要件ID | タイトル | ステータス | 作成日 |
 |---|---|---|---|
+| `SPEC-432610ad` | [SPEC-432610ad: Docker(Linux) → Windows Unity ホストでキャプチャ出力パス不整合の修正](SPEC-432610ad/spec.md) | 未設定 | - |
 | `SPEC-a99caa4b` | SPEC-a99caa4b | 未設定 | - |
 | `SPEC-e9854a10` | SPEC-e9854a10 | 未設定 | - |
 
