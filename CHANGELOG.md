@@ -1,3 +1,13 @@
+## [0.2.1] - 2026-03-02
+
+### 🐛 Bug Fixes
+
+- Cross-platform path mismatch in capture handlers (#54)
+- *(ci)* Release workflow now triggers on merge commits
+
+### ⚙️ Miscellaneous Tasks
+
+- Update specs index
 ## [0.2.0] - 2026-03-02
 
 ### 🚀 Features
