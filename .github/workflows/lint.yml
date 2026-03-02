@@ -34,7 +34,7 @@ jobs:
         run: ./scripts/skill-eval/static-skill-contract-check.sh
       - name: Upload contract report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: skill-static-report
           path: specs/perf/skill-static-report.json
