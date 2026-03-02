@@ -15,7 +15,7 @@ jobs:
   create-tag:
     name: Create Tag & Release
     runs-on: ubuntu-latest
-    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
