@@ -13,6 +13,7 @@ use ureq::Agent;
 const DOWNLOAD_TIMEOUT_SECS: u64 = 30;
 const USER_AGENT_VALUE: &str = "unity-cli";
 const MANIFEST_REPOS: &[&str] = &["akiojin/unity-cli"];
+const GITHUB_TOKEN_ENV_VARS: &[&str] = &["GITHUB_TOKEN", "GH_TOKEN"];
 
 #[derive(Debug, Deserialize)]
 struct ReleaseInfo {
@@ -258,11 +259,35 @@ fn http_client() -> Result<Agent> {
 
 fn get_response(url: &str) -> Result<ureq::Response> {
     let client = http_client()?;
-    match client.get(url).set("User-Agent", USER_AGENT_VALUE).call() {
+    let mut request = client.get(url).set("User-Agent", USER_AGENT_VALUE);
+
+    if let Some(token) = github_token_from_env() {
+        request = request.set("Authorization", &format!("Bearer {token}"));
+    }
+
+    match request.call() {
         Ok(response) => Ok(response),
-        Err(ureq::Error::Status(status, _)) => Err(anyhow!("HTTP {status} for {url}")),
+        Err(ureq::Error::Status(status, response)) => {
+            let body = response
+                .into_string()
+                .map(|body| format!(" body={body}"))
+                .unwrap_or_default();
+            Err(anyhow!("HTTP {status} for {url}{body}"))
+        }
         Err(error) => Err(anyhow!("Failed to request {url}: {error}")),
     }
+}
+
+fn github_token_from_env() -> Option<String> {
+    for key in GITHUB_TOKEN_ENV_VARS {
+        if let Ok(value) = std::env::var(key) {
+            let token = value.trim();
+            if !token.is_empty() {
+                return Some(token.to_string());
+            }
+        }
+    }
+    None
 }
 
 fn get_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T> {
@@ -277,6 +302,7 @@ mod tests {
     use super::*;
     use std::io::{Read, Write};
     use std::net::TcpListener;
+    use std::sync::{Arc, Mutex};
     use std::thread;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
     use tempfile::tempdir;
@@ -340,6 +366,39 @@ mod tests {
             stream.flush().expect("response flush should succeed");
         });
         (format!("http://127.0.0.1:{port}/"), handle)
+    }
+
+    fn run_http_server_once_with_request_capture(
+        status: &str,
+        body: &str,
+    ) -> (String, Arc<Mutex<String>>, thread::JoinHandle<()>) {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should expose local addr")
+            .port();
+        let status_line = status.to_string();
+        let body_text = body.to_string();
+        let captured = Arc::new(Mutex::new(String::new()));
+        let captured_for_thread = Arc::clone(&captured);
+        let handle = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept should succeed");
+            let mut buf = [0_u8; 4096];
+            let len = stream.read(&mut buf).unwrap_or_default();
+            let request = String::from_utf8_lossy(&buf[..len]).to_string();
+            *captured_for_thread.lock().expect("request buffer lock") = request;
+            let response = format!(
+                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {len}\r\nConnection: close\r\n\r\n{body}",
+                status = status_line,
+                len = body_text.len(),
+                body = body_text
+            );
+            stream
+                .write_all(response.as_bytes())
+                .expect("response write should succeed");
+            stream.flush().expect("response flush should succeed");
+        });
+        (format!("http://127.0.0.1:{port}/"), captured, handle)
     }
 
     #[test]
@@ -455,10 +514,32 @@ mod tests {
     }
 
     #[test]
+    fn get_response_includes_authorization_header() {
+        let token = "ghs_test_token";
+        let (url, captured_request, handle) =
+            run_http_server_once_with_request_capture("200 OK", "{\"tag_name\":\"v1.2.3\"}");
+        let _guard = EnvVarGuard::set("GITHUB_TOKEN", token);
+
+        let _ = get_response(&url).expect("authorized request should succeed");
+        handle.join().expect("server thread should complete");
+        let request = captured_request.lock().expect("request lock");
+        assert!(request.contains(&format!("Authorization: Bearer {token}")));
+    }
+
+    #[test]
     fn get_json_parses_http_body() {
         let (url, handle) = run_http_server_once("200 OK", "{\"tag_name\":\"v1.2.3\"}");
         let release: ReleaseInfo = get_json(&url).expect("JSON payload should parse");
         handle.join().expect("server thread should complete");
         assert_eq!(release.tag_name, "v1.2.3");
+    }
+
+    #[test]
+    fn get_json_fails_with_status_and_body() {
+        let (url, handle) = run_http_server_once("403 Forbidden", "{\"message\":\"forbidden\"}");
+        let error = get_json::<ReleaseInfo>(&url).expect_err("HTTP 403 should fail");
+        handle.join().expect("server thread should complete");
+        assert!(error.to_string().contains("HTTP 403"));
+        assert!(error.to_string().contains("forbidden"));
     }
 }
