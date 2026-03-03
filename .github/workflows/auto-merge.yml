@@ -22,11 +22,16 @@ jobs:
     steps:
       - name: Enable auto-merge (with retry)
         env:
-          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+
+          if [ -z "$GH_TOKEN" ]; then
+            echo "PERSONAL_ACCESS_TOKEN not provided, skipping auto-merge"
+            exit 0
+          fi
 
           for i in $(seq 1 60); do
             echo "Attempt $i: enable auto-merge for #$PR_NUMBER"
