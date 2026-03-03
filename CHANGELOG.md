@@ -1,3 +1,11 @@
+## [0.2.2] - 2026-03-03
+
+### 🐛 Bug Fixes
+
+- *(plugin)* Remove invalid manifest fields that broke marketplace install (#57)
+- *(bridge)* Separate compile errors from console errors, fix test filter and watchdog (#59)
+- *(lsp)* Use github token for lsp manifest fetch
+- *(ci)* Format lsp_manager test helper
 ## [0.2.1] - 2026-03-02
 
 ### 🐛 Bug Fixes
