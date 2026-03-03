@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+</Project>

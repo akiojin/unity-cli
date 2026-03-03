@@ -1,0 +1,44 @@
+{
+  "name": "unity-cli-workspace",
+  "version": "0.2.2",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "description": "Development environment for unity-cli",
+  "scripts": {
+    "release": "echo \"Use scripts/publish.sh for manual release orchestration.\" && exit 1",
+    "lint:md": "markdownlint README.md CONTRIBUTING.md CLAUDE.md RELEASE.md docs/development.md docs/constitution.md UnityCliBridge/Packages/unity-cli-bridge/**/*.md .github/workflows/README.md --config .markdownlint.json --ignore-path .markdownlintignore",
+    "lint:format": "prettier --check .",
+    "lint:format:write": "prettier --write .",
+    "test:rust": "cargo test",
+    "test:lsp": "dotnet test lsp/Server.Tests.csproj",
+    "test": "npm run test:rust && npm run test:lsp"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
+    "@eslint/js": "^10.0.1",
+    "@google/gemini-cli": "^0.31.0",
+    "@openai/codex": "^0.106.0",
+    "eslint": "^10.0.2",
+    "globals": "^17.4.0",
+    "markdownlint-cli": "^0.47.0",
+    "prettier": "^3.8.1"
+  },
+  "overrides": {
+    "markdownlint-cli": {
+      "glob": "11.1.0"
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "@modelcontextprotocol/sdk": ">=1.25.2",
+      "glob": ">=11.1.0",
+      "qs": ">=6.14.1",
+      "lodash": ">=4.17.23",
+      "hono": ">=4.11.4",
+      "tar": ">=7.5.4",
+      "undici": ">=7.18.2",
+      "diff": ">=8.0.3"
+    }
+  }
+}

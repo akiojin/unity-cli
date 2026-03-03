@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+coverage/
+*.log
+
+# Unity
+UnityCliBridge/
+.unity/
+.worktrees/
+
+# Git
+.git/
+.husky/
+
+# Temp files
+*.tmp
+*.temp
+.DS_Store

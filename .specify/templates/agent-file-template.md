@@ -1,0 +1,28 @@
+# [PROJECT NAME] 開発ガイドライン
+
+全要件の plan.md から自動生成。最終更新日: [DATE]
+
+## 利用技術
+
+[EXTRACTED FROM ALL PLAN.MD FILES]
+
+## プロジェクト構造
+
+```text
+[ACTUAL STRUCTURE FROM PLANS]
+```
+
+## コマンド
+
+[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]
+
+## コードスタイル
+
+[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]
+
+## 最近の変更
+
+[LAST 3 FEATURES AND WHAT THEY ADDED]
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

@@ -1,0 +1,176 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop, "feature/**"]
+  workflow_dispatch:
+
+jobs:
+  rust-test:
+    name: Rust Tests (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run cargo test
+        run: cargo test
+
+  lsp-test:
+    name: LSP Tests (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET SDK 9
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Run dotnet test
+        run: dotnet test lsp/Server.Tests.csproj
+
+  rust-coverage:
+    name: Rust Coverage >= 90% (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run Rust coverage gate
+        run: |
+          cargo llvm-cov --all-targets --summary-only --fail-under-lines 90
+
+  lsp-coverage:
+    name: LSP Coverage >= 90% (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET SDK 9
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Run LSP coverage gate
+        run: |
+          dotnet test lsp/Server.Tests.csproj \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=cobertura \
+            /p:Threshold=90 \
+            /p:ThresholdType=line \
+            /p:ThresholdStat=total
+
+  lsp-perf:
+    name: LSP Performance (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install perf dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          python3 -m pip install tiktoken
+
+      - name: Build unity-cli
+        run: cargo build --release
+
+      - name: Install LSP binary
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./target/release/unity-cli lsp install --output json
+
+      - name: Run LSP performance check
+        run: |
+          mkdir -p artifacts
+          ./scripts/lsp-perf-check.sh --unity-cli ./target/release/unity-cli --project-root ./UnityCliBridge --json | tee artifacts/lsp-perf-summary.json
+          cp specs/perf/lsp-history.jsonl artifacts/lsp-history.jsonl
+
+      - name: Upload LSP perf artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lsp-perf-history
+          path: |
+            artifacts/lsp-perf-summary.json
+            artifacts/lsp-history.jsonl
+          retention-days: 30
+
+  unity-e2e:
+    name: Unity E2E Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    # NOTE: Unity Editor must be running on the runner for E2E tests to pass.
+    # This job is manual-only (workflow_dispatch) because it requires a live
+    # Unity Editor instance connected via TCP.
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build unity-cli
+        run: cargo build --release
+
+      - name: Run E2E scenarios
+        id: e2e
+        run: |
+          chmod +x scripts/e2e-test.sh
+          scripts/e2e-test.sh
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-logs
+          path: |
+            /tmp/unity-cli-e2e-*.log
+          retention-days: 7

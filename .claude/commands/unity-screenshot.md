@@ -1,0 +1,1 @@
+../../.claude-plugin/plugins/unity-mcp-server/commands/unity-screenshot.md
