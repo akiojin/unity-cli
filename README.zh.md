@@ -26,8 +26,18 @@ Claude Code
 
 ### 推荐: Claude Code 插件
 
-从 Claude Code Marketplace 安装 `unity-cli` 插件。
+从 Claude Code Marketplace 安装 `unity-cli` 插件:
+
+```bash
+/plugin marketplace add akiojin/unity-cli
+```
+
 如果环境中可用 `cargo`，插件安装流程可自动安装或更新 `unity-cli`。
+
+### Codex Skills
+
+使用 Codex 时，`.codex/skills/` 中已提供指向插件源的符号链接。
+只需克隆仓库即可，无需额外配置。
 
 ### 手动安装
 

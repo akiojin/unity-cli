@@ -26,8 +26,18 @@ Alcuni strumenti di codice (`read`, `search`, `find_symbol`, `find_refs`, ecc.) 
 
 ### Consigliato: plugin Claude Code
 
-Installa il plugin `unity-cli` dal Claude Code Marketplace.
+Installa il plugin `unity-cli` dal Claude Code Marketplace:
+
+```bash
+/plugin marketplace add akiojin/unity-cli
+```
+
 Se `cargo` e disponibile, il setup del plugin puo installare o aggiornare automaticamente `unity-cli`.
+
+### Codex Skills
+
+Quando si utilizza questo repository con Codex, le skill sono disponibili tramite `.codex/skills/` (link simbolici alla sorgente del plugin).
+Non e necessaria alcuna configurazione aggiuntiva — basta clonare il repository.
 
 ### Installazione manuale
 

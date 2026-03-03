@@ -26,8 +26,18 @@ Claude Code
 
 ### 推奨: Claude Code プラグイン
 
-Claude Code Marketplace から `unity-cli` プラグインをインストールします。
+Claude Code Marketplace から `unity-cli` プラグインをインストールします:
+
+```bash
+/plugin marketplace add akiojin/unity-cli
+```
+
 `cargo` が利用可能な環境では、プラグインセットアップ時に `unity-cli` を自動インストールまたは更新できます。
+
+### Codex スキル
+
+Codex でこのリポジトリを利用する場合、`.codex/skills/` にスキルのシンボリックリンクが配置済みです。
+リポジトリをクローンするだけで追加セットアップは不要です。
 
 ### 手動インストール
 
