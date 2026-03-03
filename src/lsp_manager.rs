@@ -386,9 +386,7 @@ mod tests {
             let mut buf = [0_u8; 4096];
             let len = stream.read(&mut buf).unwrap_or_default();
             let request = String::from_utf8_lossy(&buf[..len]).to_string();
-            *captured_for_thread
-                .lock()
-                .expect("request buffer lock") = request;
+            *captured_for_thread.lock().expect("request buffer lock") = request;
             let response = format!(
                 "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {len}\r\nConnection: close\r\n\r\n{body}",
                 status = status_line,
