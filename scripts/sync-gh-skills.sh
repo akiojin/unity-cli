@@ -13,6 +13,8 @@ Sync gh-* skills from a GitHub repository into:
 Options:
   --repo <owner/repo>      Source repository (default: akiojin/skills)
   --ref <ref>              Git ref (default: main)
+  --method <auto|installer|git>
+                           Fetch method (default: auto)
   --target <both|global|project>
                            Install target (default: both)
   --check                  Only check whether global/project gh-* skills are identical
@@ -29,6 +31,7 @@ INSTALLER_SCRIPT="$CODEX_HOME/skills/.system/skill-installer/scripts/install-ski
 
 REPO="akiojin/skills"
 REF="main"
+METHOD="auto"
 TARGET="both"
 CHECK_ONLY=0
 SKILLS=("gh-fix-ci" "gh-fix-issue" "gh-pr" "gh-pr-check")
@@ -41,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --ref)
       REF="${2:-}"
+      shift 2
+      ;;
+    --method)
+      METHOD="${2:-}"
       shift 2
       ;;
     --target)
@@ -68,6 +75,11 @@ if [[ "$TARGET" != "both" && "$TARGET" != "global" && "$TARGET" != "project" ]];
   exit 1
 fi
 
+if [[ "$METHOD" != "auto" && "$METHOD" != "installer" && "$METHOD" != "git" ]]; then
+  echo "ERROR: --method must be one of: auto, installer, git" >&2
+  exit 1
+fi
+
 if [[ $CHECK_ONLY -eq 1 ]]; then
   mismatch=0
   for skill in "${SKILLS[@]}"; do
@@ -88,12 +100,6 @@ if [[ $CHECK_ONLY -eq 1 ]]; then
   exit "$mismatch"
 fi
 
-if [[ ! -f "$INSTALLER_SCRIPT" ]]; then
-  echo "ERROR: Installer script not found: $INSTALLER_SCRIPT" >&2
-  echo "Install/enable skill-installer first." >&2
-  exit 1
-fi
-
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -102,11 +108,54 @@ for skill in "${SKILLS[@]}"; do
   INSTALL_PATHS+=("github/skills/$skill")
 done
 
-python3 "$INSTALLER_SCRIPT" \
-  --repo "$REPO" \
-  --ref "$REF" \
-  --path "${INSTALL_PATHS[@]}" \
-  --dest "$TMP_DIR"
+fetch_with_installer() {
+  if [[ ! -f "$INSTALLER_SCRIPT" ]]; then
+    return 1
+  fi
+  python3 "$INSTALLER_SCRIPT" \
+    --repo "$REPO" \
+    --ref "$REF" \
+    --path "${INSTALL_PATHS[@]}" \
+    --dest "$TMP_DIR"
+}
+
+fetch_with_git_sparse_checkout() {
+  local repo_dir="$TMP_DIR/.repo"
+  if ! command -v git >/dev/null 2>&1; then
+    echo "ERROR: git command is required for --method git" >&2
+    return 1
+  fi
+
+  git clone --depth 1 --filter=blob:none --sparse "https://github.com/$REPO.git" "$repo_dir" >/dev/null
+  if [[ "$REF" != "main" ]]; then
+    git -C "$repo_dir" fetch --depth 1 origin "$REF" >/dev/null
+    git -C "$repo_dir" checkout FETCH_HEAD >/dev/null
+  fi
+  git -C "$repo_dir" sparse-checkout set "${INSTALL_PATHS[@]}" >/dev/null
+
+  for skill in "${SKILLS[@]}"; do
+    if [[ ! -d "$repo_dir/github/skills/$skill" ]]; then
+      echo "ERROR: Skill path not found in repo: github/skills/$skill" >&2
+      return 1
+    fi
+    cp -R "$repo_dir/github/skills/$skill" "$TMP_DIR/$skill"
+  done
+}
+
+if [[ "$METHOD" == "installer" ]]; then
+  if ! fetch_with_installer; then
+    echo "ERROR: --method installer was requested but installer script is unavailable or failed." >&2
+    echo "Expected: $INSTALLER_SCRIPT" >&2
+    exit 1
+  fi
+elif [[ "$METHOD" == "git" ]]; then
+  fetch_with_git_sparse_checkout
+else
+  if ! fetch_with_installer; then
+    echo "INFO: installer method unavailable/failed. Falling back to git sparse-checkout." >&2
+    fetch_with_git_sparse_checkout
+  fi
+fi
 
 sync_to_dest() {
   local dest="$1"
@@ -137,4 +186,3 @@ fi
 if [[ "$TARGET" == "both" || "$TARGET" == "project" ]]; then
   sync_to_dest "$PROJECT_SKILLS_DIR"
 fi
-
