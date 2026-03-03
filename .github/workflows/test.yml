@@ -124,6 +124,8 @@ jobs:
         run: cargo build --release
 
       - name: Install LSP binary
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: ./target/release/unity-cli lsp install --output json
 
       - name: Run LSP performance check
