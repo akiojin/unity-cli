@@ -26,8 +26,18 @@ Einige Code Tools (`read`, `search`, `find_symbol`, `find_refs` usw.) laufen lok
 
 ### Empfohlen: Claude Code Plugin
 
-Installieren Sie das `unity-cli` Plugin aus dem Claude Code Marketplace.
+Installieren Sie das `unity-cli` Plugin aus dem Claude Code Marketplace:
+
+```bash
+/plugin marketplace add akiojin/unity-cli
+```
+
 Wenn `cargo` verfugbar ist, kann das Plugin Setup `unity-cli` automatisch installieren oder aktualisieren.
+
+### Codex Skills
+
+Wenn Sie dieses Repository mit Codex verwenden, sind Skills uber `.codex/skills/` verfugbar (Symlinks zur Plugin Quelle).
+Es ist keine zusatzliche Einrichtung erforderlich — klonen Sie einfach das Repository.
 
 ### Manuelle Installation
 

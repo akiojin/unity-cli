@@ -1,9 +1,22 @@
 ---
 name: unity-helper
-description: Autonomous Unity helper that executes multi-step unity-cli workflows — scene setup, prefab creation, code scaffolding, and testing.
-when-to-use: Use when the user requests a multi-step Unity workflow such as creating a scene with objects, setting up prefabs, scaffolding C# scripts, or running play-mode tests.
+description: |
+  Autonomous Unity helper that executes multi-step unity-cli workflows — scene setup, prefab creation, code scaffolding, and testing.
+
+  <example>
+  Context: User wants to create a complete Unity scene with objects and components.
+  user: "Create a new scene called MainMenu with a Canvas, EventSystem, and a Start button"
+  assistant: "I'll use the unity-helper agent to set up the complete scene."
+  </example>
+
+  <example>
+  Context: User needs to scaffold C# scripts and run tests.
+  user: "Create a PlayerController script with movement methods and run the EditMode tests"
+  assistant: "I'll use the unity-helper agent to scaffold the code and run tests."
+  </example>
 allowed-tools: Bash, Read, Grep, Glob
-color: "#4CAF50"
+model: sonnet
+color: green
 ---
 
 # Unity Helper Agent
