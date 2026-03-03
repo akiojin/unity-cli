@@ -28,6 +28,10 @@ namespace UnityCliBridge.Handlers
             public string timestamp;
         }
 
+        // Mode bits for script compilation entries (Unity internal LogEntry.mode)
+        private const int ModeBitScriptCompileError = 1 << 12;   // 0x00001000
+        private const int ModeBitScriptCompileWarning = 1 << 13; // 0x00002000
+
         /// <summary>
         /// Get current compilation state and recent errors
         /// </summary>
@@ -43,8 +47,8 @@ namespace UnityCliBridge.Handlers
                 bool isCompiling = EditorApplication.isCompiling;
                 bool isUpdating = EditorApplication.isUpdating;
 
-                // Always get current console counts via LogEntries (internal API)
-                var (errCount, warnCount, logCount) = GetConsoleCounts();
+                // Separate compilation errors from general console errors
+                var (compErrors, compWarnings, consErrors, consWarnings) = GetErrorCounts();
 
                 // Snapshot console for error details (optional)
                 var uniqueMessages = SnapshotConsoleMessages(maxMessages)
@@ -62,8 +66,10 @@ namespace UnityCliBridge.Handlers
                     isMonitoring = false,
                     lastCompilationTime = GetLastAssemblyWriteTime(),
                     messageCount = uniqueMessages.Count,
-                    errorCount = errCount,
-                    warningCount = warnCount
+                    errorCount = compErrors,
+                    warningCount = compWarnings,
+                    consoleErrorCount = consErrors,
+                    consoleWarningCount = consWarnings
                 };
 
                 if (includeMessages)
@@ -78,6 +84,8 @@ namespace UnityCliBridge.Handlers
                         messageCount = result.messageCount,
                         errorCount = result.errorCount,
                         warningCount = result.warningCount,
+                        consoleErrorCount = result.consoleErrorCount,
+                        consoleWarningCount = result.consoleWarningCount,
                         messages = uniqueMessages
                     };
                 }
@@ -150,27 +158,62 @@ namespace UnityCliBridge.Handlers
             return char.ToUpper(input[0]) + input.Substring(1).ToLower();
         }
 
-        private static (int error, int warning, int log) GetConsoleCounts()
+        private static (int compilationErrors, int compilationWarnings,
+                    int consoleErrors, int consoleWarnings) GetErrorCounts()
         {
-            int err = 0, warn = 0, log = 0;
+            int compErr = 0, compWarn = 0;
+            int consErr = 0, consWarn = 0;
             try
             {
+                // Get total console counts via GetCountsByType for consoleErrorCount / consoleWarningCount
                 var logEntriesType = Type.GetType("UnityEditor.LogEntries, UnityEditor");
-                var method = logEntriesType?.GetMethod("GetCountsByType", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-                if (method != null)
+                var getCountsByType = logEntriesType?.GetMethod("GetCountsByType", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                if (getCountsByType != null)
                 {
-                    object[] args = { err, warn, log };
-                    method.Invoke(null, args);
-                    err = (int)args[0];
-                    warn = (int)args[1];
-                    log = (int)args[2];
+                    int e = 0, w = 0, l = 0;
+                    object[] args = { e, w, l };
+                    getCountsByType.Invoke(null, args);
+                    consErr = (int)args[0];
+                    consWarn = (int)args[1];
+                }
+
+                // Walk console entries to count only script-compilation errors/warnings
+                var startMethod = logEntriesType?.GetMethod("StartGettingEntries", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                var endMethod = logEntriesType?.GetMethod("EndGettingEntries", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                var getCount = logEntriesType?.GetMethod("GetCount", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                var getEntry = logEntriesType?.GetMethod("GetEntryInternal", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+                var logEntryType = typeof(EditorApplication).Assembly.GetType("UnityEditor.LogEntry");
+                var modeField = logEntryType?.GetField("mode", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+                if (startMethod != null && endMethod != null && getCount != null && getEntry != null && modeField != null)
+                {
+                    startMethod.Invoke(null, null);
+                    try
+                    {
+                        int total = (int)getCount.Invoke(null, null);
+                        var entry = Activator.CreateInstance(logEntryType);
+                        for (int i = 0; i < total; i++)
+                        {
+                            getEntry.Invoke(null, new object[] { i, entry });
+                            int mode = (int)modeField.GetValue(entry);
+                            if ((mode & ModeBitScriptCompileError) != 0)
+                                compErr++;
+                            if ((mode & ModeBitScriptCompileWarning) != 0)
+                                compWarn++;
+                        }
+                    }
+                    finally
+                    {
+                        endMethod.Invoke(null, null);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                BridgeLogger.LogWarning("CompilationHandler", $"GetConsoleCounts failed: {ex.Message}");
+                BridgeLogger.LogWarning("CompilationHandler", $"GetErrorCounts failed: {ex.Message}");
             }
-            return (err, warn, log);
+            return (compErr, compWarn, consErr, consWarn);
         }
 
         private static string GetLastAssemblyWriteTime()

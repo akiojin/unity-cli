@@ -25,9 +25,9 @@ namespace UnityCliBridge.Tests.Editor
         }
 
         [Test]
-        public void Watchdog_Triggers_WhenNotPlayingAndStale()
+        public void Watchdog_Triggers_WhenPlayModeNotPlayingAndStale()
         {
-            // Simulate running test that stopped updating 15s ago with PlayMode already false
+            // Simulate PlayMode test that stopped updating 15s ago with PlayMode already false
             SetPrivateStaticField("isTestRunning", true);
             SetPrivateStaticField("currentTestMode", "PlayMode");
             SetPrivateStaticField("currentRunId", "watchdog-run");
@@ -41,6 +41,7 @@ namespace UnityCliBridge.Tests.Editor
 
             Assert.AreEqual("error", result["status"]?.ToString());
             Assert.AreEqual("RUNNER_TIMEOUT", result["code"]?.ToString());
+            StringAssert.Contains("PlayMode", result["message"]?.ToString());
         }
 
         [Test]
@@ -59,6 +60,64 @@ namespace UnityCliBridge.Tests.Editor
 
             Assert.AreEqual("running", result["status"]?.ToString());
             Assert.AreEqual("running-run", result["runId"]?.ToString());
+        }
+
+        [Test]
+        public void Watchdog_EditMode_DoesNotTrigger_Before60Seconds()
+        {
+            // EditMode tests should NOT trigger watchdog at 15s (only at >60s)
+            SetPrivateStaticField("isTestRunning", true);
+            SetPrivateStaticField("currentTestMode", "EditMode");
+            SetPrivateStaticField("currentRunId", "editmode-run");
+            var now = DateTime.UtcNow;
+            SetPrivateStaticField("runStartedAtUtc", now.AddSeconds(-20));
+            SetPrivateStaticField("runLastUpdateUtc", now.AddSeconds(-15));
+            TestExecutionHandler.PlayModeDetector = () => false;
+
+            var resultObj = TestExecutionHandler.GetTestStatus(new JObject());
+            var result = JObject.FromObject(resultObj);
+
+            Assert.AreEqual("running", result["status"]?.ToString(),
+                "EditMode tests should not trigger watchdog at 15s elapsed");
+        }
+
+        [Test]
+        public void Watchdog_EditMode_Triggers_After60Seconds()
+        {
+            // EditMode tests SHOULD trigger watchdog after >60s
+            SetPrivateStaticField("isTestRunning", true);
+            SetPrivateStaticField("currentTestMode", "EditMode");
+            SetPrivateStaticField("currentRunId", "editmode-stuck");
+            var now = DateTime.UtcNow;
+            SetPrivateStaticField("runStartedAtUtc", now.AddSeconds(-90));
+            SetPrivateStaticField("runLastUpdateUtc", now.AddSeconds(-65));
+            TestExecutionHandler.PlayModeDetector = () => false;
+
+            var resultObj = TestExecutionHandler.GetTestStatus(new JObject());
+            var result = JObject.FromObject(resultObj);
+
+            Assert.AreEqual("error", result["status"]?.ToString());
+            Assert.AreEqual("RUNNER_TIMEOUT", result["code"]?.ToString());
+            StringAssert.Contains("EditMode", result["message"]?.ToString());
+        }
+
+        [Test]
+        public void Watchdog_General_Triggers_After120Seconds()
+        {
+            // Any test mode should trigger general watchdog after >120s
+            SetPrivateStaticField("isTestRunning", true);
+            SetPrivateStaticField("currentTestMode", "All");
+            SetPrivateStaticField("currentRunId", "general-stuck");
+            var now = DateTime.UtcNow;
+            SetPrivateStaticField("runStartedAtUtc", now.AddSeconds(-150));
+            SetPrivateStaticField("runLastUpdateUtc", now.AddSeconds(-125));
+            TestExecutionHandler.PlayModeDetector = () => true; // still playing
+
+            var resultObj = TestExecutionHandler.GetTestStatus(new JObject());
+            var result = JObject.FromObject(resultObj);
+
+            Assert.AreEqual("error", result["status"]?.ToString());
+            Assert.AreEqual("RUNNER_TIMEOUT", result["code"]?.ToString());
         }
 
         private void SetPrivateStaticField(string name, object value)

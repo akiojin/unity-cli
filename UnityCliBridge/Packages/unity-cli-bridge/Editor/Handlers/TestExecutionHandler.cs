@@ -140,7 +140,16 @@ namespace UnityCliBridge.Handlers
 
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    filterSettings.testNames = new[] { filter };
+                    if (filter.Contains("."))
+                    {
+                        // Fully-qualified name: exact match via testNames
+                        filterSettings.testNames = new[] { filter };
+                    }
+                    else
+                    {
+                        // Class/fixture name: match via groupNames
+                        filterSettings.groupNames = new[] { filter };
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(category))
@@ -198,11 +207,19 @@ namespace UnityCliBridge.Handlers
 
                 if (isTestRunning)
                 {
-                    // Watchdog: if Play Mode already exited and no updates for >10s, abort
+                    // Watchdog: mode-aware timeout detection
                     var elapsedSinceLast = runLastUpdateUtc.HasValue
                         ? (DateTime.UtcNow - runLastUpdateUtc.Value).TotalSeconds
                         : 0;
-                    if (!(Application.isPlaying) && elapsedSinceLast > 10)
+
+                    bool isPlayModeStuck = !Application.isPlaying
+                        && currentTestMode != "EditMode"
+                        && elapsedSinceLast > 10;
+                    bool isEditModeStuck = currentTestMode == "EditMode"
+                        && elapsedSinceLast > 60;
+                    bool isGeneralStuck = elapsedSinceLast > 120;
+
+                    if (isPlayModeStuck || isEditModeStuck || isGeneralStuck)
                     {
                         isTestRunning = false;
                         currentCollector = null;
@@ -211,7 +228,11 @@ namespace UnityCliBridge.Handlers
                         {
                             status = "error",
                             code = "RUNNER_TIMEOUT",
-                            message = "PlayMode ended but test runner did not finish within watchdog window.",
+                            message = isEditModeStuck
+                                ? "EditMode test runner did not finish within watchdog window."
+                                : isPlayModeStuck
+                                    ? "PlayMode ended but test runner did not finish within watchdog window."
+                                    : "Test runner did not finish within general watchdog window.",
                             testMode = currentTestMode,
                             runId = currentRunId,
                             elapsedSeconds = (runStartedAtUtc.HasValue ? (DateTime.UtcNow - runStartedAtUtc.Value).TotalSeconds : (double?)null),
@@ -237,17 +258,36 @@ namespace UnityCliBridge.Handlers
                     var persisted = LoadRunState();
                     if (persisted != null && persisted.status == "running")
                     {
-	                        return new
-	                        {
-	                            status = "running",
-	                            message = "Test execution in progress (persisted state)",
-	                            testMode = persisted.testMode,
-	                            runId = persisted.runId,
-	                            source = "run_tests",
-	                            persisted = true,
-	                            elapsedSeconds = persisted.runStartedAt.HasValue ? (DateTime.UtcNow - persisted.runStartedAt.Value).TotalSeconds : (double?)null
-	                        };
-	                    }
+                        var persistedAge = persisted.lastUpdate.HasValue
+                            ? (DateTime.UtcNow - persisted.lastUpdate.Value).TotalSeconds
+                            : double.MaxValue;
+
+                        if (persistedAge > 120)
+                        {
+                            ClearRunState();
+                            return new
+                            {
+                                status = "error",
+                                code = "RUNNER_TIMEOUT",
+                                message = "Persisted running state exceeded staleness threshold (120s). Test runner likely crashed or was interrupted.",
+                                testMode = persisted.testMode,
+                                runId = persisted.runId,
+                                persisted = true,
+                                staleness = persistedAge
+                            };
+                        }
+
+                        return new
+                        {
+                            status = "running",
+                            message = "Test execution in progress (persisted state)",
+                            testMode = persisted.testMode,
+                            runId = persisted.runId,
+                            source = "run_tests",
+                            persisted = true,
+                            elapsedSeconds = persisted.runStartedAt.HasValue ? (DateTime.UtcNow - persisted.runStartedAt.Value).TotalSeconds : (double?)null
+                        };
+                    }
 
                     return new
                     {
@@ -505,7 +545,7 @@ namespace UnityCliBridge.Handlers
                     testMode = currentTestMode,
                     status = status,
                     runStartedAt = runStartedAtUtc,
-                    lastUpdate = runLastUpdateUtc,
+                    lastUpdate = DateTime.UtcNow,
                     code = code
                 };
                 var json = JsonConvert.SerializeObject(state, Formatting.Indented);
