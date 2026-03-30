@@ -79,7 +79,7 @@ jobs:
             --fail-under-lines 90
 
       - name: Upload Rust coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/rust/cobertura.xml
@@ -109,7 +109,7 @@ jobs:
             /p:ThresholdStat=total
 
       - name: Upload LSP coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lsp/coverage.cobertura.xml
