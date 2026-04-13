@@ -17,12 +17,12 @@
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
-    "@google/gemini-cli": "^0.36.0",
-    "@openai/codex": "^0.118.0",
+    "@google/gemini-cli": "^0.37.1",
+    "@openai/codex": "^0.120.0",
     "eslint": "^10.1.0",
-    "globals": "^17.4.0",
+    "globals": "^17.5.0",
     "markdownlint-cli": "^0.48.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.2"
   },
   "overrides": {
     "markdownlint-cli": {
