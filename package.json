@@ -14,15 +14,15 @@
     "test": "npm run test:rust && npm run test:lsp"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
     "@eslint/js": "^10.0.1",
-    "@google/gemini-cli": "^0.37.1",
-    "@openai/codex": "^0.120.0",
-    "eslint": "^10.1.0",
-    "globals": "^17.5.0",
+    "@google/gemini-cli": "^0.40.1",
+    "@openai/codex": "^0.128.0",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
     "markdownlint-cli": "^0.48.0",
-    "prettier": "^3.8.2"
+    "prettier": "^3.8.3"
   },
   "overrides": {
     "markdownlint-cli": {
