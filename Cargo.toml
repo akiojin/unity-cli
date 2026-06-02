@@ -1,6 +1,6 @@
 [package]
 name = "unity-cli"
-version = "0.11.3"
+version = "0.11.4"
 edition = "2021"
 description = "Rust CLI for Unity Editor automation over the Unity TCP protocol"
 readme = "README.md"

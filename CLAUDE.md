@@ -91,7 +91,7 @@ Node.js + MCP プロトコルベースの旧実装を Rust + TCP 直接通信に
 ```bash
 cargo fmt --all -- --check
 cargo clippy --all-targets -- -D warnings
-cargo test --all-targets
+cargo test --all-targets -- --test-threads=1
 cargo run -- skills lint --severity error
 dotnet test lsp/Server.Tests.csproj
 ```

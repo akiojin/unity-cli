@@ -1,3 +1,19 @@
+## [0.11.4] - 2026-06-02
+
+### 🐛 Bug Fixes
+
+- *(ci)* Cargo test を --test-threads=1 で実行して env race を解消
+
+### 📚 Documentation
+
+- *(lessons)* Gwt-spec の集約 close 例外条項を追加
+- *(skills)* Unity-asset-management の get_asset_info action を明記 (#206)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(hooks)* Husky を auto-install して commit-msg を CI と一致させる
+- *(hooks)* Pre-push を fmt check のみに絞る
+
 ## [0.11.3] - 2026-05-12
 
 ### 🐛 Bug Fixes

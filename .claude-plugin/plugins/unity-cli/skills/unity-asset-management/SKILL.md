@@ -4,7 +4,7 @@ description: Manage Unity assets and import metadata with unity-cli. Use when th
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: assets
   triggers:
     - asset
@@ -39,12 +39,13 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 
 ## Preferred Flow
 
-1. Inspect the target asset or material with `manage_asset_database` before changing it.
+1. Inspect the target asset with `manage_asset_database` using `{"action":"get_asset_info","assetPath":"..."}` before changing it.
 2. Run `analyze_asset_dependencies` before deleting, moving, or changing shared assets.
 3. Apply import or material changes with the narrowest possible payload.
 4. Call `refresh_assets` after any out-of-editor file change.
 
 ```bash
+unity-cli raw manage_asset_database --json '{"action":"get_asset_info","assetPath":"Assets/Textures/hero.png"}'
 unity-cli raw manage_asset_database --json '{"action":"refresh"}'
 unity-cli raw create_material --json '{"materialPath":"Assets/Materials/HeroMat.mat","shader":"Standard"}'
 unity-cli raw create_animation_clip --json '{"clipPath":"Assets/Animations/Hero.anim","spritePaths":["Assets/Sprites/Hero/idle_0.png"],"frameRate":12,"loopTime":true}'
