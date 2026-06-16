@@ -926,6 +926,19 @@ namespace UnityCliBridge.Core
 	                        var compilationStateResult = CompilationHandler.GetCompilationState(command.Parameters);
 	                        response = Response.SuccessResult(command.Id, compilationStateResult);
 	                        break;
+                    // VFX Graph commands (spike)
+                    case "vfx_describe_graph":
+                        var vfxDescribeResult = VfxGraphHandler.DescribeGraph(command.Parameters);
+                        response = Response.SuccessResult(command.Id, vfxDescribeResult);
+                        break;
+                    case "vfx_list_library":
+                        var vfxListResult = VfxGraphHandler.ListLibrary(command.Parameters);
+                        response = Response.SuccessResult(command.Id, vfxListResult);
+                        break;
+                    case "vfx_apply":
+                        var vfxApplyResult = VfxGraphHandler.Apply(command.Parameters);
+                        response = Response.SuccessResult(command.Id, vfxApplyResult);
+                        break;
                     // Test Execution commands
                     case "run_tests":
                         var runTestsResult = TestExecutionHandler.RunTests(command.Parameters);

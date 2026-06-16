@@ -100,6 +100,14 @@ Global options:
 | `modify_material` | Modify Material properties |
 | `refresh_assets` | Refresh the AssetDatabase |
 
+### Visual Effect Graph
+
+| Tool | Description |
+| --- | --- |
+| `vfx_describe_graph` | Describe a Visual Effect Graph asset: its contexts and the blocks within each |
+| `vfx_list_library` | List available Visual Effect Graph block descriptors |
+| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset |
+
 ### Addressables
 
 | Tool | Description |

@@ -131,6 +131,9 @@ pub const TOOL_NAMES: &[&str] = &[
     "reference_resolve_symbol_at",
     "reference_embed_build",
     "reference_embed_search",
+    "vfx_describe_graph",
+    "vfx_list_library",
+    "vfx_apply",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -204,6 +207,11 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "vfx_describe_graph" => {
+            "Describe a Visual Effect Graph asset: its contexts and the blocks within each"
+        }
+        "vfx_list_library" => "List available Visual Effect Graph block descriptors",
+        "vfx_apply" => "Apply an authoring mutation to a Visual Effect Graph asset",
         _ => "Unity CLI tool operation",
     }
 }
@@ -294,6 +302,8 @@ fn is_read_only_tool(name: &str) -> bool {
             | "reference_diff"
             | "reference_resolve_symbol_at"
             | "reference_embed_search"
+            | "vfx_describe_graph"
+            | "vfx_list_library"
     )
 }
 
@@ -2357,6 +2367,21 @@ fn tool_params_schema(name: &str) -> Value {
             &["query"],
             false,
         ),
+        "vfx_describe_graph" => {
+            object_schema(&[("assetPath", string_schema())], &["assetPath"], false)
+        }
+        "vfx_list_library" => object_schema(&[("filter", string_schema())], &[], false),
+        "vfx_apply" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("assetPath", string_schema()),
+                ("contextType", string_schema()),
+                ("blockName", string_schema()),
+                ("settings", any_object_schema()),
+            ],
+            &["op", "assetPath"],
+            false,
+        ),
         _ => default_params_schema(),
     }
 }
@@ -2471,7 +2496,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 129);
+        assert_eq!(TOOL_NAMES.len(), 132);
     }
 
     #[test]
@@ -2507,6 +2532,24 @@ mod tests {
         assert_eq!(spec.executor, ToolExecutor::Remote);
         assert_eq!(spec.params_schema["type"], "object");
         assert_eq!(spec.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
+    fn vfx_describe_graph_is_read_only_and_requires_asset_path() {
+        let spec = get_tool_spec("vfx_describe_graph").expect("vfx_describe_graph must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["assetPath"]));
+    }
+
+    #[test]
+    fn vfx_apply_is_mutating_and_requires_op_and_asset_path() {
+        let spec = get_tool_spec("vfx_apply").expect("vfx_apply must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op", "assetPath"]));
     }
 
     #[test]
