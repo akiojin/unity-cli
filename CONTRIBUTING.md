@@ -9,7 +9,7 @@ Thanks for contributing to `unity-cli`.
 - Rust stable
 - .NET SDK 10.0+ (for `lsp/` tests)
 - Node.js 20+ + pnpm (for markdown/commit tooling)
-- Unity 6+ (when validating Unity package behavior)
+- Unity 2022.3 LTS or Unity 6 (when validating Unity package behavior)
 
 ## Development Setup
 
@@ -134,7 +134,7 @@ Recommended text:
 - Rust stable
 - .NET SDK 10.0+（`lsp/` テスト用）
 - Node.js 20+ と pnpm（ドキュメント/コミット系ツール用）
-- Unity 6+（Unityパッケージ挙動確認時）
+- Unity 2022.3 LTS または Unity 6（Unityパッケージ挙動確認時）
 
 ## セットアップ
 

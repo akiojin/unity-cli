@@ -10,7 +10,7 @@ use crate::cli::{
     ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity, SkillsCommand, SystemCommand,
     ToolCommand, UnitydCommand,
 };
-use crate::config::RuntimeConfig;
+use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::instances::{list_instances, set_active_instance};
@@ -440,7 +440,7 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
         return local_result;
     }
 
-    let config = RuntimeConfig::from_cli(cli)?;
+    let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
     let (mut value, timing) = call_remote_tool_with_timing(&config, tool_name, params).await?;
     if tool_name == "get_command_stats" {
         augment_command_stats(&mut value);
@@ -547,7 +547,7 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
     }
 
     if !cli.dry_run {
-        let config = RuntimeConfig::from_cli(cli)?;
+        let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),
             Err(error) if error.is_transport() => {
@@ -611,6 +611,16 @@ fn should_skip_for_dry_run(cli: &Cli, tool_name: &str) -> bool {
     get_tool_spec(tool_name)
         .map(|spec| spec.mutating)
         .unwrap_or(false)
+}
+
+fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
+    RuntimeOverrides {
+        host: cli.host.clone(),
+        port: cli.port,
+        timeout_ms: cli.timeout_ms,
+        dry_run: cli.dry_run,
+        project_root: None,
+    }
 }
 
 fn augment_command_stats(value: &mut Value) {
@@ -988,7 +998,8 @@ fn init_tracing(verbose: u8) -> Result<()> {
 mod tests {
     use super::{
         build_reference_call, execute_tool, init_tracing, load_params, parse_external_tool_command,
-        parse_json_object, parse_ports, print_value, run_with_cli, validate_tool_params,
+        parse_json_object, parse_ports, print_value, run_with_cli, runtime_overrides_from_cli,
+        validate_tool_params,
     };
     use crate::cli::{
         Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand,
@@ -1057,6 +1068,21 @@ mod tests {
             Some("before")
         );
         std::env::remove_var("UNITY_CLI_TEST_GUARD");
+    }
+
+    #[test]
+    fn runtime_overrides_are_derived_from_cli_at_app_boundary() {
+        let cli = cli_for_dry_run(Command::Tool {
+            command: ToolCommand::List,
+        });
+
+        let overrides = runtime_overrides_from_cli(&cli);
+
+        assert_eq!(overrides.host.as_deref(), Some("127.0.0.1"));
+        assert_eq!(overrides.port, Some(9));
+        assert_eq!(overrides.timeout_ms, Some(20));
+        assert!(overrides.dry_run);
+        assert!(overrides.project_root.is_none());
     }
 
     #[test]

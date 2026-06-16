@@ -1,6 +1,6 @@
 # Tool Catalog
 
-Snapshot date: `2026-03-06`
+Snapshot date: `2026-06-16`
 
 ## Command Groups (Typed Subcommands)
 
@@ -30,7 +30,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-## Unity Tool APIs (101 tools)
+Registered tool total: 129 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 118 runtime/local tool APIs plus 11 Reference Cache tools.
+
+## Runtime Tool APIs (118 tools)
 
 ### Scenes
 
@@ -120,6 +122,16 @@ Global options:
 | `get_symbols` | Get symbols in a file |
 | `build_index` | Build code search index |
 | `update_index` | Update code search index |
+| `rename_symbol` | Rename a C# symbol |
+| `replace_symbol_body` | Replace a C# symbol body |
+| `insert_before_symbol` | Insert C# source before a symbol |
+| `insert_after_symbol` | Insert C# source after a symbol |
+| `remove_symbol` | Remove a C# symbol |
+| `validate_text_edits` | Validate C# text edits |
+| `write_csharp_file` | Write a complete C# source file |
+| `create_csharp_file` | Create a new C# source file |
+| `apply_csharp_edits` | Apply structured C# source edits |
+| `create_class` | Create a C# class |
 
 ### Input System
 
@@ -190,7 +202,11 @@ Global options:
 | `registry_config` | Configure scoped registries |
 | `get_editor_info` | Get editor version info |
 | `get_editor_state` | Get editor state |
+| `get_project_setting` | Get a project setting |
+| `set_project_setting` | Set a project setting |
 | `get_project_settings` | Get project settings |
+| `get_package_setting` | Get a package setting |
+| `set_package_setting` | Set a package setting |
 | `update_project_settings` | Update project settings |
 
 ### Screenshots & Video
@@ -211,9 +227,9 @@ Global options:
 | `ping` | Check Unity Editor connectivity |
 | `list_packages` | List installed packages |
 
-## Local Tools (No Unity Connection Required)
+## Local Runtime Tools (No Unity Connection Required)
 
-These tools run locally via Rust and do not require a TCP connection to Unity Editor:
+These runtime/code tools run locally via Rust and do not require a TCP connection to Unity Editor. Reference Cache tools are also local and are listed separately below.
 
 - `read` — Read C# source files
 - `search` — Search code by pattern
@@ -223,6 +239,16 @@ These tools run locally via Rust and do not require a TCP connection to Unity Ed
 - `update_index` — Update code search index
 - `find_symbol` — Find symbol definitions
 - `find_refs` — Find symbol references
+- `rename_symbol` — Rename a C# symbol
+- `replace_symbol_body` — Replace a C# symbol body
+- `insert_before_symbol` — Insert C# source before a symbol
+- `insert_after_symbol` — Insert C# source after a symbol
+- `remove_symbol` — Remove a C# symbol
+- `validate_text_edits` — Validate C# text edits
+- `write_csharp_file` — Write a complete C# source file
+- `create_csharp_file` — Create a new C# source file
+- `apply_csharp_edits` — Apply structured C# source edits
+- `create_class` — Create a C# class
 
 ## Schema Notes
 

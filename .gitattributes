@@ -31,3 +31,5 @@
 # Docker/CI
 Dockerfile text eol=lf
 docker-compose.yml text eol=lf
+**/.gwt/work/board-remote-roots.jsonl merge=union
+**/.gwt/work/events.jsonl merge=union

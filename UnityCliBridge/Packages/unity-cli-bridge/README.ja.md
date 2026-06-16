@@ -4,6 +4,11 @@
 
 本パッケージは、GameObject のコンポーネント列挙・追加・削除・変更などのエディタ操作を `unity-cli` が利用する Unity TCP コマンドとして提供します。
 
+## 対応 Unity バージョン
+
+- Unity 6
+- Unity 2022.3 LTS
+
 ## インストール
 
 - Unity Package Manager で「Add package from Git URL...」を選択します。

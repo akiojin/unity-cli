@@ -103,8 +103,9 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
-        public void SetUIElementValue_WithUiToolkitPrefix_RoutesToUiToolkit()
+        public async Task SetUIElementValue_WithUiToolkitPrefix_RoutesToUiToolkit()
         {
+            await Task.Yield();
             var result = ToJObject(UIInteractionHandler.SetUIElementValue(new JObject
             {
                 ["elementPath"] = "uitk:/NoSuch/UIDocument#Any",

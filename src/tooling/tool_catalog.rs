@@ -2486,6 +2486,48 @@ mod tests {
     }
 
     #[test]
+    fn tools_doc_matches_registered_catalog() {
+        let docs = include_str!("../../docs/tools.md");
+        let runtime_tool_count = TOOL_NAMES
+            .iter()
+            .filter(|name| !name.starts_with("reference_"))
+            .count();
+        let reference_tool_count = TOOL_NAMES.len() - runtime_tool_count;
+
+        assert!(docs.contains(&format!("Registered tool total: {}", TOOL_NAMES.len())));
+        assert!(docs.contains(&format!(
+            "## Runtime Tool APIs ({runtime_tool_count} tools)"
+        )));
+        assert!(docs.contains(&format!(
+            "## Reference Cache ({reference_tool_count} tools)"
+        )));
+
+        for name in TOOL_NAMES {
+            assert!(
+                docs.contains(&format!("`{name}`")),
+                "docs/tools.md is missing `{name}`"
+            );
+        }
+    }
+
+    #[test]
+    fn remote_tools_have_unity_bridge_dispatch_cases() {
+        let bridge_router = include_str!(
+            "../../UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs"
+        );
+
+        for name in TOOL_NAMES {
+            let spec = get_tool_spec(name).expect("tool must exist");
+            if spec.executor == ToolExecutor::Remote {
+                assert!(
+                    bridge_router.contains(&format!("[\"{name}\"]")),
+                    "remote tool `{name}` is missing from BridgeCommandRouter registry"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn tool_catalog_avoids_default_params_schema_for_known_tools() {
         let fallback = json!({
             "type": "object",

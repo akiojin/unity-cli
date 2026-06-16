@@ -13,6 +13,15 @@ The project uses the local package reference defined in `Packages/manifest.json`
 
 - `com.akiojin.unity-cli-bridge`: `file:unity-cli-bridge`
 
+## Unity Version Profiles
+
+`Packages/manifest.json` defaults to the Unity 6 profile. Switch profiles before validating a specific editor line:
+
+```bash
+./scripts/switch-unity-manifest.sh 6
+./scripts/switch-unity-manifest.sh 2022
+```
+
 ## Open in Unity
 
 Open this folder in Unity Hub:
@@ -25,6 +34,5 @@ Open this folder in Unity Hub:
 unity -batchmode -nographics \
   -projectPath UnityCliBridge \
   -runTests -testPlatform editmode \
-  -testResults test-results/editmode.xml \
-  -quit
+  -testResults test-results/editmode.xml
 ```

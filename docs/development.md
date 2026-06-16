@@ -17,8 +17,8 @@ This document covers internal development workflow for `unity-cli`.
 | Tool | Version | Purpose |
 | ------ | --------- | -------- |
 | Rust toolchain (stable) | latest | CLI build and test |
-| .NET SDK | 9.0 | LSP server build and test |
-| Unity Editor | 2022.3+ | E2E tests (requires live connection) |
+| .NET SDK | 10.0 | LSP server build and test |
+| Unity Editor | 2022.3 LTS or Unity 6 | E2E tests (requires live connection) |
 | Python + `tiktoken` | 3.9+ | LSP perf token measurement (`scripts/lsp-perf-check.sh`) |
 
 ### Installation
@@ -28,7 +28,7 @@ This document covers internal development workflow for `unity-cli`.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # .NET SDK 10
-# https://dotnet.microsoft.com/download/dotnet/9.0
+# https://dotnet.microsoft.com/download/dotnet/10.0
 ```
 
 ### Docker
@@ -130,8 +130,8 @@ unity-cli tool call find_refs --json '{"name":"MyClass","pageSize":20}'
 
 Tool catalog sources:
 
-- Rust catalog: `src/tool_catalog.rs`
-- Local tool implementation: `src/local_tools.rs`
+- Rust catalog: `src/tooling/tool_catalog.rs`
+- Local tool implementation: `src/tooling/local_tools.rs`
 - Snapshot list: `docs/tools.md` (`Tool Catalog`)
 
 ## Local Commands
@@ -148,7 +148,11 @@ dotnet test lsp/Server.Tests.csproj
 dotnet test lsp/Server.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90 /p:ThresholdType=line /p:ThresholdStat=total
 
 # Unity (EditMode tests)
-unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+./scripts/switch-unity-manifest.sh 6
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity6.xml
+
+./scripts/switch-unity-manifest.sh 2022
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity2022.xml
 ```
 
 Rust coverage gate is enforced at repository level (all Rust targets, line >= 90%).
@@ -424,10 +428,10 @@ Periodically verify that docs and issue-first workflow references match the curr
 
    - `docs/migration-notes.md` intentionally contains old names for migration/deprecation documentation.
 
-2. **Environment variable consistency**: Compare the variables listed in this document with `src/config.rs`.
+2. **Environment variable consistency**: Compare the variables listed in this document with `src/core/config.rs`.
 
    ```bash
-   grep -oE 'UNITY_CLI_[A-Z_]+' src/config.rs | sort -u
+   grep -oE 'UNITY_CLI_[A-Z_]+' src/core/config.rs | sort -u
    grep -oE 'UNITY_CLI_[A-Z_]+' docs/development.md | sort -u
    ```
 
@@ -469,7 +473,7 @@ The Unity-side codebase uses `unity-mcp-server` as its base copy. Differences ar
 | -------- | ----------- | ------ |
 | Rust toolchain (stable) | latest | CLI 本体のビルド・テスト |
 | .NET SDK | 10.0 | LSP サーバーのビルド・テスト |
-| Unity Editor | 2022.3+ | ローカル Unity listener / ローカル E2E 検証 |
+| Unity Editor | 2022.3 LTS または Unity 6 | ローカル Unity listener / ローカル E2E 検証 |
 | Python + `tiktoken` | 3.9+ | LSP 性能計測時のトークン算出（`scripts/lsp-perf-check.sh`） |
 
 ### インストール
@@ -581,8 +585,8 @@ unity-cli tool call find_refs --json '{"name":"MyClass","pageSize":20}'
 
 参照先:
 
-- Rustツールカタログ: `src/tool_catalog.rs`
-- ローカルツール実装: `src/local_tools.rs`
+- Rustツールカタログ: `src/tooling/tool_catalog.rs`
+- ローカルツール実装: `src/tooling/local_tools.rs`
 - スナップショット一覧: `docs/tools.md`（`Tool Catalog`）
 
 ## ローカル実行コマンド
@@ -597,7 +601,11 @@ cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 
 # Unity（EditModeテスト）
-unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+./scripts/switch-unity-manifest.sh 6
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity6.xml
+
+./scripts/switch-unity-manifest.sh 2022
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity2022.xml
 ```
 
 ### プッシュ前フック
@@ -863,10 +871,10 @@ cargo run -- skills lint --severity error
    grep -rni "mcp" docs/ README.md | grep -v migration-notes.md
    ```
 
-2. **環境変数の整合確認**: 本ドキュメントの変数一覧と `src/config.rs` の実装を比較します。
+2. **環境変数の整合確認**: 本ドキュメントの変数一覧と `src/core/config.rs` の実装を比較します。
 
    ```bash
-   grep -oE 'UNITY_CLI_[A-Z_]+' src/config.rs | sort -u
+   grep -oE 'UNITY_CLI_[A-Z_]+' src/core/config.rs | sort -u
    grep -oE 'UNITY_CLI_[A-Z_]+' docs/development.md | sort -u
    ```
 

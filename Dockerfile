@@ -53,13 +53,13 @@ RUN set -e; \
     GH_TOKEN="$TOKEN" GITHUB_TOKEN="$TOKEN" gh extension install twelvelabs/gh-repo-config; \
     gh auth logout -h github.com >/dev/null 2>&1 || true
 
-# Install .NET 9 SDK (for C# LSP build) via official install script
+# Install .NET 10 SDK (for C# LSP build) via official install script
 ENV DOTNET_ROOT=/usr/share/dotnet
 ENV PATH="${DOTNET_ROOT}:${PATH}"
 RUN set -eux; \
     curl -fsSL -o /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh; \
     chmod +x /tmp/dotnet-install.sh; \
-    /tmp/dotnet-install.sh --channel 9.0 --install-dir "$DOTNET_ROOT"; \
+    /tmp/dotnet-install.sh --channel 10.0 --install-dir "$DOTNET_ROOT"; \
     ln -sf "$DOTNET_ROOT/dotnet" /usr/bin/dotnet; \
     dotnet --info
 
