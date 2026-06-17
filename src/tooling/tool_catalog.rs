@@ -134,6 +134,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "vfx_describe_graph",
     "vfx_list_library",
     "vfx_apply",
+    "vfx_runtime",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -208,13 +209,16 @@ fn tool_description(name: &str) -> &'static str {
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
         "vfx_describe_graph" => {
-            "Describe a Visual Effect Graph asset: contexts (with blocks and slots) and operators, including slot links"
+            "Describe a Visual Effect Graph asset: contexts (with blocks and slots), operators, and exposed parameters, including slot links"
         }
         "vfx_list_library" => {
-            "List available Visual Effect Graph descriptors (kind: block, operator, or context)"
+            "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
         }
         "vfx_apply" => {
-            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, link_slots)"
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots)"
+        }
+        "vfx_runtime" => {
+            "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
         }
         _ => "Unity CLI tool operation",
     }
@@ -2405,6 +2409,18 @@ fn tool_params_schema(name: &str) -> Value {
             &["op", "assetPath"],
             false,
         ),
+        "vfx_runtime" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("gameObject", string_schema()),
+                ("assetPath", string_schema()),
+                ("name", string_schema()),
+                ("value", any_schema()),
+                ("eventName", string_schema()),
+            ],
+            &["op", "gameObject"],
+            false,
+        ),
         _ => default_params_schema(),
     }
 }
@@ -2519,7 +2535,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 132);
+        assert_eq!(TOOL_NAMES.len(), 133);
     }
 
     #[test]
@@ -2573,6 +2589,15 @@ mod tests {
         assert_eq!(spec.executor, ToolExecutor::Remote);
         assert_eq!(spec.params_schema["additionalProperties"], false);
         assert_eq!(spec.params_schema["required"], json!(["op", "assetPath"]));
+    }
+
+    #[test]
+    fn vfx_runtime_is_mutating_and_requires_op_and_game_object() {
+        let spec = get_tool_spec("vfx_runtime").expect("vfx_runtime must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op", "gameObject"]));
     }
 
     #[test]

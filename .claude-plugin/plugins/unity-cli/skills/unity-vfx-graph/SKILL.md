@@ -26,12 +26,13 @@ Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts an
 - The user wants to discover which blocks are available to add to a graph.
 - The user wants to modify a graph, such as adding a block to a context.
 - The user is verifying agent control over Visual Effect Graph authoring.
+- The user wants to drive an exposed (blackboard) parameter on a live `VisualEffect` via the public API (`vfx_runtime`).
 
 ## Do Not Use When
 
 - The task is generic asset, material, or import work; use `unity-asset-management`.
-- The request is about editing a `VisualEffect` component's runtime fields on a scene object; use `unity-gameobject-edit`.
-- The work is play-mode runtime verification of particles; use `unity-playmode-testing`.
+- The request is about editing arbitrary serialized fields on a scene component; use `unity-gameobject-edit`. (`vfx_runtime` is only for VisualEffect public-API calls like `SetFloat`/`SendEvent`.)
+- The work is play-mode lifecycle control or input simulation; use `unity-playmode-testing`.
 
 ## Preferred Flow
 
@@ -68,6 +69,23 @@ links, an `operators` array, and a `parameters` array (each with `exposedName`/`
 re-describing. Use `vfx_list_library` with `kind` (`block` default, `operator`, `context`, `parameter`)
 to discover descriptor names.
 
+To verify an exposed parameter at runtime, put the `.vfx` on a scene `VisualEffect` and drive it via
+`vfx_runtime` (the public `UnityEngine.VFX.VisualEffect` API; no play-mode required for the value
+round-trip). Build the rig with `create_gameobject` + `add_component` (`UnityEngine.VFX.VisualEffect`),
+then:
+
+```bash
+unity-cli raw vfx_runtime --json '{"op":"set_asset","gameObject":"VfxRig","assetPath":"Assets/Basic Graphs/Minimal.vfx"}'
+unity-cli raw vfx_runtime --json '{"op":"set_float","gameObject":"VfxRig","name":"Rate","value":7.5}'
+unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name":"Rate"}'
+```
+
+`vfx_runtime` ops target a named scene object's `VisualEffect`: `set_asset` (load + bind a
+`VisualEffectAsset`, then `Reinit`), `set_float`/`set_int`/`set_bool`/`set_vector2`/`set_vector3`/
+`set_vector4` (`name` = the exposed parameter name), `send_event` (`eventName`), `reinit`, and
+`get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`, `playRate`, and — when `name` is given —
+`hasFloat`/`floatValue`). Set ops echo `get_state` so you can confirm the round-trip in one call.
+
 ## Examples
 
 - "List the contexts and blocks in `Assets/Basic Graphs/Minimal.vfx`."
@@ -76,6 +94,7 @@ to discover descriptor names.
 - "Set the Turbulence block's NoiseType to Perlin and confirm it stuck."
 - "Add two Add operators and wire the first's output into the second's input."
 - "Create an exposed float parameter `Rate` and drive the Constant Spawn Rate block with it."
+- "Put the graph on a VisualEffect and set its exposed `Rate` to 7.5 at runtime, then read it back."
 
 ## References
 

@@ -107,6 +107,7 @@ Global options:
 | `vfx_describe_graph` | Describe a Visual Effect Graph asset: contexts (with blocks and slots), operators, and exposed parameters, including slot links |
 | `vfx_list_library` | List available Visual Effect Graph descriptors (`kind`: block, operator, context, or parameter) |
 | `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots) |
+| `vfx_runtime` | Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state) |
 
 ### Addressables
 

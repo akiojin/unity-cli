@@ -41,6 +41,8 @@ namespace UnityCliBridge.Handlers
         private static Type ParameterType => T("UnityEditor.VFX.VFXParameter");
         private static Type SlotType => T("UnityEditor.VFX.VFXSlot");
         private static Type LibraryType => T("UnityEditor.VFX.VFXLibrary");
+        private static Type VisualEffectType => T("UnityEngine.VFX.VisualEffect");
+        private static Type VisualEffectAssetType => T("UnityEngine.VFX.VisualEffectAsset");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -831,6 +833,133 @@ namespace UnityCliBridge.Handlers
                     ["slotName"] = SlotName(inSlot)
                 }
             };
+        }
+
+        // ---- Runtime control (public UnityEngine.VFX.VisualEffect API) -------
+
+        /// <summary>Find an active VisualEffect component on a named GameObject.</summary>
+        private static object FindVisualEffect(string gameObject)
+        {
+            if (string.IsNullOrEmpty(gameObject))
+                throw new Exception("gameObject is required (name of a scene object with a VisualEffect)");
+            var go = GameObject.Find(gameObject);
+            if (go == null)
+                throw new Exception($"GameObject '{gameObject}' not found in the active scene");
+            var comp = go.GetComponent(VisualEffectType);
+            if (comp == null)
+                throw new Exception($"GameObject '{gameObject}' has no VisualEffect component");
+            return comp;
+        }
+
+        private static object ToVector(JToken token, int n)
+        {
+            var arr = token as JArray;
+            if (arr == null || arr.Count < n)
+                throw new Exception($"value must be an array of {n} numbers");
+            switch (n)
+            {
+                case 2: return new Vector2(arr[0].ToObject<float>(), arr[1].ToObject<float>());
+                case 3: return new Vector3(arr[0].ToObject<float>(), arr[1].ToObject<float>(), arr[2].ToObject<float>());
+                default: return new Vector4(arr[0].ToObject<float>(), arr[1].ToObject<float>(),
+                    arr[2].ToObject<float>(), arr[3].ToObject<float>());
+            }
+        }
+
+        /// <summary>
+        /// Runtime control of a VisualEffect component via its public API. Ops:
+        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state.
+        /// </summary>
+        public static object Runtime(JObject parameters)
+        {
+            var op = parameters?["op"]?.ToString();
+            var gameObject = parameters?["gameObject"]?.ToString();
+
+            if (op == "set_asset")
+            {
+                var assetPath = parameters?["assetPath"]?.ToString();
+                if (string.IsNullOrEmpty(assetPath)) throw new Exception("assetPath is required");
+                var comp = FindVisualEffect(gameObject);
+                var asset = AssetDatabase.LoadAssetAtPath(assetPath, VisualEffectAssetType);
+                if (asset == null) throw new Exception($"No VisualEffectAsset at path: {assetPath}");
+                SetProp(comp, "visualEffectAsset", asset);
+                Call(comp, VisualEffectType, "Reinit");
+                return new JObject
+                {
+                    ["op"] = op, ["gameObject"] = gameObject, ["assetPath"] = assetPath,
+                    ["asset"] = (asset as UnityEngine.Object)?.name
+                };
+            }
+
+            var comp2 = FindVisualEffect(gameObject);
+            var name = parameters?["name"]?.ToString();
+            var valueToken = parameters?["value"];
+
+            switch (op)
+            {
+                case "set_float":
+                    Call(comp2, VisualEffectType, "SetFloat", name, valueToken.ToObject<float>());
+                    break;
+                case "set_int":
+                    Call(comp2, VisualEffectType, "SetInt", name, valueToken.ToObject<int>());
+                    break;
+                case "set_bool":
+                    Call(comp2, VisualEffectType, "SetBool", name, valueToken.ToObject<bool>());
+                    break;
+                case "set_vector2":
+                    Call(comp2, VisualEffectType, "SetVector2", name, ToVector(valueToken, 2));
+                    break;
+                case "set_vector3":
+                    Call(comp2, VisualEffectType, "SetVector3", name, ToVector(valueToken, 3));
+                    break;
+                case "set_vector4":
+                    Call(comp2, VisualEffectType, "SetVector4", name, ToVector(valueToken, 4));
+                    break;
+                case "send_event":
+                {
+                    var eventName = parameters?["eventName"]?.ToString();
+                    if (string.IsNullOrEmpty(eventName)) throw new Exception("eventName is required");
+                    Call(comp2, VisualEffectType, "SendEvent", eventName);
+                    return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
+                }
+                case "reinit":
+                    Call(comp2, VisualEffectType, "Reinit");
+                    return new JObject { ["op"] = op, ["gameObject"] = gameObject };
+                case "get_state":
+                    return RuntimeState(comp2, gameObject, name);
+                default:
+                    throw new Exception(
+                        $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
+                        "set_vector2, set_vector3, set_vector4, send_event, reinit, get_state");
+            }
+
+            // Echo the new value back via get_state so the caller can verify the round-trip.
+            var state = RuntimeState(comp2, gameObject, name);
+            state["op"] = op;
+            return state;
+        }
+
+        private static JObject RuntimeState(object comp, string gameObject, string name)
+        {
+            var asset = Prop(comp, "visualEffectAsset");
+            var state = new JObject
+            {
+                ["op"] = "get_state",
+                ["gameObject"] = gameObject,
+                ["hasAsset"] = asset != null,
+                ["asset"] = (asset as UnityEngine.Object)?.name
+            };
+            try { state["aliveParticleCount"] = (int)Prop(comp, "aliveParticleCount"); } catch { }
+            try { state["pause"] = (bool)Prop(comp, "pause"); } catch { }
+            try { state["playRate"] = (float)Prop(comp, "playRate"); } catch { }
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                state["name"] = name;
+                try { state["hasFloat"] = (bool)Call(comp, VisualEffectType, "HasFloat", name); } catch { }
+                if (state.Value<bool?>("hasFloat") == true)
+                    try { state["floatValue"] = (float)Call(comp, VisualEffectType, "GetFloat", name); } catch { }
+            }
+            return state;
         }
     }
 }

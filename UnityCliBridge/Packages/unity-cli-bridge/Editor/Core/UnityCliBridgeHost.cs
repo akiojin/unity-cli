@@ -939,6 +939,10 @@ namespace UnityCliBridge.Core
                         var vfxApplyResult = VfxGraphHandler.Apply(command.Parameters);
                         response = Response.SuccessResult(command.Id, vfxApplyResult);
                         break;
+                    case "vfx_runtime":
+                        var vfxRuntimeResult = VfxGraphHandler.Runtime(command.Parameters);
+                        response = Response.SuccessResult(command.Id, vfxRuntimeResult);
+                        break;
                     // Test Execution commands
                     case "run_tests":
                         var runTestsResult = TestExecutionHandler.RunTests(command.Parameters);

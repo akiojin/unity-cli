@@ -151,6 +151,18 @@ namespace UnityCliBridge.Tests
             StringAssert.Contains("type is required", ex.Message);
         }
 
+        [Test]
+        public void Runtime_SetFloat_WithoutGameObject_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Runtime(new JObject
+            {
+                ["op"] = "set_float",
+                ["name"] = "Rate",
+                ["value"] = 1.0f
+            }));
+            StringAssert.Contains("gameObject is required", ex.Message);
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -373,6 +385,41 @@ namespace UnityCliBridge.Tests
             var rateInput = spawner["blocks"][0]["inputSlots"][0];
             Assert.IsTrue(rateInput.Value<bool>("hasLink"), "Rate input slot should report a link");
             Assert.AreEqual("parameter", ((JArray)rateInput["links"])[0]["node"].Value<string>("kind"));
+        }
+
+        [Test]
+        public void Runtime_SetFloatOnExposedParameter_RoundTripsViaPublicApi()
+        {
+            string copy = CopyFixture("runtime");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Rate", ["type"] = "Float", ["value"] = 1.0f
+            });
+
+            var go = new UnityEngine.GameObject("VfxRigTest");
+            try
+            {
+                go.AddComponent(Type.GetType("UnityEngine.VFX.VisualEffect, UnityEngine.VFXModule"));
+
+                VfxGraphHandler.Runtime(new JObject
+                {
+                    ["op"] = "set_asset", ["gameObject"] = "VfxRigTest", ["assetPath"] = copy
+                });
+                JObject set = ToJObject(VfxGraphHandler.Runtime(new JObject
+                {
+                    ["op"] = "set_float", ["gameObject"] = "VfxRigTest",
+                    ["name"] = "Rate", ["value"] = 7.5f
+                }));
+
+                Assert.IsTrue(set.Value<bool>("hasAsset"), "asset should be bound");
+                Assert.IsTrue(set.Value<bool>("hasFloat"), "exposed Rate should be visible at runtime");
+                Assert.AreEqual(7.5f, set.Value<float>("floatValue"), 0.001f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(go);
+            }
         }
 
         private static string CopyFixture(string suffix)
