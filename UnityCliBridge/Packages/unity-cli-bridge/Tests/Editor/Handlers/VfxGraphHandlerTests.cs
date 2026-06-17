@@ -127,6 +127,30 @@ namespace UnityCliBridge.Tests
             StringAssert.Contains("to is required", ex.Message);
         }
 
+        [Test]
+        public void Apply_AddParameter_WithoutParameterName_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["type"] = "Float"
+            }));
+            StringAssert.Contains("parameterName is required", ex.Message);
+        }
+
+        [Test]
+        public void Apply_AddParameter_WithoutType_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["parameterName"] = "Rate"
+            }));
+            StringAssert.Contains("type is required", ex.Message);
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -281,6 +305,74 @@ namespace UnityCliBridge.Tests
             // Operator 1's input slot 0 reports the reciprocal link.
             Assert.IsTrue(operators[1]["inputSlots"][0].Value<bool>("hasLink"),
                 "operator 1 input slot should report a link");
+        }
+
+        [Test]
+        public void ApplyAddParameter_CreatesExposedFloatReportedByDescribe()
+        {
+            string copy = CopyFixture("addparam");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = copy,
+                ["parameterName"] = "Rate",
+                ["type"] = "Float",
+                ["value"] = 42.5f,
+                ["category"] = "Tuning"
+            }));
+            Assert.AreEqual("Rate", result.Value<string>("parameterName"));
+            Assert.IsTrue(result.Value<bool>("exposed"));
+            Assert.AreEqual(0, result.Value<int>("parameterIndex"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(1, after.Value<int>("parameterCount"));
+            var param = ((JArray)after["parameters"])[0];
+            Assert.AreEqual("Rate", param.Value<string>("exposedName"));
+            Assert.IsTrue(param.Value<bool>("exposed"));
+            Assert.AreEqual("Tuning", param.Value<string>("category"));
+            Assert.AreEqual(42.5f, param.Value<float>("value"), 0.001f);
+        }
+
+        [Test]
+        public void ApplyLinkSlots_LinksParameterIntoSpawnRateBlock()
+        {
+            string copy = CopyFixture("paramlink");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Rate", ["type"] = "Float"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate"
+            });
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject
+                {
+                    ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0
+                }
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+
+            // The parameter's output slot now drives the block's Rate input.
+            var paramOut = (JArray)((JArray)after["parameters"])[0]["outputSlots"][0]["links"];
+            Assert.AreEqual(1, paramOut.Count, "parameter output should drive one slot");
+            Assert.AreEqual("block", paramOut[0]["node"].Value<string>("kind"));
+
+            var spawner = FindContext(after, "Spawner");
+            var rateInput = spawner["blocks"][0]["inputSlots"][0];
+            Assert.IsTrue(rateInput.Value<bool>("hasLink"), "Rate input slot should report a link");
+            Assert.AreEqual("parameter", ((JArray)rateInput["links"])[0]["node"].Value<string>("kind"));
         }
 
         private static string CopyFixture(string suffix)

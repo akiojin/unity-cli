@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.4.0
+  version: 0.5.0
   category: assets
   triggers:
     - vfx
@@ -49,18 +49,24 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
+unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"category":"Tuning"}'
+unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0}}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
 `vfx_apply` ops: `add_block` (descriptor by name), `set_block_setting` (target a block by `contextType`
 + `blockIndex` from describe, set a `[VFXSetting]` field), `add_context` (descriptor by name, with
 optional `linkFrom` to flow an existing context into the new one), `add_operator` (descriptor by name,
-added to the graph), and `link_slots` (connect a `from` output slot to a `to` input slot; each endpoint
-is `{node: operator|context|block, …address, slot: index}` where an operator uses `operatorIndex`, a
-block/context uses `contextType` (+ `blockIndex` for blocks)). `vfx_describe_graph` reports each block's
-`settings`, per-context `inputs`/`outputs` flow links, and an `operators` array — every block/operator
-slot carries `links` (resolved node address + slot index), so confirm changes by re-describing. Use
-`vfx_list_library` with `kind` (`block` default, `operator`, `context`) to discover descriptor names.
+added to the graph), `add_parameter` (exposed blackboard parameter: `parameterName` = exposed name,
+`type` = a parameter descriptor name like `Float`/`Vector3`/`Color`, optional `value`/`tooltip`/
+`category`/`exposed`), and `link_slots` (connect a `from` output slot to a `to` input slot; each endpoint
+is `{node: operator|parameter|context|block, …address, slot: index}` where an operator uses
+`operatorIndex`, a parameter uses `parameterIndex`, a block/context uses `contextType` (+ `blockIndex`
+for blocks)). `vfx_describe_graph` reports each block's `settings`, per-context `inputs`/`outputs` flow
+links, an `operators` array, and a `parameters` array (each with `exposedName`/`exposed`/`value`/
+`category`) — every slot carries `links` (resolved node address + slot index), so confirm changes by
+re-describing. Use `vfx_list_library` with `kind` (`block` default, `operator`, `context`, `parameter`)
+to discover descriptor names.
 
 ## Examples
 
@@ -69,6 +75,7 @@ slot carries `links` (resolved node address + slot index), so confirm changes by
 - "Add a Turbulence block to the Update context of the minimal graph."
 - "Set the Turbulence block's NoiseType to Perlin and confirm it stuck."
 - "Add two Add operators and wire the first's output into the second's input."
+- "Create an exposed float parameter `Rate` and drive the Constant Spawn Rate block with it."
 
 ## References
 

@@ -38,6 +38,7 @@ namespace UnityCliBridge.Handlers
         private static Type ContextType => T("UnityEditor.VFX.VFXContext");
         private static Type BlockType => T("UnityEditor.VFX.VFXBlock");
         private static Type OperatorType => T("UnityEditor.VFX.VFXOperator");
+        private static Type ParameterType => T("UnityEditor.VFX.VFXParameter");
         private static Type SlotType => T("UnityEditor.VFX.VFXSlot");
         private static Type LibraryType => T("UnityEditor.VFX.VFXLibrary");
 
@@ -66,6 +67,16 @@ namespace UnityCliBridge.Handlers
                 if (p != null) return p.GetValue(target);
             }
             throw new Exception($"Property not found: {target.GetType().Name}.{name}");
+        }
+
+        private static void SetProp(object target, string name, object value)
+        {
+            for (var t = target.GetType(); t != null; t = t.BaseType)
+            {
+                var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
+                if (p != null && p.CanWrite) { p.SetValue(target, value); return; }
+            }
+            throw new Exception($"Writable property not found: {target.GetType().Name}.{name}");
         }
 
         private static IEnumerable<object> Children(object model)
@@ -179,6 +190,7 @@ namespace UnityCliBridge.Handlers
             // Collect contexts and operators first so links can be resolved to stable indices.
             var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
             var opList = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var paramList = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
 
             // Resolve any slot-owning model to a stable address within this describe pass.
             JObject ResolveAddress(object container)
@@ -200,6 +212,9 @@ namespace UnityCliBridge.Handlers
                     for (int oi = 0; oi < opList.Count; oi++)
                         if (ReferenceEquals(opList[oi], container))
                             return new JObject { ["kind"] = "operator", ["operatorIndex"] = oi };
+                    for (int pi = 0; pi < paramList.Count; pi++)
+                        if (ReferenceEquals(paramList[pi], container))
+                            return new JObject { ["kind"] = "parameter", ["parameterIndex"] = pi };
                 }
                 return new JObject { ["kind"] = "unknown" };
             }
@@ -312,13 +327,42 @@ namespace UnityCliBridge.Handlers
                 });
             }
 
+            var paramsJson = new JArray();
+            for (int i = 0; i < paramList.Count; i++)
+            {
+                var p = paramList[i];
+                string exposedName = null, category = null, tooltip = null;
+                bool exposed = false;
+                JToken value = null;
+                try { exposedName = Prop(p, "exposedName") as string; } catch { }
+                try { exposed = (bool)Prop(p, "exposed"); } catch { }
+                try { category = Prop(p, "category") as string; } catch { }
+                try { tooltip = Prop(p, "tooltip") as string; } catch { }
+                try { value = ToJToken(Prop(p, "value")); } catch { }
+                paramsJson.Add(new JObject
+                {
+                    ["index"] = i,
+                    ["type"] = p.GetType().Name,
+                    ["parameterType"] = (Prop(p, "type") as Type)?.Name,
+                    ["exposedName"] = exposedName,
+                    ["exposed"] = exposed,
+                    ["category"] = category,
+                    ["tooltip"] = tooltip,
+                    ["value"] = value,
+                    ["inputSlots"] = SlotsJson(p, true),
+                    ["outputSlots"] = SlotsJson(p, false)
+                });
+            }
+
             return new JObject
             {
                 ["assetPath"] = assetPath,
                 ["contextCount"] = contexts.Count,
                 ["contexts"] = contexts,
                 ["operatorCount"] = operators.Count,
-                ["operators"] = operators
+                ["operators"] = operators,
+                ["parameterCount"] = paramsJson.Count,
+                ["parameters"] = paramsJson
             };
         }
 
@@ -332,7 +376,8 @@ namespace UnityCliBridge.Handlers
                 "operator" => "GetOperators",
                 "context" => "GetContexts",
                 "block" => "GetBlocks",
-                _ => throw new Exception($"Unknown kind '{kind}'. Supported: block, operator, context")
+                "parameter" => "GetParameters",
+                _ => throw new Exception($"Unknown kind '{kind}'. Supported: block, operator, context, parameter")
             };
             var descriptors = Call(null, LibraryType, discovery) as IEnumerable;
             var items = new JArray();
@@ -349,7 +394,7 @@ namespace UnityCliBridge.Handlers
             return new JObject { ["kind"] = kind, ["count"] = items.Count, ["items"] = items };
         }
 
-        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, link_slots.</summary>
+        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots.</summary>
         public static object Apply(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
@@ -359,10 +404,11 @@ namespace UnityCliBridge.Handlers
                 case "set_block_setting": return SetBlockSetting(parameters);
                 case "add_context": return AddContext(parameters);
                 case "add_operator": return AddOperator(parameters);
+                case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
                 default:
                     throw new Exception(
-                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, link_slots");
+                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots");
             }
         }
 
@@ -611,6 +657,77 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        private static object AddParameter(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var parameterName = parameters?["parameterName"]?.ToString();
+            if (string.IsNullOrEmpty(parameterName))
+                throw new Exception("parameterName is required");
+            var typeName = parameters?["type"]?.ToString();
+            if (string.IsNullOrEmpty(typeName))
+                throw new Exception("type is required (e.g. Float, Int, Vector3, Color). Use vfx_list_library with kind 'parameter'.");
+            bool exposed = parameters?["exposed"]?.ToObject<bool>() ?? true;
+
+            var graph = LoadGraph(assetPath);
+
+            // Find parameter descriptor by type name (exact, then contains).
+            var descriptors = (Call(null, LibraryType, "GetParameters") as IEnumerable).Cast<object>().ToList();
+            var match = descriptors.FirstOrDefault(d =>
+                            string.Equals(Prop(d, "name") as string, typeName, StringComparison.OrdinalIgnoreCase))
+                        ?? descriptors.FirstOrDefault(d =>
+                            ((Prop(d, "name") as string)?.IndexOf(typeName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
+            if (match == null)
+            {
+                var available = string.Join(", ", descriptors
+                    .Select(d => Prop(d, "name") as string)
+                    .Where(n => !string.IsNullOrEmpty(n)).Distinct());
+                throw new Exception($"No parameter type matching '{typeName}'. Available: {available}");
+            }
+
+            var parameter = Call(match, match.GetType(), "CreateInstance");
+            if (parameter == null)
+                throw new Exception($"CreateInstance returned null for parameter type '{typeName}'");
+
+            Call(graph, ModelType, "AddChild", parameter, -1, true);
+
+            // exposedName + exposed are [VFXSetting] backing fields.
+            Call(parameter, ModelType, "SetSettingValue", "m_ExposedName", parameterName);
+            Call(parameter, ModelType, "SetSettingValue", "m_Exposed", exposed);
+
+            // Optional default value (set on the parameter's value slot, coerced to its type).
+            var valueToken = parameters?["value"];
+            JToken appliedValue = null;
+            if (valueToken != null && valueToken.Type != JTokenType.Null)
+            {
+                var paramType = Prop(parameter, "type") as Type;
+                object converted = valueToken.ToObject(paramType);
+                SetProp(parameter, "value", converted);
+                appliedValue = ToJToken(converted);
+            }
+
+            var tooltip = parameters?["tooltip"]?.ToString();
+            if (!string.IsNullOrEmpty(tooltip)) SetProp(parameter, "tooltip", tooltip);
+            var category = parameters?["category"]?.ToString();
+            if (!string.IsNullOrEmpty(category)) SetProp(parameter, "category", category);
+
+            Persist(graph, assetPath);
+
+            int parameterIndex = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList()
+                .FindIndex(p => ReferenceEquals(p, parameter));
+
+            return new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = assetPath,
+                ["parameterName"] = parameterName,
+                ["parameterType"] = (Prop(parameter, "type") as Type)?.Name,
+                ["matchedDescriptor"] = Prop(match, "name") as string,
+                ["exposed"] = exposed,
+                ["value"] = appliedValue,
+                ["parameterIndex"] = parameterIndex
+            };
+        }
+
         /// <summary>Resolve a node address (operator/context/block) to its model object.</summary>
         private static object ResolveNode(object graph, JObject node, string label)
         {
@@ -626,6 +743,14 @@ namespace UnityCliBridge.Handlers
                     if (idx < 0 || idx >= ops.Count)
                         throw new Exception($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
                     return ops[idx];
+                }
+                case "parameter":
+                {
+                    int idx = node["parameterIndex"]?.ToObject<int>() ?? 0;
+                    var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+                    if (idx < 0 || idx >= ps.Count)
+                        throw new Exception($"{label} parameterIndex {idx} out of range; graph has {ps.Count} parameter(s)");
+                    return ps[idx];
                 }
                 case "context":
                 {
@@ -648,7 +773,7 @@ namespace UnityCliBridge.Handlers
                     return blocks[bi];
                 }
                 default:
-                    throw new Exception($"{label} has unknown node kind '{kind}'. Supported: operator, context, block");
+                    throw new Exception($"{label} has unknown node kind '{kind}'. Supported: operator, parameter, context, block");
             }
         }
 
