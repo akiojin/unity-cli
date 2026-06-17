@@ -97,7 +97,46 @@ namespace UnityCliBridge.Handlers
 
         // ---- Commands -------------------------------------------------------
 
-        /// <summary>Tier-1 read-back: dump contexts + their blocks for an asset.</summary>
+        private static Type SettingFlagsType => T("UnityEditor.VFX.VFXSettingAttribute+VisibleFlags");
+
+        private static JToken ToJToken(object value)
+        {
+            if (value == null) return JValue.CreateNull();
+            if (value.GetType().IsEnum) return new JValue(value.ToString());
+            try { return JToken.FromObject(value); }
+            catch { return new JValue(value.ToString()); }
+        }
+
+        /// <summary>Read a model's [VFXSetting] fields as a name -> value map.</summary>
+        private static JObject ModelSettings(object model)
+        {
+            var result = new JObject();
+            object settings;
+            try
+            {
+                var defaultFlags = Enum.Parse(SettingFlagsType, "Default");
+                settings = Call(model, ModelType, "GetSettings", false, defaultFlags);
+            }
+            catch { return result; }
+
+            if (settings is IEnumerable e)
+            {
+                foreach (var s in e)
+                {
+                    try
+                    {
+                        var sname = Prop(s, "name") as string;
+                        if (!string.IsNullOrEmpty(sname)) result[sname] = ToJToken(Prop(s, "value"));
+                    }
+                    catch { /* skip unreadable setting */ }
+                }
+            }
+            return result;
+        }
+
+        private static JObject BlockSettings(object block) => ModelSettings(block);
+
+        /// <summary>Tier-1 read-back: dump contexts + their blocks (with settings) for an asset.</summary>
         public static object DescribeGraph(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -108,12 +147,15 @@ namespace UnityCliBridge.Handlers
             {
                 if (!ContextType.IsInstanceOfType(child)) continue;
                 var blocks = new JArray();
+                int blockIndex = 0;
                 foreach (var b in Children(child))
                 {
                     blocks.Add(new JObject
                     {
+                        ["index"] = blockIndex++,
                         ["name"] = ModelName(b),
-                        ["type"] = b.GetType().Name
+                        ["type"] = b.GetType().Name,
+                        ["settings"] = BlockSettings(b)
                     });
                 }
                 string ctxType;
@@ -155,15 +197,50 @@ namespace UnityCliBridge.Handlers
             return new JObject { ["blockCount"] = blocks.Count, ["blocks"] = blocks };
         }
 
-        /// <summary>Mutator. Supported op: add_block.</summary>
+        /// <summary>Mutator. Supported ops: add_block, set_block_setting.</summary>
         public static object Apply(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
             switch (op)
             {
                 case "add_block": return AddBlock(parameters);
-                default: throw new Exception($"Unsupported op: '{op}'. Supported: add_block");
+                case "set_block_setting": return SetBlockSetting(parameters);
+                default: throw new Exception($"Unsupported op: '{op}'. Supported: add_block, set_block_setting");
             }
+        }
+
+        /// <summary>Find a context child by its contextType enum name (case-insensitive).</summary>
+        private static object FindContext(object graph, string contextType)
+        {
+            foreach (var child in Children(graph))
+            {
+                if (!ContextType.IsInstanceOfType(child)) continue;
+                if (string.Equals(Prop(child, "contextType")?.ToString(), contextType,
+                        StringComparison.OrdinalIgnoreCase))
+                    return child;
+            }
+            return null;
+        }
+
+        /// <summary>Find a field by name, walking the type hierarchy.</summary>
+        private static FieldInfo FindField(Type type, string name)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                var f = t.GetField(name, AllInstance | BindingFlags.DeclaredOnly);
+                if (f != null) return f;
+            }
+            return null;
+        }
+
+        /// <summary>Mark the graph dirty, write the asset, and reimport so it recompiles.</summary>
+        private static void Persist(object graph, string assetPath)
+        {
+            Call(graph, GraphType, "SetExpressionGraphDirty", true);
+            var resource = Prop(graph, "visualEffectResource");
+            Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.SaveAssets();
         }
 
         private static object AddBlock(JObject parameters)
@@ -176,18 +253,7 @@ namespace UnityCliBridge.Handlers
 
             var graph = LoadGraph(assetPath);
 
-            // Find target context by contextType (enum ToString match, case-insensitive).
-            object targetContext = null;
-            foreach (var child in Children(graph))
-            {
-                if (!ContextType.IsInstanceOfType(child)) continue;
-                var ct = Prop(child, "contextType")?.ToString();
-                if (string.Equals(ct, wantContext, StringComparison.OrdinalIgnoreCase))
-                {
-                    targetContext = child;
-                    break;
-                }
-            }
+            var targetContext = FindContext(graph, wantContext);
             if (targetContext == null)
                 throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
 
@@ -223,12 +289,7 @@ namespace UnityCliBridge.Handlers
                 }
             }
 
-            // Persist + recompile.
-            Call(graph, GraphType, "SetExpressionGraphDirty", true);
-            var resource = Prop(graph, "visualEffectResource");
-            Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.SaveAssets();
+            Persist(graph, assetPath);
 
             return new JObject
             {
@@ -238,6 +299,58 @@ namespace UnityCliBridge.Handlers
                 ["addedBlock"] = block.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["settingsApplied"] = applied
+            };
+        }
+
+        private static object SetBlockSetting(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var wantContext = parameters?["contextType"]?.ToString() ?? "Update";
+            var settingName = parameters?["setting"]?.ToString();
+            if (string.IsNullOrEmpty(settingName))
+                throw new Exception("setting is required");
+            var valueToken = parameters?["value"];
+            if (valueToken == null || valueToken.Type == JTokenType.Null)
+                throw new Exception("value is required");
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+
+            var graph = LoadGraph(assetPath);
+
+            var targetContext = FindContext(graph, wantContext);
+            if (targetContext == null)
+                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+
+            var blocks = Children(targetContext).ToList();
+            if (blockIndex < 0 || blockIndex >= blocks.Count)
+                throw new Exception(
+                    $"blockIndex {blockIndex} out of range; context '{wantContext}' has {blocks.Count} block(s)");
+            var block = blocks[blockIndex];
+
+            var field = FindField(block.GetType(), settingName);
+            if (field == null)
+                throw new Exception(
+                    $"Setting '{settingName}' not found on block '{block.GetType().Name}'. Use vfx_describe_graph to list settings.");
+
+            object converted;
+            try { converted = valueToken.ToObject(field.FieldType); }
+            catch (Exception e)
+            {
+                throw new Exception(
+                    $"Cannot convert value to {field.FieldType.Name} for setting '{settingName}': {e.Message}");
+            }
+
+            Call(block, ModelType, "SetSettingValue", settingName, converted);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = assetPath,
+                ["contextType"] = wantContext,
+                ["blockIndex"] = blockIndex,
+                ["block"] = block.GetType().Name,
+                ["setting"] = settingName,
+                ["value"] = ToJToken(converted)
             };
         }
     }

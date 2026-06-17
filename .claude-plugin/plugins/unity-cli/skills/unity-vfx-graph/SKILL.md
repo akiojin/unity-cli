@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.1.0
+  version: 0.2.0
   category: assets
   triggers:
     - vfx
@@ -44,15 +44,20 @@ Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts an
 unity-cli raw vfx_describe_graph --json '{"assetPath":"Assets/Basic Graphs/Minimal.vfx"}'
 unity-cli raw vfx_list_library --json '{"filter":"turbulence"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Turbulence"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"NoiseType","value":"Perlin"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
+
+`vfx_apply` ops: `add_block` (descriptor by name) and `set_block_setting` (target a block by
+`contextType` + `blockIndex` from the describe output, set a `[VFXSetting]` field). `vfx_describe_graph`
+reports each block's `settings`, so confirm a setting change by re-describing.
 
 ## Examples
 
 - "List the contexts and blocks in `Assets/Basic Graphs/Minimal.vfx`."
 - "Which force blocks can I add to a particle system?"
 - "Add a Turbulence block to the Update context of the minimal graph."
-- "Confirm the graph still compiles after adding the block."
+- "Set the Turbulence block's NoiseType to Perlin and confirm it stuck."
 
 ## References
 

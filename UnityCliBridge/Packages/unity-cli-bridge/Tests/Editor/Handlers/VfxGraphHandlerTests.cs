@@ -58,6 +58,29 @@ namespace UnityCliBridge.Tests
             StringAssert.Contains("assetPath is required", ex.Message);
         }
 
+        [Test]
+        public void Apply_SetBlockSetting_WithoutSetting_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = "Assets/Some.vfx"
+            }));
+            StringAssert.Contains("setting is required", ex.Message);
+        }
+
+        [Test]
+        public void Apply_SetBlockSetting_WithoutValue_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["setting"] = "NoiseType"
+            }));
+            StringAssert.Contains("value is required", ex.Message);
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -106,6 +129,35 @@ namespace UnityCliBridge.Tests
             var blocks = (JArray)FindContext(after, "Update")["blocks"];
             Assert.AreEqual(1, blocks.Count);
             Assert.AreEqual("Turbulence", blocks[0].Value<string>("name"));
+        }
+
+        [Test]
+        public void ApplySetBlockSetting_ChangesTurbulenceNoiseType()
+        {
+            string copy = CopyFixture("setsetting");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockName"] = "Turbulence"
+            });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0,
+                ["setting"] = "NoiseType",
+                ["value"] = "Perlin"
+            }));
+            Assert.AreEqual("Perlin", result.Value<string>("value"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            JToken settings = ((JArray)FindContext(after, "Update")["blocks"])[0]["settings"];
+            Assert.AreEqual("Perlin", settings?["NoiseType"]?.ToString());
         }
 
         private static string CopyFixture(string suffix)
