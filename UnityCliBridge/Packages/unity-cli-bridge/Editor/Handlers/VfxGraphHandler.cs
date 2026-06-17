@@ -37,6 +37,8 @@ namespace UnityCliBridge.Handlers
         private static Type ModelType => T("UnityEditor.VFX.VFXModel");
         private static Type ContextType => T("UnityEditor.VFX.VFXContext");
         private static Type BlockType => T("UnityEditor.VFX.VFXBlock");
+        private static Type OperatorType => T("UnityEditor.VFX.VFXOperator");
+        private static Type SlotType => T("UnityEditor.VFX.VFXSlot");
         private static Type LibraryType => T("UnityEditor.VFX.VFXLibrary");
 
         private const BindingFlags AllInstance =
@@ -156,14 +158,112 @@ namespace UnityCliBridge.Handlers
             return refs;
         }
 
-        /// <summary>Tier-1 read-back: contexts (with flow links) + their blocks (with settings).</summary>
+        /// <summary>A slot's exposed property name (VFXSlot.property.name is a struct field).</summary>
+        private static string SlotName(object slot)
+        {
+            try
+            {
+                var property = Prop(slot, "property");
+                var nameField = property.GetType().GetField("name");
+                return nameField?.GetValue(property) as string;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>Tier-1 read-back: contexts (flow links + blocks + slots) and operators with slot links.</summary>
         public static object DescribeGraph(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
 
-            // Collect contexts first so flow links can be resolved to stable indices.
+            // Collect contexts and operators first so links can be resolved to stable indices.
             var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var opList = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+
+            // Resolve any slot-owning model to a stable address within this describe pass.
+            JObject ResolveAddress(object container)
+            {
+                if (container != null)
+                {
+                    for (int ci = 0; ci < ctxList.Count; ci++)
+                    {
+                        if (ReferenceEquals(ctxList[ci], container))
+                            return new JObject { ["kind"] = "context", ["contextIndex"] = ci };
+                        int bi = 0;
+                        foreach (var b in Children(ctxList[ci]))
+                        {
+                            if (ReferenceEquals(b, container))
+                                return new JObject { ["kind"] = "block", ["contextIndex"] = ci, ["blockIndex"] = bi };
+                            bi++;
+                        }
+                    }
+                    for (int oi = 0; oi < opList.Count; oi++)
+                        if (ReferenceEquals(opList[oi], container))
+                            return new JObject { ["kind"] = "operator", ["operatorIndex"] = oi };
+                }
+                return new JObject { ["kind"] = "unknown" };
+            }
+
+            // (slotIndex, isInput) for a slot within its owner's top-level slot collection.
+            int SlotIndexIn(object slot)
+            {
+                try
+                {
+                    var owner = Prop(slot, "owner");
+                    if (owner == null) return -1;
+                    bool isOutput = Prop(slot, "direction")?.ToString() == "kOutput";
+                    var coll = Prop(owner, isOutput ? "outputSlots" : "inputSlots") as IEnumerable;
+                    int idx = 0;
+                    if (coll != null)
+                        foreach (var s in coll) { if (ReferenceEquals(s, slot)) return idx; idx++; }
+                }
+                catch { }
+                return -1;
+            }
+
+            JArray LinksJson(object slot)
+            {
+                var arr = new JArray();
+                IEnumerable linked;
+                try { linked = Prop(slot, "LinkedSlots") as IEnumerable; }
+                catch { return arr; }
+                if (linked == null) return arr;
+                foreach (var other in linked)
+                {
+                    object owner = null;
+                    try { owner = Prop(other, "owner"); }
+                    catch { }
+                    arr.Add(new JObject
+                    {
+                        ["node"] = ResolveAddress(owner),
+                        ["slot"] = SlotIndexIn(other),
+                        ["name"] = SlotName(other)
+                    });
+                }
+                return arr;
+            }
+
+            JArray SlotsJson(object container, bool isInput)
+            {
+                var arr = new JArray();
+                IEnumerable coll;
+                try { coll = Prop(container, isInput ? "inputSlots" : "outputSlots") as IEnumerable; }
+                catch { return arr; }
+                if (coll == null) return arr;
+                int idx = 0;
+                foreach (var slot in coll)
+                {
+                    var links = LinksJson(slot);
+                    arr.Add(new JObject
+                    {
+                        ["index"] = idx++,
+                        ["name"] = SlotName(slot),
+                        ["hasLink"] = links.Count > 0,
+                        ["links"] = links
+                    });
+                }
+                return arr;
+            }
 
             var contexts = new JArray();
             for (int i = 0; i < ctxList.Count; i++)
@@ -178,7 +278,9 @@ namespace UnityCliBridge.Handlers
                         ["index"] = blockIndex++,
                         ["name"] = ModelName(b),
                         ["type"] = b.GetType().Name,
-                        ["settings"] = BlockSettings(b)
+                        ["settings"] = BlockSettings(b),
+                        ["inputSlots"] = SlotsJson(b, true),
+                        ["outputSlots"] = SlotsJson(b, false)
                     });
                 }
                 string ctxType;
@@ -196,20 +298,44 @@ namespace UnityCliBridge.Handlers
                 });
             }
 
+            var operators = new JArray();
+            for (int i = 0; i < opList.Count; i++)
+            {
+                var op = opList[i];
+                operators.Add(new JObject
+                {
+                    ["index"] = i,
+                    ["type"] = op.GetType().Name,
+                    ["name"] = ModelName(op),
+                    ["inputSlots"] = SlotsJson(op, true),
+                    ["outputSlots"] = SlotsJson(op, false)
+                });
+            }
+
             return new JObject
             {
                 ["assetPath"] = assetPath,
                 ["contextCount"] = contexts.Count,
-                ["contexts"] = contexts
+                ["contexts"] = contexts,
+                ["operatorCount"] = operators.Count,
+                ["operators"] = operators
             };
         }
 
-        /// <summary>Discovery oracle: list available block descriptors (name/category/type).</summary>
+        /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context.</summary>
         public static object ListLibrary(JObject parameters)
         {
             var filter = parameters?["filter"]?.ToString();
-            var descriptors = Call(null, LibraryType, "GetBlocks") as IEnumerable;
-            var blocks = new JArray();
+            var kind = parameters?["kind"]?.ToString()?.ToLowerInvariant() ?? "block";
+            string discovery = kind switch
+            {
+                "operator" => "GetOperators",
+                "context" => "GetContexts",
+                "block" => "GetBlocks",
+                _ => throw new Exception($"Unknown kind '{kind}'. Supported: block, operator, context")
+            };
+            var descriptors = Call(null, LibraryType, discovery) as IEnumerable;
+            var items = new JArray();
             foreach (var d in descriptors)
             {
                 var name = Prop(d, "name") as string;
@@ -218,12 +344,12 @@ namespace UnityCliBridge.Handlers
                     (name?.IndexOf(filter, StringComparison.OrdinalIgnoreCase) ?? -1) < 0 &&
                     (category?.IndexOf(filter, StringComparison.OrdinalIgnoreCase) ?? -1) < 0)
                     continue;
-                blocks.Add(new JObject { ["name"] = name, ["category"] = category });
+                items.Add(new JObject { ["name"] = name, ["category"] = category });
             }
-            return new JObject { ["blockCount"] = blocks.Count, ["blocks"] = blocks };
+            return new JObject { ["kind"] = kind, ["count"] = items.Count, ["items"] = items };
         }
 
-        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context.</summary>
+        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, link_slots.</summary>
         public static object Apply(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
@@ -232,9 +358,11 @@ namespace UnityCliBridge.Handlers
                 case "add_block": return AddBlock(parameters);
                 case "set_block_setting": return SetBlockSetting(parameters);
                 case "add_context": return AddContext(parameters);
+                case "add_operator": return AddOperator(parameters);
+                case "link_slots": return LinkSlots(parameters);
                 default:
                     throw new Exception(
-                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context");
+                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, link_slots");
             }
         }
 
@@ -440,6 +568,143 @@ namespace UnityCliBridge.Handlers
                 ["addedContext"] = context.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["linked"] = linked
+            };
+        }
+
+        private static object AddOperator(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var operatorName = parameters?["operatorName"]?.ToString();
+            if (string.IsNullOrEmpty(operatorName))
+                throw new Exception("operatorName is required");
+
+            var graph = LoadGraph(assetPath);
+
+            // Find operator descriptor by name (exact, then contains).
+            var descriptors = (Call(null, LibraryType, "GetOperators") as IEnumerable).Cast<object>().ToList();
+            var match = descriptors.FirstOrDefault(d =>
+                            string.Equals(Prop(d, "name") as string, operatorName, StringComparison.OrdinalIgnoreCase))
+                        ?? descriptors.FirstOrDefault(d =>
+                            ((Prop(d, "name") as string)?.IndexOf(operatorName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
+            if (match == null)
+                throw new Exception(
+                    $"No operator descriptor matching '{operatorName}'. Use vfx_list_library with kind 'operator' to discover names.");
+
+            var op = Call(match, match.GetType(), "CreateInstance");
+            if (op == null)
+                throw new Exception($"CreateInstance returned null for operator '{operatorName}'");
+
+            Call(graph, ModelType, "AddChild", op, -1, true);
+
+            Persist(graph, assetPath);
+
+            int operatorIndex = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList()
+                .FindIndex(o => ReferenceEquals(o, op));
+
+            return new JObject
+            {
+                ["op"] = "add_operator",
+                ["assetPath"] = assetPath,
+                ["addedOperator"] = op.GetType().Name,
+                ["matchedDescriptor"] = Prop(match, "name") as string,
+                ["operatorIndex"] = operatorIndex
+            };
+        }
+
+        /// <summary>Resolve a node address (operator/context/block) to its model object.</summary>
+        private static object ResolveNode(object graph, JObject node, string label)
+        {
+            if (node == null)
+                throw new Exception($"{label} is required (an object with 'node' = operator|context|block)");
+            var kind = node["node"]?.ToString();
+            switch (kind)
+            {
+                case "operator":
+                {
+                    int idx = node["operatorIndex"]?.ToObject<int>() ?? 0;
+                    var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+                    if (idx < 0 || idx >= ops.Count)
+                        throw new Exception($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
+                    return ops[idx];
+                }
+                case "context":
+                {
+                    var ct = node["contextType"]?.ToString();
+                    var ctx = FindContext(graph, ct);
+                    if (ctx == null)
+                        throw new Exception($"{label} context of type '{ct}' not found");
+                    return ctx;
+                }
+                case "block":
+                {
+                    var ct = node["contextType"]?.ToString();
+                    var ctx = FindContext(graph, ct);
+                    if (ctx == null)
+                        throw new Exception($"{label} context of type '{ct}' not found");
+                    int bi = node["blockIndex"]?.ToObject<int>() ?? 0;
+                    var blocks = Children(ctx).ToList();
+                    if (bi < 0 || bi >= blocks.Count)
+                        throw new Exception($"{label} blockIndex {bi} out of range; context '{ct}' has {blocks.Count} block(s)");
+                    return blocks[bi];
+                }
+                default:
+                    throw new Exception($"{label} has unknown node kind '{kind}'. Supported: operator, context, block");
+            }
+        }
+
+        /// <summary>Get a top-level input/output slot of a slot container by index.</summary>
+        private static object GetSlot(object container, bool isInput, int index, string label)
+        {
+            var coll = (Prop(container, isInput ? "inputSlots" : "outputSlots") as IEnumerable)?.Cast<object>().ToList()
+                       ?? new List<object>();
+            if (index < 0 || index >= coll.Count)
+                throw new Exception(
+                    $"{label} {(isInput ? "input" : "output")} slot index {index} out of range; {container.GetType().Name} has {coll.Count}");
+            return coll[index];
+        }
+
+        private static object LinkSlots(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var from = parameters?["from"] as JObject;
+            var to = parameters?["to"] as JObject;
+            if (from == null) throw new Exception("from is required");
+            if (to == null) throw new Exception("to is required");
+
+            var graph = LoadGraph(assetPath);
+
+            var fromNode = ResolveNode(graph, from, "from");
+            var toNode = ResolveNode(graph, to, "to");
+            int fromSlot = from["slot"]?.ToObject<int>() ?? 0;
+            int toSlot = to["slot"]?.ToObject<int>() ?? 0;
+
+            var outSlot = GetSlot(fromNode, false, fromSlot, "from");
+            var inSlot = GetSlot(toNode, true, toSlot, "to");
+
+            bool ok = (bool)Call(outSlot, SlotType, "Link", inSlot, true);
+            if (!ok)
+                throw new Exception(
+                    "Link rejected: output slot type is incompatible with the input slot (or directions are wrong). " +
+                    "'from' must reference an output slot, 'to' an input slot.");
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = assetPath,
+                ["from"] = new JObject
+                {
+                    ["node"] = fromNode.GetType().Name,
+                    ["slot"] = fromSlot,
+                    ["slotName"] = SlotName(outSlot)
+                },
+                ["to"] = new JObject
+                {
+                    ["node"] = toNode.GetType().Name,
+                    ["slot"] = toSlot,
+                    ["slotName"] = SlotName(inSlot)
+                }
             };
         }
     }

@@ -208,10 +208,14 @@ fn tool_description(name: &str) -> &'static str {
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
         "vfx_describe_graph" => {
-            "Describe a Visual Effect Graph asset: its contexts and the blocks within each"
+            "Describe a Visual Effect Graph asset: contexts (with blocks and slots) and operators, including slot links"
         }
-        "vfx_list_library" => "List available Visual Effect Graph block descriptors",
-        "vfx_apply" => "Apply an authoring mutation to a Visual Effect Graph asset",
+        "vfx_list_library" => {
+            "List available Visual Effect Graph descriptors (kind: block, operator, or context)"
+        }
+        "vfx_apply" => {
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, link_slots)"
+        }
         _ => "Unity CLI tool operation",
     }
 }
@@ -2370,7 +2374,11 @@ fn tool_params_schema(name: &str) -> Value {
         "vfx_describe_graph" => {
             object_schema(&[("assetPath", string_schema())], &["assetPath"], false)
         }
-        "vfx_list_library" => object_schema(&[("filter", string_schema())], &[], false),
+        "vfx_list_library" => object_schema(
+            &[("filter", string_schema()), ("kind", string_schema())],
+            &[],
+            false,
+        ),
         "vfx_apply" => object_schema(
             &[
                 ("op", string_schema()),
@@ -2385,6 +2393,9 @@ fn tool_params_schema(name: &str) -> Value {
                 ("linkFrom", string_schema()),
                 ("fromIndex", integer_schema()),
                 ("toIndex", integer_schema()),
+                ("operatorName", string_schema()),
+                ("from", any_object_schema()),
+                ("to", any_object_schema()),
             ],
             &["op", "assetPath"],
             false,

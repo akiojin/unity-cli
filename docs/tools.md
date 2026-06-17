@@ -104,9 +104,9 @@ Global options:
 
 | Tool | Description |
 | --- | --- |
-| `vfx_describe_graph` | Describe a Visual Effect Graph asset: its contexts and the blocks within each |
-| `vfx_list_library` | List available Visual Effect Graph block descriptors |
-| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset |
+| `vfx_describe_graph` | Describe a Visual Effect Graph asset: contexts (with blocks and slots) and operators, including slot links |
+| `vfx_list_library` | List available Visual Effect Graph descriptors (`kind`: block, operator, or context) |
+| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, link_slots) |
 
 ### Addressables
 
