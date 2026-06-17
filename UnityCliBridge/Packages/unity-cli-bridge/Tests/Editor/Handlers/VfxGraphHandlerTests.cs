@@ -81,6 +81,17 @@ namespace UnityCliBridge.Tests
             StringAssert.Contains("value is required", ex.Message);
         }
 
+        [Test]
+        public void Apply_AddContext_WithoutContextName_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = "Assets/Some.vfx"
+            }));
+            StringAssert.Contains("contextName is required", ex.Message);
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -158,6 +169,27 @@ namespace UnityCliBridge.Tests
                 new JObject { ["assetPath"] = copy }));
             JToken settings = ((JArray)FindContext(after, "Update")["blocks"])[0]["settings"];
             Assert.AreEqual("Perlin", settings?["NoiseType"]?.ToString());
+        }
+
+        [Test]
+        public void ApplyAddContext_AddsOutputLinkedFromUpdate()
+        {
+            string copy = CopyFixture("addcontext");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Output Particle|Point",
+                ["linkFrom"] = "Update"
+            }));
+            Assert.AreEqual("VFXPointOutput", result.Value<string>("addedContext"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(5, after.Value<int>("contextCount"));
+            // Update now flows into two outputs (the original quad + the new point output).
+            Assert.AreEqual(2, ((JArray)FindContext(after, "Update")["outputs"]).Count);
         }
 
         private static string CopyFixture(string suffix)

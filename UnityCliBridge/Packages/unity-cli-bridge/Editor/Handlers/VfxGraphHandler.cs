@@ -136,19 +136,42 @@ namespace UnityCliBridge.Handlers
 
         private static JObject BlockSettings(object block) => ModelSettings(block);
 
-        /// <summary>Tier-1 read-back: dump contexts + their blocks (with settings) for an asset.</summary>
+        /// <summary>Resolve a context's flow links (input/output contexts) to graph indices.</summary>
+        private static JArray FlowRefs(object ctx, string propName, List<object> ctxList)
+        {
+            var refs = new JArray();
+            object linked;
+            try { linked = Prop(ctx, propName); }
+            catch { return refs; }
+            if (linked is IEnumerable e)
+            {
+                foreach (var other in e)
+                {
+                    string t;
+                    try { t = Prop(other, "contextType")?.ToString(); }
+                    catch { t = "unknown"; }
+                    refs.Add(new JObject { ["index"] = ctxList.IndexOf(other), ["contextType"] = t });
+                }
+            }
+            return refs;
+        }
+
+        /// <summary>Tier-1 read-back: contexts (with flow links) + their blocks (with settings).</summary>
         public static object DescribeGraph(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
 
+            // Collect contexts first so flow links can be resolved to stable indices.
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+
             var contexts = new JArray();
-            foreach (var child in Children(graph))
+            for (int i = 0; i < ctxList.Count; i++)
             {
-                if (!ContextType.IsInstanceOfType(child)) continue;
+                var ctx = ctxList[i];
                 var blocks = new JArray();
                 int blockIndex = 0;
-                foreach (var b in Children(child))
+                foreach (var b in Children(ctx))
                 {
                     blocks.Add(new JObject
                     {
@@ -159,13 +182,16 @@ namespace UnityCliBridge.Handlers
                     });
                 }
                 string ctxType;
-                try { ctxType = Prop(child, "contextType")?.ToString(); }
+                try { ctxType = Prop(ctx, "contextType")?.ToString(); }
                 catch { ctxType = "unknown"; }
                 contexts.Add(new JObject
                 {
+                    ["index"] = i,
                     ["contextType"] = ctxType,
-                    ["type"] = child.GetType().Name,
-                    ["name"] = ModelName(child),
+                    ["type"] = ctx.GetType().Name,
+                    ["name"] = ModelName(ctx),
+                    ["inputs"] = FlowRefs(ctx, "inputContexts", ctxList),
+                    ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
                     ["blocks"] = blocks
                 });
             }
@@ -197,7 +223,7 @@ namespace UnityCliBridge.Handlers
             return new JObject { ["blockCount"] = blocks.Count, ["blocks"] = blocks };
         }
 
-        /// <summary>Mutator. Supported ops: add_block, set_block_setting.</summary>
+        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context.</summary>
         public static object Apply(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
@@ -205,7 +231,10 @@ namespace UnityCliBridge.Handlers
             {
                 case "add_block": return AddBlock(parameters);
                 case "set_block_setting": return SetBlockSetting(parameters);
-                default: throw new Exception($"Unsupported op: '{op}'. Supported: add_block, set_block_setting");
+                case "add_context": return AddContext(parameters);
+                default:
+                    throw new Exception(
+                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context");
             }
         }
 
@@ -351,6 +380,66 @@ namespace UnityCliBridge.Handlers
                 ["block"] = block.GetType().Name,
                 ["setting"] = settingName,
                 ["value"] = ToJToken(converted)
+            };
+        }
+
+        private static object AddContext(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var contextName = parameters?["contextName"]?.ToString();
+            if (string.IsNullOrEmpty(contextName))
+                throw new Exception("contextName is required");
+            var linkFrom = parameters?["linkFrom"]?.ToString();
+
+            var graph = LoadGraph(assetPath);
+
+            // Find context descriptor by name (exact, then contains).
+            var descriptors = (Call(null, LibraryType, "GetContexts") as IEnumerable).Cast<object>().ToList();
+            var match = descriptors.FirstOrDefault(d =>
+                            string.Equals(Prop(d, "name") as string, contextName, StringComparison.OrdinalIgnoreCase))
+                        ?? descriptors.FirstOrDefault(d =>
+                            ((Prop(d, "name") as string)?.IndexOf(contextName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
+            if (match == null)
+            {
+                var available = string.Join(", ", descriptors
+                    .Select(d => Prop(d, "name") as string)
+                    .Where(n => !string.IsNullOrEmpty(n)).Distinct());
+                throw new Exception($"No context descriptor matching '{contextName}'. Available: {available}");
+            }
+
+            var context = Call(match, match.GetType(), "CreateInstance");
+            if (context == null)
+                throw new Exception($"CreateInstance returned null for context '{contextName}'");
+
+            Call(graph, ModelType, "AddChild", context, -1, true);
+
+            // Optional flow link: an existing context (by contextType) flows INTO the new one.
+            JObject linked = null;
+            if (!string.IsNullOrEmpty(linkFrom))
+            {
+                var fromContext = FindContext(graph, linkFrom);
+                if (fromContext == null)
+                    throw new Exception($"linkFrom context '{linkFrom}' not found in {assetPath}");
+                int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
+                int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? 0;
+                Call(fromContext, ContextType, "LinkTo", context, fromIndex, toIndex);
+                linked = new JObject
+                {
+                    ["from"] = linkFrom,
+                    ["fromIndex"] = fromIndex,
+                    ["toIndex"] = toIndex
+                };
+            }
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = assetPath,
+                ["addedContext"] = context.GetType().Name,
+                ["matchedDescriptor"] = Prop(match, "name") as string,
+                ["linked"] = linked
             };
         }
     }

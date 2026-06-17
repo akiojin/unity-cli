@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.2.0
+  version: 0.3.0
   category: assets
   triggers:
     - vfx
@@ -45,12 +45,14 @@ unity-cli raw vfx_describe_graph --json '{"assetPath":"Assets/Basic Graphs/Minim
 unity-cli raw vfx_list_library --json '{"filter":"turbulence"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Turbulence"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"NoiseType","value":"Perlin"}'
+unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
-`vfx_apply` ops: `add_block` (descriptor by name) and `set_block_setting` (target a block by
-`contextType` + `blockIndex` from the describe output, set a `[VFXSetting]` field). `vfx_describe_graph`
-reports each block's `settings`, so confirm a setting change by re-describing.
+`vfx_apply` ops: `add_block` (descriptor by name), `set_block_setting` (target a block by `contextType`
++ `blockIndex` from describe, set a `[VFXSetting]` field), and `add_context` (descriptor by name, with
+optional `linkFrom` to flow an existing context into the new one). `vfx_describe_graph` reports each
+block's `settings` plus per-context `inputs`/`outputs` flow links, so confirm changes by re-describing.
 
 ## Examples
 
