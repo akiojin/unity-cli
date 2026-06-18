@@ -148,11 +148,14 @@ namespace UnityCliBridge.Handlers
         private static JObject ModelSettings(object model)
         {
             var result = new JObject();
+            // listHidden=true bypasses the visible-flags mask so the oracle surfaces every
+            // [VFXSetting] field — including ReadOnly fields like CustomHLSL.m_HLSLCode that
+            // would be filtered by the Default mask (which requires InGeneratedCodeComments).
             object settings;
             try
             {
                 var defaultFlags = Enum.Parse(SettingFlagsType, "Default");
-                settings = Call(model, ModelType, "GetSettings", false, defaultFlags);
+                settings = Call(model, ModelType, "GetSettings", true, defaultFlags);
             }
             catch { return result; }
 

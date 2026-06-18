@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.9.0
+  version: 0.10.0
   category: assets
   triggers:
     - vfx
@@ -57,6 +57,8 @@ unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Gra
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Custom HLSL"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_HLSLCode","value":"void DoIt(inout VFXAttributes a, in float k){a.position *= k;}"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -78,6 +80,14 @@ and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[
 asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
 optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
+
+Custom HLSL needs no dedicated op: the Custom HLSL block (descriptor `"Custom HLSL"`, category `HLSL`)
+and Custom HLSL operator (category `Operator/HLSL`) are discoverable via `vfx_list_library` and instantiate
+through `add_block`/`add_operator`. Write the inline HLSL function via `set_block_setting` with
+`setting:"m_HLSLCode"` (other settings: `m_BlockName` for the displayed name, `m_ShaderFile` to switch
+to an external `ShaderInclude`). Describe surfaces these as block `settings` (the oracle reports every
+`[VFXSetting]`, including `ReadOnly` fields like `m_HLSLCode`), and the block's input slots are
+re-parsed from the HLSL signature.
 `vfx_describe_graph` reports each context's `settings` (including `boundsMode` on Init), `inputSlots`
 (each slot's resolved `value` for unlinked slots — e.g. the bounds AABox center/size), each block's
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
@@ -115,6 +125,7 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 - "Switch the Initialize context to Manual bounds with center (0,0,0) and size (4,4,4)."
 - "Drop a sticky note on the graph titled 'TODO' explaining the burst plan."
 - "Disable instancing on this VFX asset so each VisualEffect runs as an individual draw."
+- "Add a Custom HLSL block to the Update context and inline a function that scales position by a float."
 
 ## References
 

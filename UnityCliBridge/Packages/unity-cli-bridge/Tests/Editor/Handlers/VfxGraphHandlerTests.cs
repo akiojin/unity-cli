@@ -555,6 +555,45 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyCustomHLSL_AddsBlockAndWritesInlineSource()
+        {
+            string copy = CopyFixture("customhlsl");
+            const string source =
+                "void MyHLSL(inout VFXAttributes attributes, in float scale)\n" +
+                "{\n  attributes.position *= scale;\n}";
+
+            JObject add = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockName"] = "Custom HLSL"
+            }));
+            Assert.AreEqual("CustomHLSL", add.Value<string>("addedBlock"));
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0,
+                ["setting"] = "m_HLSLCode",
+                ["value"] = source
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            JToken update = FindContext(after, "Update");
+            var blocks = (JArray)update["blocks"];
+            Assert.AreEqual(1, blocks.Count);
+            Assert.AreEqual("CustomHLSL", blocks[0].Value<string>("type"));
+            string storedCode = blocks[0]["settings"]?["m_HLSLCode"]?.ToString();
+            Assert.IsNotNull(storedCode, "describe should now report m_HLSLCode (a ReadOnly setting)");
+            Assert.IsTrue(storedCode.Contains("MyHLSL"),
+                $"m_HLSLCode should contain the inline source; got: {storedCode}");
+        }
+
+        [Test]
         public void Runtime_SetFloatOnExposedParameter_RoundTripsViaPublicApi()
         {
             string copy = CopyFixture("runtime");
