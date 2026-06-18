@@ -19,160 +19,158 @@ namespace UnityCliBridge.Tests
     public class VfxGraphHandlerTests
     {
         // ---- Contract tests (no VFX package required) ----------------------
+        // Handlers report validation failures as a { error } result (the bridge's
+        // handler convention), not by throwing, so assert on the error field.
 
-        [Test]
-        public void Apply_WithUnsupportedOp_ThrowsDescriptiveError()
+        private static void AssertError(object result, string expectedSubstring)
         {
-            var ex = Assert.Throws<Exception>(() =>
-                VfxGraphHandler.Apply(new JObject { ["op"] = "no_such_op" }));
-            StringAssert.Contains("Unsupported op", ex.Message);
+            JObject obj = ToJObject(result);
+            string error = obj.Value<string>("error");
+            Assert.IsNotNull(error, $"expected an error result, got: {obj}");
+            StringAssert.Contains(expectedSubstring, error);
         }
 
         [Test]
-        public void Apply_AddBlock_WithoutBlockName_ThrowsRequiredError()
+        public void Apply_WithUnsupportedOp_ReturnsDescriptiveError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "no_such_op",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "Unsupported op");
+        }
+
+        [Test]
+        public void Apply_AddBlock_WithoutBlockName_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block",
                 ["assetPath"] = "Assets/Some.vfx"
-            }));
-            StringAssert.Contains("blockName is required", ex.Message);
+            }), "blockName is required");
         }
 
         [Test]
-        public void Apply_AddBlock_WithoutAssetPath_ThrowsRequiredError()
+        public void Apply_AddBlock_WithoutAssetPath_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block",
                 ["blockName"] = "Turbulence"
-            }));
-            StringAssert.Contains("assetPath is required", ex.Message);
+            }), "assetPath is required");
         }
 
         [Test]
-        public void DescribeGraph_WithoutAssetPath_ThrowsRequiredError()
+        public void DescribeGraph_WithoutAssetPath_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() =>
-                VfxGraphHandler.DescribeGraph(new JObject()));
-            StringAssert.Contains("assetPath is required", ex.Message);
+            AssertError(VfxGraphHandler.DescribeGraph(new JObject()), "assetPath is required");
         }
 
         [Test]
-        public void Apply_SetBlockSetting_WithoutSetting_ThrowsRequiredError()
+        public void Apply_SetBlockSetting_WithoutSetting_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "set_block_setting",
                 ["assetPath"] = "Assets/Some.vfx"
-            }));
-            StringAssert.Contains("setting is required", ex.Message);
+            }), "setting is required");
         }
 
         [Test]
-        public void Apply_SetBlockSetting_WithoutValue_ThrowsRequiredError()
+        public void Apply_SetBlockSetting_WithoutValue_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "set_block_setting",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["setting"] = "NoiseType"
-            }));
-            StringAssert.Contains("value is required", ex.Message);
+            }), "value is required");
         }
 
         [Test]
-        public void Apply_AddContext_WithoutContextName_ThrowsRequiredError()
+        public void Apply_AddContext_WithoutContextName_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_context",
                 ["assetPath"] = "Assets/Some.vfx"
-            }));
-            StringAssert.Contains("contextName is required", ex.Message);
+            }), "contextName is required");
         }
 
         [Test]
-        public void Apply_AddOperator_WithoutOperatorName_ThrowsRequiredError()
+        public void Apply_AddOperator_WithoutOperatorName_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_operator",
                 ["assetPath"] = "Assets/Some.vfx"
-            }));
-            StringAssert.Contains("operatorName is required", ex.Message);
+            }), "operatorName is required");
         }
 
         [Test]
-        public void Apply_LinkSlots_WithoutFrom_ThrowsRequiredError()
+        public void Apply_LinkSlots_WithoutFrom_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_slots",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["to"] = new JObject { ["node"] = "operator" }
-            }));
-            StringAssert.Contains("from is required", ex.Message);
+            }), "from is required");
         }
 
         [Test]
-        public void Apply_LinkSlots_WithoutTo_ThrowsRequiredError()
+        public void Apply_LinkSlots_WithoutTo_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_slots",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["from"] = new JObject { ["node"] = "operator" }
-            }));
-            StringAssert.Contains("to is required", ex.Message);
+            }), "to is required");
         }
 
         [Test]
-        public void Apply_AddParameter_WithoutParameterName_ThrowsRequiredError()
+        public void Apply_AddParameter_WithoutParameterName_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_parameter",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["type"] = "Float"
-            }));
-            StringAssert.Contains("parameterName is required", ex.Message);
+            }), "parameterName is required");
         }
 
         [Test]
-        public void Apply_AddParameter_WithoutType_ThrowsRequiredError()
+        public void Apply_AddParameter_WithoutType_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_parameter",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["parameterName"] = "Rate"
-            }));
-            StringAssert.Contains("type is required", ex.Message);
+            }), "type is required");
         }
 
         [Test]
-        public void Apply_LinkFlow_WithoutFrom_ThrowsRequiredError()
+        public void Apply_LinkFlow_WithoutFrom_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            AssertError(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_flow",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["to"] = new JObject { ["contextType"] = "Spawner" }
-            }));
-            StringAssert.Contains("from is required", ex.Message);
+            }), "from is required");
         }
 
         [Test]
-        public void Runtime_SetFloat_WithoutGameObject_ThrowsRequiredError()
+        public void Runtime_SetFloat_WithoutGameObject_ReturnsRequiredError()
         {
-            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Runtime(new JObject
+            AssertError(VfxGraphHandler.Runtime(new JObject
             {
                 ["op"] = "set_float",
                 ["name"] = "Rate",
                 ["value"] = 1.0f
-            }));
-            StringAssert.Contains("gameObject is required", ex.Message);
+            }), "gameObject is required");
         }
 
 #if UNITY_VFX_GRAPH

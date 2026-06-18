@@ -6,14 +6,18 @@ using System.Reflection;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityCliBridge.Logging;
 
 namespace UnityCliBridge.Handlers
 {
     /// <summary>
-    /// Spike handler for driving Unity VFX Graph authoring via reflection over the
-    /// internal UnityEditor.VFX model API (the package exposes no public authoring API).
+    /// Handler for driving Unity VFX Graph authoring via reflection over the
+    /// internal UnityEditor.VFX model API (the package exposes no public authoring API),
+    /// plus runtime control of a VisualEffect via its public UnityEngine.VFX API.
     /// Commands: vfx_describe_graph (Tier-1 read-back oracle), vfx_list_library
-    /// (discovery), vfx_apply (mutator; currently: add_block).
+    /// (discovery), vfx_apply (authoring mutator), vfx_runtime (runtime control).
+    /// Public entry points catch and return { error } to match the bridge's handler
+    /// convention rather than throwing into the host's INTERNAL_ERROR envelope.
     /// </summary>
     public static class VfxGraphHandler
     {
@@ -183,10 +187,25 @@ namespace UnityCliBridge.Handlers
             catch { return null; }
         }
 
+        /// <summary>Log an error and return it as a { error } result (the bridge's handler convention).</summary>
+        private static object Fail(string command, Exception ex)
+        {
+            BridgeLogger.LogError("VfxGraphHandler", $"Error in {command}: {ex.Message}");
+            return new { error = ex.Message };
+        }
+
         /// <summary>Tier-1 read-back: contexts (flow links + blocks + slots) and operators with slot links.</summary>
         public static object DescribeGraph(JObject parameters)
         {
+            try { return DescribeGraphCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_describe_graph", ex); }
+        }
+
+        private static object DescribeGraphCore(JObject parameters)
+        {
             var assetPath = parameters?["assetPath"]?.ToString();
+            if (string.IsNullOrEmpty(assetPath))
+                return new { error = "assetPath is required" };
             var graph = LoadGraph(assetPath);
 
             // Collect contexts and operators first so links can be resolved to stable indices.
@@ -369,19 +388,26 @@ namespace UnityCliBridge.Handlers
             };
         }
 
-        /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context.</summary>
+        /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context|parameter.</summary>
         public static object ListLibrary(JObject parameters)
+        {
+            try { return ListLibraryCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_list_library", ex); }
+        }
+
+        private static object ListLibraryCore(JObject parameters)
         {
             var filter = parameters?["filter"]?.ToString();
             var kind = parameters?["kind"]?.ToString()?.ToLowerInvariant() ?? "block";
-            string discovery = kind switch
+            string discovery;
+            switch (kind)
             {
-                "operator" => "GetOperators",
-                "context" => "GetContexts",
-                "block" => "GetBlocks",
-                "parameter" => "GetParameters",
-                _ => throw new Exception($"Unknown kind '{kind}'. Supported: block, operator, context, parameter")
-            };
+                case "operator": discovery = "GetOperators"; break;
+                case "context": discovery = "GetContexts"; break;
+                case "block": discovery = "GetBlocks"; break;
+                case "parameter": discovery = "GetParameters"; break;
+                default: return new { error = $"Unknown kind '{kind}'. Supported: block, operator, context, parameter" };
+            }
             var descriptors = Call(null, LibraryType, discovery) as IEnumerable;
             var items = new JArray();
             foreach (var d in descriptors)
@@ -400,7 +426,15 @@ namespace UnityCliBridge.Handlers
         /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow.</summary>
         public static object Apply(JObject parameters)
         {
+            try { return ApplyCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_apply", ex); }
+        }
+
+        private static object ApplyCore(JObject parameters)
+        {
             var op = parameters?["op"]?.ToString();
+            if (string.IsNullOrEmpty(parameters?["assetPath"]?.ToString()))
+                return new { error = "assetPath is required" };
             switch (op)
             {
                 case "add_block": return AddBlock(parameters);
@@ -411,8 +445,7 @@ namespace UnityCliBridge.Handlers
                 case "link_slots": return LinkSlots(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 default:
-                    throw new Exception(
-                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow");
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow" };
             }
         }
 
@@ -480,7 +513,7 @@ namespace UnityCliBridge.Handlers
             var wantContext = parameters?["contextType"]?.ToString() ?? "Update";
             var blockName = parameters?["blockName"]?.ToString();
             if (string.IsNullOrEmpty(blockName))
-                throw new Exception("blockName is required");
+                return new { error = "blockName is required" };
 
             var graph = LoadGraph(assetPath);
 
@@ -516,7 +549,7 @@ namespace UnityCliBridge.Handlers
                                : kv.Value.Type == JTokenType.Boolean ? (object)kv.Value.ToObject<bool>()
                                : kv.Value.ToString();
                     try { Call(block, ModelType, "SetSettingValue", kv.Key, val); applied.Add(kv.Key); }
-                    catch (Exception e) { Debug.LogWarning($"[vfx_apply] setting '{kv.Key}' failed: {e.Message}"); }
+                    catch (Exception e) { BridgeLogger.LogWarning("VfxGraphHandler", $"setting '{kv.Key}' failed: {e.Message}"); }
                 }
             }
 
@@ -539,10 +572,10 @@ namespace UnityCliBridge.Handlers
             var wantContext = parameters?["contextType"]?.ToString() ?? "Update";
             var settingName = parameters?["setting"]?.ToString();
             if (string.IsNullOrEmpty(settingName))
-                throw new Exception("setting is required");
+                return new { error = "setting is required" };
             var valueToken = parameters?["value"];
             if (valueToken == null || valueToken.Type == JTokenType.Null)
-                throw new Exception("value is required");
+                return new { error = "value is required" };
             int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
 
             var graph = LoadGraph(assetPath);
@@ -590,7 +623,7 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var contextName = parameters?["contextName"]?.ToString();
             if (string.IsNullOrEmpty(contextName))
-                throw new Exception("contextName is required");
+                return new { error = "contextName is required" };
             var linkFrom = parameters?["linkFrom"]?.ToString();
 
             var graph = LoadGraph(assetPath);
@@ -654,7 +687,7 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var operatorName = parameters?["operatorName"]?.ToString();
             if (string.IsNullOrEmpty(operatorName))
-                throw new Exception("operatorName is required");
+                return new { error = "operatorName is required" };
 
             var graph = LoadGraph(assetPath);
 
@@ -694,10 +727,10 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var parameterName = parameters?["parameterName"]?.ToString();
             if (string.IsNullOrEmpty(parameterName))
-                throw new Exception("parameterName is required");
+                return new { error = "parameterName is required" };
             var typeName = parameters?["type"]?.ToString();
             if (string.IsNullOrEmpty(typeName))
-                throw new Exception("type is required (e.g. Float, Int, Vector3, Color). Use vfx_list_library with kind 'parameter'.");
+                return new { error = "type is required (e.g. Float, Int, Vector3, Color). Use vfx_list_library with kind 'parameter'." };
             bool exposed = parameters?["exposed"]?.ToObject<bool>() ?? true;
 
             var graph = LoadGraph(assetPath);
@@ -825,8 +858,8 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var from = parameters?["from"] as JObject;
             var to = parameters?["to"] as JObject;
-            if (from == null) throw new Exception("from is required");
-            if (to == null) throw new Exception("to is required");
+            if (from == null) return new { error = "from is required" };
+            if (to == null) return new { error = "to is required" };
 
             var graph = LoadGraph(assetPath);
 
@@ -891,8 +924,8 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var from = parameters?["from"] as JObject;
             var to = parameters?["to"] as JObject;
-            if (from == null) throw new Exception("from is required (the source context)");
-            if (to == null) throw new Exception("to is required (the target context)");
+            if (from == null) return new { error = "from is required (the source context)" };
+            if (to == null) return new { error = "to is required (the target context)" };
 
             var graph = LoadGraph(assetPath);
             var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
@@ -962,16 +995,24 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         public static object Runtime(JObject parameters)
         {
+            try { return RuntimeCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_runtime", ex); }
+        }
+
+        private static object RuntimeCore(JObject parameters)
+        {
             var op = parameters?["op"]?.ToString();
             var gameObject = parameters?["gameObject"]?.ToString();
+            if (string.IsNullOrEmpty(gameObject))
+                return new { error = "gameObject is required (name of a scene object with a VisualEffect)" };
 
             if (op == "set_asset")
             {
                 var assetPath = parameters?["assetPath"]?.ToString();
-                if (string.IsNullOrEmpty(assetPath)) throw new Exception("assetPath is required");
+                if (string.IsNullOrEmpty(assetPath)) return new { error = "assetPath is required" };
                 var comp = FindVisualEffect(gameObject);
                 var asset = AssetDatabase.LoadAssetAtPath(assetPath, VisualEffectAssetType);
-                if (asset == null) throw new Exception($"No VisualEffectAsset at path: {assetPath}");
+                if (asset == null) return new { error = $"No VisualEffectAsset at path: {assetPath}" };
                 SetProp(comp, "visualEffectAsset", asset);
                 Call(comp, VisualEffectType, "Reinit");
                 return new JObject
@@ -1008,7 +1049,7 @@ namespace UnityCliBridge.Handlers
                 case "send_event":
                 {
                     var eventName = parameters?["eventName"]?.ToString();
-                    if (string.IsNullOrEmpty(eventName)) throw new Exception("eventName is required");
+                    if (string.IsNullOrEmpty(eventName)) return new { error = "eventName is required" };
                     Call(comp2, VisualEffectType, "SendEvent", eventName);
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
                 }
@@ -1018,9 +1059,11 @@ namespace UnityCliBridge.Handlers
                 case "get_state":
                     return RuntimeState(comp2, gameObject, name);
                 default:
-                    throw new Exception(
-                        $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
-                        "set_vector2, set_vector3, set_vector4, send_event, reinit, get_state");
+                    return new
+                    {
+                        error = $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
+                                "set_vector2, set_vector3, set_vector4, send_event, reinit, get_state"
+                    };
             }
 
             // Echo the new value back via get_state so the caller can verify the round-trip.
