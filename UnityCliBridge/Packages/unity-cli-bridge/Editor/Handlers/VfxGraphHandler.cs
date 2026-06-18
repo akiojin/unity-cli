@@ -47,6 +47,8 @@ namespace UnityCliBridge.Handlers
         private static Type LibraryType => T("UnityEditor.VFX.VFXLibrary");
         private static Type VisualEffectType => T("UnityEngine.VFX.VisualEffect");
         private static Type VisualEffectAssetType => T("UnityEngine.VFX.VisualEffectAsset");
+        private static Type UIInfoType => T("UnityEditor.VFX.VFXUI+UIInfo");
+        private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -129,6 +131,7 @@ namespace UnityCliBridge.Handlers
             if (t == typeof(Vector3)) { var v = (Vector3)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z }; }
             if (t == typeof(Vector4)) { var v = (Vector4)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z, ["w"] = v.w }; }
             if (t == typeof(Color)) { var c = (Color)value; return new JObject { ["r"] = c.r, ["g"] = c.g, ["b"] = c.b, ["a"] = c.a }; }
+            if (t == typeof(Rect)) { var r = (Rect)value; return new JObject { ["x"] = r.x, ["y"] = r.y, ["width"] = r.width, ["height"] = r.height }; }
             if (t.IsValueType && !t.IsPrimitive && t.Namespace != null &&
                 (t.Namespace.StartsWith("UnityEditor.VFX") || t.Namespace.StartsWith("UnityEngine.VFX")))
             {
@@ -397,6 +400,8 @@ namespace UnityCliBridge.Handlers
                 });
             }
 
+            var stickyNotes = StickyNotesJson(graph);
+
             return new JObject
             {
                 ["assetPath"] = assetPath,
@@ -405,8 +410,41 @@ namespace UnityCliBridge.Handlers
                 ["operatorCount"] = operators.Count,
                 ["operators"] = operators,
                 ["parameterCount"] = paramsJson.Count,
-                ["parameters"] = paramsJson
+                ["parameters"] = paramsJson,
+                ["stickyNoteCount"] = stickyNotes.Count,
+                ["stickyNotes"] = stickyNotes
             };
+        }
+
+        /// <summary>Read the graph's VFXUI sticky-note array as JSON (title/contents/position/theme).</summary>
+        private static JArray StickyNotesJson(object graph)
+        {
+            var arr = new JArray();
+            object ui;
+            try { ui = Prop(graph, "UIInfos"); }
+            catch { return arr; }
+            if (ui == null) return arr;
+            var notesField = FindField(ui.GetType(), "stickyNoteInfos");
+            if (notesField == null) return arr;
+            var notes = notesField.GetValue(ui) as Array;
+            if (notes == null) return arr;
+            for (int i = 0; i < notes.Length; i++)
+            {
+                var note = notes.GetValue(i);
+                if (note == null) continue;
+                var t = note.GetType();
+                arr.Add(new JObject
+                {
+                    ["index"] = i,
+                    ["title"] = FindField(t, "title")?.GetValue(note) as string,
+                    ["contents"] = FindField(t, "contents")?.GetValue(note) as string,
+                    ["position"] = ToJToken(FindField(t, "position")?.GetValue(note)),
+                    ["theme"] = FindField(t, "theme")?.GetValue(note) as string,
+                    ["textSize"] = FindField(t, "textSize")?.GetValue(note) as string,
+                    ["colorTheme"] = (int)(FindField(t, "colorTheme")?.GetValue(note) ?? 0)
+                });
+            }
+            return arr;
         }
 
         /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context|parameter.</summary>
@@ -466,8 +504,9 @@ namespace UnityCliBridge.Handlers
                 case "link_slots": return LinkSlots(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
+                case "add_sticky_note": return AddStickyNote(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note" };
             }
         }
 
@@ -1086,6 +1125,67 @@ namespace UnityCliBridge.Handlers
                 ["mode"] = appliedMode,
                 ["bounds"] = appliedBounds,
                 ["padding"] = appliedPadding
+            };
+        }
+
+        /// <summary>Append a sticky note to VFXGraph.UIInfos.stickyNoteInfos.</summary>
+        private static object AddStickyNote(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var title = parameters?["title"]?.ToString() ?? "Note";
+            var contents = parameters?["contents"]?.ToString() ?? string.Empty;
+            int colorTheme = parameters?["colorTheme"]?.ToObject<int>() ?? 1;
+            var textSize = parameters?["textSize"]?.ToString();
+
+            // Position: optional [x, y, width, height] (defaults to a 200x100 box at origin).
+            float x = 0, y = 0, w = 200, h = 100;
+            var posTok = parameters?["position"] as JArray;
+            if (posTok != null && posTok.Count >= 4)
+            {
+                x = posTok[0].ToObject<float>();
+                y = posTok[1].ToObject<float>();
+                w = posTok[2].ToObject<float>();
+                h = posTok[3].ToObject<float>();
+            }
+
+            var graph = LoadGraph(assetPath);
+            var ui = Prop(graph, "UIInfos");
+            if (ui == null)
+                throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
+
+            var notesField = FindField(ui.GetType(), "stickyNoteInfos");
+            if (notesField == null)
+                throw new Exception("stickyNoteInfos field not found on VFXUI.");
+
+            var noteType = StickyNoteInfoType;
+            var newNote = Activator.CreateInstance(noteType);
+            FindField(noteType, "title").SetValue(newNote, title);
+            FindField(noteType, "contents").SetValue(newNote, contents);
+            FindField(noteType, "position").SetValue(newNote, new Rect(x, y, w, h));
+            FindField(noteType, "colorTheme").SetValue(newNote, colorTheme);
+            if (!string.IsNullOrEmpty(textSize))
+                FindField(noteType, "textSize").SetValue(newNote, textSize);
+
+            var oldArr = notesField.GetValue(ui) as Array;
+            int oldLen = oldArr?.Length ?? 0;
+            var newArr = Array.CreateInstance(noteType, oldLen + 1);
+            if (oldArr != null) Array.Copy(oldArr, newArr, oldLen);
+            newArr.SetValue(newNote, oldLen);
+            notesField.SetValue(ui, newArr);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "add_sticky_note",
+                ["assetPath"] = assetPath,
+                ["stickyNoteIndex"] = oldLen,
+                ["title"] = title,
+                ["contents"] = contents,
+                ["colorTheme"] = colorTheme,
+                ["textSize"] = textSize,
+                ["position"] = new JArray { x, y, w, h }
             };
         }
 

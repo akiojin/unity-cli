@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.7.0
+  version: 0.8.0
   category: assets
   triggers:
     - vfx
@@ -55,6 +55,7 @@ unity-cli raw vfx_apply --json '{"op":"link_flow","assetPath":"Assets/Basic Grap
 unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"category":"Tuning"}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
+unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -70,7 +71,10 @@ block/context uses `contextType` (+ `blockIndex` for blocks)), and `link_flow` (
 edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{index}`, with optional
 `fromIndex`/`toIndex` flow-slot indices), and `set_bounds` (write the Initialize context's particle
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write
-the bounds AABox when the mode exposes one; `padding` writes `boundsPadding` for Recorded/Automatic).
+the bounds AABox when the mode exposes one; `padding` writes `boundsPadding` for Recorded/Automatic),
+and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[x,y,width,height]`),
+`colorTheme` int 1–3, `textSize` "Small"/"Medium"/"Large"/"Huge"). Describe surfaces sticky notes via a
+top-level `stickyNotes` array.
 `vfx_describe_graph` reports each context's `settings` (including `boundsMode` on Init), `inputSlots`
 (each slot's resolved `value` for unlinked slots — e.g. the bounds AABox center/size), each block's
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
@@ -106,6 +110,7 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 - "Put the graph on a VisualEffect and set its exposed `Rate` to 7.5 at runtime, then read it back."
 - "Add a custom `Burst` Event context, wire it into Spawn, and trigger it at runtime with `send_event`."
 - "Switch the Initialize context to Manual bounds with center (0,0,0) and size (4,4,4)."
+- "Drop a sticky note on the graph titled 'TODO' explaining the burst plan."
 
 ## References
 

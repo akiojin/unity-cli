@@ -173,6 +173,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_AddStickyNote_WithoutAssetPath_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note",
+                ["title"] = "x"
+            }), "assetPath is required");
+        }
+
+        [Test]
         public void Runtime_SetFloat_WithoutGameObject_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Runtime(new JObject
@@ -480,6 +490,38 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(4f, value["size"].Value<float>("x"), 0.001f);
             Assert.AreEqual(5f, value["size"].Value<float>("y"), 0.001f);
             Assert.AreEqual(6f, value["size"].Value<float>("z"), 0.001f);
+        }
+
+        [Test]
+        public void ApplyAddStickyNote_AppendsNoteVisibleInDescribe()
+        {
+            string copy = CopyFixture("sticky");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note",
+                ["assetPath"] = copy,
+                ["title"] = "TODO",
+                ["contents"] = "Wire up bursts",
+                ["position"] = new JArray { 100f, 50f, 240f, 120f },
+                ["colorTheme"] = 2,
+                ["textSize"] = "Medium"
+            }));
+            Assert.AreEqual(0, result.Value<int>("stickyNoteIndex"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(1, after.Value<int>("stickyNoteCount"));
+            var note = ((JArray)after["stickyNotes"])[0];
+            Assert.AreEqual("TODO", note.Value<string>("title"));
+            Assert.AreEqual("Wire up bursts", note.Value<string>("contents"));
+            Assert.AreEqual(2, note.Value<int>("colorTheme"));
+            Assert.AreEqual("Medium", note.Value<string>("textSize"));
+            var pos = note["position"];
+            Assert.AreEqual(100f, pos.Value<float>("x"), 0.001f);
+            Assert.AreEqual(50f, pos.Value<float>("y"), 0.001f);
+            Assert.AreEqual(240f, pos.Value<float>("width"), 0.001f);
+            Assert.AreEqual(120f, pos.Value<float>("height"), 0.001f);
         }
 
         [Test]
