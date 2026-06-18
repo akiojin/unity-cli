@@ -309,6 +309,7 @@ namespace UnityCliBridge.Handlers
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
+                    ["settings"] = ModelSettings(ctx),
                     ["inputs"] = FlowRefs(ctx, "inputContexts", ctxList),
                     ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
                     ["blocks"] = blocks
@@ -396,7 +397,7 @@ namespace UnityCliBridge.Handlers
             return new JObject { ["kind"] = kind, ["count"] = items.Count, ["items"] = items };
         }
 
-        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots.</summary>
+        /// <summary>Mutator. Supported ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow.</summary>
         public static object Apply(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
@@ -408,9 +409,10 @@ namespace UnityCliBridge.Handlers
                 case "add_operator": return AddOperator(parameters);
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
+                case "link_flow": return LinkFlow(parameters);
                 default:
                     throw new Exception(
-                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots");
+                        $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow");
             }
         }
 
@@ -436,6 +438,30 @@ namespace UnityCliBridge.Handlers
                 if (f != null) return f;
             }
             return null;
+        }
+
+        /// <summary>Apply a name->value settings map to a model, coercing each value to its field type.</summary>
+        private static JArray ApplySettings(object model, JObject settings)
+        {
+            var applied = new JArray();
+            if (settings == null) return applied;
+            foreach (var kv in settings)
+            {
+                var field = FindField(model.GetType(), kv.Key);
+                if (field == null)
+                    throw new Exception(
+                        $"Setting '{kv.Key}' not found on '{model.GetType().Name}'. Use vfx_describe_graph to list settings.");
+                object converted;
+                try { converted = kv.Value.ToObject(field.FieldType); }
+                catch (Exception e)
+                {
+                    throw new Exception(
+                        $"Cannot convert value to {field.FieldType.Name} for setting '{kv.Key}': {e.Message}");
+                }
+                Call(model, ModelType, "SetSettingValue", kv.Key, converted);
+                applied.Add(kv.Key);
+            }
+            return applied;
         }
 
         /// <summary>Mark the graph dirty, write the asset, and reimport so it recompiles.</summary>
@@ -589,6 +615,9 @@ namespace UnityCliBridge.Handlers
 
             Call(graph, ModelType, "AddChild", context, -1, true);
 
+            // Optional context settings (e.g. an Event context's eventName).
+            var appliedSettings = ApplySettings(context, parameters?["settings"] as JObject);
+
             // Optional flow link: an existing context (by contextType) flows INTO the new one.
             JObject linked = null;
             if (!string.IsNullOrEmpty(linkFrom))
@@ -615,6 +644,7 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["addedContext"] = context.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
+                ["settingsApplied"] = appliedSettings,
                 ["linked"] = linked
             };
         }
@@ -831,6 +861,67 @@ namespace UnityCliBridge.Handlers
                     ["node"] = toNode.GetType().Name,
                     ["slot"] = toSlot,
                     ["slotName"] = SlotName(inSlot)
+                }
+            };
+        }
+
+        /// <summary>Resolve a flow endpoint ({index} into the context list, or {contextType}) to a context.</summary>
+        private static object ResolveContextRef(object graph, JObject endpoint, List<object> ctxList, string label)
+        {
+            if (endpoint == null)
+                throw new Exception($"{label} is required (an object with 'index' or 'contextType')");
+            var idxTok = endpoint["index"];
+            if (idxTok != null && idxTok.Type != JTokenType.Null)
+            {
+                int idx = idxTok.ToObject<int>();
+                if (idx < 0 || idx >= ctxList.Count)
+                    throw new Exception($"{label} index {idx} out of range; graph has {ctxList.Count} context(s)");
+                return ctxList[idx];
+            }
+            var ct = endpoint["contextType"]?.ToString();
+            var ctx = FindContext(graph, ct);
+            if (ctx == null)
+                throw new Exception($"{label} context of type '{ct}' not found (or use 'index')");
+            return ctx;
+        }
+
+        /// <summary>Flow-link one context's output into another context's input (VFXContext.LinkTo).</summary>
+        private static object LinkFlow(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var from = parameters?["from"] as JObject;
+            var to = parameters?["to"] as JObject;
+            if (from == null) throw new Exception("from is required (the source context)");
+            if (to == null) throw new Exception("to is required (the target context)");
+
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+
+            var fromCtx = ResolveContextRef(graph, from, ctxList, "from");
+            var toCtx = ResolveContextRef(graph, to, ctxList, "to");
+            int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
+            int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? 0;
+
+            // LinkTo throws (via CanLink) on incompatible flow.
+            Call(fromCtx, ContextType, "LinkTo", toCtx, fromIndex, toIndex);
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = assetPath,
+                ["from"] = new JObject
+                {
+                    ["contextType"] = Prop(fromCtx, "contextType")?.ToString(),
+                    ["type"] = fromCtx.GetType().Name,
+                    ["fromIndex"] = fromIndex
+                },
+                ["to"] = new JObject
+                {
+                    ["contextType"] = Prop(toCtx, "contextType")?.ToString(),
+                    ["type"] = toCtx.GetType().Name,
+                    ["toIndex"] = toIndex
                 }
             };
         }

@@ -152,6 +152,18 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_LinkFlow_WithoutFrom_ThrowsRequiredError()
+        {
+            var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["to"] = new JObject { ["contextType"] = "Spawner" }
+            }));
+            StringAssert.Contains("from is required", ex.Message);
+        }
+
+        [Test]
         public void Runtime_SetFloat_WithoutGameObject_ThrowsRequiredError()
         {
             var ex = Assert.Throws<Exception>(() => VfxGraphHandler.Runtime(new JObject
@@ -385,6 +397,43 @@ namespace UnityCliBridge.Tests
             var rateInput = spawner["blocks"][0]["inputSlots"][0];
             Assert.IsTrue(rateInput.Value<bool>("hasLink"), "Rate input slot should report a link");
             Assert.AreEqual("parameter", ((JArray)rateInput["links"])[0]["node"].Value<string>("kind"));
+        }
+
+        [Test]
+        public void ApplyAddContextAndLinkFlow_WiresCustomEventIntoSpawn()
+        {
+            string copy = CopyFixture("event");
+
+            JObject add = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Event",
+                ["settings"] = new JObject { ["eventName"] = "Burst" }
+            }));
+            Assert.AreEqual("VFXBasicEvent", add.Value<string>("addedContext"));
+            Assert.IsTrue(((JArray)add["settingsApplied"]).Any(t => t.ToString() == "eventName"),
+                "eventName should be reported as applied");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["contextType"] = "Event" },
+                ["to"] = new JObject { ["contextType"] = "Spawner" },
+                ["toIndex"] = 0
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+
+            JToken evt = FindContext(after, "Event");
+            Assert.IsNotNull(evt, "Event context should exist");
+            Assert.AreEqual("Burst", evt["settings"]?["eventName"]?.ToString());
+            // The Event context flows into the Spawn context.
+            Assert.AreEqual("Spawner", ((JArray)evt["outputs"])[0]["contextType"].ToString());
+            // Spawn reports the reciprocal input edge.
+            Assert.AreEqual(1, ((JArray)FindContext(after, "Spawner")["inputs"]).Count);
         }
 
         [Test]
