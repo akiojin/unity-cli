@@ -401,6 +401,9 @@ namespace UnityCliBridge.Handlers
             }
 
             var stickyNotes = StickyNotesJson(graph);
+            JObject instancing = null;
+            try { instancing = InstancingJson(Prop(graph, "visualEffectResource")); }
+            catch { /* resource unavailable — leave null */ }
 
             return new JObject
             {
@@ -412,7 +415,8 @@ namespace UnityCliBridge.Handlers
                 ["parameterCount"] = paramsJson.Count,
                 ["parameters"] = paramsJson,
                 ["stickyNoteCount"] = stickyNotes.Count,
-                ["stickyNotes"] = stickyNotes
+                ["stickyNotes"] = stickyNotes,
+                ["instancing"] = instancing
             };
         }
 
@@ -505,8 +509,9 @@ namespace UnityCliBridge.Handlers
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
+                case "set_instancing": return SetInstancing(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing" };
             }
         }
 
@@ -1125,6 +1130,89 @@ namespace UnityCliBridge.Handlers
                 ["mode"] = appliedMode,
                 ["bounds"] = appliedBounds,
                 ["padding"] = appliedPadding
+            };
+        }
+
+        /// <summary>
+        /// Read the asset's VisualEffectResource instancing settings (mode + capacity)
+        /// as a JSON block for describe; null when the resource doesn't surface either.
+        /// </summary>
+        private static JObject InstancingJson(object resource)
+        {
+            if (resource == null) return null;
+            JToken modeTok = null;
+            JToken capTok = null;
+            try { modeTok = ToJToken(Prop(resource, "instancingMode")); } catch { }
+            try { capTok = ToJToken(Prop(resource, "instancingCapacity")); } catch { }
+            if (modeTok == null && capTok == null) return null;
+            return new JObject { ["mode"] = modeTok, ["capacity"] = capTok };
+        }
+
+        /// <summary>Set VisualEffectResource.instancingMode (+ optional instancingCapacity).</summary>
+        private static object SetInstancing(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var modeStr = parameters?["mode"]?.ToString();
+            var capTok = parameters?["capacity"];
+            if (string.IsNullOrEmpty(modeStr) && capTok == null)
+                return new { error = "set_instancing requires at least one of: mode, capacity" };
+
+            var graph = LoadGraph(assetPath);
+            var resource = Prop(graph, "visualEffectResource");
+            if (resource == null)
+                throw new Exception("Graph has no VisualEffectResource (unexpected for a valid .vfx).");
+
+            JToken appliedMode = null;
+            if (!string.IsNullOrEmpty(modeStr))
+            {
+                var modeProp = resource.GetType().GetProperty("instancingMode", AllInstance);
+                if (modeProp == null)
+                    throw new Exception("instancingMode property not found on VisualEffectResource (VFX package too old?).");
+                object modeValue;
+                try { modeValue = Enum.Parse(modeProp.PropertyType, modeStr, true); }
+                catch (Exception e)
+                {
+                    var names = string.Join(", ", Enum.GetNames(modeProp.PropertyType));
+                    throw new Exception($"Invalid mode '{modeStr}': {e.Message}. Supported: {names}.");
+                }
+                modeProp.SetValue(resource, modeValue);
+                appliedMode = new JValue(modeValue.ToString());
+            }
+
+            JToken appliedCapacity = null;
+            if (capTok != null)
+            {
+                int cap = capTok.ToObject<int>();
+                if (cap < 1) cap = 1;
+                var capProp = resource.GetType().GetProperty("instancingCapacity", AllInstance);
+                if (capProp != null)
+                {
+                    // The property is `uint` on current packages — coerce so passing JSON ints works.
+                    object capValue = Convert.ChangeType(cap, capProp.PropertyType);
+                    capProp.SetValue(resource, capValue);
+                    appliedCapacity = new JValue(cap);
+                }
+                else
+                {
+                    // Fallback to the serialized field path the inspector uses.
+                    var so = new SerializedObject(resource as UnityEngine.Object);
+                    var prop = so.FindProperty("m_Infos.m_InstancingCapacity");
+                    if (prop == null)
+                        throw new Exception("instancingCapacity is not exposed on VisualEffectResource and the serialized fallback (m_Infos.m_InstancingCapacity) was not found.");
+                    prop.intValue = cap;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    appliedCapacity = new JValue(cap);
+                }
+            }
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_instancing",
+                ["assetPath"] = assetPath,
+                ["mode"] = appliedMode,
+                ["capacity"] = appliedCapacity
             };
         }
 

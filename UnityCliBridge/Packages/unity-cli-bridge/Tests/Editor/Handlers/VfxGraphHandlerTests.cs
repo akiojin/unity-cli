@@ -183,6 +183,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetInstancing_WithoutAnyArgs_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_instancing",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "at least one of");
+        }
+
+        [Test]
         public void Runtime_SetFloat_WithoutGameObject_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Runtime(new JObject
@@ -522,6 +532,26 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(50f, pos.Value<float>("y"), 0.001f);
             Assert.AreEqual(240f, pos.Value<float>("width"), 0.001f);
             Assert.AreEqual(120f, pos.Value<float>("height"), 0.001f);
+        }
+
+        [Test]
+        public void ApplySetInstancing_TogglesModeAndDescribesIt()
+        {
+            string copy = CopyFixture("instancing");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_instancing",
+                ["assetPath"] = copy,
+                ["mode"] = "Disabled"
+            }));
+            Assert.AreEqual("Disabled", result.Value<string>("mode"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            JToken inst = after["instancing"];
+            Assert.IsNotNull(inst, "describe should report an instancing block");
+            Assert.AreEqual("Disabled", inst.Value<string>("mode"));
         }
 
         [Test]
