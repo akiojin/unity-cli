@@ -163,6 +163,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetBounds_WithoutAnyArgs_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_bounds",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "at least one of");
+        }
+
+        [Test]
         public void Runtime_SetFloat_WithoutGameObject_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Runtime(new JObject
@@ -432,6 +442,44 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual("Spawner", ((JArray)evt["outputs"])[0]["contextType"].ToString());
             // Spawn reports the reciprocal input edge.
             Assert.AreEqual(1, ((JArray)FindContext(after, "Spawner")["inputs"]).Count);
+        }
+
+        [Test]
+        public void ApplySetBounds_SwitchesInitToManualAndWritesAABox()
+        {
+            string copy = CopyFixture("bounds");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_bounds",
+                ["assetPath"] = copy,
+                ["mode"] = "Manual",
+                ["center"] = new JArray { 1f, 2f, 3f },
+                ["size"] = new JArray { 4f, 5f, 6f }
+            }));
+            Assert.AreEqual("Manual", result.Value<string>("mode"));
+            Assert.IsNotNull(result["bounds"], "bounds should be applied");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+
+            JToken init = FindContext(after, "Init");
+            Assert.IsNotNull(init, "Init context should exist");
+            Assert.AreEqual("Manual", init["settings"]?["boundsMode"]?.ToString(),
+                "boundsMode should now read Manual");
+
+            // The Manual mode exposes a single 'bounds' input slot whose value carries the AABox.
+            var boundsSlot = ((JArray)init["inputSlots"])
+                .FirstOrDefault(s => (string)s["name"] == "bounds");
+            Assert.IsNotNull(boundsSlot, "Manual mode should expose a 'bounds' input slot");
+            JToken value = boundsSlot["value"];
+            Assert.IsNotNull(value, "bounds slot should report its AABox value");
+            Assert.AreEqual(1f, value["center"].Value<float>("x"), 0.001f);
+            Assert.AreEqual(2f, value["center"].Value<float>("y"), 0.001f);
+            Assert.AreEqual(3f, value["center"].Value<float>("z"), 0.001f);
+            Assert.AreEqual(4f, value["size"].Value<float>("x"), 0.001f);
+            Assert.AreEqual(5f, value["size"].Value<float>("y"), 0.001f);
+            Assert.AreEqual(6f, value["size"].Value<float>("z"), 0.001f);
         }
 
         [Test]

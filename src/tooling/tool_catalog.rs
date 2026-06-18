@@ -215,7 +215,7 @@ fn tool_description(name: &str) -> &'static str {
             "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
         }
         "vfx_apply" => {
-            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow)"
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds)"
         }
         "vfx_runtime" => {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
@@ -2405,6 +2405,10 @@ fn tool_params_schema(name: &str) -> Value {
                 ("category", string_schema()),
                 ("from", any_object_schema()),
                 ("to", any_object_schema()),
+                ("mode", string_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("padding", array_of(number_schema())),
             ],
             &["op", "assetPath"],
             false,

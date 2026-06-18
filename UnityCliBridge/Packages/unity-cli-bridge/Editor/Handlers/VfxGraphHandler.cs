@@ -121,7 +121,22 @@ namespace UnityCliBridge.Handlers
         private static JToken ToJToken(object value)
         {
             if (value == null) return JValue.CreateNull();
-            if (value.GetType().IsEnum) return new JValue(value.ToString());
+            var t = value.GetType();
+            if (t.IsEnum) return new JValue(value.ToString());
+            // Unity vector/color structs trip Newtonsoft's reflection serializer (Vector3.normalized
+            // recurses). Hand-serialize the math types and any VFX struct by public fields.
+            if (t == typeof(Vector2)) { var v = (Vector2)value; return new JObject { ["x"] = v.x, ["y"] = v.y }; }
+            if (t == typeof(Vector3)) { var v = (Vector3)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z }; }
+            if (t == typeof(Vector4)) { var v = (Vector4)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z, ["w"] = v.w }; }
+            if (t == typeof(Color)) { var c = (Color)value; return new JObject { ["r"] = c.r, ["g"] = c.g, ["b"] = c.b, ["a"] = c.a }; }
+            if (t.IsValueType && !t.IsPrimitive && t.Namespace != null &&
+                (t.Namespace.StartsWith("UnityEditor.VFX") || t.Namespace.StartsWith("UnityEngine.VFX")))
+            {
+                var obj = new JObject();
+                foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                    obj[f.Name] = ToJToken(f.GetValue(value));
+                return obj;
+            }
             try { return JToken.FromObject(value); }
             catch { return new JValue(value.ToString()); }
         }
@@ -290,12 +305,16 @@ namespace UnityCliBridge.Handlers
                 foreach (var slot in coll)
                 {
                     var links = LinksJson(slot);
+                    JToken value = null;
+                    try { value = ToJToken(Prop(slot, "value")); }
+                    catch { /* some slot types may not have a readable value */ }
                     arr.Add(new JObject
                     {
                         ["index"] = idx++,
                         ["name"] = SlotName(slot),
                         ["hasLink"] = links.Count > 0,
-                        ["links"] = links
+                        ["links"] = links,
+                        ["value"] = value
                     });
                 }
                 return arr;
@@ -331,6 +350,8 @@ namespace UnityCliBridge.Handlers
                     ["settings"] = ModelSettings(ctx),
                     ["inputs"] = FlowRefs(ctx, "inputContexts", ctxList),
                     ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
+                    ["inputSlots"] = SlotsJson(ctx, true),
+                    ["outputSlots"] = SlotsJson(ctx, false),
                     ["blocks"] = blocks
                 });
             }
@@ -444,8 +465,9 @@ namespace UnityCliBridge.Handlers
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
                 case "link_flow": return LinkFlow(parameters);
+                case "set_bounds": return SetBounds(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds" };
             }
         }
 
@@ -956,6 +978,114 @@ namespace UnityCliBridge.Handlers
                     ["type"] = toCtx.GetType().Name,
                     ["toIndex"] = toIndex
                 }
+            };
+        }
+
+        /// <summary>Find a top-level input/output slot on a model by property name.</summary>
+        private static object FindSlotByName(object container, string name, bool isInput)
+        {
+            var coll = Prop(container, isInput ? "inputSlots" : "outputSlots") as IEnumerable;
+            if (coll == null) return null;
+            foreach (var s in coll)
+                if (string.Equals(SlotName(s), name, StringComparison.Ordinal))
+                    return s;
+            return null;
+        }
+
+        /// <summary>
+        /// Set bounds on the Initialize context's particle data: switch boundsMode
+        /// (Manual/Recorded/Automatic) and write the bounds AABox center/size and
+        /// boundsPadding when supplied. The mode change resynces the context's
+        /// input slots (Manual exposes bounds; Recorded exposes bounds + padding;
+        /// Automatic exposes padding only) — bounds/padding writes target whichever
+        /// slots the new mode exposes.
+        /// </summary>
+        private static object SetBounds(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var wantContext = parameters?["contextType"]?.ToString() ?? "Init";
+            var modeStr = parameters?["mode"]?.ToString();
+            var centerTok = parameters?["center"];
+            var sizeTok = parameters?["size"];
+            var paddingTok = parameters?["padding"];
+            if (string.IsNullOrEmpty(modeStr) && centerTok == null && sizeTok == null && paddingTok == null)
+                return new { error = "set_bounds requires at least one of: mode, center, size, padding" };
+
+            var graph = LoadGraph(assetPath);
+            var ctx = FindContext(graph, wantContext);
+            if (ctx == null)
+                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+
+            var data = Call(ctx, ContextType, "GetData");
+            if (data == null)
+                throw new Exception(
+                    $"Context '{wantContext}' has no associated VFXData; bounds live on a particle-data context (Init).");
+
+            JToken appliedMode = null;
+            if (!string.IsNullOrEmpty(modeStr))
+            {
+                var field = FindField(data.GetType(), "boundsMode");
+                if (field == null)
+                    throw new Exception(
+                        $"boundsMode field not found on '{data.GetType().Name}'; this context's data is not VFXDataParticle.");
+                object modeValue;
+                try { modeValue = Enum.Parse(field.FieldType, modeStr, true); }
+                catch (Exception e)
+                {
+                    throw new Exception(
+                        $"Invalid mode '{modeStr}': {e.Message}. Supported: Manual, Recorded, Automatic.");
+                }
+                Call(data, ModelType, "SetSettingValue", "boundsMode", modeValue);
+                appliedMode = new JValue(modeValue.ToString());
+            }
+
+            JObject appliedBounds = null;
+            if (centerTok != null || sizeTok != null)
+            {
+                var boundsSlot = FindSlotByName(ctx, "bounds", true);
+                if (boundsSlot == null)
+                    throw new Exception(
+                        "No 'bounds' input slot on this context — the current boundsMode does not expose one (Automatic exposes padding only).");
+                // bounds is an AABox struct with `center` and `size` Vector3 fields.
+                var current = Prop(boundsSlot, "value");
+                var aabType = current.GetType();
+                var centerField = aabType.GetField("center");
+                var sizeField = aabType.GetField("size");
+                if (centerField == null || sizeField == null)
+                    throw new Exception($"Unexpected bounds slot value type '{aabType.Name}'");
+                object boxed = current;
+                if (centerTok != null) centerField.SetValue(boxed, (Vector3)ToVector(centerTok, 3));
+                if (sizeTok != null) sizeField.SetValue(boxed, (Vector3)ToVector(sizeTok, 3));
+                SetProp(boundsSlot, "value", boxed);
+                appliedBounds = new JObject
+                {
+                    ["center"] = ToJToken((Vector3)centerField.GetValue(boxed)),
+                    ["size"] = ToJToken((Vector3)sizeField.GetValue(boxed))
+                };
+            }
+
+            JToken appliedPadding = null;
+            if (paddingTok != null)
+            {
+                var padSlot = FindSlotByName(ctx, "boundsPadding", true);
+                if (padSlot == null)
+                    throw new Exception(
+                        "No 'boundsPadding' input slot on this context — the current boundsMode does not expose one (Manual exposes bounds only).");
+                var padVec = (Vector3)ToVector(paddingTok, 3);
+                SetProp(padSlot, "value", padVec);
+                appliedPadding = ToJToken(padVec);
+            }
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_bounds",
+                ["assetPath"] = assetPath,
+                ["contextType"] = wantContext,
+                ["mode"] = appliedMode,
+                ["bounds"] = appliedBounds,
+                ["padding"] = appliedPadding
             };
         }
 
