@@ -281,6 +281,18 @@ namespace UnityCliBridge.Tests
             }), "value is required");
         }
 
+        [Test]
+        public void Settings_PreferencesScope_Set_UnknownPref_ReturnsDescriptiveError()
+        {
+            AssertError(VfxGraphHandler.Settings(new JObject
+            {
+                ["op"] = "set",
+                ["scope"] = "preferences",
+                ["setting"] = "noSuchPref",
+                ["value"] = true
+            }), "Unknown VFX preference");
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -934,6 +946,63 @@ namespace UnityCliBridge.Tests
                 {
                     ["op"] = "set",
                     ["setting"] = "fixedTimeStep",
+                    ["value"] = original
+                });
+            }
+        }
+
+        [Test]
+        public void Settings_PreferencesScope_Get_ReportsInstancingAndExperimentalOperator()
+        {
+            JObject result = ToJObject(VfxGraphHandler.Settings(
+                new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+            Assert.AreEqual("preferences", result.Value<string>("scope"));
+            JToken props = result["properties"];
+            Assert.IsNotNull(props, "preferences get should report a 'properties' block");
+            Assert.IsNotNull(props["instancingEnabled"],
+                "VFXViewPreference should expose instancingEnabled");
+            Assert.IsNotNull(props["displayExperimentalOperator"],
+                "VFXViewPreference should expose displayExperimentalOperator");
+            Assert.IsNotNull(props["multithreadUpdateEnabled"],
+                "VFXViewPreference should expose multithreadUpdateEnabled");
+        }
+
+        [Test]
+        public void Settings_PreferencesScope_SetInstancingEnabled_RoundTripsViaReRead()
+        {
+            // EditorPrefs are per-machine; capture and restore the original.
+            JObject before = ToJObject(VfxGraphHandler.Settings(
+                new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+            bool original = before["properties"].Value<bool>("instancingEnabled");
+
+            try
+            {
+                bool target = !original;
+                JObject set = ToJObject(VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["scope"] = "preferences",
+                    ["setting"] = "instancingEnabled",
+                    ["value"] = target
+                }));
+                Assert.AreEqual("preferences", set.Value<string>("scope"));
+                Assert.AreEqual(target, set.Value<bool>("value"),
+                    "set should echo the new value read back via the canonical property");
+                Assert.AreEqual("VFX.InstancingEnabled", set.Value<string>("editorPrefsKey"),
+                    "the resolved EditorPrefs key should match the package's constant");
+
+                JObject after = ToJObject(VfxGraphHandler.Settings(
+                    new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+                Assert.AreEqual(target, after["properties"].Value<bool>("instancingEnabled"),
+                    "re-read should reflect the new instancingEnabled value");
+            }
+            finally
+            {
+                VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["scope"] = "preferences",
+                    ["setting"] = "instancingEnabled",
                     ["value"] = original
                 });
             }

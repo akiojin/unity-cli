@@ -222,7 +222,7 @@ fn tool_description(name: &str) -> &'static str {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
         }
         "vfx_settings" => {
-            "Read or write VFX project settings (ProjectSettings/VFXManager.asset) — ops: get (read all), set (write one named setting, e.g. fixedTimeStep, maxDeltaTime)"
+            "Read or write VFX environment settings — ops: get (read all), set (write one named setting). Scope: 'project' (default — ProjectSettings/VFXManager.asset; fixedTimeStep, maxDeltaTime, maxCapacity, ...) or 'preferences' (per-machine EditorPrefs via UnityEditor.VFX.VFXViewPreference; instancingEnabled, displayExperimentalOperator, multithreadUpdateEnabled, ...)"
         }
         _ => "Unity CLI tool operation",
     }
@@ -2449,6 +2449,7 @@ fn tool_params_schema(name: &str) -> Value {
         "vfx_settings" => object_schema(
             &[
                 ("op", string_schema()),
+                ("scope", string_schema()),
                 ("setting", string_schema()),
                 ("value", any_schema()),
             ],

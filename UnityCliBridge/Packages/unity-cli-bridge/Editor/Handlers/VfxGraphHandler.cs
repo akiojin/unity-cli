@@ -51,6 +51,7 @@ namespace UnityCliBridge.Handlers
         private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
         private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
         private static Type VFXManagerType => T("UnityEngine.VFX.VFXManager");
+        private static Type VFXViewPreferenceType => T("UnityEditor.VFX.VFXViewPreference");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -1694,10 +1695,13 @@ namespace UnityCliBridge.Handlers
         private static object SettingsCore(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
+            var scope = (parameters?["scope"]?.ToString() ?? "project").ToLowerInvariant();
             switch (op)
             {
-                case "get": return GetVfxSettings();
-                case "set": return SetVfxSetting(parameters);
+                case "get":
+                    return scope == "preferences" ? GetVfxPreferences() : GetVfxSettings();
+                case "set":
+                    return scope == "preferences" ? SetVfxPreference(parameters) : SetVfxSetting(parameters);
                 default:
                     return new { error = $"Unsupported op: '{op}'. Supported: get, set" };
             }
@@ -1808,6 +1812,108 @@ namespace UnityCliBridge.Handlers
                 default:
                     throw new Exception($"Unsupported serialized property type for set: {sp.propertyType}");
             }
+        }
+
+        // ---- vfx_settings scope:preferences (EditorPrefs via VFXViewPreference) -------------
+
+        // Canonical preference table — paired property name + matching `xxxKey` const + storage type.
+        // The constant strings hold the EditorPrefs key (e.g. "VFX.InstancingEnabled").
+        // Type drives EditorPrefs.GetBool/GetInt/GetFloat and the JSON value coercion on set.
+        private static readonly (string PropName, string KeyConst, string Type)[] VfxPreferences =
+        {
+            ("displayExperimentalOperator",        "experimentalOperatorKey",                  "bool"),
+            ("displayExtraDebugInfo",              "extraDebugInfoKey",                        "bool"),
+            ("forceEditionCompilation",            "forceEditionCompilationKey",               "bool"),
+            ("generateShadersWithDebugSymbols",    "generateShadersWithDebugSymbolsKey",       "bool"),
+            ("advancedLogs",                       "advancedLogsKey",                          "bool"),
+            ("cameraBuffersFallback",              "cameraBuffersFallbackKey",                 "enum"),
+            ("multithreadUpdateEnabled",           "multithreadUpdateEnabledKey",              "bool"),
+            ("instancingEnabled",                  "instancingEnabledKey",                     "bool"),
+            ("authoringPrewarmStepCountPerSeconds","authoringPrewarmStepCountPerSecondsKey",   "int"),
+            ("authoringPrewarmMaxTime",            "authoringPrewarmMaxTimeKey",               "float"),
+            ("visualEffectTargetListed",           "visualEffectTargetListedKey",              "bool"),
+        };
+
+        private static string PrefKey(string keyConstName)
+        {
+            var f = VFXViewPreferenceType.GetField(keyConstName, BindingFlags.Public | BindingFlags.Static);
+            if (f == null) throw new Exception($"VFXViewPreference key constant not found: {keyConstName}");
+            return (string)f.GetValue(null);
+        }
+
+        private static object ReadPrefProperty(string propName)
+        {
+            var p = VFXViewPreferenceType.GetProperty(propName, BindingFlags.Public | BindingFlags.Static);
+            if (p == null) throw new Exception($"VFXViewPreference property not found: {propName}");
+            return p.GetValue(null);
+        }
+
+        private static JObject GetVfxPreferences()
+        {
+            var properties = new JObject();
+            foreach (var (propName, _, _) in VfxPreferences)
+            {
+                try { properties[propName] = ToJToken(ReadPrefProperty(propName)); } catch { }
+            }
+            return new JObject
+            {
+                ["op"] = "get",
+                ["scope"] = "preferences",
+                ["properties"] = properties
+            };
+        }
+
+        private static object SetVfxPreference(JObject parameters)
+        {
+            var setting = parameters?["setting"]?.ToString();
+            var valueToken = parameters?["value"];
+            if (string.IsNullOrEmpty(setting)) return new { error = "setting is required" };
+            if (valueToken == null) return new { error = "value is required" };
+
+            var entry = VfxPreferences.FirstOrDefault(e =>
+                string.Equals(e.PropName, setting, StringComparison.Ordinal));
+            if (string.IsNullOrEmpty(entry.PropName))
+                return new
+                {
+                    error = $"Unknown VFX preference '{setting}'. Known: " +
+                            string.Join(", ", VfxPreferences.Select(e => e.PropName))
+                };
+
+            string key = PrefKey(entry.KeyConst);
+            switch (entry.Type)
+            {
+                case "bool":  EditorPrefs.SetBool(key, valueToken.ToObject<bool>()); break;
+                case "int":   EditorPrefs.SetInt(key, valueToken.ToObject<int>()); break;
+                case "float": EditorPrefs.SetFloat(key, valueToken.ToObject<float>()); break;
+                case "enum":
+                {
+                    // cameraBuffersFallback is stored as int (the enum's underlying value).
+                    int v;
+                    if (valueToken.Type == JTokenType.String)
+                    {
+                        var enumType = VFXViewPreferenceType.GetProperty(entry.PropName,
+                            BindingFlags.Public | BindingFlags.Static).PropertyType;
+                        v = (int)Enum.Parse(enumType, valueToken.ToString(), ignoreCase: true);
+                    }
+                    else { v = valueToken.ToObject<int>(); }
+                    EditorPrefs.SetInt(key, v);
+                    break;
+                }
+                default: throw new Exception($"Unsupported preference type: {entry.Type}");
+            }
+
+            // VFXViewPreference caches values via its private LoadIfNeeded — invalidate so the next
+            // property read returns the new value (the canonical round-trip surface).
+            try { Call(null, VFXViewPreferenceType, "SetDirty"); } catch { }
+
+            return new JObject
+            {
+                ["op"] = "set",
+                ["scope"] = "preferences",
+                ["setting"] = setting,
+                ["value"] = ToJToken(ReadPrefProperty(entry.PropName)),
+                ["editorPrefsKey"] = key
+            };
         }
     }
 }

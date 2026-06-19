@@ -108,7 +108,7 @@ Global options:
 | `vfx_list_library` | List available Visual Effect Graph descriptors (`kind`: block, operator, context, parameter, or template) |
 | `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template) |
 | `vfx_runtime` | Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state) |
-| `vfx_settings` | Read or write VFX project settings (`ProjectSettings/VFXManager.asset`) — ops: `get` (read all), `set` (write one named setting, e.g. `fixedTimeStep`, `maxDeltaTime`) |
+| `vfx_settings` | Read or write VFX environment settings — ops: `get` (read all), `set` (write one named setting). `scope`: `project` (default — `ProjectSettings/VFXManager.asset`; `fixedTimeStep`, `maxDeltaTime`, `maxCapacity`, ...) or `preferences` (per-machine EditorPrefs via `UnityEditor.VFX.VFXViewPreference`; `instancingEnabled`, `displayExperimentalOperator`, `multithreadUpdateEnabled`, ...) |
 
 ### Addressables
 

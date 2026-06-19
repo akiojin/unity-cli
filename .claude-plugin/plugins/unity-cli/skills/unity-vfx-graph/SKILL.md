@@ -138,20 +138,34 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 `get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`, `playRate`, and — when `name` is given —
 `hasFloat`/`floatValue`). Set ops echo `get_state` so you can confirm the round-trip in one call.
 
-For **VFX project settings** (the global `ProjectSettings/VFXManager.asset`, not a graph), use
-`vfx_settings`:
+For **VFX environment settings** (not a graph), use `vfx_settings` with a `scope`:
 
 ```bash
+# Project settings — ProjectSettings/VFXManager.asset (shared with the team)
 unity-cli raw vfx_settings --json '{"op":"get"}'
 unity-cli raw vfx_settings --json '{"op":"set","setting":"fixedTimeStep","value":0.02}'
 unity-cli raw vfx_settings --json '{"op":"set","setting":"maxCapacity","value":50000000}'
+
+# Per-machine preferences — EditorPrefs via UnityEditor.VFX.VFXViewPreference
+unity-cli raw vfx_settings --json '{"op":"get","scope":"preferences"}'
+unity-cli raw vfx_settings --json '{"op":"set","scope":"preferences","setting":"instancingEnabled","value":false}'
+unity-cli raw vfx_settings --json '{"op":"set","scope":"preferences","setting":"displayExperimentalOperator","value":true}'
 ```
 
-`get` returns a `properties` block (the public static `UnityEngine.VFX.VFXManager` settings such as
-`fixedTimeStep`/`maxDeltaTime`, which round-trip immediately on a re-read) and a `serialized` block
-(asset fields like `m_MaxCapacity`/`m_MaxScrubTime`/`m_BatchEmptyLifetime`). `set` takes a `setting`
-name + `value`; it writes through the static property when one exists (`via:"property"`), else the
-matching serialized field `m_PascalCase` (`via:"serialized"`).
+`scope:project` (default) returns a `properties` block (public static `UnityEngine.VFX.VFXManager`
+props — `fixedTimeStep`/`maxDeltaTime`, round-trip immediately on re-read) and a `serialized` block
+(asset fields `m_MaxCapacity`/`m_MaxScrubTime`/`m_BatchEmptyLifetime`). `set` writes through the
+static property when one exists (`via:"property"`), else the matching serialized field
+`m_PascalCase` (`via:"serialized"`).
+
+`scope:preferences` returns the canonical VFX editor preferences read via `VFXViewPreference` static
+properties — `instancingEnabled` (the **Instancing master gate** for #16's 3-gate reconciliation),
+`displayExperimentalOperator`, `multithreadUpdateEnabled`, `forceEditionCompilation`,
+`generateShadersWithDebugSymbols`, `advancedLogs`, `cameraBuffersFallback` (enum surfaced by name),
+`authoringPrewarmStepCountPerSeconds`/`authoringPrewarmMaxTime`, plus `displayExtraDebugInfo` and
+`visualEffectTargetListed`. `set` writes the matching `EditorPrefs.SetBool/SetInt/SetFloat` and calls
+`VFXViewPreference.SetDirty()` so the next re-read returns the new value; the result echoes the
+resolved `editorPrefsKey` (e.g. `VFX.InstancingEnabled`).
 
 ## Examples
 
@@ -171,6 +185,7 @@ matching serialized field `m_PascalCase` (`via:"serialized"`).
 - "Build a second particle system in this graph from scratch — Init→Update→Output — and confirm it's disjoint from the first."
 - "List the built-in VFX templates and create a new graph from the Simple Burst template."
 - "Read the VFX project settings, then set the fixed time step to 0.02 and confirm it stuck."
+- "Turn off the global VFX instancing-enabled preference, then turn it back on."
 
 ## References
 
