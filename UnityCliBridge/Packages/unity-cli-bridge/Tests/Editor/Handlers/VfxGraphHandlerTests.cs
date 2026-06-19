@@ -688,6 +688,87 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyAddSystem_BuildsFreshInitUpdateOutputChainSharingNewData()
+        {
+            string copy = CopyFixture("system");
+
+            // Baseline: capture the existing system's data id.
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            int originalInitData = FindContext(baseline, "Init").Value<int>("dataInstanceId");
+
+            // Author a fresh particle system: Init → Update → Output, no linkFrom (linkFrom
+            // resolves by first-of-type which is ambiguous when duplicates exist).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Initialize Particle"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Update Particle"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Output Particle|Unlit|Quad"
+            });
+
+            // Wire the second system by index (Minimal has 4 contexts; new ones land at 4, 5, 6).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 },
+                ["to"] = new JObject { ["index"] = 5 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 5 },
+                ["to"] = new JObject { ["index"] = 6 }
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(7, after.Value<int>("contextCount"),
+                "graph should now hold both systems' contexts");
+
+            var contexts = (JArray)after["contexts"];
+            var init2 = contexts[4];
+            var update2 = contexts[5];
+            var output2 = contexts[6];
+
+            // Flow chain: Init2 → Update2 → Output2.
+            Assert.AreEqual(5, ((JArray)init2["outputs"])[0].Value<int>("index"),
+                "Init2 should flow into Update2");
+            Assert.AreEqual(6, ((JArray)update2["outputs"])[0].Value<int>("index"),
+                "Update2 should flow into Output2");
+            Assert.AreEqual(4, ((JArray)update2["inputs"])[0].Value<int>("index"),
+                "Update2 should report Init2 as its input");
+
+            // Data sharing: Init2 and Update2 share one VFXData, distinct from the original system.
+            int data2 = init2.Value<int>("dataInstanceId");
+            Assert.AreEqual(data2, update2.Value<int>("dataInstanceId"),
+                "Init2 and Update2 should share a single VFXData (LinkTo auto-merges)");
+            Assert.AreEqual(data2, output2.Value<int>("dataInstanceId"),
+                "Output2 should share the same VFXData via the Update2 link");
+            Assert.AreNotEqual(originalInitData, data2,
+                "the new system's VFXData must be distinct from the original system's");
+
+            // Tier-2: no Error-tier validation entries on the freshly-built system.
+            var errors = (JArray)after["errors"];
+            var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blocking.Count,
+                $"a from-scratch particle system should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
         public void Runtime_SetFloatOnExposedParameter_RoundTripsViaPublicApi()
         {
             string copy = CopyFixture("runtime");

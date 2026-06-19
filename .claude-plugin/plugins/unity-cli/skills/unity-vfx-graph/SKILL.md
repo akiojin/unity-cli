@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.11.0
+  version: 0.12.0
   category: assets
   triggers:
     - vfx
@@ -84,6 +84,14 @@ asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disable
 optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
 
+Systems: a full particle system is just the descriptor chain Init→Update→Output sharing one
+`VFXDataParticle`. Build a fresh system by `add_context "Initialize Particle"` +
+`add_context "Update Particle"` + `add_context "Output Particle|Unlit|Quad"` (or another Output
+variant), then `link_flow` them by `{index}` — `VFXContext.LinkTo` auto-merges the contexts'
+`VFXData`, so each chain becomes its own system. Describe emits a `dataInstanceId` per context;
+equal ids prove system membership, different ids prove disjoint systems. Use this to verify a
+from-scratch chain landed in a fresh system rather than accidentally attaching to an existing one.
+
 Subgraph: `create_subgraph_asset` copies a default Block or Operator subgraph template into a target
 path (`subgraphPath` + `kind: "block"|"operator"`); the parent graph references it by adding the
 matching library node (`add_block "Empty Subgraph Block"` / `add_operator "Empty Subgraph Operator"`)
@@ -137,6 +145,7 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 - "Disable instancing on this VFX asset so each VisualEffect runs as an individual draw."
 - "Add a Custom HLSL block to the Update context and inline a function that scales position by a float."
 - "Create a Block subgraph asset next to the main graph and reference it from an Empty Subgraph Block in Update."
+- "Build a second particle system in this graph from scratch — Init→Update→Output — and confirm it's disjoint from the first."
 
 ## References
 

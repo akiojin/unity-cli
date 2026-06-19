@@ -361,6 +361,17 @@ namespace UnityCliBridge.Handlers
                 string ctxType;
                 try { ctxType = Prop(ctx, "contextType")?.ToString(); }
                 catch { ctxType = "unknown"; }
+                // dataInstanceId — identity of the context's VFXData. Contexts in the same
+                // particle system share one VFXData (auto-wired by VFXContext.LinkTo), so equal
+                // ids prove system membership; different ids prove disjoint systems.
+                int? dataId = null;
+                try
+                {
+                    var data = Call(ctx, ContextType, "GetData") as UnityEngine.Object;
+                    if (data != null) dataId = data.GetInstanceID();
+                }
+                catch { /* contexts without data (Spawn/Event) — leave null */ }
+
                 contexts.Add(new JObject
                 {
                     ["index"] = i,
@@ -372,6 +383,7 @@ namespace UnityCliBridge.Handlers
                     ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
                     ["inputSlots"] = SlotsJson(ctx, true),
                     ["outputSlots"] = SlotsJson(ctx, false),
+                    ["dataInstanceId"] = dataId,
                     ["blocks"] = blocks
                 });
             }
