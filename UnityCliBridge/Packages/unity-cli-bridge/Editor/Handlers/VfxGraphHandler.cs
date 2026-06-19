@@ -638,6 +638,7 @@ namespace UnityCliBridge.Handlers
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
                 case "set_slot_value": return SetSlotValue(parameters);
+                case "unlink_slots": return UnlinkSlots(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
@@ -645,7 +646,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1228,6 +1229,64 @@ namespace UnityCliBridge.Handlers
                 },
                 ["subPath"] = subPath == null ? null : new JArray(subPath),
                 ["value"] = ToJToken(Prop(slot, "value"))
+            };
+        }
+
+        /// <summary>Count the links currently on a slot (its LinkedSlots).</summary>
+        private static int LinkCount(object slot)
+        {
+            try { return (Prop(slot, "LinkedSlots") as IEnumerable)?.Cast<object>().Count() ?? 0; }
+            catch { return 0; }
+        }
+
+        /// <summary>
+        /// Remove a slot connection. `target` = the input-slot endpoint {node, …address, slot} whose
+        /// link(s) to break — by default UnlinkAll (input slots hold one link in VFX, so this is
+        /// unambiguous). An optional `from` output-slot endpoint unlinks only that specific edge.
+        /// Verifiable via describe: the target slot's `links` array empties / `hasLink` flips false.
+        /// </summary>
+        private static object UnlinkSlots(JObject parameters)
+        {
+            var target = parameters?["target"] as JObject ?? parameters?["to"] as JObject;
+            if (target == null)
+                return new { error = "target is required (an object {node, …address, slot})" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
+            var slot = GetSlot(node, true, slotIndex, "target");
+
+            int before = LinkCount(slot);
+
+            var from = parameters?["from"] as JObject;
+            if (from != null)
+            {
+                var fromNode = ResolveNode(graph, from, "from");
+                int fromSlot = from["slot"]?.ToObject<int>() ?? 0;
+                var outSlot = GetSlot(fromNode, false, fromSlot, "from");
+                Call(slot, SlotType, "Unlink", outSlot, true); // (other, notify)
+            }
+            else
+            {
+                Call(slot, SlotType, "UnlinkAll", true, true); // (recursive, notify)
+            }
+
+            int after = LinkCount(slot);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "unlink_slots",
+                ["assetPath"] = assetPath,
+                ["target"] = new JObject
+                {
+                    ["node"] = node.GetType().Name,
+                    ["slot"] = slotIndex,
+                    ["slotName"] = SlotName(slot)
+                },
+                ["linksRemoved"] = before - after,
+                ["remainingLinks"] = after
             };
         }
 

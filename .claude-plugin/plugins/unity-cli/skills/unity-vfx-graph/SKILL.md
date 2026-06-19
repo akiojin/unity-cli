@@ -57,6 +57,7 @@ unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Gra
 unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0},"value":42.5}'
 unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"context","contextType":"Init","slot":0},"subPath":["center"],"value":[1,2,3]}'
 unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"context","contextType":"Init","slot":0},"subPath":["size","x"],"value":9}'
+unity-cli raw vfx_apply --json '{"op":"unlink_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"operator","operatorIndex":1,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
@@ -83,7 +84,10 @@ an unlinked input slot: `target` is the same `{node, …address, slot}` shape as
 the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color —
 while an optional `subPath` walks into a compound value struct, e.g. `["center"]` sets a sub-vector and
 `["size","x"]` sets one nested component, leaving the rest untouched; describe re-reads it via
-`inputSlots[].value`), and `link_flow` (context→context flow
+`inputSlots[].value`), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
+`{node, …address, slot}` whose link(s) to remove — by default all of them, or pass a specific `from`
+output-slot endpoint to remove just that edge; returns `linksRemoved`/`remainingLinks`, and describe
+re-reads it via `inputSlots[].hasLink`/`links`), and `link_flow` (context→context flow
 edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{index}`, with optional
 `fromIndex`/`toIndex` flow-slot indices), and `set_bounds` (write the Initialize context's particle
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write

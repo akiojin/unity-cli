@@ -150,6 +150,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_UnlinkSlots_WithoutTarget_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_slots",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "target is required");
+        }
+
+        [Test]
         public void Apply_AddParameter_WithoutParameterName_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1213,6 +1223,54 @@ namespace UnityCliBridge.Tests
                 .Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, errors.Count,
                 "graph should recompile with zero Error-tier entries after set_slot_value");
+        }
+
+        [Test]
+        public void ApplyUnlinkSlots_RemovesOperatorLinkReportedByDescribe()
+        {
+            string copy = CopyFixture("unlinkslots");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 }
+            });
+
+            // Sanity: the link is present before we remove it.
+            JObject linked = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.IsTrue(((JArray)linked["operators"])[1]["inputSlots"][0].Value<bool>("hasLink"),
+                "precondition: operator 1 input slot should be linked");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_slots",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 }
+            }));
+            Assert.AreEqual(1, result.Value<int>("linksRemoved"));
+            Assert.AreEqual(0, result.Value<int>("remainingLinks"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var operators = (JArray)after["operators"];
+            Assert.IsFalse(operators[1]["inputSlots"][0].Value<bool>("hasLink"),
+                "operator 1 input slot should no longer report a link");
+            Assert.AreEqual(0, ((JArray)operators[0]["outputSlots"][0]["links"]).Count,
+                "operator 0 output should have no links after unlink");
+            var errors = ((JArray)after["errors"])
+                .Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count,
+                "graph should recompile with zero Error-tier entries after unlink_slots");
         }
 
         private static string CopyFixture(string suffix)
