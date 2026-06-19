@@ -848,6 +848,50 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySubgraphOperator_CreatesAssetAndReferencesItFromParent()
+        {
+            string copy = CopyFixture("subgraphop");
+            string subPath = $"{TempFolder}/SubOp.vfxoperator";
+
+            JObject created = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = subPath,
+                ["kind"] = "operator"
+            }));
+            Assert.AreEqual("VisualEffectSubgraphOperator", created.Value<string>("assetType"));
+            Assert.IsTrue(System.IO.File.Exists(subPath),
+                $"operator subgraph asset file should exist on disk: {subPath}");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator",
+                ["assetPath"] = copy,
+                ["operatorName"] = "Empty Subgraph Operator"
+            });
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = copy,
+                ["operatorIndex"] = 0,
+                ["setting"] = "m_Subgraph",
+                ["value"] = subPath
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            JToken op = ((JArray)after["operators"])[0];
+            Assert.AreEqual("VFXSubgraphOperator", op.Value<string>("type"));
+            JToken subRef = op["settings"]?["m_Subgraph"];
+            Assert.IsNotNull(subRef, "m_Subgraph should be reported in operator settings");
+            Assert.AreEqual("VisualEffectSubgraphOperator", subRef.Value<string>("type"));
+            Assert.AreEqual(subPath, subRef.Value<string>("assetPath"),
+                "m_Subgraph.assetPath should resolve to the created operator subgraph asset");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplyAddSystem_BuildsFreshInitUpdateOutputChainSharingNewData()
         {
             string copy = CopyFixture("system");

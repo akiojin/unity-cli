@@ -74,6 +74,9 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MySub.vfxblock","kind":"block"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Empty Subgraph Block"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MySub.vfxblock"}'
+unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MyOpSub.vfxoperator","kind":"operator"}'
+unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Empty Subgraph Operator"}'
+unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MyOpSub.vfxoperator"}'
 unity-cli raw vfx_list_library --json '{"kind":"template"}'
 unity-cli raw vfx_apply --json '{"op":"create_from_template","targetPath":"Assets/Basic Graphs/Burst.vfx","template":"03_Simple_Burst"}'
 unity-cli raw get_compilation_state --json '{}'
@@ -140,9 +143,10 @@ from-scratch chain landed in a fresh system rather than accidentally attaching t
 Subgraph: `create_subgraph_asset` copies a default Block or Operator subgraph template into a target
 path (`subgraphPath` + `kind: "block"|"operator"`); the parent graph references it by adding the
 matching library node (`add_block "Empty Subgraph Block"` / `add_operator "Empty Subgraph Operator"`)
-and then writing the asset path into the `m_Subgraph` setting via `set_block_setting`. The
-`set_block_setting` op auto-detects `UnityEngine.Object`-derived fields and loads the value as an asset
-path via `AssetDatabase`. Describe surfaces object references as `{type, name, assetPath}`.
+and then writing the asset path into the `m_Subgraph` setting — via `set_block_setting` for the block
+kind, `set_operator_setting` for the operator kind. Both ops auto-detect `UnityEngine.Object`-derived
+fields and load the value as an asset path via `AssetDatabase`, so describe surfaces the reference as
+`{type, name, assetPath}` under the node's `settings.m_Subgraph` (verified end-to-end for both kinds).
 
 **Set/Get Attribute** also needs no dedicated op. Every `Set <Attribute>` ships as descriptor
 `|Set|_<AttrName>` (e.g. `|Set|_Color`, `|Set|_Position`, `|Set|_Lifetime`) — all instantiate the
