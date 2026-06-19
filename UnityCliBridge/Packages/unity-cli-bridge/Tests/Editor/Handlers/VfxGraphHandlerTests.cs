@@ -952,6 +952,74 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyAttributes_ComposesViaSetAttributeBlockAndGetAttributeOperator()
+        {
+            // Attributes (#7) Pass-1 compose-confirm: no new op needed — the library exposes
+            // `|Set|_<Attribute>` (all map to a single SetAttribute block class parameterized by
+            // an `attribute` [VFXSetting]) and `Get|_<Attribute>` operators (VFXAttributeParameter).
+            // Composition modes (Overwrite/Add/Multiply/Blend) are a [VFXSetting] writable via the
+            // existing set_block_setting.
+            string copy = CopyFixture("attr");
+
+            // Add Set Color to Init.
+            JObject add = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Init",
+                ["blockName"] = "|Set|_Color"
+            }));
+            Assert.AreEqual("SetAttribute", add.Value<string>("addedBlock"),
+                "all Set <Attribute> descriptors instantiate the single SetAttribute block class");
+
+            // Flip the composition mode from default (Overwrite) → Add.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = copy,
+                ["contextType"] = "Init",
+                ["blockIndex"] = 0,
+                ["setting"] = "Composition",
+                ["value"] = "Add"
+            });
+
+            // Add Get|_Position operator.
+            JObject addOp = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator",
+                ["assetPath"] = copy,
+                ["operatorName"] = "Get|_Position"
+            }));
+            Assert.AreEqual("VFXAttributeParameter", addOp.Value<string>("addedOperator"),
+                "Get|_<Attribute> operators all instantiate VFXAttributeParameter");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+
+            // Block surfaces with the expected runtime type + driven settings.
+            JToken init = FindContext(after, "Init");
+            var blocks = (JArray)init["blocks"];
+            Assert.AreEqual(1, blocks.Count);
+            Assert.AreEqual("SetAttribute", blocks[0].Value<string>("type"));
+            JToken settings = blocks[0]["settings"];
+            Assert.AreEqual("color", settings.Value<string>("attribute"),
+                "the Set Color descriptor pre-wires the `attribute` setting to 'color'");
+            Assert.AreEqual("Add", settings.Value<string>("Composition"),
+                "set_block_setting should have toggled Composition from Overwrite to Add");
+
+            // Operator surfaces with the expected runtime type.
+            var operators = (JArray)after["operators"];
+            Assert.AreEqual(1, operators.Count);
+            Assert.AreEqual("VFXAttributeParameter", operators[0].Value<string>("type"));
+
+            // Tier-2 oracle: no validator errors after composing the attribute pieces.
+            var errors = (JArray)after["errors"];
+            var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blocking.Count,
+                $"attribute composition should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
         public void Settings_PreferencesScope_Get_ReportsInstancingAndExperimentalOperator()
         {
             JObject result = ToJObject(VfxGraphHandler.Settings(

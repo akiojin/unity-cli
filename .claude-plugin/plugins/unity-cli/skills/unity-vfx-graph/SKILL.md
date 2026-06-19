@@ -107,6 +107,16 @@ and then writing the asset path into the `m_Subgraph` setting via `set_block_set
 `set_block_setting` op auto-detects `UnityEngine.Object`-derived fields and loads the value as an asset
 path via `AssetDatabase`. Describe surfaces object references as `{type, name, assetPath}`.
 
+**Set/Get Attribute** also needs no dedicated op. Every `Set <Attribute>` ships as descriptor
+`|Set|_<AttrName>` (e.g. `|Set|_Color`, `|Set|_Position`, `|Set|_Lifetime`) — all instantiate the
+single `SetAttribute` block class with the `attribute` `[VFXSetting]` pre-wired to the right name.
+Every `Get <Attribute>` ships as operator descriptor `Get|_<AttrName>` (e.g. `Get|_Position`,
+`Get|_Direction`) and instantiates `VFXAttributeParameter`. Composition mode (Overwrite/Add/
+Multiply/Blend), Random (Off/PerComponent/Uniform), Source (Slot/Source), and per-component
+`channels` are ordinary `[VFXSetting]` fields writable via `set_block_setting`. Always look up the
+exact descriptor with `vfx_list_library kind:"block" filter:"Color"` (or `kind:"operator"
+filter:"Position"`) — the leading `|` and embedded `|_` separators are load-bearing.
+
 Custom HLSL needs no dedicated op: the Custom HLSL block (descriptor `"Custom HLSL"`, category `HLSL`)
 and Custom HLSL operator (category `Operator/HLSL`) are discoverable via `vfx_list_library` and instantiate
 through `add_block`/`add_operator`. Write the inline HLSL function via `set_block_setting` with
@@ -182,6 +192,7 @@ resolved `editorPrefsKey` (e.g. `VFX.InstancingEnabled`).
 - "Disable instancing on this VFX asset so each VisualEffect runs as an individual draw."
 - "Add a Custom HLSL block to the Update context and inline a function that scales position by a float."
 - "Create a Block subgraph asset next to the main graph and reference it from an Empty Subgraph Block in Update."
+- "Add a Set Color block to Init in Add composition mode, plus a Get|_Position operator."
 - "Build a second particle system in this graph from scratch — Init→Update→Output — and confirm it's disjoint from the first."
 - "List the built-in VFX templates and create a new graph from the Simple Burst template."
 - "Read the VFX project settings, then set the fixed time step to 0.02 and confirm it stuck."
