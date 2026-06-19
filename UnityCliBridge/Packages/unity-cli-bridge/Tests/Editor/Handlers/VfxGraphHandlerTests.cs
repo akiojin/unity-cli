@@ -1527,6 +1527,66 @@ namespace UnityCliBridge.Tests
             AssertNoErrorTier(after);
         }
 
+        [Test]
+        public void ApplyAddParameter_CoversTypeMatrixConstantAndRange()
+        {
+            string copy = CopyFixture("paramtypes");
+
+            // A spread of value kinds: bool, int (+range), Vector3 (array), Color (array),
+            // an Object type (Texture2D, default null), and a non-exposed constant Float.
+            VfxGraphHandler.Apply(NewParam(copy, "B", "Bool", new JValue(true)));
+            VfxGraphHandler.Apply(WithRange(NewParam(copy, "I", "Int", new JValue(7)), 0, 10));
+            VfxGraphHandler.Apply(NewParam(copy, "V3", "Vector3", new JArray(1, 2, 3)));
+            VfxGraphHandler.Apply(NewParam(copy, "C", "Color", new JArray(1, 0, 0, 1)));
+            VfxGraphHandler.Apply(NewParam(copy, "T2", "Texture2D", null));
+            JObject constResult = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "K", ["type"] = "Float",
+                ["value"] = 9.0, ["exposed"] = false
+            }));
+            Assert.IsFalse(constResult.Value<bool>("exposed"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var byName = ((JArray)after["parameters"])
+                .ToDictionary(p => (string)p["exposedName"], p => p);
+
+            Assert.AreEqual("Boolean", byName["B"]["parameterType"].ToString());
+            Assert.AreEqual("Vector3", byName["V3"]["parameterType"].ToString());
+            Assert.AreEqual(1f, byName["V3"]["value"].Value<float>("x"), 1e-4f);
+            Assert.AreEqual("Color", byName["C"]["parameterType"].ToString());
+            Assert.AreEqual("Texture2D", byName["T2"]["parameterType"].ToString());
+
+            // Int range round-trips via valueFilter=Range + min/max.
+            Assert.AreEqual("Range", byName["I"]["valueFilter"].ToString());
+            Assert.AreEqual(0, byName["I"].Value<int>("min"));
+            Assert.AreEqual(10, byName["I"].Value<int>("max"));
+
+            // Constant (non-exposed) is still a real graph node.
+            Assert.IsFalse(byName["K"].Value<bool>("exposed"));
+
+            AssertNoErrorTier(after);
+        }
+
+        private static JObject NewParam(string asset, string name, string type, JToken value)
+        {
+            var o = new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = asset,
+                ["parameterName"] = name, ["type"] = type
+            };
+            if (value != null) o["value"] = value;
+            return o;
+        }
+
+        private static JObject WithRange(JObject param, double min, double max)
+        {
+            param["min"] = min;
+            param["max"] = max;
+            return param;
+        }
+
         private static void AssertNoErrorTier(JObject describeResult)
         {
             var errors = ((JArray)describeResult["errors"])

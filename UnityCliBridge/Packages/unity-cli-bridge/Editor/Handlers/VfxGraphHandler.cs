@@ -410,12 +410,15 @@ namespace UnityCliBridge.Handlers
                 var p = paramList[i];
                 string exposedName = null, category = null, tooltip = null;
                 bool exposed = false;
-                JToken value = null;
+                JToken value = null, min = null, max = null, valueFilter = null;
                 try { exposedName = Prop(p, "exposedName") as string; } catch { }
                 try { exposed = (bool)Prop(p, "exposed"); } catch { }
                 try { category = Prop(p, "category") as string; } catch { }
                 try { tooltip = Prop(p, "tooltip") as string; } catch { }
                 try { value = ToJToken(Prop(p, "value")); } catch { }
+                try { min = ToJToken(Prop(p, "min")); } catch { }
+                try { max = ToJToken(Prop(p, "max")); } catch { }
+                try { valueFilter = new JValue(Prop(p, "valueFilter")?.ToString()); } catch { }
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
@@ -426,6 +429,9 @@ namespace UnityCliBridge.Handlers
                     ["category"] = category,
                     ["tooltip"] = tooltip,
                     ["value"] = value,
+                    ["valueFilter"] = valueFilter,
+                    ["min"] = min,
+                    ["max"] = max,
                     ["inputSlots"] = SlotsJson(p, true),
                     ["outputSlots"] = SlotsJson(p, false)
                 });
@@ -1062,10 +1068,16 @@ namespace UnityCliBridge.Handlers
 
             var graph = LoadGraph(assetPath);
 
-            // Find parameter descriptor by type name (exact, then contains).
+            // Find parameter descriptor by type name (exact, then space-insensitive, then contains).
+            // Descriptor names carry spaces ("Vector 3", "Texture 2D"), so "Vector3"/"Texture2D" are
+            // matched by stripping whitespace before comparing.
             var descriptors = (Call(null, LibraryType, "GetParameters") as IEnumerable).Cast<object>().ToList();
+            string Squash(string s) => s?.Replace(" ", "");
+            var wantSquashed = Squash(typeName);
             var match = descriptors.FirstOrDefault(d =>
                             string.Equals(Prop(d, "name") as string, typeName, StringComparison.OrdinalIgnoreCase))
+                        ?? descriptors.FirstOrDefault(d =>
+                            string.Equals(Squash(Prop(d, "name") as string), wantSquashed, StringComparison.OrdinalIgnoreCase))
                         ?? descriptors.FirstOrDefault(d =>
                             ((Prop(d, "name") as string)?.IndexOf(typeName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
             if (match == null)
@@ -1086,15 +1098,43 @@ namespace UnityCliBridge.Handlers
             Call(parameter, ModelType, "SetSettingValue", "m_ExposedName", parameterName);
             Call(parameter, ModelType, "SetSettingValue", "m_Exposed", exposed);
 
-            // Optional default value (set on the parameter's value slot, coerced to its type).
+            var paramType = Prop(parameter, "type") as Type;
+
+            // Optional default value. Use ParamCoerce so vectors/colors (array JSON) and Object types
+            // (Texture/Mesh by asset path) work, not just the primitives Newtonsoft can build directly.
             var valueToken = parameters?["value"];
             JToken appliedValue = null;
             if (valueToken != null && valueToken.Type != JTokenType.Null)
             {
-                var paramType = Prop(parameter, "type") as Type;
-                object converted = valueToken.ToObject(paramType);
+                object converted = ParamCoerce(valueToken, paramType, "value");
                 SetProp(parameter, "value", converted);
                 appliedValue = ToJToken(converted);
+            }
+
+            // Optional min/max range. VFXParameter gates min/max behind valueFilter=Range; set the
+            // filter first (parse the enum off the property's own type), then the bounds.
+            var minToken = parameters?["min"];
+            var maxToken = parameters?["max"];
+            JToken appliedMin = null, appliedMax = null;
+            if ((minToken != null && minToken.Type != JTokenType.Null) ||
+                (maxToken != null && maxToken.Type != JTokenType.Null))
+            {
+                var filterProp = parameter.GetType().GetProperty("valueFilter",
+                    BindingFlags.Public | BindingFlags.Instance);
+                if (filterProp != null)
+                    SetProp(parameter, "valueFilter", Enum.Parse(filterProp.PropertyType, "Range", true));
+                if (minToken != null && minToken.Type != JTokenType.Null)
+                {
+                    object cMin = ParamCoerce(minToken, paramType, "min");
+                    SetProp(parameter, "min", cMin);
+                    appliedMin = ToJToken(cMin);
+                }
+                if (maxToken != null && maxToken.Type != JTokenType.Null)
+                {
+                    object cMax = ParamCoerce(maxToken, paramType, "max");
+                    SetProp(parameter, "max", cMax);
+                    appliedMax = ToJToken(cMax);
+                }
             }
 
             var tooltip = parameters?["tooltip"]?.ToString();
@@ -1116,8 +1156,29 @@ namespace UnityCliBridge.Handlers
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["exposed"] = exposed,
                 ["value"] = appliedValue,
+                ["min"] = appliedMin,
+                ["max"] = appliedMax,
                 ["parameterIndex"] = parameterIndex
             };
+        }
+
+        /// <summary>
+        /// Coerce a JSON value to a VFX parameter's CLR type. Like CoerceToType, but additionally
+        /// loads UnityEngine.Object types (Texture/Mesh/etc.) from an asset-path string. Used for a
+        /// parameter's default value and its min/max bounds.
+        /// </summary>
+        private static object ParamCoerce(JToken token, Type targetType, string label)
+        {
+            if (typeof(UnityEngine.Object).IsAssignableFrom(targetType))
+            {
+                var refPath = token.ToString();
+                if (string.IsNullOrEmpty(refPath)) return null;
+                var loaded = AssetDatabase.LoadAssetAtPath(refPath, targetType);
+                if (loaded == null)
+                    throw new Exception($"No {targetType.Name} asset at path '{refPath}' for {label}.");
+                return loaded;
+            }
+            return CoerceToType(token, targetType);
         }
 
         /// <summary>Resolve a node address (operator/context/block) to its model object.</summary>

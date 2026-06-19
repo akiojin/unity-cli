@@ -55,7 +55,8 @@ unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Event","settings":{"eventName":"Burst"}}'
 unity-cli raw vfx_apply --json '{"op":"link_flow","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"contextType":"Event"},"to":{"contextType":"Spawner"},"toIndex":0}'
-unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"category":"Tuning"}'
+unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"min":0,"max":100,"category":"Tuning"}'
+unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Tint","type":"Color","value":[1,0,0,1]}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0},"value":42.5}'
 unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"context","contextType":"Init","slot":0},"subPath":["center"],"value":[1,2,3]}'
@@ -90,8 +91,13 @@ particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too —
 reports `context` vs `data`, and `contexts[].settings` in describe reflects the write), `add_context` (descriptor by name, with
 optional `linkFrom` to flow an existing context into the new one), `add_operator` (descriptor by name,
 added to the graph, with optional `settings` like an Event context's `eventName`), `add_parameter`
-(exposed blackboard parameter: `parameterName` = exposed name, `type` = a parameter descriptor name like
-`Float`/`Vector3`/`Color`, optional `value`/`tooltip`/`category`/`exposed`), `link_slots` (connect a
+(blackboard parameter: `parameterName` = exposed name, `type` = a parameter descriptor name —
+`Bool`/`Int`/`Uint`/`Float`/`Vector2`/`Vector3`/`Vector4`/`Color`/`Texture2D`/`Texture3D`/`Cubemap`/
+`Gradient`/`Animation Curve`/`Mesh` (spaces optional: `Vector3`≡`Vector 3`); `value` is coerced to the
+type — number/bool, `[x,y,z]` vector, `[r,g,b,a]` color, or an asset-path string for Texture/Mesh;
+optional `exposed:false` for a constant (non-exposed) param, `min`/`max` for a numeric Range (sets
+`valueFilter=Range`, surfaced in describe as `parameters[].valueFilter`/`min`/`max`),
+`tooltip`/`category`), `link_slots` (connect a
 `from` output slot to a `to` input slot; each endpoint is `{node: operator|parameter|context|block,
 …address, slot: index}` where an operator uses `operatorIndex`, a parameter uses `parameterIndex`, a
 block/context uses `contextType` (+ `blockIndex` for blocks)), `set_slot_value` (write a constant into
