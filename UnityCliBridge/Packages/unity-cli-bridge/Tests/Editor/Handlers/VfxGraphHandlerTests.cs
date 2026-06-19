@@ -171,6 +171,30 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetContextSetting_WithoutContextTypeOrIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["setting"] = "loopDuration",
+                ["value"] = "Constant"
+            }), "contextType (or index) is required");
+        }
+
+        [Test]
+        public void Apply_SetContextSetting_WithoutSetting_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["contextType"] = "Update",
+                ["value"] = true
+            }), "setting is required");
+        }
+
+        [Test]
         public void Apply_SetOperatorSetting_WithoutSetting_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1464,6 +1488,42 @@ namespace UnityCliBridge.Tests
             // Update's downstream flow edge to the removed Output must be cleaned up.
             Assert.AreEqual(0, ((JArray)FindContext(after, "Update")["outputs"]).Count,
                 "Update should have no dangling flow edge after its Output was removed");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplySetContextSetting_WritesContextAndDataLevelSettings()
+        {
+            string copy = CopyFixture("ctxsetting");
+
+            // Context-level enum (Spawn loop), context-level bool (Update toggle).
+            JObject spawn = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["setting"] = "loopDuration", ["value"] = "Constant"
+            }));
+            Assert.AreEqual("context", spawn.Value<string>("via"));
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["setting"] = "ageParticles", ["value"] = false
+            });
+
+            // Data-level int (Init Capacity lives on VFXDataParticle, reached via GetData()).
+            JObject cap = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["setting"] = "capacity", ["value"] = 256
+            }));
+            Assert.AreEqual("data", cap.Value<string>("via"),
+                "Init capacity should resolve through the context's particle data");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual("Constant", FindContext(after, "Spawner")["settings"]?["loopDuration"]?.ToString());
+            Assert.IsFalse(FindContext(after, "Update")["settings"].Value<bool>("ageParticles"));
+            Assert.AreEqual(256, FindContext(after, "Init")["settings"].Value<int>("capacity"));
             AssertNoErrorTier(after);
         }
 

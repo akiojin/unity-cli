@@ -50,6 +50,8 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
+unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Spawner","setting":"loopDuration","value":"Constant"}'
+unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"capacity","value":256}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Event","settings":{"eventName":"Burst"}}'
 unity-cli raw vfx_apply --json '{"op":"link_flow","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"contextType":"Event"},"to":{"contextType":"Spawner"},"toIndex":0}'
@@ -81,7 +83,11 @@ unity-cli raw get_compilation_state --json '{}'
 `set_block_setting` for operators: target by `operatorIndex` from describe, set a `[VFXSetting]` field —
 e.g. a Custom HLSL operator's `m_HLSLCode`/`m_OperatorName`, or an Operator subgraph's `m_Subgraph`
 asset path; some settings reshape the operator's ports, and `operators[].settings` in describe reflects
-the write), `add_context` (descriptor by name, with
+the write), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
+loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
+`reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`); also reaches the context's
+particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too — the response's `via` field
+reports `context` vs `data`, and `contexts[].settings` in describe reflects the write), `add_context` (descriptor by name, with
 optional `linkFrom` to flow an existing context into the new one), `add_operator` (descriptor by name,
 added to the graph, with optional `settings` like an Event context's `eventName`), `add_parameter`
 (exposed blackboard parameter: `parameterName` = exposed name, `type` = a parameter descriptor name like

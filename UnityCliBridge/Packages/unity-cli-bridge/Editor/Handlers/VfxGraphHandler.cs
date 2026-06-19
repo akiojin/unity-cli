@@ -635,6 +635,7 @@ namespace UnityCliBridge.Handlers
                 case "add_block": return AddBlock(parameters);
                 case "set_block_setting": return SetBlockSetting(parameters);
                 case "set_operator_setting": return SetOperatorSetting(parameters);
+                case "set_context_setting": return SetContextSetting(parameters);
                 case "add_context": return AddContext(parameters);
                 case "add_operator": return AddOperator(parameters);
                 case "add_parameter": return AddParameter(parameters);
@@ -652,7 +653,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -840,6 +841,61 @@ namespace UnityCliBridge.Handlers
                 ["operatorIndex"] = operatorIndex,
                 ["operator"] = op.GetType().Name,
                 ["setting"] = settingName,
+                ["value"] = ToJToken(converted)
+            };
+        }
+
+        /// <summary>
+        /// Write a [VFXSetting] field on a context (Spawn loop settings, Update toggles, Output
+        /// blend/UV/shader knobs) OR on the context's particle data (Init Capacity, boundsMode,
+        /// stripCapacity). Tries the context first, then falls back to GetData() — the same bridge
+        /// describe uses to surface data settings on `contexts[].settings`. Address by `contextType`
+        /// or `index`. Some settings add/remove ports, so re-describe afterwards.
+        /// </summary>
+        private static object SetContextSetting(JObject parameters)
+        {
+            var settingName = parameters?["setting"]?.ToString();
+            if (string.IsNullOrEmpty(settingName))
+                return new { error = "setting is required" };
+            var valueToken = parameters?["value"];
+            if (valueToken == null || valueToken.Type == JTokenType.Null)
+                return new { error = "value is required" };
+            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (!hasIndex && string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType (or index) is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ctx = ResolveContextRef(graph, parameters, ctxList, "context");
+
+            // Context-level setting first; else the context's particle data (capacity/boundsMode etc.).
+            object targetModel = ctx;
+            string via = "context";
+            var field = FindField(ctx.GetType(), settingName);
+            if (field == null)
+            {
+                var data = Call(ctx, ContextType, "GetData");
+                var dataField = data == null ? null : FindField(data.GetType(), settingName);
+                if (dataField != null) { field = dataField; targetModel = data; via = "data"; }
+            }
+            if (field == null)
+                throw new Exception(
+                    $"Setting '{settingName}' not found on context '{ctx.GetType().Name}' or its data. Use vfx_describe_graph to list settings.");
+
+            object converted = CoerceSettingValue(field, valueToken, settingName);
+            Call(targetModel, ModelType, "SetSettingValue", settingName, converted);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_context_setting",
+                ["assetPath"] = assetPath,
+                ["contextType"] = Prop(ctx, "contextType")?.ToString(),
+                ["context"] = ctx.GetType().Name,
+                ["setting"] = settingName,
+                ["via"] = via,
                 ["value"] = ToJToken(converted)
             };
         }
