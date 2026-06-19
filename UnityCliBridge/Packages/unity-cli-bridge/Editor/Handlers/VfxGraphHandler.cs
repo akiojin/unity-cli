@@ -50,6 +50,7 @@ namespace UnityCliBridge.Handlers
         private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
         private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
         private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
+        private static Type VFXManagerType => T("UnityEngine.VFX.VFXManager");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -1670,6 +1671,143 @@ namespace UnityCliBridge.Handlers
                     try { state["floatValue"] = (float)Call(comp, VisualEffectType, "GetFloat", name); } catch { }
             }
             return state;
+        }
+
+        // ---- vfx_settings: VFX project settings (ProjectSettings/VFXManager.asset) ----------
+
+        private const string VFXManagerAssetPath = "ProjectSettings/VFXManager.asset";
+
+        // Serialized fields on the VFXManager singleton (see VFXManagerEditor) — covers settings
+        // that have no public static property (e.g. max capacity, batch empty lifetime).
+        private static readonly string[] VfxManagerSerializedFields =
+        {
+            "m_FixedTimeStep", "m_MaxDeltaTime", "m_MaxScrubTime", "m_MaxCapacity", "m_BatchEmptyLifetime"
+        };
+
+        /// <summary>Read/write VFX project settings (no graph — environment capability).</summary>
+        public static object Settings(JObject parameters)
+        {
+            try { return SettingsCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_settings", ex); }
+        }
+
+        private static object SettingsCore(JObject parameters)
+        {
+            var op = parameters?["op"]?.ToString();
+            switch (op)
+            {
+                case "get": return GetVfxSettings();
+                case "set": return SetVfxSetting(parameters);
+                default:
+                    return new { error = $"Unsupported op: '{op}'. Supported: get, set" };
+            }
+        }
+
+        private static JObject GetVfxSettings()
+        {
+            var result = new JObject { ["op"] = "get" };
+
+            // Public static runtime properties — the canonical surface that round-trips immediately
+            // on a re-read (UnityEngine.VFX.VFXManager.fixedTimeStep / maxDeltaTime / ...).
+            var properties = new JObject();
+            foreach (var p in VFXManagerType.GetProperties(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (!p.CanRead) continue;
+                if (!IsScalarSettingType(p.PropertyType)) continue;
+                try { properties[p.Name] = ToJToken(p.GetValue(null)); } catch { }
+            }
+            result["properties"] = properties;
+
+            // Serialized asset fields (covers settings without a public static property).
+            var serialized = new JObject();
+            var asset = AssetDatabase.LoadAllAssetsAtPath(VFXManagerAssetPath).FirstOrDefault();
+            if (asset != null)
+            {
+                var so = new SerializedObject(asset);
+                foreach (var name in VfxManagerSerializedFields)
+                {
+                    var sp = so.FindProperty(name);
+                    if (sp != null) serialized[name] = SerializedToJToken(sp);
+                }
+            }
+            result["serialized"] = serialized;
+            return result;
+        }
+
+        private static object SetVfxSetting(JObject parameters)
+        {
+            var setting = parameters?["setting"]?.ToString();
+            var valueToken = parameters?["value"];
+            if (string.IsNullOrEmpty(setting)) return new { error = "setting is required" };
+            if (valueToken == null) return new { error = "value is required" };
+
+            // Prefer the public static property setter: it writes through the native VFXManager and
+            // the change round-trips immediately via a re-read of the same property.
+            var prop = VFXManagerType.GetProperty(setting, BindingFlags.Public | BindingFlags.Static);
+            if (prop != null && prop.CanRead && prop.CanWrite && IsScalarSettingType(prop.PropertyType))
+            {
+                prop.SetValue(null, valueToken.ToObject(prop.PropertyType));
+                return new JObject
+                {
+                    ["op"] = "set",
+                    ["setting"] = setting,
+                    ["value"] = ToJToken(prop.GetValue(null)),
+                    ["via"] = "property"
+                };
+            }
+
+            // Fall back to the serialized asset field (e.g. max capacity has no static setter).
+            var asset = AssetDatabase.LoadAllAssetsAtPath(VFXManagerAssetPath).FirstOrDefault();
+            if (asset == null) return new { error = $"{VFXManagerAssetPath} not found" };
+
+            var so = new SerializedObject(asset);
+            var fieldName = setting.StartsWith("m_")
+                ? setting
+                : "m_" + char.ToUpperInvariant(setting[0]) + setting.Substring(1);
+            var sp = so.FindProperty(fieldName);
+            if (sp == null)
+                return new { error = $"No writable VFX setting '{setting}' (tried static property and serialized field '{fieldName}')" };
+
+            AssignSerialized(sp, valueToken);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.SaveAssets();
+            return new JObject
+            {
+                ["op"] = "set",
+                ["setting"] = setting,
+                ["value"] = SerializedToJToken(sp),
+                ["via"] = "serialized"
+            };
+        }
+
+        private static bool IsScalarSettingType(Type t) =>
+            t == typeof(float) || t == typeof(double) || t == typeof(int) ||
+            t == typeof(uint) || t == typeof(bool);
+
+        private static JToken SerializedToJToken(SerializedProperty sp)
+        {
+            switch (sp.propertyType)
+            {
+                case SerializedPropertyType.Float: return new JValue(sp.floatValue);
+                case SerializedPropertyType.Integer: return new JValue(sp.longValue);
+                case SerializedPropertyType.Boolean: return new JValue(sp.boolValue);
+                case SerializedPropertyType.String: return new JValue(sp.stringValue);
+                case SerializedPropertyType.ObjectReference: return ToJToken(sp.objectReferenceValue);
+                default: return new JValue(sp.propertyType.ToString());
+            }
+        }
+
+        private static void AssignSerialized(SerializedProperty sp, JToken value)
+        {
+            switch (sp.propertyType)
+            {
+                case SerializedPropertyType.Float: sp.floatValue = value.ToObject<float>(); break;
+                case SerializedPropertyType.Integer: sp.longValue = value.ToObject<long>(); break;
+                case SerializedPropertyType.Boolean: sp.boolValue = value.ToObject<bool>(); break;
+                case SerializedPropertyType.String: sp.stringValue = value.ToString(); break;
+                default:
+                    throw new Exception($"Unsupported serialized property type for set: {sp.propertyType}");
+            }
         }
     }
 }

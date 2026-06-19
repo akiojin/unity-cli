@@ -252,6 +252,35 @@ namespace UnityCliBridge.Tests
             }), "gameObject is required");
         }
 
+        [Test]
+        public void Settings_WithUnsupportedOp_ReturnsDescriptiveError()
+        {
+            AssertError(VfxGraphHandler.Settings(new JObject
+            {
+                ["op"] = "no_such_op"
+            }), "Unsupported op");
+        }
+
+        [Test]
+        public void Settings_Set_WithoutSetting_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Settings(new JObject
+            {
+                ["op"] = "set",
+                ["value"] = 0.01f
+            }), "setting is required");
+        }
+
+        [Test]
+        public void Settings_Set_WithoutValue_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Settings(new JObject
+            {
+                ["op"] = "set",
+                ["setting"] = "fixedTimeStep"
+            }), "value is required");
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -859,6 +888,54 @@ namespace UnityCliBridge.Tests
             finally
             {
                 UnityEngine.Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void Settings_Get_ReportsFixedTimeStepProperty()
+        {
+            JObject result = ToJObject(VfxGraphHandler.Settings(new JObject { ["op"] = "get" }));
+            JToken props = result["properties"];
+            Assert.IsNotNull(props, "get should report a 'properties' block");
+            Assert.IsNotNull(props["fixedTimeStep"],
+                "VFXManager should expose a fixedTimeStep static property");
+            Assert.IsNotNull(props["maxDeltaTime"],
+                "VFXManager should expose a maxDeltaTime static property");
+        }
+
+        [Test]
+        public void Settings_SetFixedTimeStep_RoundTripsViaReRead()
+        {
+            // Capture the original so we can restore it (these are project-global settings).
+            JObject before = ToJObject(VfxGraphHandler.Settings(new JObject { ["op"] = "get" }));
+            float original = before["properties"].Value<float>("fixedTimeStep");
+
+            try
+            {
+                float target = original + 0.005f;
+                JObject set = ToJObject(VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["setting"] = "fixedTimeStep",
+                    ["value"] = target
+                }));
+                Assert.AreEqual("property", set.Value<string>("via"),
+                    "fixedTimeStep should write through the public static property");
+                Assert.AreEqual(target, set.Value<float>("value"), 0.0001f);
+
+                // Re-read confirms the change persisted on the canonical surface.
+                JObject after = ToJObject(VfxGraphHandler.Settings(new JObject { ["op"] = "get" }));
+                Assert.AreEqual(target, after["properties"].Value<float>("fixedTimeStep"), 0.0001f,
+                    "re-read should reflect the new fixedTimeStep");
+            }
+            finally
+            {
+                VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["setting"] = "fixedTimeStep",
+                    ["value"] = original
+                });
             }
         }
 

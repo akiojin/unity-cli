@@ -135,6 +135,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "vfx_list_library",
     "vfx_apply",
     "vfx_runtime",
+    "vfx_settings",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -219,6 +220,9 @@ fn tool_description(name: &str) -> &'static str {
         }
         "vfx_runtime" => {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
+        }
+        "vfx_settings" => {
+            "Read or write VFX project settings (ProjectSettings/VFXManager.asset) — ops: get (read all), set (write one named setting, e.g. fixedTimeStep, maxDeltaTime)"
         }
         _ => "Unity CLI tool operation",
     }
@@ -2442,6 +2446,15 @@ fn tool_params_schema(name: &str) -> Value {
             &["op", "gameObject"],
             false,
         ),
+        "vfx_settings" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("setting", string_schema()),
+                ("value", any_schema()),
+            ],
+            &["op"],
+            false,
+        ),
         _ => default_params_schema(),
     }
 }
@@ -2556,7 +2569,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 133);
+        assert_eq!(TOOL_NAMES.len(), 134);
     }
 
     #[test]
@@ -2620,6 +2633,17 @@ mod tests {
         assert_eq!(spec.executor, ToolExecutor::Remote);
         assert_eq!(spec.params_schema["additionalProperties"], false);
         assert_eq!(spec.params_schema["required"], json!(["op", "gameObject"]));
+    }
+
+    #[test]
+    fn vfx_settings_is_mutating_and_requires_op() {
+        let spec = get_tool_spec("vfx_settings").expect("vfx_settings must exist");
+        // The tool carries both a read-only `get` and a mutating `set` op; like vfx_runtime it is
+        // marked mutating at the tool level (per-op read-only behavior is documented, not flagged).
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
     }
 
     #[test]
