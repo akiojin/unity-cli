@@ -68,6 +68,8 @@ unity-cli raw vfx_apply --json '{"op":"remove_parameter","assetPath":"Assets/Bas
 unity-cli raw vfx_apply --json '{"op":"remove_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Output"}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
+unity-cli raw vfx_apply --json '{"op":"update_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"title":"DONE","contents":"bursts wired"}'
+unity-cli raw vfx_apply --json '{"op":"remove_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Custom HLSL"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_HLSLCode","value":"void DoIt(inout VFXAttributes a, in float k){a.position *= k;}"}'
@@ -121,7 +123,9 @@ edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{ind
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write
 the bounds AABox when the mode exposes one; `padding` writes `boundsPadding` for Recorded/Automatic),
 and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[x,y,width,height]`),
-`colorTheme` int 1–3, `textSize` "Small"/"Medium"/"Large"/"Huge"), and `set_instancing` (write the
+`colorTheme` int 1–3, `textSize` "Small"/"Medium"/"Large"/"Huge"), `update_sticky_note` (edit an
+existing note by `index` — only the supplied fields change, the rest stay) and `remove_sticky_note`
+(delete by `index`; describe's `stickyNotes[]` array shrinks), and `set_instancing` (write the
 asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
 optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.

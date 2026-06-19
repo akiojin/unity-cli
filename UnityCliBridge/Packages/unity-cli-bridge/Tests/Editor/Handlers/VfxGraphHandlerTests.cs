@@ -171,6 +171,27 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_UpdateStickyNote_WithoutIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "update_sticky_note",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["title"] = "x"
+            }), "index is required");
+        }
+
+        [Test]
+        public void Apply_RemoveStickyNote_WithoutIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_sticky_note",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "index is required");
+        }
+
+        [Test]
         public void Apply_SetContextSetting_WithoutContextTypeOrIndex_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1629,6 +1650,52 @@ namespace UnityCliBridge.Tests
             param["min"] = min;
             param["max"] = max;
             return param;
+        }
+
+        [Test]
+        public void ApplyStickyNote_UpdateEditsFieldsAndRemoveShrinksArray()
+        {
+            string copy = CopyFixture("stickyedit");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note", ["assetPath"] = copy,
+                ["title"] = "A", ["contents"] = "first", ["colorTheme"] = 1
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note", ["assetPath"] = copy,
+                ["title"] = "B", ["contents"] = "second", ["colorTheme"] = 2
+            });
+
+            // Update note 0: change title + contents only; B must stay intact.
+            JObject upd = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "update_sticky_note", ["assetPath"] = copy,
+                ["index"] = 0, ["title"] = "A-edited", ["contents"] = "changed"
+            }));
+            CollectionAssert.AreEquivalent(new[] { "title", "contents" },
+                ((JArray)upd["changed"]).Select(t => t.ToString()).ToArray());
+
+            JObject afterUpdate = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var notes = (JArray)afterUpdate["stickyNotes"];
+            Assert.AreEqual("A-edited", notes[0].Value<string>("title"));
+            Assert.AreEqual("changed", notes[0].Value<string>("contents"));
+            Assert.AreEqual("B", notes[1].Value<string>("title"), "sibling note should be untouched");
+
+            // Remove note 0: B slides into index 0.
+            JObject rem = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_sticky_note", ["assetPath"] = copy, ["index"] = 0
+            }));
+            Assert.AreEqual(1, rem.Value<int>("remaining"));
+
+            JObject afterRemove = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var remaining = (JArray)afterRemove["stickyNotes"];
+            Assert.AreEqual(1, remaining.Count);
+            Assert.AreEqual("B", remaining[0].Value<string>("title"));
+            AssertNoErrorTier(afterRemove);
         }
 
         private static void AssertNoErrorTier(JObject describeResult)

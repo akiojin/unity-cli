@@ -655,11 +655,13 @@ namespace UnityCliBridge.Handlers
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
+                case "update_sticky_note": return UpdateStickyNote(parameters);
+                case "remove_sticky_note": return RemoveStickyNote(parameters);
                 case "set_instancing": return SetInstancing(parameters);
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1999,13 +2001,7 @@ namespace UnityCliBridge.Handlers
             }
 
             var graph = LoadGraph(assetPath);
-            var ui = Prop(graph, "UIInfos");
-            if (ui == null)
-                throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
-
-            var notesField = FindField(ui.GetType(), "stickyNoteInfos");
-            if (notesField == null)
-                throw new Exception("stickyNoteInfos field not found on VFXUI.");
+            var (ui, notesField, _) = GetStickyNotes(graph);
 
             var noteType = StickyNoteInfoType;
             var newNote = Activator.CreateInstance(noteType);
@@ -2036,6 +2032,102 @@ namespace UnityCliBridge.Handlers
                 ["colorTheme"] = colorTheme,
                 ["textSize"] = textSize,
                 ["position"] = new JArray { x, y, w, h }
+            };
+        }
+
+        /// <summary>Resolve a graph's VFXUI sidecar + its stickyNoteInfos field + current array.</summary>
+        private static (object ui, FieldInfo field, Array arr) GetStickyNotes(object graph)
+        {
+            var ui = Prop(graph, "UIInfos");
+            if (ui == null)
+                throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
+            var notesField = FindField(ui.GetType(), "stickyNoteInfos");
+            if (notesField == null)
+                throw new Exception("stickyNoteInfos field not found on VFXUI.");
+            return (ui, notesField, notesField.GetValue(ui) as Array);
+        }
+
+        /// <summary>Edit an existing sticky note by index — only the supplied fields are changed.</summary>
+        private static object UpdateStickyNote(JObject parameters)
+        {
+            var idxTok = parameters?["index"];
+            if (idxTok == null || idxTok.Type == JTokenType.Null)
+                return new { error = "index is required" };
+            int index = idxTok.ToObject<int>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (ui, _, arr) = GetStickyNotes(graph);
+            int len = arr?.Length ?? 0;
+            if (index < 0 || index >= len)
+                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+
+            var noteType = StickyNoteInfoType;
+            var note = arr.GetValue(index);
+            var changed = new JArray();
+            if (parameters["title"] != null)
+            { FindField(noteType, "title").SetValue(note, parameters["title"].ToString()); changed.Add("title"); }
+            if (parameters["contents"] != null)
+            { FindField(noteType, "contents").SetValue(note, parameters["contents"].ToString()); changed.Add("contents"); }
+            if (parameters["colorTheme"] != null)
+            { FindField(noteType, "colorTheme").SetValue(note, parameters["colorTheme"].ToObject<int>()); changed.Add("colorTheme"); }
+            if (parameters["textSize"] != null)
+            { FindField(noteType, "textSize").SetValue(note, parameters["textSize"].ToString()); changed.Add("textSize"); }
+            var posTok = parameters["position"] as JArray;
+            if (posTok != null && posTok.Count >= 4)
+            {
+                FindField(noteType, "position").SetValue(note, new Rect(
+                    posTok[0].ToObject<float>(), posTok[1].ToObject<float>(),
+                    posTok[2].ToObject<float>(), posTok[3].ToObject<float>()));
+                changed.Add("position");
+            }
+            // StickyNoteInfo is a struct/class; SetValue on a boxed array element of a value type would
+            // be lost, so write the (possibly re-boxed) element back into the array slot.
+            arr.SetValue(note, index);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "update_sticky_note",
+                ["assetPath"] = assetPath,
+                ["index"] = index,
+                ["changed"] = changed
+            };
+        }
+
+        /// <summary>Remove a sticky note by index (shrinks stickyNoteInfos).</summary>
+        private static object RemoveStickyNote(JObject parameters)
+        {
+            var idxTok = parameters?["index"];
+            if (idxTok == null || idxTok.Type == JTokenType.Null)
+                return new { error = "index is required" };
+            int index = idxTok.ToObject<int>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (ui, notesField, arr) = GetStickyNotes(graph);
+            int len = arr?.Length ?? 0;
+            if (index < 0 || index >= len)
+                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+
+            var noteType = StickyNoteInfoType;
+            var newArr = Array.CreateInstance(noteType, len - 1);
+            int w = 0;
+            for (int r = 0; r < len; r++)
+                if (r != index) newArr.SetValue(arr.GetValue(r), w++);
+            notesField.SetValue(ui, newArr);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_sticky_note",
+                ["assetPath"] = assetPath,
+                ["index"] = index,
+                ["remaining"] = len - 1
             };
         }
 

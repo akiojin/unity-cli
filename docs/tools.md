@@ -106,7 +106,7 @@ Global options:
 | --- | --- |
 | `vfx_describe_graph` | Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, and exposed parameters, including slot and flow links |
 | `vfx_list_library` | List available Visual Effect Graph descriptors (`kind`: block, operator, context, parameter, or template) |
-| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template) |
+| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template) |
 | `vfx_runtime` | Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state) |
 | `vfx_settings` | Read or write VFX environment settings — ops: `get` (read all), `set` (write one named setting). `scope`: `project` (default — `ProjectSettings/VFXManager.asset`; `fixedTimeStep`, `maxDeltaTime`, `maxCapacity`, ...) or `preferences` (per-machine EditorPrefs via `UnityEditor.VFX.VFXViewPreference`; `instancingEnabled`, `displayExperimentalOperator`, `multithreadUpdateEnabled`, ...) |
 
