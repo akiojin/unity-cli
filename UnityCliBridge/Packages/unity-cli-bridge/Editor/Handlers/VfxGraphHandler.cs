@@ -125,6 +125,18 @@ namespace UnityCliBridge.Handlers
         private static JToken ToJToken(object value)
         {
             if (value == null) return JValue.CreateNull();
+            // UnityEngine.Object references (incl. asset references like a Subgraph) — Newtonsoft
+            // would recurse through GameObject/Transform; emit a stable identifier instead.
+            if (value is UnityEngine.Object uo)
+            {
+                if (uo == null) return JValue.CreateNull(); // "fake null" pattern
+                return new JObject
+                {
+                    ["type"] = uo.GetType().Name,
+                    ["name"] = uo.name,
+                    ["assetPath"] = AssetDatabase.GetAssetPath(uo)
+                };
+            }
             var t = value.GetType();
             if (t.IsEnum) return new JValue(value.ToString());
             // Unity vector/color structs trip Newtonsoft's reflection serializer (Vector3.normalized
@@ -567,7 +579,9 @@ namespace UnityCliBridge.Handlers
         private static object ApplyCore(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
-            if (string.IsNullOrEmpty(parameters?["assetPath"]?.ToString()))
+            // create_subgraph_asset is the only op whose target is its OWN new path; all others
+            // mutate an existing parent graph at assetPath, so guard that here.
+            if (op != "create_subgraph_asset" && string.IsNullOrEmpty(parameters?["assetPath"]?.ToString()))
                 return new { error = "assetPath is required" };
             switch (op)
             {
@@ -581,8 +595,9 @@ namespace UnityCliBridge.Handlers
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
                 case "set_instancing": return SetInstancing(parameters);
+                case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset" };
             }
         }
 
@@ -733,11 +748,26 @@ namespace UnityCliBridge.Handlers
                     $"Setting '{settingName}' not found on block '{block.GetType().Name}'. Use vfx_describe_graph to list settings.");
 
             object converted;
-            try { converted = valueToken.ToObject(field.FieldType); }
-            catch (Exception e)
+            // Object-reference fields (e.g. VFXSubgraphBlock.m_Subgraph) accept an asset path string:
+            // load via AssetDatabase rather than asking Newtonsoft to deserialize a ScriptableObject.
+            if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
             {
-                throw new Exception(
-                    $"Cannot convert value to {field.FieldType.Name} for setting '{settingName}': {e.Message}");
+                var refPath = valueToken.ToString();
+                converted = string.IsNullOrEmpty(refPath)
+                    ? null
+                    : AssetDatabase.LoadAssetAtPath(refPath, field.FieldType);
+                if (!string.IsNullOrEmpty(refPath) && converted == null)
+                    throw new Exception(
+                        $"No {field.FieldType.Name} asset at path '{refPath}' for setting '{settingName}'.");
+            }
+            else
+            {
+                try { converted = valueToken.ToObject(field.FieldType); }
+                catch (Exception e)
+                {
+                    throw new Exception(
+                        $"Cannot convert value to {field.FieldType.Name} for setting '{settingName}': {e.Message}");
+                }
             }
 
             Call(block, ModelType, "SetSettingValue", settingName, converted);
@@ -1201,6 +1231,62 @@ namespace UnityCliBridge.Handlers
                 ["mode"] = appliedMode,
                 ["bounds"] = appliedBounds,
                 ["padding"] = appliedPadding
+            };
+        }
+
+        /// <summary>
+        /// Copy a default subgraph template from the VFX package into the target path. Creates a
+        /// stand-alone .vfxblock or .vfxoperator asset; the caller then references it from a parent
+        /// graph via add_block / add_operator + set_block_setting m_Subgraph.
+        /// (System subgraph = a regular .vfx; defer to Pass-2.)
+        /// </summary>
+        private static object CreateSubgraphAsset(JObject parameters)
+        {
+            var subgraphPath = parameters?["subgraphPath"]?.ToString();
+            if (string.IsNullOrEmpty(subgraphPath))
+                return new { error = "subgraphPath is required (target .vfxblock or .vfxoperator path)" };
+            var kind = parameters?["kind"]?.ToString()?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(kind))
+                return new { error = "kind is required (block or operator)" };
+
+            string templatePath;
+            string expectedExt;
+            switch (kind)
+            {
+                case "block":
+                    templatePath = "Packages/com.unity.visualeffectgraph/Editor/Templates/DefaultSubgraphBlock.vfxblock";
+                    expectedExt = ".vfxblock";
+                    break;
+                case "operator":
+                    templatePath = "Packages/com.unity.visualeffectgraph/Editor/Templates/DefaultSubgraphOperator.vfxoperator";
+                    expectedExt = ".vfxoperator";
+                    break;
+                default:
+                    return new { error = $"Unknown kind '{kind}'. Supported: block, operator." };
+            }
+            if (!subgraphPath.EndsWith(expectedExt, StringComparison.OrdinalIgnoreCase))
+                return new { error = $"subgraphPath must end with '{expectedExt}' for kind '{kind}'." };
+
+            var template = AssetDatabase.LoadMainAssetAtPath(templatePath);
+            if (template == null)
+                throw new Exception($"Default subgraph template not found at: {templatePath}");
+
+            // Make sure the parent folder exists. AssetDatabase.CopyAsset won't create folders.
+            var parentDir = System.IO.Path.GetDirectoryName(subgraphPath)?.Replace('\\', '/');
+            if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
+                throw new Exception($"Parent folder does not exist: {parentDir}");
+
+            if (!AssetDatabase.CopyAsset(templatePath, subgraphPath))
+                throw new Exception($"Failed to copy template '{templatePath}' to '{subgraphPath}'.");
+            AssetDatabase.ImportAsset(subgraphPath, ImportAssetOptions.ForceUpdate);
+
+            var created = AssetDatabase.LoadMainAssetAtPath(subgraphPath);
+            return new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = subgraphPath,
+                ["kind"] = kind,
+                ["assetType"] = created?.GetType().Name
             };
         }
 

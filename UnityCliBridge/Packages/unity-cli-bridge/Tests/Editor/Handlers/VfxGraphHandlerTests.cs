@@ -183,6 +183,37 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_CreateSubgraph_WithoutSubgraphPath_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["kind"] = "block"
+            }), "subgraphPath is required");
+        }
+
+        [Test]
+        public void Apply_CreateSubgraph_WithoutKind_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = "Assets/Foo.vfxblock"
+            }), "kind is required");
+        }
+
+        [Test]
+        public void Apply_CreateSubgraph_WithMismatchedExtension_ReturnsDescriptiveError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = "Assets/Foo.vfxoperator",
+                ["kind"] = "block"
+            }), "subgraphPath must end with");
+        }
+
+        [Test]
         public void Apply_SetInstancing_WithoutAnyArgs_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -607,6 +638,53 @@ namespace UnityCliBridge.Tests
             var blockingErrors = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blockingErrors.Count,
                 $"custom HLSL block should not register Error-tier issues; got: {string.Join(", ", blockingErrors.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ApplySubgraphBlock_CreatesAssetAndReferencesItFromParent()
+        {
+            string copy = CopyFixture("subgraph");
+            string subPath = $"{TempFolder}/Sub.vfxblock";
+
+            JObject created = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = subPath,
+                ["kind"] = "block"
+            }));
+            Assert.AreEqual("VisualEffectSubgraphBlock", created.Value<string>("assetType"));
+            Assert.IsTrue(System.IO.File.Exists(subPath),
+                $"subgraph asset file should exist on disk: {subPath}");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockName"] = "Empty Subgraph Block"
+            });
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0,
+                ["setting"] = "m_Subgraph",
+                ["value"] = subPath
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            JToken update = FindContext(after, "Update");
+            var blocks = (JArray)update["blocks"];
+            Assert.AreEqual(1, blocks.Count);
+            Assert.AreEqual("VFXSubgraphBlock", blocks[0].Value<string>("type"));
+            JToken subRef = blocks[0]["settings"]?["m_Subgraph"];
+            Assert.IsNotNull(subRef, "m_Subgraph should be reported in block settings");
+            Assert.AreEqual("VisualEffectSubgraphBlock", subRef.Value<string>("type"));
+            Assert.AreEqual(subPath, subRef.Value<string>("assetPath"),
+                "m_Subgraph.assetPath should resolve to the created subgraph asset");
         }
 
         [Test]

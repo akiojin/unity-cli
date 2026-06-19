@@ -215,7 +215,7 @@ fn tool_description(name: &str) -> &'static str {
             "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
         }
         "vfx_apply" => {
-            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing)"
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset)"
         }
         "vfx_runtime" => {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
@@ -2420,8 +2420,12 @@ fn tool_params_schema(name: &str) -> Value {
                 ("colorTheme", integer_schema()),
                 ("textSize", string_schema()),
                 ("capacity", integer_schema()),
+                ("subgraphPath", string_schema()),
+                ("kind", string_schema()),
             ],
-            &["op", "assetPath"],
+            // assetPath required for every op except create_subgraph_asset (whose target is its own
+            // new subgraphPath). Per-op validation lives in the handler.
+            &["op"],
             false,
         ),
         "vfx_runtime" => object_schema(
@@ -2598,12 +2602,13 @@ mod tests {
     }
 
     #[test]
-    fn vfx_apply_is_mutating_and_requires_op_and_asset_path() {
+    fn vfx_apply_is_mutating_and_requires_op() {
         let spec = get_tool_spec("vfx_apply").expect("vfx_apply must exist");
         assert!(spec.mutating);
         assert_eq!(spec.executor, ToolExecutor::Remote);
         assert_eq!(spec.params_schema["additionalProperties"], false);
-        assert_eq!(spec.params_schema["required"], json!(["op", "assetPath"]));
+        // assetPath is per-op (every op except create_subgraph_asset needs it; handler enforces).
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
     }
 
     #[test]

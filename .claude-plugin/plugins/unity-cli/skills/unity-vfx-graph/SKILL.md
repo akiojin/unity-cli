@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.10.0
+  version: 0.11.0
   category: assets
   triggers:
     - vfx
@@ -59,6 +59,9 @@ unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basi
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Custom HLSL"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_HLSLCode","value":"void DoIt(inout VFXAttributes a, in float k){a.position *= k;}"}'
+unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MySub.vfxblock","kind":"block"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Empty Subgraph Block"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MySub.vfxblock"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -80,6 +83,13 @@ and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[
 asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
 optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
+
+Subgraph: `create_subgraph_asset` copies a default Block or Operator subgraph template into a target
+path (`subgraphPath` + `kind: "block"|"operator"`); the parent graph references it by adding the
+matching library node (`add_block "Empty Subgraph Block"` / `add_operator "Empty Subgraph Operator"`)
+and then writing the asset path into the `m_Subgraph` setting via `set_block_setting`. The
+`set_block_setting` op auto-detects `UnityEngine.Object`-derived fields and loads the value as an asset
+path via `AssetDatabase`. Describe surfaces object references as `{type, name, assetPath}`.
 
 Custom HLSL needs no dedicated op: the Custom HLSL block (descriptor `"Custom HLSL"`, category `HLSL`)
 and Custom HLSL operator (category `Operator/HLSL`) are discoverable via `vfx_list_library` and instantiate
@@ -126,6 +136,7 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 - "Drop a sticky note on the graph titled 'TODO' explaining the burst plan."
 - "Disable instancing on this VFX asset so each VisualEffect runs as an individual draw."
 - "Add a Custom HLSL block to the Update context and inline a function that scales position by a float."
+- "Create a Block subgraph asset next to the main graph and reference it from an Empty Subgraph Block in Update."
 
 ## References
 
