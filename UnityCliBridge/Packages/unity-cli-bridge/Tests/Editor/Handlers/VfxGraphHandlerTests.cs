@@ -19,8 +19,6 @@ namespace UnityCliBridge.Tests
     public class VfxGraphHandlerTests
     {
         // ---- Contract tests (no VFX package required) ----------------------
-        // Handlers report validation failures as a { error } result (the bridge's
-        // handler convention), not by throwing, so assert on the error field.
 
         private static void AssertError(object result, string expectedSubstring)
         {

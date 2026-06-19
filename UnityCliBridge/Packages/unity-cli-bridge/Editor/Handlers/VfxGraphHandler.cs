@@ -16,8 +16,6 @@ namespace UnityCliBridge.Handlers
     /// plus runtime control of a VisualEffect via its public UnityEngine.VFX API.
     /// Commands: vfx_describe_graph (Tier-1 read-back oracle), vfx_list_library
     /// (discovery), vfx_apply (authoring mutator), vfx_runtime (runtime control).
-    /// Public entry points catch and return { error } to match the bridge's handler
-    /// convention rather than throwing into the host's INTERNAL_ERROR envelope.
     /// </summary>
     public static class VfxGraphHandler
     {
@@ -222,7 +220,7 @@ namespace UnityCliBridge.Handlers
             catch { return null; }
         }
 
-        /// <summary>Log an error and return it as a { error } result (the bridge's handler convention).</summary>
+        /// <summary>Log an error and return it as a { error } result.</summary>
         private static object Fail(string command, Exception ex)
         {
             BridgeLogger.LogError("VfxGraphHandler", $"Error in {command}: {ex.Message}");
@@ -981,41 +979,41 @@ namespace UnityCliBridge.Handlers
             switch (kind)
             {
                 case "operator":
-                {
-                    int idx = node["operatorIndex"]?.ToObject<int>() ?? 0;
-                    var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
-                    if (idx < 0 || idx >= ops.Count)
-                        throw new Exception($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
-                    return ops[idx];
-                }
+                    {
+                        int idx = node["operatorIndex"]?.ToObject<int>() ?? 0;
+                        var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+                        if (idx < 0 || idx >= ops.Count)
+                            throw new Exception($"{label} operatorIndex {idx} out of range; graph has {ops.Count} operator(s)");
+                        return ops[idx];
+                    }
                 case "parameter":
-                {
-                    int idx = node["parameterIndex"]?.ToObject<int>() ?? 0;
-                    var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
-                    if (idx < 0 || idx >= ps.Count)
-                        throw new Exception($"{label} parameterIndex {idx} out of range; graph has {ps.Count} parameter(s)");
-                    return ps[idx];
-                }
+                    {
+                        int idx = node["parameterIndex"]?.ToObject<int>() ?? 0;
+                        var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+                        if (idx < 0 || idx >= ps.Count)
+                            throw new Exception($"{label} parameterIndex {idx} out of range; graph has {ps.Count} parameter(s)");
+                        return ps[idx];
+                    }
                 case "context":
-                {
-                    var ct = node["contextType"]?.ToString();
-                    var ctx = FindContext(graph, ct);
-                    if (ctx == null)
-                        throw new Exception($"{label} context of type '{ct}' not found");
-                    return ctx;
-                }
+                    {
+                        var ct = node["contextType"]?.ToString();
+                        var ctx = FindContext(graph, ct);
+                        if (ctx == null)
+                            throw new Exception($"{label} context of type '{ct}' not found");
+                        return ctx;
+                    }
                 case "block":
-                {
-                    var ct = node["contextType"]?.ToString();
-                    var ctx = FindContext(graph, ct);
-                    if (ctx == null)
-                        throw new Exception($"{label} context of type '{ct}' not found");
-                    int bi = node["blockIndex"]?.ToObject<int>() ?? 0;
-                    var blocks = Children(ctx).ToList();
-                    if (bi < 0 || bi >= blocks.Count)
-                        throw new Exception($"{label} blockIndex {bi} out of range; context '{ct}' has {blocks.Count} block(s)");
-                    return blocks[bi];
-                }
+                    {
+                        var ct = node["contextType"]?.ToString();
+                        var ctx = FindContext(graph, ct);
+                        if (ctx == null)
+                            throw new Exception($"{label} context of type '{ct}' not found");
+                        int bi = node["blockIndex"]?.ToObject<int>() ?? 0;
+                        var blocks = Children(ctx).ToList();
+                        if (bi < 0 || bi >= blocks.Count)
+                            throw new Exception($"{label} blockIndex {bi} out of range; context '{ct}' has {blocks.Count} block(s)");
+                        return blocks[bi];
+                    }
                 default:
                     throw new Exception($"{label} has unknown node kind '{kind}'. Supported: operator, parameter, context, block");
             }
@@ -1471,7 +1469,8 @@ namespace UnityCliBridge.Handlers
             {
                 case 2: return new Vector2(arr[0].ToObject<float>(), arr[1].ToObject<float>());
                 case 3: return new Vector3(arr[0].ToObject<float>(), arr[1].ToObject<float>(), arr[2].ToObject<float>());
-                default: return new Vector4(arr[0].ToObject<float>(), arr[1].ToObject<float>(),
+                default:
+                    return new Vector4(arr[0].ToObject<float>(), arr[1].ToObject<float>(),
                     arr[2].ToObject<float>(), arr[3].ToObject<float>());
             }
         }
@@ -1504,7 +1503,9 @@ namespace UnityCliBridge.Handlers
                 Call(comp, VisualEffectType, "Reinit");
                 return new JObject
                 {
-                    ["op"] = op, ["gameObject"] = gameObject, ["assetPath"] = assetPath,
+                    ["op"] = op,
+                    ["gameObject"] = gameObject,
+                    ["assetPath"] = assetPath,
                     ["asset"] = (asset as UnityEngine.Object)?.name
                 };
             }
@@ -1534,12 +1535,12 @@ namespace UnityCliBridge.Handlers
                     Call(comp2, VisualEffectType, "SetVector4", name, ToVector(valueToken, 4));
                     break;
                 case "send_event":
-                {
-                    var eventName = parameters?["eventName"]?.ToString();
-                    if (string.IsNullOrEmpty(eventName)) return new { error = "eventName is required" };
-                    Call(comp2, VisualEffectType, "SendEvent", eventName);
-                    return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
-                }
+                    {
+                        var eventName = parameters?["eventName"]?.ToString();
+                        if (string.IsNullOrEmpty(eventName)) return new { error = "eventName is required" };
+                        Call(comp2, VisualEffectType, "SendEvent", eventName);
+                        return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
+                    }
                 case "reinit":
                     Call(comp2, VisualEffectType, "Reinit");
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject };
