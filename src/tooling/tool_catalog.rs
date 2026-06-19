@@ -2375,9 +2375,14 @@ fn tool_params_schema(name: &str) -> Value {
             &["query"],
             false,
         ),
-        "vfx_describe_graph" => {
-            object_schema(&[("assetPath", string_schema())], &["assetPath"], false)
-        }
+        "vfx_describe_graph" => object_schema(
+            &[
+                ("assetPath", string_schema()),
+                ("includeErrors", boolean_schema()),
+            ],
+            &["assetPath"],
+            false,
+        ),
         "vfx_list_library" => object_schema(
             &[("filter", string_schema()), ("kind", string_schema())],
             &[],

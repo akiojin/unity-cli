@@ -582,7 +582,7 @@ namespace UnityCliBridge.Tests
             });
 
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
-                new JObject { ["assetPath"] = copy }));
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
             JToken update = FindContext(after, "Update");
             var blocks = (JArray)update["blocks"];
             Assert.AreEqual(1, blocks.Count);
@@ -591,6 +591,22 @@ namespace UnityCliBridge.Tests
             Assert.IsNotNull(storedCode, "describe should now report m_HLSLCode (a ReadOnly setting)");
             Assert.IsTrue(storedCode.Contains("MyHLSL"),
                 $"m_HLSLCode should contain the inline source; got: {storedCode}");
+
+            // Slot resync: the default block exposes _offset + _speedFactor; our custom MyHLSL
+            // declares a single `scale` input, so HLSLParser should reshape the block's input
+            // slots to a single `_scale` entry.
+            var inputSlots = (JArray)blocks[0]["inputSlots"];
+            Assert.AreEqual(1, inputSlots.Count,
+                "input slots should resync to match the custom signature");
+            Assert.AreEqual("_scale", inputSlots[0].Value<string>("name"),
+                "the single input slot should derive from the custom function's `scale` param");
+
+            // Tier-2 oracle: no validator errors registered against any model after the edit.
+            var errors = (JArray)after["errors"];
+            Assert.IsNotNull(errors, "includeErrors=true should populate the errors array");
+            var blockingErrors = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blockingErrors.Count,
+                $"custom HLSL block should not register Error-tier issues; got: {string.Join(", ", blockingErrors.Select(e => (string)e["description"]))}");
         }
 
         [Test]

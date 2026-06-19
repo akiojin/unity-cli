@@ -49,6 +49,8 @@ namespace UnityCliBridge.Handlers
         private static Type VisualEffectAssetType => T("UnityEngine.VFX.VisualEffectAsset");
         private static Type UIInfoType => T("UnityEditor.VFX.VFXUI+UIInfo");
         private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
+        private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
+        private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -408,6 +410,11 @@ namespace UnityCliBridge.Handlers
             try { instancing = InstancingJson(Prop(graph, "visualEffectResource")); }
             catch { /* resource unavailable — leave null */ }
 
+            // Opt-in Tier-2 oracle: collect per-model validation errors. Off by default to
+            // keep describe cheap; tests that need to assert compile-clean pass includeErrors=true.
+            var includeErrors = parameters?["includeErrors"]?.ToObject<bool>() ?? false;
+            JArray errors = includeErrors ? CollectErrors(graph) : null;
+
             return new JObject
             {
                 ["assetPath"] = assetPath,
@@ -419,8 +426,69 @@ namespace UnityCliBridge.Handlers
                 ["parameters"] = paramsJson,
                 ["stickyNoteCount"] = stickyNotes.Count,
                 ["stickyNotes"] = stickyNotes,
-                ["instancing"] = instancing
+                ["instancing"] = instancing,
+                ["errors"] = errors
             };
+        }
+
+        /// <summary>
+        /// Walk all VFXModels in the graph and ask each to register validation errors into a fresh
+        /// VFXErrorReporter, then dump the reporter's m_Errors dictionary as JSON. Tier-2 oracle:
+        /// catches HLSL parse failures and similar model-level validation issues that bad ops would
+        /// leave invisible to a structural-only describe.
+        /// </summary>
+        private static JArray CollectErrors(object graph)
+        {
+            var arr = new JArray();
+            try
+            {
+                var invalidateOrigin = Enum.Parse(ErrorOriginType, "Invalidate");
+                var reporter = Activator.CreateInstance(ErrorReporterType, invalidateOrigin);
+
+                void Visit(object model)
+                {
+                    if (model == null) return;
+                    try { Call(model, ModelType, "GenerateErrors", reporter); }
+                    catch { /* models that fail validation hard are tolerated */ }
+                }
+
+                Visit(graph);
+                foreach (var child in Children(graph))
+                {
+                    Visit(child);
+                    if (ContextType.IsInstanceOfType(child))
+                        foreach (var block in Children(child))
+                            Visit(block);
+                }
+
+                var errorsField = ErrorReporterType.GetField("m_Errors", AllInstance);
+                var dict = errorsField?.GetValue(reporter) as IDictionary;
+                if (dict == null) return arr;
+                foreach (DictionaryEntry kv in dict)
+                {
+                    var modelName = (kv.Key as UnityEngine.Object)?.name
+                                    ?? kv.Key?.GetType().Name;
+                    var modelType = kv.Key?.GetType().Name;
+                    var list = kv.Value as IEnumerable;
+                    if (list == null) continue;
+                    foreach (var rep in list)
+                    {
+                        arr.Add(new JObject
+                        {
+                            ["model"] = modelName,
+                            ["modelType"] = modelType,
+                            ["type"] = Prop(rep, "type")?.ToString(),
+                            ["error"] = Prop(rep, "error") as string,
+                            ["description"] = Prop(rep, "description") as string
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                arr.Add(new JObject { ["error"] = $"error-collector failed: {ex.Message}" });
+            }
+            return arr;
         }
 
         /// <summary>Read the graph's VFXUI sticky-note array as JSON (title/contents/position/theme).</summary>
