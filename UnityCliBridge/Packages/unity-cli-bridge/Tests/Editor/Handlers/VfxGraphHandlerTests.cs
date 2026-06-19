@@ -150,6 +150,30 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetOperatorSetting_WithoutSetting_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["operatorIndex"] = 0,
+                ["value"] = "x"
+            }), "setting is required");
+        }
+
+        [Test]
+        public void Apply_SetOperatorSetting_WithoutValue_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["operatorIndex"] = 0,
+                ["setting"] = "m_OperatorName"
+            }), "value is required");
+        }
+
+        [Test]
         public void Apply_UnlinkSlots_WithoutTarget_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1271,6 +1295,53 @@ namespace UnityCliBridge.Tests
                 .Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, errors.Count,
                 "graph should recompile with zero Error-tier entries after unlink_slots");
+        }
+
+        [Test]
+        public void ApplySetOperatorSetting_ChangesCustomHlslOperatorAndReshapesSlots()
+        {
+            string copy = CopyFixture("opsetting");
+            JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator",
+                ["assetPath"] = copy,
+                ["operatorName"] = "Custom HLSL"
+            }));
+            Assert.AreEqual("CustomHLSL", added.Value<string>("addedOperator"));
+
+            // String setting round-trips through describe (operators[].settings is the new oracle).
+            JObject named = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = copy,
+                ["operatorIndex"] = 0,
+                ["setting"] = "m_OperatorName",
+                ["value"] = "MyScale"
+            }));
+            Assert.AreEqual("MyScale", named.Value<string>("value"));
+
+            // Writing the HLSL source resyncs the operator's input ports to the function signature.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = copy,
+                ["operatorIndex"] = 0,
+                ["setting"] = "m_HLSLCode",
+                ["value"] = "float MyScale(in float k){return k*2.0f;}"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            JToken op = ((JArray)after["operators"])[0];
+            Assert.AreEqual("MyScale", op["settings"]?["m_OperatorName"]?.ToString(),
+                "operator name setting should round-trip through describe");
+            var inputNames = ((JArray)op["inputSlots"]).Select(s => (string)s["name"]).ToList();
+            CollectionAssert.AreEqual(new[] { "k" }, inputNames,
+                "the single-argument HLSL function should reshape the input slots to one 'k' port");
+            var errors = ((JArray)after["errors"])
+                .Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count,
+                "graph should recompile with zero Error-tier entries after set_operator_setting");
         }
 
         private static string CopyFixture(string suffix)

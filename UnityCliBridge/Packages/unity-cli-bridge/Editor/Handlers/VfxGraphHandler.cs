@@ -398,6 +398,7 @@ namespace UnityCliBridge.Handlers
                     ["index"] = i,
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
+                    ["settings"] = ModelSettings(op),
                     ["inputSlots"] = SlotsJson(op, true),
                     ["outputSlots"] = SlotsJson(op, false)
                 });
@@ -633,6 +634,7 @@ namespace UnityCliBridge.Handlers
             {
                 case "add_block": return AddBlock(parameters);
                 case "set_block_setting": return SetBlockSetting(parameters);
+                case "set_operator_setting": return SetOperatorSetting(parameters);
                 case "add_context": return AddContext(parameters);
                 case "add_operator": return AddOperator(parameters);
                 case "add_parameter": return AddParameter(parameters);
@@ -646,7 +648,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -767,6 +769,77 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        /// <summary>
+        /// Convert a JSON value to a [VFXSetting] field's type. Object-reference fields (e.g.
+        /// VFXSubgraphBlock.m_Subgraph / VFXSubgraphOperator.m_Subgraph) accept an asset-path string,
+        /// loaded via AssetDatabase rather than deserialized by Newtonsoft. Shared by
+        /// set_block_setting and set_operator_setting.
+        /// </summary>
+        private static object CoerceSettingValue(FieldInfo field, JToken valueToken, string settingName)
+        {
+            if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
+            {
+                var refPath = valueToken.ToString();
+                if (string.IsNullOrEmpty(refPath)) return null;
+                var loaded = AssetDatabase.LoadAssetAtPath(refPath, field.FieldType);
+                if (loaded == null)
+                    throw new Exception(
+                        $"No {field.FieldType.Name} asset at path '{refPath}' for setting '{settingName}'.");
+                return loaded;
+            }
+            try { return valueToken.ToObject(field.FieldType); }
+            catch (Exception e)
+            {
+                throw new Exception(
+                    $"Cannot convert value to {field.FieldType.Name} for setting '{settingName}': {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Write a [VFXSetting] field on a graph operator (symmetrical to set_block_setting). Some
+        /// settings add/remove ports or change types on write (the model resyncs its slots), so the
+        /// caller should re-describe afterwards. Unblocks Operator subgraph references
+        /// (m_Subgraph) and Custom HLSL operator source (m_HLSLCode).
+        /// </summary>
+        private static object SetOperatorSetting(JObject parameters)
+        {
+            var settingName = parameters?["setting"]?.ToString();
+            if (string.IsNullOrEmpty(settingName))
+                return new { error = "setting is required" };
+            var valueToken = parameters?["value"];
+            if (valueToken == null || valueToken.Type == JTokenType.Null)
+                return new { error = "value is required" };
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            if (operatorIndex < 0 || operatorIndex >= ops.Count)
+                throw new Exception(
+                    $"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
+            var op = ops[operatorIndex];
+
+            var field = FindField(op.GetType(), settingName);
+            if (field == null)
+                throw new Exception(
+                    $"Setting '{settingName}' not found on operator '{op.GetType().Name}'. Use vfx_describe_graph to list settings.");
+
+            object converted = CoerceSettingValue(field, valueToken, settingName);
+            Call(op, ModelType, "SetSettingValue", settingName, converted);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_operator_setting",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["setting"] = settingName,
+                ["value"] = ToJToken(converted)
+            };
+        }
+
         private static object SetBlockSetting(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -796,29 +869,7 @@ namespace UnityCliBridge.Handlers
                 throw new Exception(
                     $"Setting '{settingName}' not found on block '{block.GetType().Name}'. Use vfx_describe_graph to list settings.");
 
-            object converted;
-            // Object-reference fields (e.g. VFXSubgraphBlock.m_Subgraph) accept an asset path string:
-            // load via AssetDatabase rather than asking Newtonsoft to deserialize a ScriptableObject.
-            if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
-            {
-                var refPath = valueToken.ToString();
-                converted = string.IsNullOrEmpty(refPath)
-                    ? null
-                    : AssetDatabase.LoadAssetAtPath(refPath, field.FieldType);
-                if (!string.IsNullOrEmpty(refPath) && converted == null)
-                    throw new Exception(
-                        $"No {field.FieldType.Name} asset at path '{refPath}' for setting '{settingName}'.");
-            }
-            else
-            {
-                try { converted = valueToken.ToObject(field.FieldType); }
-                catch (Exception e)
-                {
-                    throw new Exception(
-                        $"Cannot convert value to {field.FieldType.Name} for setting '{settingName}': {e.Message}");
-                }
-            }
-
+            object converted = CoerceSettingValue(field, valueToken, settingName);
             Call(block, ModelType, "SetSettingValue", settingName, converted);
             Persist(graph, assetPath);
 
