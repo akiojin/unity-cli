@@ -215,7 +215,7 @@ fn tool_description(name: &str) -> &'static str {
             "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
         }
         "vfx_apply" => {
-            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset)"
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template)"
         }
         "vfx_runtime" => {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state)"
@@ -2422,6 +2422,8 @@ fn tool_params_schema(name: &str) -> Value {
                 ("capacity", integer_schema()),
                 ("subgraphPath", string_schema()),
                 ("kind", string_schema()),
+                ("targetPath", string_schema()),
+                ("template", string_schema()),
             ],
             // assetPath required for every op except create_subgraph_asset (whose target is its own
             // new subgraphPath). Per-op validation lives in the handler.

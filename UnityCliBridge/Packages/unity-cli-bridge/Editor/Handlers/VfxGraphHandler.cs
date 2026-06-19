@@ -49,6 +49,7 @@ namespace UnityCliBridge.Handlers
         private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
         private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
         private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
+        private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -551,10 +552,42 @@ namespace UnityCliBridge.Handlers
             catch (Exception ex) { return Fail("vfx_list_library", ex); }
         }
 
+        /// <summary>List the built-in template .vfx files shipped with the VFX package.</summary>
+        private static object ListTemplates(string filter)
+        {
+            var dir = AssetEditorUtilityType
+                .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
+            var items = new JArray();
+            if (string.IsNullOrEmpty(dir) || !System.IO.Directory.Exists(dir))
+                return new JObject { ["kind"] = "template", ["count"] = 0, ["items"] = items, ["templateDir"] = dir };
+
+            foreach (var file in System.IO.Directory.GetFiles(dir, "*.vfx"))
+            {
+                var name = System.IO.Path.GetFileNameWithoutExtension(file);
+                if (!string.IsNullOrEmpty(filter) &&
+                    name.IndexOf(filter, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+                items.Add(new JObject
+                {
+                    ["name"] = name,
+                    ["category"] = "Default VFX Graph Templates",
+                    ["path"] = file.Replace('\\', '/')
+                });
+            }
+            return new JObject
+            {
+                ["kind"] = "template",
+                ["count"] = items.Count,
+                ["items"] = items,
+                ["templateDir"] = dir.Replace('\\', '/')
+            };
+        }
+
         private static object ListLibraryCore(JObject parameters)
         {
             var filter = parameters?["filter"]?.ToString();
             var kind = parameters?["kind"]?.ToString()?.ToLowerInvariant() ?? "block";
+            if (kind == "template") return ListTemplates(filter);
             string discovery;
             switch (kind)
             {
@@ -562,7 +595,7 @@ namespace UnityCliBridge.Handlers
                 case "context": discovery = "GetContexts"; break;
                 case "block": discovery = "GetBlocks"; break;
                 case "parameter": discovery = "GetParameters"; break;
-                default: return new { error = $"Unknown kind '{kind}'. Supported: block, operator, context, parameter" };
+                default: return new { error = $"Unknown kind '{kind}'. Supported: block, operator, context, parameter, template" };
             }
             var descriptors = Call(null, LibraryType, discovery) as IEnumerable;
             var items = new JArray();
@@ -589,9 +622,10 @@ namespace UnityCliBridge.Handlers
         private static object ApplyCore(JObject parameters)
         {
             var op = parameters?["op"]?.ToString();
-            // create_subgraph_asset is the only op whose target is its OWN new path; all others
-            // mutate an existing parent graph at assetPath, so guard that here.
-            if (op != "create_subgraph_asset" && string.IsNullOrEmpty(parameters?["assetPath"]?.ToString()))
+            // Asset-creation ops target their OWN new path (subgraphPath/targetPath), not an
+            // existing parent graph at assetPath, so they're exempt from the assetPath guard.
+            if (op != "create_subgraph_asset" && op != "create_from_template"
+                && string.IsNullOrEmpty(parameters?["assetPath"]?.ToString()))
                 return new { error = "assetPath is required" };
             switch (op)
             {
@@ -606,8 +640,9 @@ namespace UnityCliBridge.Handlers
                 case "add_sticky_note": return AddStickyNote(parameters);
                 case "set_instancing": return SetInstancing(parameters);
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
+                case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1296,6 +1331,59 @@ namespace UnityCliBridge.Handlers
                 ["op"] = "create_subgraph_asset",
                 ["subgraphPath"] = subgraphPath,
                 ["kind"] = kind,
+                ["assetType"] = created?.GetType().Name
+            };
+        }
+
+        /// <summary>
+        /// Instantiate a new .vfx asset from a built-in template via
+        /// VisualEffectAssetEditorUtility.CreateTemplateAsset (copies the template's serialized
+        /// graph to the target path + imports). `template` is a template name (filename stem in
+        /// the package template dir) or an explicit path to a .vfx template.
+        /// </summary>
+        private static object CreateFromTemplate(JObject parameters)
+        {
+            var targetPath = parameters?["targetPath"]?.ToString();
+            if (string.IsNullOrEmpty(targetPath))
+                return new { error = "targetPath is required (the new .vfx asset path)" };
+            if (!targetPath.EndsWith(".vfx", StringComparison.OrdinalIgnoreCase))
+                return new { error = "targetPath must end with '.vfx'" };
+            var template = parameters?["template"]?.ToString();
+            if (string.IsNullOrEmpty(template))
+                return new { error = "template is required (a template name or path to a .vfx template)" };
+
+            // Resolve template → an absolute/asset path. Accept an explicit path, else a name
+            // resolved against the package template dir.
+            var templateDir = AssetEditorUtilityType
+                .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
+            string templateFile;
+            if (template.EndsWith(".vfx", StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(template))
+                templateFile = template;
+            else
+            {
+                if (string.IsNullOrEmpty(templateDir))
+                    throw new Exception("Could not resolve the VFX package template directory.");
+                templateFile = System.IO.Path.Combine(templateDir, template + ".vfx");
+                if (!System.IO.File.Exists(templateFile))
+                    throw new Exception(
+                        $"No template '{template}' in {templateDir}. Use vfx_list_library kind 'template' to discover names.");
+            }
+
+            var parentDir = System.IO.Path.GetDirectoryName(targetPath)?.Replace('\\', '/');
+            if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
+                throw new Exception($"Parent folder does not exist: {parentDir}");
+
+            // CreateTemplateAsset(pathName, templateFilePath) copies + imports.
+            Call(null, AssetEditorUtilityType, "CreateTemplateAsset", targetPath, templateFile);
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+
+            var created = AssetDatabase.LoadMainAssetAtPath(targetPath);
+            return new JObject
+            {
+                ["op"] = "create_from_template",
+                ["targetPath"] = targetPath,
+                ["template"] = template,
+                ["templateFile"] = templateFile.Replace('\\', '/'),
                 ["assetType"] = created?.GetType().Name
             };
         }

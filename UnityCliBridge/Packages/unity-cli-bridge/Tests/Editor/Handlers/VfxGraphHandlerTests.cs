@@ -212,6 +212,26 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_CreateFromTemplate_WithoutTargetPath_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_from_template",
+                ["template"] = "01_Minimal_System"
+            }), "targetPath is required");
+        }
+
+        [Test]
+        public void Apply_CreateFromTemplate_WithoutTemplate_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_from_template",
+                ["targetPath"] = "Assets/New.vfx"
+            }), "template is required");
+        }
+
+        [Test]
         public void Apply_SetInstancing_WithoutAnyArgs_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -764,6 +784,47 @@ namespace UnityCliBridge.Tests
             var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blocking.Count,
                 $"a from-scratch particle system should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ListLibrary_Templates_ReportsBuiltInVfxTemplates()
+        {
+            JObject result = ToJObject(VfxGraphHandler.ListLibrary(
+                new JObject { ["kind"] = "template" }));
+            Assert.AreEqual("template", result.Value<string>("kind"));
+            Assert.Greater(result.Value<int>("count"), 0,
+                "the VFX package ships built-in templates");
+            var names = ((JArray)result["items"]).Select(i => (string)i["name"]).ToList();
+            Assert.IsTrue(names.Any(n => n.Contains("Minimal")),
+                $"expected a Minimal-System template; got: {string.Join(", ", names)}");
+        }
+
+        [Test]
+        public void ApplyCreateFromTemplate_InstantiatesVfxAssetWithContexts()
+        {
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder(TempFolder);
+            string targetPath = $"{TempFolder}/FromTemplate.vfx";
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_from_template",
+                ["targetPath"] = targetPath,
+                ["template"] = "01_Minimal_System"
+            }));
+            Assert.AreEqual("VisualEffectAsset", result.Value<string>("assetType"));
+            Assert.IsTrue(System.IO.File.Exists(targetPath),
+                $"template-instantiated asset should exist on disk: {targetPath}");
+
+            // The instantiated asset is a real, describable VFX graph with contexts.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = targetPath, ["includeErrors"] = true }));
+            Assert.Greater(after.Value<int>("contextCount"), 0,
+                "the Minimal System template should contain contexts");
+            var errors = (JArray)after["errors"];
+            var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blocking.Count,
+                $"a template-instantiated asset should have no Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
         }
 
         [Test]

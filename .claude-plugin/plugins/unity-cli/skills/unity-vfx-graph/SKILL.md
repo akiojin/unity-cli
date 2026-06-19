@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.12.0
+  version: 0.13.0
   category: assets
   triggers:
     - vfx
@@ -62,6 +62,8 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MySub.vfxblock","kind":"block"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Empty Subgraph Block"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MySub.vfxblock"}'
+unity-cli raw vfx_list_library --json '{"kind":"template"}'
+unity-cli raw vfx_apply --json '{"op":"create_from_template","targetPath":"Assets/Basic Graphs/Burst.vfx","template":"03_Simple_Burst"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -83,6 +85,12 @@ and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[
 asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
 optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
+
+Templates: `vfx_list_library kind:"template"` enumerates the VFX package's built-in starter templates
+(`01_Minimal_System` … `06_Firework`) with their on-disk paths. `create_from_template`
+(`targetPath` = new `.vfx`, `template` = a template name or explicit `.vfx` path) instantiates a fresh
+graph by copying the template's serialized graph (`VisualEffectAssetEditorUtility.CreateTemplateAsset`)
+— the result is a real describable graph, not an empty asset.
 
 Systems: a full particle system is just the descriptor chain Init→Update→Output sharing one
 `VFXDataParticle`. Build a fresh system by `add_context "Initialize Particle"` +
@@ -111,7 +119,7 @@ re-parsed from the HLSL signature.
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
 (each with `exposedName`/`exposed`/`value`/`category`) — every slot carries `links` (resolved node
 address + slot index), so confirm changes by re-describing. Use `vfx_list_library` with `kind` (`block`
-default, `operator`, `context`, `parameter`) to discover descriptor names.
+default, `operator`, `context`, `parameter`, `template`) to discover descriptor/template names.
 
 To verify an exposed parameter at runtime, put the `.vfx` on a scene `VisualEffect` and drive it via
 `vfx_runtime` (the public `UnityEngine.VFX.VisualEffect` API; no play-mode required for the value
@@ -146,6 +154,7 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 - "Add a Custom HLSL block to the Update context and inline a function that scales position by a float."
 - "Create a Block subgraph asset next to the main graph and reference it from an Empty Subgraph Block in Update."
 - "Build a second particle system in this graph from scratch — Init→Update→Output — and confirm it's disjoint from the first."
+- "List the built-in VFX templates and create a new graph from the Simple Burst template."
 
 ## References
 
