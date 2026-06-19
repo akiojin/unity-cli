@@ -150,6 +150,27 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_RemoveBlock_WithoutContextType_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_block",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["blockIndex"] = 0
+            }), "contextType is required");
+        }
+
+        [Test]
+        public void Apply_RemoveContext_WithoutContextTypeOrIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_context",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "contextType (or index) is required");
+        }
+
+        [Test]
         public void Apply_SetOperatorSetting_WithoutSetting_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1342,6 +1363,116 @@ namespace UnityCliBridge.Tests
                 .Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, errors.Count,
                 "graph should recompile with zero Error-tier entries after set_operator_setting");
+        }
+
+        [Test]
+        public void ApplyRemoveBlock_RemovesBlockAndCleansLinks()
+        {
+            string copy = CopyFixture("removeblock");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Turbulence"
+            });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0
+            }));
+            Assert.AreEqual("Turbulence", result.Value<string>("removedBlock"));
+            Assert.AreEqual(0, result.Value<int>("remainingBlocks"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(0, ((JArray)FindContext(after, "Update")["blocks"]).Count);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyRemoveOperator_RemovesLinkedOperatorWithoutDanglingLinks()
+        {
+            string copy = CopyFixture("removeop");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 }
+            });
+
+            // Remove operator 1 (the link target); operator 0's output link must be cleaned up.
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_operator", ["assetPath"] = copy, ["operatorIndex"] = 1
+            }));
+            Assert.AreEqual(1, result.Value<int>("remainingOperators"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(1, after.Value<int>("operatorCount"));
+            Assert.AreEqual(0, ((JArray)((JArray)after["operators"])[0]["outputSlots"][0]["links"]).Count,
+                "the surviving operator's output should have no dangling link to the removed one");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyRemoveParameter_RemovesParameterFromGraph()
+        {
+            string copy = CopyFixture("removeparam");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Rate", ["type"] = "Float"
+            });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_parameter", ["assetPath"] = copy, ["parameterIndex"] = 0
+            }));
+            Assert.AreEqual(0, result.Value<int>("remainingParameters"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(0, ((JArray)after["parameters"]).Count);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyRemoveContext_RemovesOutputAndUnlinksFlow()
+        {
+            string copy = CopyFixture("removectx");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_context", ["assetPath"] = copy, ["contextType"] = "Output"
+            }));
+            Assert.AreEqual("Output", result.Value<string>("removedContextType"));
+            Assert.AreEqual(3, result.Value<int>("remainingContexts"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(3, after.Value<int>("contextCount"));
+            Assert.IsNull(FindContext(after, "Output"), "Output context should be gone");
+            // Update's downstream flow edge to the removed Output must be cleaned up.
+            Assert.AreEqual(0, ((JArray)FindContext(after, "Update")["outputs"]).Count,
+                "Update should have no dangling flow edge after its Output was removed");
+            AssertNoErrorTier(after);
+        }
+
+        private static void AssertNoErrorTier(JObject describeResult)
+        {
+            var errors = ((JArray)describeResult["errors"])
+                .Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count,
+                "graph should recompile with zero Error-tier entries");
         }
 
         private static string CopyFixture(string suffix)

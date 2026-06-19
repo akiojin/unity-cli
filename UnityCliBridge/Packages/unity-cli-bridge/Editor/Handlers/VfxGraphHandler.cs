@@ -641,6 +641,10 @@ namespace UnityCliBridge.Handlers
                 case "link_slots": return LinkSlots(parameters);
                 case "set_slot_value": return SetSlotValue(parameters);
                 case "unlink_slots": return UnlinkSlots(parameters);
+                case "remove_block": return RemoveBlock(parameters);
+                case "remove_operator": return RemoveOperator(parameters);
+                case "remove_parameter": return RemoveParameter(parameters);
+                case "remove_context": return RemoveContext(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
@@ -648,7 +652,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1338,6 +1342,161 @@ namespace UnityCliBridge.Handlers
                 },
                 ["linksRemoved"] = before - after,
                 ["remainingLinks"] = after
+            };
+        }
+
+        /// <summary>
+        /// Unlink every top-level input/output slot of a slot container (block/operator/parameter/
+        /// context). RemoveChild does NOT cascade-unlink a removed node's data slots, so callers must
+        /// clear them first to avoid dangling links in the nodes on the other end.
+        /// </summary>
+        private static void UnlinkContainerSlots(object container)
+        {
+            foreach (var dir in new[] { "inputSlots", "outputSlots" })
+            {
+                IEnumerable coll;
+                try { coll = Prop(container, dir) as IEnumerable; }
+                catch { continue; }
+                if (coll == null) continue;
+                foreach (var slot in coll.Cast<object>().ToList())
+                {
+                    try { Call(slot, SlotType, "UnlinkAll", true, true); }
+                    catch { /* slot may not be linkable; ignore */ }
+                }
+            }
+        }
+
+        private static object RemoveBlock(JObject parameters)
+        {
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType is required" };
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctx = FindContext(graph, wantContext);
+            if (ctx == null)
+                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+
+            var blocks = Children(ctx).ToList();
+            if (blockIndex < 0 || blockIndex >= blocks.Count)
+                throw new Exception(
+                    $"blockIndex {blockIndex} out of range; context '{wantContext}' has {blocks.Count} block(s)");
+            var block = blocks[blockIndex];
+            var removedType = block.GetType().Name;
+
+            UnlinkContainerSlots(block);
+            Call(ctx, ModelType, "RemoveChild", block, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_block",
+                ["assetPath"] = assetPath,
+                ["contextType"] = wantContext,
+                ["removedBlock"] = removedType,
+                ["remainingBlocks"] = Children(ctx).Count()
+            };
+        }
+
+        private static object RemoveOperator(JObject parameters)
+        {
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            if (operatorIndex < 0 || operatorIndex >= ops.Count)
+                throw new Exception(
+                    $"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
+            var op = ops[operatorIndex];
+            var removedType = op.GetType().Name;
+
+            UnlinkContainerSlots(op);
+            Call(graph, ModelType, "RemoveChild", op, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_operator",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["removedOperator"] = removedType,
+                ["remainingOperators"] = Children(graph).Count(c => OperatorType.IsInstanceOfType(c))
+            };
+        }
+
+        private static object RemoveParameter(JObject parameters)
+        {
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            if (parameterIndex < 0 || parameterIndex >= ps.Count)
+                throw new Exception(
+                    $"parameterIndex {parameterIndex} out of range; graph has {ps.Count} parameter(s)");
+            var param = ps[parameterIndex];
+            var removedName = ModelName(param);
+
+            UnlinkContainerSlots(param);
+            Call(graph, ModelType, "RemoveChild", param, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_parameter",
+                ["assetPath"] = assetPath,
+                ["parameterIndex"] = parameterIndex,
+                ["removedParameter"] = removedName,
+                ["remainingParameters"] = Children(graph).Count(c => ParameterType.IsInstanceOfType(c))
+            };
+        }
+
+        private static object RemoveContext(JObject parameters)
+        {
+            var idxTok = parameters?["index"];
+            bool hasIndex = idxTok != null && idxTok.Type != JTokenType.Null;
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (!hasIndex && string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType (or index) is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+
+            object ctx;
+            if (hasIndex)
+            {
+                int idx = idxTok.ToObject<int>();
+                if (idx < 0 || idx >= ctxList.Count)
+                    throw new Exception($"index {idx} out of range; graph has {ctxList.Count} context(s)");
+                ctx = ctxList[idx];
+            }
+            else
+            {
+                ctx = FindContext(graph, wantContext);
+                if (ctx == null)
+                    throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            }
+            var removedType = ctx.GetType().Name;
+            var removedContextType = Prop(ctx, "contextType")?.ToString();
+
+            // Contexts don't cascade-unlink on RemoveChild: drop flow edges (VFXContext.UnlinkAll, the
+            // no-arg flow variant) AND any data-slot links, else the other endpoints keep dangling refs.
+            Call(ctx, ContextType, "UnlinkAll");
+            UnlinkContainerSlots(ctx);
+            Call(graph, ModelType, "RemoveChild", ctx, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_context",
+                ["assetPath"] = assetPath,
+                ["removedContext"] = removedType,
+                ["removedContextType"] = removedContextType,
+                ["remainingContexts"] = Children(graph).Count(c => ContextType.IsInstanceOfType(c))
             };
         }
 
