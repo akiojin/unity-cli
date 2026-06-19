@@ -637,6 +637,7 @@ namespace UnityCliBridge.Handlers
                 case "add_operator": return AddOperator(parameters);
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
+                case "set_slot_value": return SetSlotValue(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
@@ -644,7 +645,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, link_flow, set_bounds, add_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1109,6 +1110,124 @@ namespace UnityCliBridge.Handlers
                     ["slot"] = toSlot,
                     ["slotName"] = SlotName(inSlot)
                 }
+            };
+        }
+
+        /// <summary>
+        /// Coerce a JSON value to a concrete CLR type. Handles the Unity math structs that
+        /// Newtonsoft can't round-trip (Vector2/3/4 from [n,n,…] arrays, Color from [r,g,b(,a)]),
+        /// enums (by name or int), and falls back to JToken.ToObject for primitives/everything else.
+        /// </summary>
+        private static object CoerceToType(JToken value, Type targetType)
+        {
+            if (value == null)
+                throw new Exception($"value is required (target slot expects {targetType.Name})");
+            if (targetType == typeof(Vector2)) return ToVector(value, 2);
+            if (targetType == typeof(Vector3)) return ToVector(value, 3);
+            if (targetType == typeof(Vector4)) return ToVector(value, 4);
+            if (targetType == typeof(Color))
+            {
+                var arr = value as JArray;
+                if (arr == null || arr.Count < 3)
+                    throw new Exception("Color value must be an array [r,g,b] or [r,g,b,a]");
+                float a = arr.Count >= 4 ? arr[3].ToObject<float>() : 1f;
+                return new Color(arr[0].ToObject<float>(), arr[1].ToObject<float>(), arr[2].ToObject<float>(), a);
+            }
+            if (targetType.IsEnum)
+            {
+                return value.Type == JTokenType.String
+                    ? Enum.Parse(targetType, value.ToString(), true)
+                    : Enum.ToObject(targetType, value.ToObject<long>());
+            }
+            try { return value.ToObject(targetType); }
+            catch (Exception e)
+            {
+                throw new Exception($"Cannot convert value to {targetType.Name}: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Walk a subPath into a (possibly nested) value-type struct, setting the leaf. Structs are
+        /// value types, so each level is boxed, its field rewritten, and propagated back up — the
+        /// same box-and-write trick set_bounds uses, generalized to arbitrary depth (e.g.
+        /// ["center","x"] on an AABox).
+        /// </summary>
+        private static object SetNestedField(object current, string[] path, int i, JToken value)
+        {
+            if (i >= path.Length)
+                return CoerceToType(value, current?.GetType()
+                    ?? throw new Exception("Cannot infer leaf type from a null slot value"));
+            if (current == null)
+                throw new Exception($"Cannot walk subPath segment '{path[i]}' into a null value");
+            var t = current.GetType();
+            var field = t.GetField(path[i], BindingFlags.Public | BindingFlags.Instance);
+            if (field == null)
+            {
+                var available = string.Join(", ",
+                    t.GetFields(BindingFlags.Public | BindingFlags.Instance).Select(f => f.Name));
+                throw new Exception($"subPath segment '{path[i]}' not found on '{t.Name}'. Available: {available}");
+            }
+            object boxed = current; // boxing the struct lets SetValue mutate this copy
+            var newChild = SetNestedField(field.GetValue(boxed), path, i + 1, value);
+            field.SetValue(boxed, newChild);
+            return boxed;
+        }
+
+        /// <summary>
+        /// Write a constant value into an (unlinked) input slot. Addresses the slot by
+        /// target = {node, …address, slot}; optional subPath walks into compound value structs
+        /// (Vector3 ["x"], AABox ["center","y"], Color N/A — set the whole color). The whole-slot
+        /// path coerces the JSON value to the slot's current value type; the subPath path uses the
+        /// box-and-write struct walk.
+        /// </summary>
+        private static object SetSlotValue(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            var valueToken = parameters?["value"];
+            if (target == null)
+                return new { error = "target is required (an object {node, …address, slot})" };
+            if (valueToken == null)
+                return new { error = "value is required" };
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
+            var slot = GetSlot(node, true, slotIndex, "target");
+
+            var current = Prop(slot, "value");
+            var subPath = (parameters?["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+
+            object newValue;
+            if (subPath != null && subPath.Length > 0)
+            {
+                if (current == null)
+                    throw new Exception("Slot has no readable value to walk subPath into");
+                newValue = SetNestedField(current, subPath, 0, valueToken);
+            }
+            else
+            {
+                var targetType = current?.GetType()
+                    ?? throw new Exception(
+                        "Slot value type could not be inferred (slot has a null value); subPath/typed slots unsupported here");
+                newValue = CoerceToType(valueToken, targetType);
+            }
+
+            SetProp(slot, "value", newValue);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = assetPath,
+                ["target"] = new JObject
+                {
+                    ["node"] = node.GetType().Name,
+                    ["slot"] = slotIndex,
+                    ["slotName"] = SlotName(slot)
+                },
+                ["subPath"] = subPath == null ? null : new JArray(subPath),
+                ["value"] = ToJToken(Prop(slot, "value"))
             };
         }
 

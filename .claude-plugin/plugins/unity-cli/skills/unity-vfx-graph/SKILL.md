@@ -54,6 +54,9 @@ unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Gr
 unity-cli raw vfx_apply --json '{"op":"link_flow","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"contextType":"Event"},"to":{"contextType":"Spawner"},"toIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"category":"Tuning"}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0}}'
+unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0},"value":42.5}'
+unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"context","contextType":"Init","slot":0},"subPath":["center"],"value":[1,2,3]}'
+unity-cli raw vfx_apply --json '{"op":"set_slot_value","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"context","contextType":"Init","slot":0},"subPath":["size","x"],"value":9}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
@@ -75,7 +78,12 @@ added to the graph, with optional `settings` like an Event context's `eventName`
 `Float`/`Vector3`/`Color`, optional `value`/`tooltip`/`category`/`exposed`), `link_slots` (connect a
 `from` output slot to a `to` input slot; each endpoint is `{node: operator|parameter|context|block,
 …address, slot: index}` where an operator uses `operatorIndex`, a parameter uses `parameterIndex`, a
-block/context uses `contextType` (+ `blockIndex` for blocks)), and `link_flow` (context→context flow
+block/context uses `contextType` (+ `blockIndex` for blocks)), `set_slot_value` (write a constant into
+an unlinked input slot: `target` is the same `{node, …address, slot}` shape as a `link_slots` endpoint;
+the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color —
+while an optional `subPath` walks into a compound value struct, e.g. `["center"]` sets a sub-vector and
+`["size","x"]` sets one nested component, leaving the rest untouched; describe re-reads it via
+`inputSlots[].value`), and `link_flow` (context→context flow
 edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{index}`, with optional
 `fromIndex`/`toIndex` flow-slot indices), and `set_bounds` (write the Initialize context's particle
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write

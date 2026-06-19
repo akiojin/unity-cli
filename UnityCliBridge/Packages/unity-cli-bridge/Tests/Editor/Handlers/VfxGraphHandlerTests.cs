@@ -128,6 +128,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetSlotValue_WithoutTarget_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["value"] = 1.0
+            }), "target is required");
+        }
+
+        [Test]
+        public void Apply_SetSlotValue_WithoutValue_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["target"] = new JObject { ["node"] = "context", ["contextType"] = "Init" }
+            }), "value is required");
+        }
+
+        [Test]
         public void Apply_AddParameter_WithoutParameterName_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1074,6 +1096,123 @@ namespace UnityCliBridge.Tests
                     ["value"] = original
                 });
             }
+        }
+
+        [Test]
+        public void ApplySetSlotValue_SetsScalarRateOnSpawnerBlock()
+        {
+            string copy = CopyFixture("slotscalar");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Constant Spawn Rate"
+            });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block",
+                    ["contextType"] = "Spawner",
+                    ["blockIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = 42.5
+            }));
+            Assert.AreEqual("Rate", result["target"].Value<string>("slotName"));
+            Assert.AreEqual(42.5f, result.Value<float>("value"), 1e-4f);
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var slots = (JArray)((JArray)FindContext(after, "Spawner")["blocks"])[0]["inputSlots"];
+            JToken rate = slots.First(s => (string)s["name"] == "Rate");
+            Assert.AreEqual(42.5f, rate.Value<float>("value"), 1e-4f,
+                "the Rate slot value should round-trip through describe");
+        }
+
+        [Test]
+        public void ApplySetSlotValue_WalksCompoundSubPathIntoBoundsCenter()
+        {
+            string copy = CopyFixture("slotcompound");
+
+            // Whole sub-vector: bounds.center = (1,2,3)
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "context",
+                    ["contextType"] = "Init",
+                    ["slot"] = 0
+                },
+                ["subPath"] = new JArray("center"),
+                ["value"] = new JArray(1, 2, 3)
+            });
+
+            // Nested leaf: bounds.size.x = 9 — must leave center untouched.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "context",
+                    ["contextType"] = "Init",
+                    ["slot"] = 0
+                },
+                ["subPath"] = new JArray("size", "x"),
+                ["value"] = 9
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var slots = (JArray)FindContext(after, "Init")["inputSlots"];
+            JToken bounds = slots.First(s => (string)s["name"] == "bounds")["value"];
+            Assert.AreEqual(1f, bounds["center"].Value<float>("x"), 1e-4f);
+            Assert.AreEqual(2f, bounds["center"].Value<float>("y"), 1e-4f);
+            Assert.AreEqual(3f, bounds["center"].Value<float>("z"), 1e-4f);
+            Assert.AreEqual(9f, bounds["size"].Value<float>("x"), 1e-4f,
+                "nested subPath write should update size.x");
+            Assert.AreEqual(1f, bounds["size"].Value<float>("y"), 1e-4f,
+                "nested subPath write should leave the other components untouched");
+        }
+
+        [Test]
+        public void ApplySetSlotValue_RecompilesCleanWithNoErrors()
+        {
+            string copy = CopyFixture("slotclean");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Constant Spawn Rate"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block",
+                    ["contextType"] = "Spawner",
+                    ["blockIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = 17.0
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var errors = ((JArray)after["errors"])
+                .Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count,
+                "graph should recompile with zero Error-tier entries after set_slot_value");
         }
 
         private static string CopyFixture(string suffix)
