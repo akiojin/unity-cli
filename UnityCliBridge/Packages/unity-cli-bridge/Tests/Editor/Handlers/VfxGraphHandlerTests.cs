@@ -181,6 +181,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_AddCustomAttribute_WithoutName_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["attributeType"] = "Float"
+            }), "attributeName is required");
+        }
+
+        [Test]
+        public void Apply_AddCustomAttribute_WithoutType_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["attributeName"] = "Heat"
+            }), "attributeType is required");
+        }
+
+        [Test]
         public void Apply_SetBlockEnabled_WithoutEnabled_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1125,6 +1147,140 @@ namespace UnityCliBridge.Tests
             JObject relocal = ToJObject(VfxGraphHandler.DescribeGraph(
                 new JObject { ["assetPath"] = copy }));
             Assert.AreEqual("Local", FindContext(relocal, "Init").Value<string>("simulationSpace"));
+        }
+
+        [Test]
+        public void ApplyAddCustomAttribute_CreatesAndReferencesInSetBlock()
+        {
+            string copy = CopyFixture("customattr");
+
+            // Two custom attributes of different signatures.
+            JObject heat = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "Heat", ["attributeType"] = "Float",
+                ["description"] = "per-particle heat"
+            }));
+            Assert.AreEqual("Float", heat.Value<string>("attributeType"));
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "Swirl", ["attributeType"] = "Vector3"
+            });
+
+            // Describe surfaces both on the new customAttributes oracle.
+            JObject afterAdd = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var attrs = (JArray)afterAdd["customAttributes"];
+            Assert.AreEqual(2, afterAdd.Value<int>("customAttributeCount"));
+            var heatDesc = attrs.FirstOrDefault(a => (string)a["attributeName"] == "Heat");
+            Assert.IsNotNull(heatDesc, "Heat should be listed");
+            Assert.AreEqual("Float", (string)heatDesc["type"]);
+            Assert.AreEqual("per-particle heat", (string)heatDesc["description"]);
+            Assert.IsTrue(attrs.Any(a => (string)a["attributeName"] == "Swirl"),
+                "Swirl should be listed");
+
+            // Reference the custom attribute: a SetAttribute block repointed to "Heat".
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockName"] = "|Set|_Color"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockIndex"] = 0,
+                ["setting"] = "attribute", ["value"] = "Heat"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var initBlock = ((JArray)FindContext(after, "Init")["blocks"])[0];
+            Assert.AreEqual("Heat", (string)initBlock["settings"]["attribute"],
+                "the SetAttribute block should now drive the custom Heat attribute");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyAddCustomAttribute_RejectsBuiltInAndDuplicateAndBadType()
+        {
+            string copy = CopyFixture("customattrbad");
+
+            // A built-in attribute name can't be re-declared as custom.
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "position", ["attributeType"] = "Vector3"
+            }), "Failed to add custom attribute");
+
+            // An unknown type lists the valid signatures.
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "Foo", ["attributeType"] = "Matrix"
+            }), "Unknown attribute type");
+
+            // Declaring the same custom name twice fails the second time.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "Heat", ["attributeType"] = "Float"
+            });
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                ["attributeName"] = "Heat", ["attributeType"] = "Float"
+            }), "Failed to add custom attribute");
+        }
+
+        [Test]
+        public void ApplyAttribute_VariadicChannelsAndSourceVsCurrent()
+        {
+            string copy = CopyFixture("attrchannels");
+
+            // Set Position is a variadic attribute → exposes a `channels` flags setting and a
+            // `Source` (Slot/Source) setting; both compose via the existing set_block_setting.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockName"] = "|Set|_Position"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockIndex"] = 0,
+                ["setting"] = "channels", ["value"] = "XY"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockIndex"] = 0,
+                ["setting"] = "Source", ["value"] = "Source"
+            });
+
+            // A Get Position operator exposes the Source-vs-Current `location` setting.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy,
+                ["operatorName"] = "Get|_Position"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["setting"] = "location", ["value"] = "Source"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var block = ((JArray)FindContext(after, "Init")["blocks"])[0];
+            Assert.AreEqual("XY", (string)block["settings"]["channels"],
+                "the variadic channels mask should be narrowed to XY");
+            Assert.AreEqual("Source", (string)block["settings"]["Source"],
+                "the Set block should read from Source");
+            var op = ((JArray)after["operators"])[0];
+            Assert.AreEqual("Source", (string)op["settings"]["location"],
+                "the Get operator should read the Source (initial) attribute value");
+            AssertNoErrorTier(after);
         }
 
         [Test]

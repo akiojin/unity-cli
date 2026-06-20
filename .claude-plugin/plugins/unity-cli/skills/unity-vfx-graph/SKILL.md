@@ -71,6 +71,10 @@ unity-cli raw vfx_apply --json '{"op":"remove_parameter","assetPath":"Assets/Bas
 unity-cli raw vfx_apply --json '{"op":"remove_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Output"}'
 unity-cli raw vfx_apply --json '{"op":"delete_system","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":4}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"space","value":"World"}'
+unity-cli raw vfx_apply --json '{"op":"add_custom_attribute","assetPath":"Assets/Basic Graphs/Minimal.vfx","attributeName":"Heat","attributeType":"Float","description":"per-particle heat"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","blockName":"|Set|_Color"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","blockIndex":0,"setting":"attribute","value":"Heat"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","blockIndex":0,"setting":"channels","value":"XY"}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"update_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"title":"DONE","contents":"bursts wired"}'
@@ -109,7 +113,13 @@ surfaced in describe as `contexts[].simulationSpace`); `contexts[].settings` in 
 writes), `delete_system` (delete a whole particle system in one op — every context sharing the addressed
 context's `VFXData`, i.e. the Init/Update/Output of one system; address any member by `contextType` or
 `index`; the cascade matches `remove_context` so a disjoint system is left intact — the response reports
-`removedContexts`/`removedContextTypes`/`remainingContexts`), `add_context` (descriptor by name, with
+`removedContexts`/`removedContextTypes`/`remainingContexts`), `add_custom_attribute` (declare a
+blackboard-managed custom attribute: `attributeName` + `attributeType` = one of
+`Float`/`Vector2`/`Vector3`/`Vector4`/`Bool`/`Uint`/`Int`, optional `description`/`isReadOnly`; describe
+surfaces them in a top-level `customAttributes` array. To USE it, add a Set/Get attribute block/operator
+for any built-in attribute then repoint it with `set_block_setting setting:"attribute" value:"<Name>"`
+(custom attributes have no `|Set|_<Name>` library descriptor — the block class is the same generic
+`SetAttribute`). Built-in/duplicate names and unknown types return a clear error), `add_context` (descriptor by name, with
 optional `linkFrom` to flow an existing context into the new one), `add_operator` (descriptor by name,
 added to the graph, with optional `settings` like an Event context's `eventName`), `add_parameter`
 (blackboard parameter: `parameterName` = exposed name, `type` = a parameter descriptor name —

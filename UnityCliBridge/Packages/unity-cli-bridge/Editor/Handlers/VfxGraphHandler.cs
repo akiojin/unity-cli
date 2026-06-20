@@ -451,6 +451,7 @@ namespace UnityCliBridge.Handlers
             }
 
             var stickyNotes = StickyNotesJson(graph);
+            var customAttributes = CustomAttributesJson(graph);
             JObject instancing = null;
             try { instancing = InstancingJson(Prop(graph, "visualEffectResource")); }
             catch { /* resource unavailable — leave null */ }
@@ -471,9 +472,33 @@ namespace UnityCliBridge.Handlers
                 ["parameters"] = paramsJson,
                 ["stickyNoteCount"] = stickyNotes.Count,
                 ["stickyNotes"] = stickyNotes,
+                ["customAttributeCount"] = customAttributes.Count,
+                ["customAttributes"] = customAttributes,
                 ["instancing"] = instancing,
                 ["errors"] = errors
             };
+        }
+
+        /// <summary>The graph's blackboard-managed custom attributes (name/type/description).</summary>
+        private static JArray CustomAttributesJson(object graph)
+        {
+            var arr = new JArray();
+            try
+            {
+                if (!(Prop(graph, "customAttributes") is IEnumerable list)) return arr;
+                foreach (var desc in list)
+                {
+                    arr.Add(new JObject
+                    {
+                        ["attributeName"] = Prop(desc, "attributeName")?.ToString(),
+                        ["type"] = Prop(desc, "type")?.ToString(),
+                        ["description"] = Prop(desc, "description")?.ToString(),
+                        ["isReadOnly"] = (bool)(Prop(desc, "isReadOnly") ?? false)
+                    });
+                }
+            }
+            catch { /* older package without customAttributes — leave empty */ }
+            return arr;
         }
 
         /// <summary>
@@ -669,6 +694,7 @@ namespace UnityCliBridge.Handlers
                 case "remove_parameter": return RemoveParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
                 case "delete_system": return DeleteSystem(parameters);
+                case "add_custom_attribute": return AddCustomAttribute(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
@@ -1010,6 +1036,75 @@ namespace UnityCliBridge.Handlers
                 ["removedContexts"] = members.Count,
                 ["removedContextTypes"] = new JArray(members.Select(m => (JToken)(Prop(m, "contextType")?.ToString()))),
                 ["remainingContexts"] = Children(graph).Count(c => ContextType.IsInstanceOfType(c))
+            };
+        }
+
+        /// <summary>
+        /// Create a blackboard-managed custom attribute on the graph (VFXGraph.TryAddCustomAttribute).
+        /// The user type is one of the VFX Signature names (Float/Vector2/Vector3/Vector4/Bool/Uint/Int),
+        /// mapped to a VFXValueType via the package's CustomAttributeUtility. Once created, a Set/Get
+        /// block referencing the name (`|Set|_<Name>` / `Get|_<Name>`) composes via add_block/add_operator.
+        /// </summary>
+        private static object AddCustomAttribute(JObject parameters)
+        {
+            var name = parameters?["attributeName"]?.ToString() ?? parameters?["name"]?.ToString();
+            if (string.IsNullOrEmpty(name))
+                return new { error = "attributeName is required" };
+            var typeName = parameters?["attributeType"]?.ToString() ?? parameters?["type"]?.ToString();
+            if (string.IsNullOrEmpty(typeName))
+                return new { error = "attributeType is required (Float/Vector2/Vector3/Vector4/Bool/Uint/Int)" };
+            var description = parameters?["description"]?.ToString() ?? string.Empty;
+            bool isReadOnly = parameters?["isReadOnly"]?.ToObject<bool>() ?? false;
+
+            // Resolve the friendly type name → a Signature through the package's own enum, so we stay
+            // aligned with whatever value types the installed package supports. A bad type is expected
+            // user-input validation → quiet early return (before LoadGraph), not a logged exception.
+            var sigType = T("UnityEditor.VFX.Block.CustomAttributeUtility+Signature");
+            object signature;
+            try { signature = Enum.Parse(sigType, typeName, true); }
+            catch
+            {
+                return new
+                {
+                    error =
+                        $"Unknown attribute type '{typeName}'. Valid: {string.Join(", ", Enum.GetNames(sigType))}"
+                };
+            }
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+
+            var custUtilType = T("UnityEditor.VFX.Block.CustomAttributeUtility");
+            var valueType = Call(null, custUtilType, "GetValueType", signature);
+
+            // TryAddCustomAttribute(string, VFXValueType, string, bool, out VFXAttribute) — the out param
+            // needs a manual Invoke (the Call helper can't surface a by-ref result).
+            var method = GraphType.GetMethod("TryAddCustomAttribute", AllInstance);
+            if (method == null)
+                throw new Exception("VFXGraph.TryAddCustomAttribute not found (package version mismatch).");
+            var args = new object[] { name, valueType, description, isReadOnly, null };
+            bool ok = (bool)method.Invoke(graph, args);
+            if (!ok)
+                // A name collision (built-in or existing custom attribute) is expected user-input
+                // validation → quiet early return, not a logged exception.
+                return new
+                {
+                    error =
+                        $"Failed to add custom attribute '{name}' — the name may collide with a built-in " +
+                        "attribute or an existing custom attribute (names are case-insensitive)."
+                };
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "add_custom_attribute",
+                ["assetPath"] = assetPath,
+                ["attributeName"] = name,
+                ["attributeType"] = signature.ToString(),
+                ["description"] = description,
+                ["isReadOnly"] = isReadOnly,
+                ["customAttributeCount"] = CustomAttributesJson(graph).Count
             };
         }
 
