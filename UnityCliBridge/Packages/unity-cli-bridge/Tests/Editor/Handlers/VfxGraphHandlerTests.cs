@@ -1279,6 +1279,49 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Settings_PreferencesScope_AllowShaderExternalization_RoundTripsViaEditorPrefs()
+        {
+            // allowShaderExternalization has no public getter property on VFXViewPreference (only a
+            // key constant + private field), so it exercises the EditorPrefs-direct read path.
+            JObject before = ToJObject(VfxGraphHandler.Settings(
+                new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+            Assert.IsNotNull(before["properties"]["allowShaderExternalization"],
+                "preferences get should now expose allowShaderExternalization");
+            bool original = before["properties"].Value<bool>("allowShaderExternalization");
+
+            try
+            {
+                bool target = !original;
+                JObject set = ToJObject(VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["scope"] = "preferences",
+                    ["setting"] = "allowShaderExternalization",
+                    ["value"] = target
+                }));
+                Assert.AreEqual(target, set.Value<bool>("value"),
+                    "set should echo the new value read back via EditorPrefs");
+                Assert.AreEqual("VFX.allowShaderExternalization", set.Value<string>("editorPrefsKey"),
+                    "the resolved EditorPrefs key should match the package's constant");
+
+                JObject after = ToJObject(VfxGraphHandler.Settings(
+                    new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+                Assert.AreEqual(target, after["properties"].Value<bool>("allowShaderExternalization"),
+                    "re-read should reflect the new allowShaderExternalization value");
+            }
+            finally
+            {
+                VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set",
+                    ["scope"] = "preferences",
+                    ["setting"] = "allowShaderExternalization",
+                    ["value"] = original
+                });
+            }
+        }
+
+        [Test]
         public void ApplySetSlotValue_SetsScalarRateOnSpawnerBlock()
         {
             string copy = CopyFixture("slotscalar");

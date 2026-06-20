@@ -212,6 +212,7 @@ unity-cli raw vfx_settings --json '{"op":"set","setting":"maxCapacity","value":5
 unity-cli raw vfx_settings --json '{"op":"get","scope":"preferences"}'
 unity-cli raw vfx_settings --json '{"op":"set","scope":"preferences","setting":"instancingEnabled","value":false}'
 unity-cli raw vfx_settings --json '{"op":"set","scope":"preferences","setting":"displayExperimentalOperator","value":true}'
+unity-cli raw vfx_settings --json '{"op":"set","scope":"preferences","setting":"allowShaderExternalization","value":true}'
 ```
 
 `scope:project` (default) returns a `properties` block (public static `UnityEngine.VFX.VFXManager`
@@ -225,9 +226,11 @@ properties — `instancingEnabled` (the **Instancing master gate** for #16's 3-g
 `displayExperimentalOperator`, `multithreadUpdateEnabled`, `forceEditionCompilation`,
 `generateShadersWithDebugSymbols`, `advancedLogs`, `cameraBuffersFallback` (enum surfaced by name),
 `authoringPrewarmStepCountPerSeconds`/`authoringPrewarmMaxTime`, plus `displayExtraDebugInfo` and
-`visualEffectTargetListed`. `set` writes the matching `EditorPrefs.SetBool/SetInt/SetFloat` and calls
-`VFXViewPreference.SetDirty()` so the next re-read returns the new value; the result echoes the
-resolved `editorPrefsKey` (e.g. `VFX.InstancingEnabled`).
+`visualEffectTargetListed`, and `allowShaderExternalization` (this one has no public getter property,
+so it's read/written via `EditorPrefs` directly by its key constant). `set` writes the matching
+`EditorPrefs.SetBool/SetInt/SetFloat` and calls `VFXViewPreference.SetDirty()` so the next re-read
+returns the new value; the result echoes the resolved `editorPrefsKey` (e.g. `VFX.InstancingEnabled`,
+`VFX.allowShaderExternalization`).
 
 ## Examples
 

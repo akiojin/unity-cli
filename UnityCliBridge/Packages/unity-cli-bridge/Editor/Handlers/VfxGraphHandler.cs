@@ -2564,6 +2564,9 @@ namespace UnityCliBridge.Handlers
             ("authoringPrewarmStepCountPerSeconds","authoringPrewarmStepCountPerSecondsKey",   "int"),
             ("authoringPrewarmMaxTime",            "authoringPrewarmMaxTimeKey",               "float"),
             ("visualEffectTargetListed",           "visualEffectTargetListedKey",              "bool"),
+            // No public getter property on VFXViewPreference — only the key constant + a private
+            // field — so this one reads/writes EditorPrefs directly (see ReadPref's fallback).
+            ("allowShaderExternalization",         "allowShaderExternalizationKey",            "bool"),
         };
 
         private static string PrefKey(string keyConstName)
@@ -2573,19 +2576,31 @@ namespace UnityCliBridge.Handlers
             return (string)f.GetValue(null);
         }
 
-        private static object ReadPrefProperty(string propName)
+        /// <summary>
+        /// Read a preference's current value. Prefers the canonical public static property (which
+        /// reflects VFXViewPreference's own cache); for prefs that expose only an EditorPrefs key
+        /// constant and no getter property (allowShaderExternalization), reads EditorPrefs directly
+        /// by key + type.
+        /// </summary>
+        private static object ReadPref((string PropName, string KeyConst, string Type) entry)
         {
-            var p = VFXViewPreferenceType.GetProperty(propName, BindingFlags.Public | BindingFlags.Static);
-            if (p == null) throw new Exception($"VFXViewPreference property not found: {propName}");
-            return p.GetValue(null);
+            var p = VFXViewPreferenceType.GetProperty(entry.PropName, BindingFlags.Public | BindingFlags.Static);
+            if (p != null) return p.GetValue(null);
+            string key = PrefKey(entry.KeyConst);
+            switch (entry.Type)
+            {
+                case "int":   return EditorPrefs.GetInt(key, 0);
+                case "float": return EditorPrefs.GetFloat(key, 0f);
+                default:      return EditorPrefs.GetBool(key, false);
+            }
         }
 
         private static JObject GetVfxPreferences()
         {
             var properties = new JObject();
-            foreach (var (propName, _, _) in VfxPreferences)
+            foreach (var entry in VfxPreferences)
             {
-                try { properties[propName] = ToJToken(ReadPrefProperty(propName)); } catch { }
+                try { properties[entry.PropName] = ToJToken(ReadPref(entry)); } catch { }
             }
             return new JObject
             {
@@ -2643,7 +2658,7 @@ namespace UnityCliBridge.Handlers
                 ["op"] = "set",
                 ["scope"] = "preferences",
                 ["setting"] = setting,
-                ["value"] = ToJToken(ReadPrefProperty(entry.PropName)),
+                ["value"] = ToJToken(ReadPref(entry)),
                 ["editorPrefsKey"] = key
             };
         }
