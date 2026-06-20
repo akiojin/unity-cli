@@ -147,6 +147,24 @@ namespace UnityCliBridge.Handlers
             if (t == typeof(Vector4)) { var v = (Vector4)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z, ["w"] = v.w }; }
             if (t == typeof(Color)) { var c = (Color)value; return new JObject { ["r"] = c.r, ["g"] = c.g, ["b"] = c.b, ["a"] = c.a }; }
             if (t == typeof(Rect)) { var r = (Rect)value; return new JObject { ["x"] = r.x, ["y"] = r.y, ["width"] = r.width, ["height"] = r.height }; }
+            // MultipleValuesChoice<T> (the Custom HLSL function selector): selection/selectedIndex are
+            // private; `values` is a rebuilt (non-serialized) list. Surface the active selection + choices
+            // so the function selector is verifiable in describe.
+            if (t.IsGenericType && t.GetGenericTypeDefinition().Name.StartsWith("MultipleValuesChoice"))
+            {
+                var obj = new JObject();
+                try { obj["selection"] = ToJToken(t.GetMethod("GetSelection").Invoke(value, null)); }
+                catch { obj["selection"] = JValue.CreateNull(); }
+                try
+                {
+                    var vals = t.GetProperty("values")?.GetValue(value) as IEnumerable;
+                    var arr = new JArray();
+                    if (vals != null) foreach (var v in vals) arr.Add(v?.ToString());
+                    obj["values"] = arr;
+                }
+                catch { /* values unavailable */ }
+                return obj;
+            }
             if (t.IsValueType && !t.IsPrimitive && t.Namespace != null &&
                 (t.Namespace.StartsWith("UnityEditor.VFX") || t.Namespace.StartsWith("UnityEngine.VFX")))
             {
@@ -833,6 +851,23 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object CoerceSettingValue(FieldInfo field, JToken valueToken, string settingName)
         {
+            // MultipleValuesChoice<T> (Custom HLSL m_AvailableFunction(s)): the setting's serialized
+            // state is the selected value; the choice list is rebuilt on resync. Accept a plain string
+            // (the function name) and stamp it as the selection — the block/operator's resync then picks
+            // the matching function and reshapes its slots.
+            if (field.FieldType.IsGenericType &&
+                field.FieldType.GetGenericTypeDefinition().Name.StartsWith("MultipleValuesChoice"))
+            {
+                var sel = valueToken.ToString();
+                var argType = field.FieldType.GetGenericArguments()[0];
+                var listType = typeof(List<>).MakeGenericType(argType);
+                var list = Activator.CreateInstance(listType);
+                listType.GetMethod("Add").Invoke(list, new[] { (object)sel });
+                object choice = Activator.CreateInstance(field.FieldType); // boxed struct
+                field.FieldType.GetProperty("values").SetValue(choice, list);
+                field.FieldType.GetMethod("SetSelection").Invoke(choice, new[] { (object)sel });
+                return choice;
+            }
             if (typeof(UnityEngine.Object).IsAssignableFrom(field.FieldType))
             {
                 var refPath = valueToken.ToString();

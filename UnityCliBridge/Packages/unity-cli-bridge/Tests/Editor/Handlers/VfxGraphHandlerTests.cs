@@ -487,6 +487,7 @@ namespace UnityCliBridge.Tests
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
         private const string Fixture = "Assets/VfxFixtures/Minimal.vfx";
+        private const string ShaderIncludeFixture = "Assets/VfxFixtures/HLSLInclude.hlsl";
         private const string TempFolder = "Assets/UnityCliBridgeTests/Vfx";
 
         [TearDown]
@@ -1280,6 +1281,132 @@ namespace UnityCliBridge.Tests
             var op = ((JArray)after["operators"])[0];
             Assert.AreEqual("Source", (string)op["settings"]["location"],
                 "the Get operator should read the Source (initial) attribute value");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyCustomHLSL_BlockFunctionSelectorReshapesSlots()
+        {
+            string copy = CopyFixture("hlslfunc");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            // Two functions with distinct signatures; the block defaults to the first (FuncA → _k).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0, ["setting"] = "m_HLSLCode",
+                ["value"] =
+                    "void FuncA(inout VFXAttributes a, in float k){a.velocity *= k;}\n" +
+                    "void FuncB(inout VFXAttributes a, in float3 dir, in float s){a.position += dir*s;}"
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var blockBefore = ((JArray)FindContext(before, "Update")["blocks"])[0];
+            CollectionAssert.AreEqual(new[] { "_k" },
+                ((JArray)blockBefore["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "default should expose FuncA's single float input");
+            var availBefore = blockBefore["settings"]["m_AvailableFunction"];
+            Assert.AreEqual("FuncA", (string)availBefore["selection"]);
+            CollectionAssert.AreEquivalent(new[] { "FuncA", "FuncB" },
+                ((JArray)availBefore["values"]).Select(v => (string)v).ToList());
+
+            // Select FuncB — the block reshapes to FuncB's (_dir, _s) inputs.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0,
+                ["setting"] = "m_AvailableFunction", ["value"] = "FuncB"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var blockAfter = ((JArray)FindContext(after, "Update")["blocks"])[0];
+            CollectionAssert.AreEqual(new[] { "_dir", "_s" },
+                ((JArray)blockAfter["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "selecting FuncB should reshape the slots to its (float3, float) inputs");
+            Assert.AreEqual("FuncB", (string)blockAfter["settings"]["m_AvailableFunction"]["selection"]);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyCustomHLSL_OperatorInlineSourceAndFunctionSelector()
+        {
+            string copy = CopyFixture("hlslop");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy, ["operatorIndex"] = 0,
+                ["setting"] = "m_HLSLCode",
+                ["value"] =
+                    "float OpA(in float k){return k*2.0f;}\n" +
+                    "float3 OpB(in float3 v, in float s){return v*s;}"
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var opBefore = ((JArray)before["operators"])[0];
+            CollectionAssert.AreEqual(new[] { "k" },
+                ((JArray)opBefore["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "the operator should resync its slots to OpA's single input");
+
+            // The operator's selector setting is plural (m_AvailableFunctions).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy, ["operatorIndex"] = 0,
+                ["setting"] = "m_AvailableFunctions", ["value"] = "OpB"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var opAfter = ((JArray)after["operators"])[0];
+            CollectionAssert.AreEqual(new[] { "v", "s" },
+                ((JArray)opAfter["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "selecting OpB should reshape the operator's inputs to (float3, float)");
+            Assert.AreEqual("OpB", (string)opAfter["settings"]["m_AvailableFunctions"]["selection"]);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyCustomHLSL_BlockExternalShaderFileDrivesSlots()
+        {
+            if (!System.IO.File.Exists(ShaderIncludeFixture))
+            {
+                Assert.Ignore($"ShaderInclude fixture not present: {ShaderIncludeFixture}");
+            }
+            string copy = CopyFixture("hlslfile");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            // Point the block at an external .hlsl (imported as a ShaderInclude). Its single function
+            // Squash(inout VFXAttributes, in float factor) drives the block's input slots.
+            JObject set = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0,
+                ["setting"] = "m_ShaderFile", ["value"] = ShaderIncludeFixture
+            }));
+            Assert.AreEqual("ShaderInclude", (string)set["value"]["type"],
+                "m_ShaderFile should resolve the .hlsl as a ShaderInclude asset");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var block = ((JArray)FindContext(after, "Update")["blocks"])[0];
+            CollectionAssert.AreEqual(new[] { "_factor" },
+                ((JArray)block["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "the block's slots should derive from the external file's function signature");
+            Assert.AreEqual(ShaderIncludeFixture, (string)block["settings"]["m_ShaderFile"]["assetPath"]);
             AssertNoErrorTier(after);
         }
 

@@ -82,6 +82,10 @@ unity-cli raw vfx_apply --json '{"op":"remove_sticky_note","assetPath":"Assets/B
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Custom HLSL"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_HLSLCode","value":"void DoIt(inout VFXAttributes a, in float k){a.position *= k;}"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_ShaderFile","value":"Assets/Basic Graphs/MyInclude.hlsl"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_AvailableFunction","value":"FuncB"}'
+unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Custom HLSL"}'
+unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_AvailableFunctions","value":"OpB"}'
 unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MySub.vfxblock","kind":"block"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Empty Subgraph Block"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MySub.vfxblock"}'
@@ -190,11 +194,17 @@ filter:"Position"`) — the leading `|` and embedded `|_` separators are load-be
 
 Custom HLSL needs no dedicated op: the Custom HLSL block (descriptor `"Custom HLSL"`, category `HLSL`)
 and Custom HLSL operator (category `Operator/HLSL`) are discoverable via `vfx_list_library` and instantiate
-through `add_block`/`add_operator`. Write the inline HLSL function via `set_block_setting` with
-`setting:"m_HLSLCode"` (other settings: `m_BlockName` for the displayed name, `m_ShaderFile` to switch
-to an external `ShaderInclude`). Describe surfaces these as block `settings` (the oracle reports every
-`[VFXSetting]`, including `ReadOnly` fields like `m_HLSLCode`), and the block's input slots are
-re-parsed from the HLSL signature.
+through `add_block`/`add_operator`. Write the inline HLSL function via `set_block_setting`/
+`set_operator_setting` with `setting:"m_HLSLCode"` (other settings: `m_BlockName`/`m_OperatorName` for the
+displayed name). For an **external file**, set `m_ShaderFile` to the path of a `.hlsl` imported as a
+`ShaderInclude` (the Object-by-path coercion loads it; the node sources from the file and ignores inline
+code). When the source defines **multiple functions** (each with a `void/scalar Name(...)` signature),
+pick which one the node exposes by setting the **function selector** to the function name — `m_AvailableFunction`
+on the block, `m_AvailableFunctions` (plural) on the operator; pass the bare name string (the
+`MultipleValuesChoice` selection is coerced for you). Describe surfaces these as `settings` (the oracle
+reports every `[VFXSetting]`, including `ReadOnly` fields like `m_HLSLCode`; the selector shows as
+`{selection, values}`), and the node's input slots are re-parsed from the selected function's signature —
+so confirm a source/file/selector change by re-describing the reshaped `inputSlots`.
 `vfx_describe_graph` reports each context's `settings` (including `boundsMode` on Init), `inputSlots`
 (each slot's resolved `value` for unlinked slots — e.g. the bounds AABox center/size), each block's
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
