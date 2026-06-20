@@ -69,6 +69,8 @@ unity-cli raw vfx_apply --json '{"op":"remove_block","assetPath":"Assets/Basic G
 unity-cli raw vfx_apply --json '{"op":"remove_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Output"}'
+unity-cli raw vfx_apply --json '{"op":"delete_system","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":4}'
+unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"space","value":"World"}'
 unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Manual","center":[0,0,0],"size":[4,4,4]}'
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"update_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"title":"DONE","contents":"bursts wired"}'
@@ -100,7 +102,14 @@ the write), `set_context_setting` (set a `[VFXSetting]` on a context by `context
 loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
 `reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`); also reaches the context's
 particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too — the response's `via` field
-reports `context` vs `data`, and `contexts[].settings` in describe reflects the write), `add_context` (descriptor by name, with
+reports `context` vs `data`; it also falls back to a writable **property** (`via:"…-property"`) for
+settings that aren't `[VFXSetting]` fields, notably **simulation space** (`setting:"space"`,
+`value:"Local"|"World"` — applies to the whole system since space lives on the shared particle data,
+surfaced in describe as `contexts[].simulationSpace`); `contexts[].settings` in describe reflects field
+writes), `delete_system` (delete a whole particle system in one op — every context sharing the addressed
+context's `VFXData`, i.e. the Init/Update/Output of one system; address any member by `contextType` or
+`index`; the cascade matches `remove_context` so a disjoint system is left intact — the response reports
+`removedContexts`/`removedContextTypes`/`remainingContexts`), `add_context` (descriptor by name, with
 optional `linkFrom` to flow an existing context into the new one), `add_operator` (descriptor by name,
 added to the graph, with optional `settings` like an Event context's `eventName`), `add_parameter`
 (blackboard parameter: `parameterName` = exposed name, `type` = a parameter descriptor name —

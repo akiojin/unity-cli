@@ -171,6 +171,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_DeleteSystem_WithoutContextTypeOrIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "delete_system",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "contextType (or index) is required");
+        }
+
+        [Test]
         public void Apply_SetBlockEnabled_WithoutEnabled_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1027,6 +1037,94 @@ namespace UnityCliBridge.Tests
             var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blocking.Count,
                 $"a from-scratch particle system should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ApplyDeleteSystem_RemovesAllContextsOfTheAddressedSystemOnly()
+        {
+            string copy = CopyFixture("delsystem");
+
+            // Capture the original system's data id, then build a second, disjoint system.
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            int originalInitData = FindContext(baseline, "Init").Value<int>("dataInstanceId");
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 }, ["to"] = new JObject { ["index"] = 5 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 5 }, ["to"] = new JObject { ["index"] = 6 }
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(7, before.Value<int>("contextCount"), "both systems should be present");
+
+            // Delete the second system by addressing any one of its members (its Update at index 5).
+            JObject del = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "delete_system", ["assetPath"] = copy, ["index"] = 5
+            }));
+            Assert.AreEqual(3, del.Value<int>("removedContexts"),
+                "all three contexts of the addressed system should be removed in one op");
+            Assert.AreEqual(4, del.Value<int>("remainingContexts"));
+
+            // The original system (Spawner/Init/Update/Output) must survive intact and disjoint.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(4, after.Value<int>("contextCount"));
+            var survivingInit = FindContext(after, "Init");
+            Assert.IsNotNull(survivingInit, "the original Init should remain");
+            Assert.AreEqual(originalInitData, survivingInit.Value<int>("dataInstanceId"),
+                "the surviving system must be the original one (same VFXData id)");
+            Assert.IsNotNull(FindContext(after, "Spawner"), "the Spawner should remain");
+            Assert.IsNotNull(FindContext(after, "Output"), "the original Output should remain");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplySetContextSetting_WritesSimulationSpaceViaProperty()
+        {
+            string copy = CopyFixture("simspace");
+
+            // space is a public property (not a [VFXSetting] field) on the particle data — the op's
+            // property fallback should reach it and the describe oracle should surface it.
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["setting"] = "space", ["value"] = "World"
+            }));
+            StringAssert.Contains("property", result.Value<string>("via"),
+                "simulation space resolves through the property fallback, not a [VFXSetting] field");
+            Assert.AreEqual("World", result.Value<string>("value"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            // The whole particle system shares one space (it lives on the shared VFXData).
+            Assert.AreEqual("World", FindContext(after, "Init").Value<string>("simulationSpace"));
+            Assert.AreEqual("World", FindContext(after, "Update").Value<string>("simulationSpace"));
+            Assert.AreEqual("World", FindContext(after, "Output").Value<string>("simulationSpace"));
+            AssertNoErrorTier(after);
+
+            // Round-trip back to Local to prove it's a real read/write, not a constant.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["setting"] = "space", ["value"] = "Local"
+            });
+            JObject relocal = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual("Local", FindContext(relocal, "Init").Value<string>("simulationSpace"));
         }
 
         [Test]

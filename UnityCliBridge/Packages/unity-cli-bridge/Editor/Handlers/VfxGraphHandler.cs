@@ -369,10 +369,19 @@ namespace UnityCliBridge.Handlers
                 // particle system share one VFXData (auto-wired by VFXContext.LinkTo), so equal
                 // ids prove system membership; different ids prove disjoint systems.
                 int? dataId = null;
+                // simulationSpace — Local/World on the context's particle data. m_Space is a private
+                // non-[VFXSetting] field (so it doesn't surface in `settings`), but VFXDataParticle
+                // exposes a public `space` property. Spawn/Event data has no space → leave null.
+                string simSpace = null;
                 try
                 {
-                    var data = Call(ctx, ContextType, "GetData") as UnityEngine.Object;
-                    if (data != null) dataId = data.GetInstanceID();
+                    var data = Call(ctx, ContextType, "GetData");
+                    if (data is UnityEngine.Object uo) dataId = uo.GetInstanceID();
+                    if (data != null)
+                    {
+                        try { simSpace = Prop(data, "space")?.ToString(); }
+                        catch { /* data without a space property */ }
+                    }
                 }
                 catch { /* contexts without data (Spawn/Event) — leave null */ }
 
@@ -388,6 +397,7 @@ namespace UnityCliBridge.Handlers
                     ["inputSlots"] = SlotsJson(ctx, true),
                     ["outputSlots"] = SlotsJson(ctx, false),
                     ["dataInstanceId"] = dataId,
+                    ["simulationSpace"] = simSpace,
                     ["blocks"] = blocks
                 });
             }
@@ -658,6 +668,7 @@ namespace UnityCliBridge.Handlers
                 case "remove_operator": return RemoveOperator(parameters);
                 case "remove_parameter": return RemoveParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
+                case "delete_system": return DeleteSystem(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
@@ -887,21 +898,48 @@ namespace UnityCliBridge.Handlers
             // Context-level setting first; else the context's particle data (capacity/boundsMode etc.).
             object targetModel = ctx;
             string via = "context";
+            object data = null;
             var field = FindField(ctx.GetType(), settingName);
             if (field == null)
             {
-                var data = Call(ctx, ContextType, "GetData");
+                data = Call(ctx, ContextType, "GetData");
                 var dataField = data == null ? null : FindField(data.GetType(), settingName);
                 if (dataField != null) { field = dataField; targetModel = data; via = "data"; }
             }
-            if (field == null)
+
+            if (field != null)
+            {
+                object convertedSetting = CoerceSettingValue(field, valueToken, settingName);
+                Call(targetModel, ModelType, "SetSettingValue", settingName, convertedSetting);
+                Persist(graph, assetPath);
+                return SetContextSettingResult(assetPath, ctx, settingName, via, ToJToken(convertedSetting));
+            }
+
+            // Property fallback: a few "settings" are exposed as public properties rather than
+            // [VFXSetting] fields — notably VFXDataParticle.space (simulation Local/World), whose
+            // m_Space field is private and explicitly not a setting yet. Setting the property runs the
+            // model's own invalidation (Modified), so no separate SetSettingValue is needed.
+            var prop = FindWritableProperty(ctx.GetType(), settingName);
+            if (prop != null) { targetModel = ctx; via = "context-property"; }
+            else
+            {
+                data = data ?? Call(ctx, ContextType, "GetData");
+                var dataProp = data == null ? null : FindWritableProperty(data.GetType(), settingName);
+                if (dataProp != null) { prop = dataProp; targetModel = data; via = "data-property"; }
+            }
+            if (prop == null)
                 throw new Exception(
                     $"Setting '{settingName}' not found on context '{ctx.GetType().Name}' or its data. Use vfx_describe_graph to list settings.");
 
-            object converted = CoerceSettingValue(field, valueToken, settingName);
-            Call(targetModel, ModelType, "SetSettingValue", settingName, converted);
+            object convertedProp = CoerceToType(valueToken, prop.PropertyType);
+            prop.SetValue(targetModel, convertedProp);
             Persist(graph, assetPath);
+            return SetContextSettingResult(assetPath, ctx, settingName, via, ToJToken(convertedProp?.ToString()));
+        }
 
+        private static JObject SetContextSettingResult(
+            string assetPath, object ctx, string settingName, string via, JToken value)
+        {
             return new JObject
             {
                 ["op"] = "set_context_setting",
@@ -910,7 +948,68 @@ namespace UnityCliBridge.Handlers
                 ["context"] = ctx.GetType().Name,
                 ["setting"] = settingName,
                 ["via"] = via,
-                ["value"] = ToJToken(converted)
+                ["value"] = value
+            };
+        }
+
+        /// <summary>Find a public/non-public writable instance property by name, walking up base types.</summary>
+        private static PropertyInfo FindWritableProperty(Type type, string name)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
+                if (p != null && p.CanWrite && p.GetSetMethod(true) != null) return p;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Delete a whole particle system in one op: every context that shares the addressed context's
+        /// VFXData (Init/Update/Output of one system). Addressed by `contextType` or `index` (any member).
+        /// Mirrors remove_context's cascade — flow UnlinkAll + data-slot unlink — for each member before
+        /// RemoveChild, so no dangling links remain on a disjoint system.
+        /// </summary>
+        private static object DeleteSystem(JObject parameters)
+        {
+            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (!hasIndex && string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType (or index) is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var target = ResolveContextRef(graph, parameters, ctxList, "context");
+
+            var targetData = Call(target, ContextType, "GetData") as UnityEngine.Object;
+            if (targetData == null)
+                throw new Exception(
+                    $"Context '{target.GetType().Name}' has no VFXData — it isn't part of a particle system " +
+                    "(Spawn/Event contexts can't address a system). Address an Init/Update/Output context.");
+            int systemId = targetData.GetInstanceID();
+
+            var members = ctxList.Where(c =>
+            {
+                var d = Call(c, ContextType, "GetData") as UnityEngine.Object;
+                return d != null && d.GetInstanceID() == systemId;
+            }).ToList();
+
+            foreach (var ctx in members)
+            {
+                Call(ctx, ContextType, "UnlinkAll");
+                UnlinkContainerSlots(ctx);
+                Call(graph, ModelType, "RemoveChild", ctx, true);
+            }
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "delete_system",
+                ["assetPath"] = assetPath,
+                ["systemDataInstanceId"] = systemId,
+                ["removedContexts"] = members.Count,
+                ["removedContextTypes"] = new JArray(members.Select(m => (JToken)(Prop(m, "contextType")?.ToString()))),
+                ["remainingContexts"] = Children(graph).Count(c => ContextType.IsInstanceOfType(c))
             };
         }
 
