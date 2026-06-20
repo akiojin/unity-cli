@@ -80,6 +80,12 @@ unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basi
 unity-cli raw vfx_apply --json '{"op":"update_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"title":"DONE","contents":"bursts wired"}'
 unity-cli raw vfx_apply --json '{"op":"remove_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
+unity-cli raw vfx_apply --json '{"op":"set_initial_event_name","assetPath":"Assets/Basic Graphs/Minimal.vfx","eventName":"Launch"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Trigger Event|On Die"}'
+unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"GPU Event"}'
+unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"block","contextType":"Update","blockIndex":0,"slot":0},"to":{"node":"context","contextType":"SpawnerGPU","slot":0}}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Spawner","blockName":"Set SpawnEvent Color"}'
+unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Event"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Custom HLSL"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_HLSLCode","value":"void DoIt(inout VFXAttributes a, in float k){a.position *= k;}"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"m_ShaderFile","value":"Assets/Basic Graphs/MyInclude.hlsl"}'
@@ -157,8 +163,18 @@ and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[
 existing note by `index` — only the supplied fields change, the rest stay) and `remove_sticky_note`
 (delete by `index`; describe's `stickyNotes[]` array shrinks), and `set_instancing` (write the
 asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
-optional `capacity` int). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
+optional `capacity` int), and `set_initial_event_name` (`eventName` = the asset's default play event,
+default `"OnPlay"`; stored on the resource's `m_Infos.m_InitialEventName`; describe surfaces it as a
+top-level `initialEventName`). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
+
+**Events** are mostly compose-only. *GPU events:* a `Trigger Event|<Mode>` block (`On Die`/`Over Time`/
+`Always`/…) in Update has a `evt` GPU-event output slot; `link_slots` it into a `GPU Event` context's
+`evt` input (the context's `contextType` is `SpawnerGPU`), then `link_flow` that context into a second
+system's Initialize — particles spawn particles. *Event payloads:* a `Set SpawnEvent <Attribute>` block
+on the Spawner carries an attribute on the spawn event (readable in Initialize via a Source attribute,
+see Attributes). *Output events:* `add_context "Output Event"` (`contextType` `OutputEvent`) is the CPU
+callback endpoint — authoring is headless; the C# callback fires only in play mode.
 
 Templates: `vfx_list_library kind:"template"` enumerates the VFX package's built-in starter templates
 (`01_Minimal_System` … `06_Firework`) with their on-disk paths. `create_from_template`

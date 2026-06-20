@@ -470,6 +470,9 @@ namespace UnityCliBridge.Handlers
 
             var stickyNotes = StickyNotesJson(graph);
             var customAttributes = CustomAttributesJson(graph);
+            string initialEventName = null;
+            try { initialEventName = InitialEventNameOf(Prop(graph, "visualEffectResource")); }
+            catch { /* resource unavailable — leave null */ }
             JObject instancing = null;
             try { instancing = InstancingJson(Prop(graph, "visualEffectResource")); }
             catch { /* resource unavailable — leave null */ }
@@ -492,6 +495,7 @@ namespace UnityCliBridge.Handlers
                 ["stickyNotes"] = stickyNotes,
                 ["customAttributeCount"] = customAttributes.Count,
                 ["customAttributes"] = customAttributes,
+                ["initialEventName"] = initialEventName,
                 ["instancing"] = instancing,
                 ["errors"] = errors
             };
@@ -719,6 +723,7 @@ namespace UnityCliBridge.Handlers
                 case "update_sticky_note": return UpdateStickyNote(parameters);
                 case "remove_sticky_note": return RemoveStickyNote(parameters);
                 case "set_instancing": return SetInstancing(parameters);
+                case "set_initial_event_name": return SetInitialEventName(parameters);
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
@@ -2341,6 +2346,54 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["mode"] = appliedMode,
                 ["capacity"] = appliedCapacity
+            };
+        }
+
+        /// <summary>Read the asset's default Initial Event Name (the event fired when the effect plays;
+        /// default "OnPlay"). Stored as m_Infos.m_InitialEventName on the resource (the inspector path).</summary>
+        private static string InitialEventNameOf(object resource)
+        {
+            if (resource == null) return null;
+            try
+            {
+                var so = new SerializedObject(resource as UnityEngine.Object);
+                return so.FindProperty("m_Infos.m_InitialEventName")?.stringValue;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Set the asset's default Initial Event Name — the event sent when the effect activates
+        /// (default "OnPlay"). Written via the resource's serialized m_Infos.m_InitialEventName (the same
+        /// path the asset inspector uses; there is no public property). This is the per-asset default;
+        /// the per-instance override is the runtime VisualEffect.initialEventName (vfx_runtime).
+        /// </summary>
+        private static object SetInitialEventName(JObject parameters)
+        {
+            var eventName = parameters?["eventName"]?.ToString();
+            if (eventName == null) // empty string is allowed (clears to no auto-play); null means missing
+                return new { error = "eventName is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var resource = Prop(graph, "visualEffectResource");
+            if (resource == null)
+                throw new Exception("Graph has no VisualEffectResource (unexpected for a valid .vfx).");
+
+            var so = new SerializedObject(resource as UnityEngine.Object);
+            var prop = so.FindProperty("m_Infos.m_InitialEventName");
+            if (prop == null)
+                throw new Exception("m_Infos.m_InitialEventName not found on VisualEffectResource (VFX package too old?).");
+            prop.stringValue = eventName;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_initial_event_name",
+                ["assetPath"] = assetPath,
+                ["initialEventName"] = InitialEventNameOf(resource)
             };
         }
 

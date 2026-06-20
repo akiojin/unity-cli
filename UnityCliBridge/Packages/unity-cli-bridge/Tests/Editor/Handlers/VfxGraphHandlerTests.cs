@@ -181,6 +181,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetInitialEventName_WithoutEventName_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_initial_event_name",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "eventName is required");
+        }
+
+        [Test]
         public void Apply_AddCustomAttribute_WithoutName_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1407,6 +1417,113 @@ namespace UnityCliBridge.Tests
                 ((JArray)block["inputSlots"]).Select(s => (string)s["name"]).ToList(),
                 "the block's slots should derive from the external file's function signature");
             Assert.AreEqual(ShaderIncludeFixture, (string)block["settings"]["m_ShaderFile"]["assetPath"]);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyEvents_GpuEventChainTriggerToSecondSystem()
+        {
+            string copy = CopyFixture("gpuevent");
+
+            // A Trigger Event block in Update emits a GPU event (output slot `evt`).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Trigger Event|On Die"
+            });
+            // A GPU Event context (contextType "SpawnerGPU") receives it via its `evt` input slot.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "GPU Event"
+            });
+            JObject linked = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject
+                {
+                    ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 0
+                },
+                ["to"] = new JObject { ["node"] = "context", ["contextType"] = "SpawnerGPU", ["slot"] = 0 }
+            }));
+            Assert.IsNull(linked["error"], "linking the Trigger evt output to the GPU Event input should succeed");
+
+            // The GPU Event context flows into a second particle system.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            // Contexts: 0 Spawner,1 Init,2 Update,3 Output,4 SpawnerGPU,5 Init2,6 Output2.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 }, ["to"] = new JObject { ["index"] = 5 }
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var contexts = (JArray)after["contexts"];
+            var gpu = contexts.First(c => (string)c["contextType"] == "SpawnerGPU");
+            Assert.AreEqual(5, ((JArray)gpu["outputs"])[0].Value<int>("index"),
+                "the GPU Event context should flow into the second system's Initialize");
+            // The Trigger block's evt output should resolve a link to the GPU Event context.
+            var triggerBlock = ((JArray)FindContext(after, "Update")["blocks"])
+                .First(b => ((string)b["name"]).Contains("Trigger"));
+            var evtLinks = (JArray)((JArray)triggerBlock["outputSlots"])[0]["links"];
+            Assert.AreEqual(1, evtLinks.Count, "the Trigger evt output should be linked");
+            Assert.AreEqual("context", (string)evtLinks[0]["node"]["kind"]);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyEvents_SpawnPayloadAndOutputEventContext()
+        {
+            string copy = CopyFixture("eventpayload");
+
+            // A Set SpawnEvent <Attribute> block on the Spawner carries an event payload.
+            JObject payload = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["blockName"] = "Set SpawnEvent Color"
+            }));
+            Assert.IsNull(payload["error"], "Set SpawnEvent Color should be a valid Spawner block");
+
+            // An Output Event context (CPU callback endpoint) authors headless.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Event"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var spawnerBlocks = (JArray)FindContext(after, "Spawner")["blocks"];
+            Assert.IsTrue(spawnerBlocks.Any(b => ((string)b["name"]).Contains("SpawnEvent")),
+                "the Spawner should carry a Set SpawnEvent payload block");
+            Assert.IsNotNull(((JArray)after["contexts"]).FirstOrDefault(
+                    c => (string)c["contextType"] == "OutputEvent"),
+                "an Output Event context should have been added");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplySetInitialEventName_RoundTripsThroughDescribe()
+        {
+            string copy = CopyFixture("initevent");
+
+            // The committed fixture defaults to OnPlay.
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual("OnPlay", baseline.Value<string>("initialEventName"));
+
+            JObject set = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_initial_event_name", ["assetPath"] = copy, ["eventName"] = "Launch"
+            }));
+            Assert.AreEqual("Launch", set.Value<string>("initialEventName"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual("Launch", after.Value<string>("initialEventName"),
+                "the asset's default Initial Event Name should round-trip through describe");
             AssertNoErrorTier(after);
         }
 
