@@ -349,11 +349,14 @@ namespace UnityCliBridge.Handlers
                 int blockIndex = 0;
                 foreach (var b in Children(ctx))
                 {
+                    bool blockEnabled = true;
+                    try { blockEnabled = (bool)Prop(b, "enabled"); } catch { }
                     blocks.Add(new JObject
                     {
                         ["index"] = blockIndex++,
                         ["name"] = ModelName(b),
                         ["type"] = b.GetType().Name,
+                        ["enabled"] = blockEnabled,
                         ["settings"] = BlockSettings(b),
                         ["inputSlots"] = SlotsJson(b, true),
                         ["outputSlots"] = SlotsJson(b, false)
@@ -649,6 +652,9 @@ namespace UnityCliBridge.Handlers
                 case "set_slot_value": return SetSlotValue(parameters);
                 case "unlink_slots": return UnlinkSlots(parameters);
                 case "remove_block": return RemoveBlock(parameters);
+                case "set_block_enabled": return SetBlockEnabled(parameters);
+                case "reorder_block": return ReorderBlock(parameters);
+                case "move_block": return MoveBlock(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
                 case "remove_parameter": return RemoveParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
@@ -661,7 +667,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -1516,6 +1522,135 @@ namespace UnityCliBridge.Handlers
                 ["contextType"] = wantContext,
                 ["removedBlock"] = removedType,
                 ["remainingBlocks"] = Children(ctx).Count()
+            };
+        }
+
+        /// <summary>Locate a block by (contextType, blockIndex); returns its context + the block.</summary>
+        private static (object ctx, object block) LocateBlock(object graph, string contextType, int blockIndex)
+        {
+            var ctx = FindContext(graph, contextType);
+            if (ctx == null)
+                throw new Exception($"No context of type '{contextType}' found");
+            var blocks = Children(ctx).ToList();
+            if (blockIndex < 0 || blockIndex >= blocks.Count)
+                throw new Exception(
+                    $"blockIndex {blockIndex} out of range; context '{contextType}' has {blocks.Count} block(s)");
+            return (ctx, blocks[blockIndex]);
+        }
+
+        /// <summary>
+        /// Enable/disable a block. `enabled` is a read-only computed property derived from the block's
+        /// activation slot (default `!m_Disabled`); the editor toggles it by writing the activation
+        /// slot's value, so we set that (and keep the serialized `m_Disabled` field consistent).
+        /// </summary>
+        private static object SetBlockEnabled(JObject parameters)
+        {
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType is required" };
+            var enabledTok = parameters?["enabled"];
+            if (enabledTok == null || enabledTok.Type == JTokenType.Null)
+                return new { error = "enabled is required (bool)" };
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+            bool enabled = enabledTok.ToObject<bool>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (_, block) = LocateBlock(graph, wantContext, blockIndex);
+
+            var actSlot = Prop(block, "activationSlot");
+            if (actSlot != null) SetProp(actSlot, "value", enabled);
+            FindField(block.GetType(), "m_Disabled")?.SetValue(block, !enabled);
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_block_enabled",
+                ["assetPath"] = assetPath,
+                ["contextType"] = wantContext,
+                ["blockIndex"] = blockIndex,
+                ["block"] = block.GetType().Name,
+                ["enabled"] = (bool)Prop(block, "enabled")
+            };
+        }
+
+        /// <summary>Move a block to a new position within its own context (RemoveChild → AddChild at index).</summary>
+        private static object ReorderBlock(JObject parameters)
+        {
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType is required" };
+            var toTok = parameters?["toIndex"];
+            if (toTok == null || toTok.Type == JTokenType.Null)
+                return new { error = "toIndex is required" };
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+            int toIndex = toTok.ToObject<int>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (ctx, block) = LocateBlock(graph, wantContext, blockIndex);
+
+            int count = Children(ctx).Count();
+            if (toIndex < 0 || toIndex >= count)
+                throw new Exception($"toIndex {toIndex} out of range; context '{wantContext}' has {count} block(s)");
+
+            Call(ctx, ModelType, "RemoveChild", block, false); // notify:false — re-add immediately
+            Call(ctx, ModelType, "AddChild", block, toIndex, true);
+            Persist(graph, assetPath);
+
+            int newIndex = Children(ctx).ToList().FindIndex(b => ReferenceEquals(b, block));
+            return new JObject
+            {
+                ["op"] = "reorder_block",
+                ["assetPath"] = assetPath,
+                ["contextType"] = wantContext,
+                ["block"] = block.GetType().Name,
+                ["fromIndex"] = blockIndex,
+                ["toIndex"] = newIndex
+            };
+        }
+
+        /// <summary>
+        /// Move a block to a different (compatible) context. Validates via VFXContext.Accept before
+        /// re-parenting, so an incompatible target returns a clear error instead of corrupting the graph.
+        /// </summary>
+        private static object MoveBlock(JObject parameters)
+        {
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType is required (the source context)" };
+            var toContext = parameters?["toContextType"]?.ToString();
+            if (string.IsNullOrEmpty(toContext))
+                return new { error = "toContextType is required (the destination context)" };
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+            int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? -1;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (srcCtx, block) = LocateBlock(graph, wantContext, blockIndex);
+            var dstCtx = FindContext(graph, toContext);
+            if (dstCtx == null)
+                throw new Exception($"No destination context of type '{toContext}' found in {assetPath}");
+
+            bool accept = (bool)Call(dstCtx, ContextType, "Accept", block, -1);
+            if (!accept)
+                return new { error = $"Block '{block.GetType().Name}' is not compatible with context '{toContext}'." };
+
+            Call(srcCtx, ModelType, "RemoveChild", block, false);
+            Call(dstCtx, ModelType, "AddChild", block, toIndex, true);
+            Persist(graph, assetPath);
+
+            int newIndex = Children(dstCtx).ToList().FindIndex(b => ReferenceEquals(b, block));
+            return new JObject
+            {
+                ["op"] = "move_block",
+                ["assetPath"] = assetPath,
+                ["block"] = block.GetType().Name,
+                ["fromContextType"] = wantContext,
+                ["toContextType"] = toContext,
+                ["toIndex"] = newIndex,
+                ["remainingInSource"] = Children(srcCtx).Count()
             };
         }
 

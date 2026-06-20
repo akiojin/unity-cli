@@ -47,6 +47,9 @@ unity-cli raw vfx_list_library --json '{"filter":"turbulence"}'
 unity-cli raw vfx_list_library --json '{"kind":"operator","filter":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Turbulence"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"NoiseType","value":"Perlin"}'
+unity-cli raw vfx_apply --json '{"op":"set_block_enabled","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"enabled":false}'
+unity-cli raw vfx_apply --json '{"op":"reorder_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toIndex":1}'
+unity-cli raw vfx_apply --json '{"op":"move_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toContextType":"Init"}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
@@ -85,7 +88,11 @@ unity-cli raw get_compilation_state --json '{}'
 ```
 
 `vfx_apply` ops: `add_block` (descriptor by name), `set_block_setting` (target a block by `contextType`
-+ `blockIndex` from describe, set a `[VFXSetting]` field), `set_operator_setting` (symmetrical to
++ `blockIndex` from describe, set a `[VFXSetting]` field), `set_block_enabled` (toggle a block's
+`enabled` state by `contextType`+`blockIndex`+`enabled` bool — describe surfaces `blocks[].enabled`),
+`reorder_block` (move a block to `toIndex` within its context) and `move_block` (relocate a block to a
+compatible `toContextType` — validated via `VFXContext.Accept`, so an incompatible target returns a
+clear error rather than corrupting the graph), `set_operator_setting` (symmetrical to
 `set_block_setting` for operators: target by `operatorIndex` from describe, set a `[VFXSetting]` field —
 e.g. a Custom HLSL operator's `m_HLSLCode`/`m_OperatorName`, or an Operator subgraph's `m_Subgraph`
 asset path; some settings reshape the operator's ports, and `operators[].settings` in describe reflects

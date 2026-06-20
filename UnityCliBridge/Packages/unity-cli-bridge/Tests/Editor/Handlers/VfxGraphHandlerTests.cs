@@ -171,6 +171,42 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetBlockEnabled_WithoutEnabled_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_enabled",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0
+            }), "enabled is required");
+        }
+
+        [Test]
+        public void Apply_ReorderBlock_WithoutToIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_block",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0
+            }), "toIndex is required");
+        }
+
+        [Test]
+        public void Apply_MoveBlock_WithoutToContextType_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_block",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0
+            }), "toContextType is required");
+        }
+
+        [Test]
         public void Apply_UpdateStickyNote_WithoutIndex_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1696,6 +1732,94 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(1, remaining.Count);
             Assert.AreEqual("B", remaining[0].Value<string>("title"));
             AssertNoErrorTier(afterRemove);
+        }
+
+        [Test]
+        public void ApplyBlock_EnableReorderAndMoveAcrossContexts()
+        {
+            string copy = CopyFixture("blockmove");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Turbulence"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Gravity"
+            });
+
+            // Disable block 0 (Turbulence).
+            JObject dis = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_enabled", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0, ["enabled"] = false
+            }));
+            Assert.IsFalse(dis.Value<bool>("enabled"));
+
+            JObject afterDisable = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var blocks = (JArray)FindContext(afterDisable, "Update")["blocks"];
+            Assert.IsFalse(blocks[0].Value<bool>("enabled"), "Turbulence should be disabled");
+            Assert.IsTrue(blocks[1].Value<bool>("enabled"), "Gravity should stay enabled");
+
+            // Reorder Turbulence (0) to index 1; the disabled state travels with the block.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0, ["toIndex"] = 1
+            });
+            JObject afterReorder = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var reordered = (JArray)FindContext(afterReorder, "Update")["blocks"];
+            Assert.AreEqual("Gravity", reordered[0].Value<string>("name"));
+            Assert.AreEqual("Turbulence", reordered[1].Value<string>("name"));
+            Assert.IsFalse(reordered[1].Value<bool>("enabled"),
+                "the disabled state should follow Turbulence to its new position");
+
+            // Add a Set Velocity block (valid in Init+Update) and move it to Init.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "|Set|_Velocity"
+            });
+            JObject moved = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 2, ["toContextType"] = "Init"
+            }));
+            Assert.AreEqual("Init", moved.Value<string>("toContextType"));
+
+            JObject afterMove = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var initBlocks = (JArray)FindContext(afterMove, "Init")["blocks"];
+            Assert.AreEqual(1, initBlocks.Count, "Init should now own the moved block");
+            Assert.AreEqual(2, ((JArray)FindContext(afterMove, "Update")["blocks"]).Count,
+                "Update should be back down to its two original blocks");
+            AssertNoErrorTier(afterMove);
+        }
+
+        [Test]
+        public void ApplyMoveBlock_RejectsIncompatibleTargetContext()
+        {
+            string copy = CopyFixture("blockmovebad");
+            // Gravity is an Update-only force block; moving it to Initialize must be rejected.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Gravity"
+            });
+
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0, ["toContextType"] = "Init"
+            }), "not compatible");
+
+            // The block must still be in Update (rejection left the graph intact).
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(1, ((JArray)FindContext(after, "Update")["blocks"]).Count);
         }
 
         private static void AssertNoErrorTier(JObject describeResult)
