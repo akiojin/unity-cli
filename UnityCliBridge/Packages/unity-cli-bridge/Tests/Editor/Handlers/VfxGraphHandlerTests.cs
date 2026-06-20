@@ -1822,6 +1822,42 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(1, ((JArray)FindContext(after, "Update")["blocks"]).Count);
         }
 
+        [Test]
+        public void DescribeGraph_IncludeErrors_SurfacesRealErrorTierIssue()
+        {
+            // Negative control for the Tier-2 oracle: prove includeErrors does NOT always return 0 —
+            // a deliberately-broken graph must report an Error-tier entry, so every other test's
+            // AssertNoErrorTier (and the "recompiles clean" claims) actually mean something.
+            string copy = CopyFixture("errorctl");
+
+            // A Custom HLSL block whose source has no valid function is a hard Error
+            // ("No valid HLSL function has been provided"), not a Warning.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0,
+                ["setting"] = "m_HLSLCode", ["value"] = "this is not valid hlsl @@@ {"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var errors = (JArray)after["errors"];
+            var errorTier = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.Greater(errorTier.Count, 0,
+                "the Tier-2 oracle must surface at least one Error-tier entry for a broken HLSL graph " +
+                "(if this fails, includeErrors is a no-op and every AssertNoErrorTier is meaningless)");
+
+            // And the benign NeedsRecording warning must NOT be miscounted as an Error — proving the
+            // type filter the other tests rely on is discriminating, not blanket.
+            Assert.IsTrue(errors.Any(e => (string)e["type"] == "Warning"),
+                "the benign NeedsRecording warning should still be reported as a Warning, not an Error");
+        }
+
         private static void AssertNoErrorTier(JObject describeResult)
         {
             var errors = ((JArray)describeResult["errors"])
