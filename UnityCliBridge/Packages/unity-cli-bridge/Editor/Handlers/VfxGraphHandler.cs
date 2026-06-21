@@ -455,7 +455,7 @@ namespace UnityCliBridge.Handlers
                 var p = paramList[i];
                 string exposedName = null, category = null, tooltip = null;
                 bool exposed = false;
-                JToken value = null, min = null, max = null, valueFilter = null;
+                JToken value = null, min = null, max = null, valueFilter = null, order = null;
                 try { exposedName = Prop(p, "exposedName") as string; } catch { }
                 try { exposed = (bool)Prop(p, "exposed"); } catch { }
                 try { category = Prop(p, "category") as string; } catch { }
@@ -464,6 +464,7 @@ namespace UnityCliBridge.Handlers
                 try { min = ToJToken(Prop(p, "min")); } catch { }
                 try { max = ToJToken(Prop(p, "max")); } catch { }
                 try { valueFilter = new JValue(Prop(p, "valueFilter")?.ToString()); } catch { }
+                try { order = new JValue(Convert.ToInt32(Prop(p, "order"))); } catch { }
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
@@ -472,6 +473,7 @@ namespace UnityCliBridge.Handlers
                     ["exposedName"] = exposedName,
                     ["exposed"] = exposed,
                     ["category"] = category,
+                    ["order"] = order,
                     ["tooltip"] = tooltip,
                     ["value"] = value,
                     ["valueFilter"] = valueFilter,
@@ -731,6 +733,11 @@ namespace UnityCliBridge.Handlers
                 case "move_block": return MoveBlock(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
                 case "remove_parameter": return RemoveParameter(parameters);
+                case "rename_parameter": return RenameParameter(parameters);
+                case "set_parameter_category": return SetParameterCategory(parameters);
+                case "rename_category": return RenameCategory(parameters);
+                case "reorder_parameter": return ReorderParameter(parameters);
+                case "duplicate_parameter": return DuplicateParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
                 case "delete_system": return DeleteSystem(parameters);
                 case "add_custom_attribute": return AddCustomAttribute(parameters);
@@ -2124,6 +2131,160 @@ namespace UnityCliBridge.Handlers
                 ["parameterIndex"] = parameterIndex,
                 ["removedParameter"] = removedName,
                 ["remainingParameters"] = Children(graph).Count(c => ParameterType.IsInstanceOfType(c))
+            };
+        }
+
+        /// <summary>Resolve a blackboard parameter by `parameterIndex` (order among graph parameters).</summary>
+        private static (object param, List<object> all) ResolveParameter(object graph, int parameterIndex)
+        {
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            if (parameterIndex < 0 || parameterIndex >= ps.Count)
+                throw new Exception($"parameterIndex {parameterIndex} out of range; graph has {ps.Count} parameter(s)");
+            return (ps[parameterIndex], ps);
+        }
+
+        /// <summary>Rename a parameter's exposedName (m_ExposedName is a [VFXSetting]; the node + its
+        /// links are untouched — same VFXParameter, new name). Optionally enforce uniqueness.</summary>
+        private static object RenameParameter(JObject parameters)
+        {
+            var newName = parameters?["exposedName"]?.ToString() ?? parameters?["name"]?.ToString();
+            if (string.IsNullOrEmpty(newName))
+                return new { error = "exposedName (the new name) is required" };
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (param, all) = ResolveParameter(graph, parameterIndex);
+
+            if (all.Any(p => !ReferenceEquals(p, param) &&
+                             string.Equals(Prop(p, "exposedName") as string, newName, StringComparison.Ordinal)))
+                return new { error = $"another parameter is already named '{newName}' (exposed names must be unique)" };
+
+            Call(param, ModelType, "SetSettingValue", "m_ExposedName", newName);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "rename_parameter",
+                ["assetPath"] = assetPath,
+                ["parameterIndex"] = parameterIndex,
+                ["exposedName"] = Prop(param, "exposedName") as string
+            };
+        }
+
+        /// <summary>Assign a parameter's blackboard category (creates the category implicitly if new).</summary>
+        private static object SetParameterCategory(JObject parameters)
+        {
+            var category = parameters?["category"];
+            if (category == null) // empty string is allowed (clears to the default/uncategorized group)
+                return new { error = "category is required" };
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (param, _) = ResolveParameter(graph, parameterIndex);
+
+            SetProp(param, "category", category.ToString());
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_parameter_category",
+                ["assetPath"] = assetPath,
+                ["parameterIndex"] = parameterIndex,
+                ["category"] = Prop(param, "category") as string
+            };
+        }
+
+        /// <summary>Rename a whole category: every parameter whose category equals `category` is moved to
+        /// `newCategory`. Categories are derived from the parameters' category strings (no separate list).</summary>
+        private static object RenameCategory(JObject parameters)
+        {
+            var oldCategory = parameters?["category"]?.ToString();
+            var newCategory = parameters?["newCategory"]?.ToString();
+            if (string.IsNullOrEmpty(oldCategory))
+                return new { error = "category (the existing category name) is required" };
+            if (newCategory == null)
+                return new { error = "newCategory is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+
+            int moved = 0;
+            foreach (var p in ps)
+            {
+                if (string.Equals(Prop(p, "category") as string, oldCategory, StringComparison.Ordinal))
+                {
+                    SetProp(p, "category", newCategory);
+                    moved++;
+                }
+            }
+            if (moved == 0)
+                return new { error = $"no parameters are in category '{oldCategory}'" };
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "rename_category",
+                ["assetPath"] = assetPath,
+                ["category"] = oldCategory,
+                ["newCategory"] = newCategory,
+                ["parametersMoved"] = moved
+            };
+        }
+
+        /// <summary>Set a parameter's blackboard order (its position within its category).</summary>
+        private static object ReorderParameter(JObject parameters)
+        {
+            var orderTok = parameters?["order"];
+            if (orderTok == null || orderTok.Type == JTokenType.Null)
+                return new { error = "order (the new integer position) is required" };
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (param, _) = ResolveParameter(graph, parameterIndex);
+
+            SetProp(param, "order", orderTok.ToObject<int>());
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "reorder_parameter",
+                ["assetPath"] = assetPath,
+                ["parameterIndex"] = parameterIndex,
+                ["order"] = Convert.ToInt32(Prop(param, "order"))
+            };
+        }
+
+        /// <summary>Duplicate a parameter (VFXParameter.Duplicate: same type/default/category, order+1),
+        /// adding the clone to the graph. The clone's exposedName defaults to "&lt;name&gt; (1)".</summary>
+        private static object DuplicateParameter(JObject parameters)
+        {
+            int parameterIndex = parameters?["parameterIndex"]?.ToObject<int>() ?? 0;
+            var copyName = parameters?["exposedName"]?.ToString() ?? parameters?["name"]?.ToString();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (param, all) = ResolveParameter(graph, parameterIndex);
+
+            if (string.IsNullOrEmpty(copyName))
+                copyName = (Prop(param, "exposedName") as string ?? "Parameter") + " (1)";
+            if (all.Any(p => string.Equals(Prop(p, "exposedName") as string, copyName, StringComparison.Ordinal)))
+                return new { error = $"a parameter named '{copyName}' already exists (exposed names must be unique)" };
+
+            var clone = Call(null, ParameterType, "Duplicate", copyName, param);
+            Call(graph, ModelType, "AddChild", clone, -1, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "duplicate_parameter",
+                ["assetPath"] = assetPath,
+                ["sourceParameterIndex"] = parameterIndex,
+                ["exposedName"] = Prop(clone, "exposedName") as string,
+                ["parameterCount"] = Children(graph).Count(c => ParameterType.IsInstanceOfType(c))
             };
         }
 

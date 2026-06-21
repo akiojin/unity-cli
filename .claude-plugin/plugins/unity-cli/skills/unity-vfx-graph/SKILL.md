@@ -71,6 +71,11 @@ unity-cli raw vfx_apply --json '{"op":"unlink_slots","assetPath":"Assets/Basic G
 unity-cli raw vfx_apply --json '{"op":"remove_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0}'
+unity-cli raw vfx_apply --json '{"op":"rename_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"exposedName":"SpawnRate"}'
+unity-cli raw vfx_apply --json '{"op":"set_parameter_category","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"category":"Tuning"}'
+unity-cli raw vfx_apply --json '{"op":"rename_category","assetPath":"Assets/Basic Graphs/Minimal.vfx","category":"Tuning","newCategory":"Spawning"}'
+unity-cli raw vfx_apply --json '{"op":"reorder_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"order":2}'
+unity-cli raw vfx_apply --json '{"op":"duplicate_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Output"}'
 unity-cli raw vfx_apply --json '{"op":"delete_system","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":4}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"space","value":"World"}'
@@ -164,7 +169,14 @@ re-reads it via `inputSlots[].hasLink`/`links`), the `remove_*` family (`remove_
 `contextType`+`blockIndex`, `remove_operator` by `operatorIndex`, `remove_parameter` by
 `parameterIndex`, `remove_context` by `contextType` or `index` — each unlinks the node's slots (and a
 context's flow edges) before deleting, so no dangling links remain; describe's counts/arrays shrink and
-the response reports `remaining*`), and `link_flow` (context→context flow
+the response reports `remaining*`), the **blackboard-management** ops (all by `parameterIndex`):
+`rename_parameter` (`exposedName` = new name; the node + its slot links survive — same VFXParameter;
+rejects a duplicate name), `set_parameter_category` (`category` string — a new string creates that
+category), `rename_category` (`category` → `newCategory` across every parameter in it; reports
+`parametersMoved`), `reorder_parameter` (`order` int — position within the category), and
+`duplicate_parameter` (clones type/default/category with `order`+1 and name `"<name> (1)"`, or an explicit
+`exposedName`); describe's `parameters[]` carries `exposedName`/`category`/`order` to confirm each. And
+`link_flow` (context→context flow
 edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{index}`, with optional
 `fromIndex`/`toIndex` flow-slot indices), and `set_bounds` (write the Initialize context's particle
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write

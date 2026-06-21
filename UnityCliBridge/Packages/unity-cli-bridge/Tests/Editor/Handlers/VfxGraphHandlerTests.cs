@@ -181,6 +181,39 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_RenameParameter_WithoutName_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_parameter",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["parameterIndex"] = 0
+            }), "exposedName");
+        }
+
+        [Test]
+        public void Apply_ReorderParameter_WithoutOrder_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_parameter",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["parameterIndex"] = 0
+            }), "order");
+        }
+
+        [Test]
+        public void Apply_RenameCategory_WithoutNewCategory_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_category",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["category"] = "Tuning"
+            }), "newCategory is required");
+        }
+
+        [Test]
         public void Apply_SetOperatorOperandType_WithoutType_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1621,6 +1654,113 @@ namespace UnityCliBridge.Tests
             AssertError(VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 }),
                 "not a cascaded operator");
+        }
+
+        [Test]
+        public void ApplyBlackboard_RenameCategoryReorderDuplicate()
+        {
+            string copy = CopyFixture("blackboard");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Rate", ["type"] = "Float", ["value"] = 1, ["category"] = "Tuning"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Tint", ["type"] = "Color", ["value"] = new JArray { 1, 0, 0, 1 },
+                ["category"] = "Tuning"
+            });
+
+            // Rename param 0's exposed name.
+            JObject renamed = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_parameter", ["assetPath"] = copy,
+                ["parameterIndex"] = 0, ["exposedName"] = "SpawnRate"
+            }));
+            Assert.AreEqual("SpawnRate", renamed.Value<string>("exposedName"));
+
+            // Move param 1 to a different category; reorder param 0.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_parameter_category", ["assetPath"] = copy,
+                ["parameterIndex"] = 1, ["category"] = "Visuals"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_parameter", ["assetPath"] = copy,
+                ["parameterIndex"] = 0, ["order"] = 5
+            });
+
+            // Rename the remaining "Tuning" category (only param 0 is still in it).
+            JObject cat = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_category", ["assetPath"] = copy,
+                ["category"] = "Tuning", ["newCategory"] = "Spawning"
+            }));
+            Assert.AreEqual(1, cat.Value<int>("parametersMoved"));
+
+            // Duplicate param 0 — the clone inherits type/category, order+1, name "(1)".
+            JObject dup = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "duplicate_parameter", ["assetPath"] = copy, ["parameterIndex"] = 0
+            }));
+            Assert.AreEqual("SpawnRate (1)", dup.Value<string>("exposedName"));
+            Assert.AreEqual(3, dup.Value<int>("parameterCount"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var ps = (JArray)after["parameters"];
+            var p0 = ps.First(p => (string)p["exposedName"] == "SpawnRate");
+            Assert.AreEqual("Spawning", (string)p0["category"]);
+            Assert.AreEqual(5, p0.Value<int>("order"));
+            Assert.AreEqual("Visuals", (string)ps.First(p => (string)p["exposedName"] == "Tint")["category"]);
+            var clone = ps.First(p => (string)p["exposedName"] == "SpawnRate (1)");
+            Assert.AreEqual("Spawning", (string)clone["category"]);
+            Assert.AreEqual(6, clone.Value<int>("order"), "the clone's order should be source order + 1");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyRenameParameter_PreservesSlotLink()
+        {
+            string copy = CopyFixture("renamelink");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Scale", ["type"] = "Float", ["value"] = 2
+            });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Sine" });
+            // Link the parameter's output into the Sine operator's input slot.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 }
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.IsTrue(((JArray)((JArray)before["operators"])[0]["inputSlots"])[0].Value<bool>("hasLink"),
+                "precondition: the operator input should be linked to the parameter");
+
+            // Rename the parameter — the link must survive (same VFXParameter, new name).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_parameter", ["assetPath"] = copy,
+                ["parameterIndex"] = 0, ["exposedName"] = "Magnitude"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual("Magnitude",
+                (string)((JArray)after["parameters"])[0]["exposedName"]);
+            Assert.IsTrue(((JArray)((JArray)after["operators"])[0]["inputSlots"])[0].Value<bool>("hasLink"),
+                "the slot link should survive the rename");
+            AssertNoErrorTier(after);
         }
 
         [Test]
