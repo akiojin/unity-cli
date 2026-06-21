@@ -742,6 +742,7 @@ namespace UnityCliBridge.Handlers
                 case "delete_system": return DeleteSystem(parameters);
                 case "add_custom_attribute": return AddCustomAttribute(parameters);
                 case "link_flow": return LinkFlow(parameters);
+                case "unlink_flow": return UnlinkFlow(parameters);
                 case "set_bounds": return SetBounds(parameters);
                 case "add_sticky_note": return AddStickyNote(parameters);
                 case "update_sticky_note": return UpdateStickyNote(parameters);
@@ -2379,6 +2380,49 @@ namespace UnityCliBridge.Handlers
             return new JObject
             {
                 ["op"] = "link_flow",
+                ["assetPath"] = assetPath,
+                ["from"] = new JObject
+                {
+                    ["contextType"] = Prop(fromCtx, "contextType")?.ToString(),
+                    ["type"] = fromCtx.GetType().Name,
+                    ["fromIndex"] = fromIndex
+                },
+                ["to"] = new JObject
+                {
+                    ["contextType"] = Prop(toCtx, "contextType")?.ToString(),
+                    ["type"] = toCtx.GetType().Name,
+                    ["toIndex"] = toIndex
+                }
+            };
+        }
+
+        /// <summary>
+        /// Remove a single context→context flow edge (companion to link_flow). Endpoints `from`/`to`
+        /// resolve by `{contextType}`/`{index}` like link_flow; `VFXContext.UnlinkTo` drops just that
+        /// edge (vs remove_context's no-arg UnlinkAll which clears every flow edge). Sibling edges stay.
+        /// </summary>
+        private static object UnlinkFlow(JObject parameters)
+        {
+            var from = parameters?["from"] as JObject;
+            var to = parameters?["to"] as JObject;
+            if (from == null) return new { error = "from is required (the source context)" };
+            if (to == null) return new { error = "to is required (the target context)" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+
+            var fromCtx = ResolveContextRef(graph, from, ctxList, "from");
+            var toCtx = ResolveContextRef(graph, to, ctxList, "to");
+            int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
+            int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? 0;
+
+            Call(fromCtx, ContextType, "UnlinkTo", toCtx, fromIndex, toIndex);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "unlink_flow",
                 ["assetPath"] = assetPath,
                 ["from"] = new JObject
                 {

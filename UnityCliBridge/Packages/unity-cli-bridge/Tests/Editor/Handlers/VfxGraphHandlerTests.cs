@@ -181,6 +181,17 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_UnlinkFlow_WithoutFrom_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_flow",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["to"] = new JObject { ["index"] = 1 }
+            }), "from is required");
+        }
+
+        [Test]
         public void Apply_RenameParameter_WithoutName_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1760,6 +1771,81 @@ namespace UnityCliBridge.Tests
                 (string)((JArray)after["parameters"])[0]["exposedName"]);
             Assert.IsTrue(((JArray)((JArray)after["operators"])[0]["inputSlots"])[0].Value<bool>("hasLink"),
                 "the slot link should survive the rename");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyContext_UnlinkAndRelinkSingleFlowEdge()
+        {
+            string copy = CopyFixture("unlinkflow");
+
+            // Fixture flow: Spawner(0) → Init(1) → Update(2) → Output(3). Drop only Update→Output.
+            JObject unlinked = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 2 }, ["to"] = new JObject { ["index"] = 3 }
+            }));
+            Assert.IsNull(unlinked["error"]);
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var ctx = (JArray)after["contexts"];
+            Assert.AreEqual(0, ((JArray)ctx[2]["outputs"]).Count, "Update→Output edge should be gone");
+            Assert.AreEqual(0, ((JArray)ctx[3]["inputs"]).Count, "Output should have no input edge");
+            // Sibling edges intact: Spawner→Init→Update still chained.
+            Assert.AreEqual(2, ((JArray)ctx[1]["outputs"])[0].Value<int>("index"),
+                "Init→Update should be untouched");
+            Assert.AreEqual(0, ((JArray)ctx[1]["inputs"])[0].Value<int>("index"),
+                "Spawner→Init should be untouched");
+            AssertNoErrorTier(after);
+
+            // Relink Update→Output restores the chain.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 2 }, ["to"] = new JObject { ["index"] = 3 }
+            });
+            JObject relinked = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(3, ((JArray)((JArray)relinked["contexts"])[2]["outputs"])[0].Value<int>("index"),
+                "relinking should restore Update→Output");
+            AssertNoErrorTier(relinked);
+        }
+
+        [Test]
+        public void ApplyContext_SpawnConstantDurationSlotWritable()
+        {
+            string copy = CopyFixture("spawnslot");
+
+            // Switching loopDuration to Constant exposes a LoopDuration value slot on the Spawner.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["setting"] = "loopDuration", ["value"] = "Constant"
+            });
+
+            JObject withSlot = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var spawner = FindContext(withSlot, "Spawner");
+            Assert.AreEqual(1, ((JArray)spawner["inputSlots"]).Count,
+                "Constant loop duration should expose one value slot");
+
+            // The per-mode slot takes a set_slot_value write.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value", ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "context", ["contextType"] = "Spawner", ["slot"] = 0
+                },
+                ["value"] = 3.5
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(3.5,
+                ((JArray)FindContext(after, "Spawner")["inputSlots"])[0].Value<double>("value"), 1e-4,
+                "the Constant duration slot should hold the written value");
             AssertNoErrorTier(after);
         }
 

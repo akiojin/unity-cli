@@ -61,6 +61,7 @@ unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Event","settings":{"eventName":"Burst"}}'
 unity-cli raw vfx_apply --json '{"op":"link_flow","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"contextType":"Event"},"to":{"contextType":"Spawner"},"toIndex":0}'
+unity-cli raw vfx_apply --json '{"op":"unlink_flow","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"index":2},"to":{"index":3}}'
 unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Rate","type":"Float","value":42.5,"min":0,"max":100,"category":"Tuning"}'
 unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterName":"Tint","type":"Color","value":[1,0,0,1]}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Spawner","blockIndex":0,"slot":0}}'
@@ -178,7 +179,9 @@ category), `rename_category` (`category` → `newCategory` across every paramete
 `exposedName`); describe's `parameters[]` carries `exposedName`/`category`/`order` to confirm each. And
 `link_flow` (context→context flow
 edge, e.g. an Event context into Spawn: `from`/`to` are `{contextType}` or `{index}`, with optional
-`fromIndex`/`toIndex` flow-slot indices), and `set_bounds` (write the Initialize context's particle
+`fromIndex`/`toIndex` flow-slot indices) and its companion `unlink_flow` (same `from`/`to` endpoints;
+removes just that single flow edge — sibling edges and the rest of the chain stay; re-add with
+`link_flow`), and `set_bounds` (write the Initialize context's particle
 bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` (Vector3 arrays) write
 the bounds AABox when the mode exposes one; `padding` writes `boundsPadding` for Recorded/Automatic),
 and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[x,y,width,height]`),
