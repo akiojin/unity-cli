@@ -53,6 +53,9 @@ unity-cli raw vfx_apply --json '{"op":"move_block","assetPath":"Assets/Basic Gra
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
+unity-cli raw vfx_apply --json '{"op":"add_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector3"}'
+unity-cli raw vfx_apply --json '{"op":"remove_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
+unity-cli raw vfx_apply --json '{"op":"set_operator_operand_type","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector2"}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Spawner","setting":"loopDuration","value":"Constant"}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"capacity","value":256}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
@@ -112,7 +115,15 @@ clear error rather than corrupting the graph), `set_operator_setting` (symmetric
 `set_block_setting` for operators: target by `operatorIndex` from describe, set a `[VFXSetting]` field —
 e.g. a Custom HLSL operator's `m_HLSLCode`/`m_OperatorName`, or an Operator subgraph's `m_Subgraph`
 asset path; some settings reshape the operator's ports, and `operators[].settings` in describe reflects
-the write), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
+the write), the operator-input ops for **dynamic numeric operators** (`add_operator_input` /
+`remove_operator_input` / `set_operator_operand_type`, all by `operatorIndex`): **cascaded** operators
+(`Add`/`Multiply`/… — the `+`/`−` in the UI) take `add_operator_input` (optional `operandType`, default
+the operator's current type) and `remove_operator_input` (optional `index`, default last; refuses to drop
+below the operator's minimum, normally 2); `set_operator_operand_type` retypes operands — **uniform**
+operators (`Sine`/`Distance`/… one shared type) take just `operandType`, **unified/cascaded** operators
+take an optional `index` (else all operands change). `operandType` must be one of the operator's valid
+types (`Float`/`Vector2`/`Vector3`/`Vector4`/…); describe's `inputSlots[].valueType` reflects the result
+and `inputSlots` grow/shrink. Non-dynamic operators return a clear error), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
 loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
 `reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`); also reaches the context's
 particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too — the response's `via` field

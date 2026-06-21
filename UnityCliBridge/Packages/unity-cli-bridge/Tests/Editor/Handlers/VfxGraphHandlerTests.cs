@@ -181,6 +181,17 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetOperatorOperandType_WithoutType_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_operand_type",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["operatorIndex"] = 0
+            }), "operandType is required");
+        }
+
+        [Test]
         public void Apply_SetInitialEventName_WithoutEventName_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1525,6 +1536,91 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual("Launch", after.Value<string>("initialEventName"),
                 "the asset's default Initial Event Name should round-trip through describe");
             AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyOperator_CascadedAddRemoveInputsAndOperandType()
+        {
+            string copy = CopyFixture("cascaded");
+
+            // Add is a cascaded numeric operator — starts with 2 float operands (a, b).
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(2, ((JArray)((JArray)baseline["operators"])[0]["inputSlots"]).Count,
+                "Add should start with 2 operands");
+
+            // Grow to 3 (default type), then to 4 with an explicit Vector3 operand.
+            JObject add1 = ToJObject(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 }));
+            Assert.AreEqual(3, add1.Value<int>("operandCount"));
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator_input", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["operandType"] = "Vector3"
+            });
+
+            JObject grown = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(4, ((JArray)((JArray)grown["operators"])[0]["inputSlots"]).Count,
+                "two add_operator_input calls should yield 4 operands");
+
+            // Retype the whole operator to Vector2 — every operand slot re-types.
+            JObject retyped = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_operand_type", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["operandType"] = "Vector2"
+            }));
+            Assert.AreEqual("all-operands", retyped.Value<string>("via"));
+
+            JObject afterType = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var slots = (JArray)((JArray)afterType["operators"])[0]["inputSlots"];
+            CollectionAssert.AreEqual(Enumerable.Repeat("Vector2", 4).ToList(),
+                slots.Select(s => (string)s["valueType"]).ToList(),
+                "every operand slot should now report the Vector2 value type");
+            AssertNoErrorTier(afterType);
+
+            // Shrink back to 3, then refuse to drop below the minimum of 2.
+            JObject removed = ToJObject(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "remove_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 }));
+            Assert.AreEqual(3, removed.Value<int>("operandCount"));
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "remove_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 });
+            AssertError(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "remove_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 }),
+                "minimum");
+        }
+
+        [Test]
+        public void ApplyOperator_UniformOperandTypeAndCascadeRejected()
+        {
+            string copy = CopyFixture("uniform");
+
+            // Sine is a uniform numeric operator: one shared operand type, no add/remove input.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Sine" });
+
+            JObject set = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_operand_type", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["operandType"] = "Vector3"
+            }));
+            Assert.AreEqual("uniform", set.Value<string>("via"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual("Vector3",
+                (string)((JArray)((JArray)after["operators"])[0]["inputSlots"])[0]["valueType"],
+                "the uniform operand type should re-type the input slot to Vector3");
+            AssertNoErrorTier(after);
+
+            // A uniform operator has no cascaded inputs — add/remove are rejected with a clear error.
+            AssertError(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 }),
+                "not a cascaded operator");
         }
 
         [Test]

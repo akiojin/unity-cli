@@ -241,6 +241,19 @@ namespace UnityCliBridge.Handlers
             catch { return null; }
         }
 
+        /// <summary>The slot's declared value type name (e.g. "Single"/"Vector3") — surfaces operand-type
+        /// changes on dynamic operators. `property.type` is a struct field on VFXSlot (like `name`).</summary>
+        private static string SlotValueTypeName(object slot)
+        {
+            try
+            {
+                var property = Prop(slot, "property");
+                var typeProp = property.GetType().GetProperty("type"); // VFXProperty.type is a property
+                return (typeProp?.GetValue(property) as Type)?.Name;
+            }
+            catch { return null; }
+        }
+
         /// <summary>Log an error and return it as a { error } result.</summary>
         private static object Fail(string command, Exception ex)
         {
@@ -351,6 +364,7 @@ namespace UnityCliBridge.Handlers
                     {
                         ["index"] = idx++,
                         ["name"] = SlotName(slot),
+                        ["valueType"] = SlotValueTypeName(slot),
                         ["hasLink"] = links.Count > 0,
                         ["links"] = links,
                         ["value"] = value
@@ -701,6 +715,9 @@ namespace UnityCliBridge.Handlers
                 case "add_block": return AddBlock(parameters);
                 case "set_block_setting": return SetBlockSetting(parameters);
                 case "set_operator_setting": return SetOperatorSetting(parameters);
+                case "add_operator_input": return AddOperatorInput(parameters);
+                case "remove_operator_input": return RemoveOperatorInput(parameters);
+                case "set_operator_operand_type": return SetOperatorOperandType(parameters);
                 case "set_context_setting": return SetContextSetting(parameters);
                 case "add_context": return AddContext(parameters);
                 case "add_operator": return AddOperator(parameters);
@@ -933,6 +950,174 @@ namespace UnityCliBridge.Handlers
                 ["operator"] = op.GetType().Name,
                 ["setting"] = settingName,
                 ["value"] = ToJToken(converted)
+            };
+        }
+
+        /// <summary>Resolve a graph operator by `operatorIndex` (order among graph operators).</summary>
+        private static object ResolveOperatorByIndex(object graph, int operatorIndex)
+        {
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            if (operatorIndex < 0 || operatorIndex >= ops.Count)
+                throw new Exception($"operatorIndex {operatorIndex} out of range; graph has {ops.Count} operator(s)");
+            return ops[operatorIndex];
+        }
+
+        /// <summary>Resolve a user type name (e.g. "Vector3", "float") against the operator's validTypes.</summary>
+        private static Type ResolveOperandType(object op, string typeName)
+        {
+            var valid = (Prop(op, "validTypes") as IEnumerable)?.Cast<Type>().ToList()
+                ?? throw new Exception($"Operator '{op.GetType().Name}' has no operand types (not a dynamic operator).");
+            string Squash(string s) => s.Replace(" ", string.Empty);
+            var match = valid.FirstOrDefault(t => string.Equals(t.Name, typeName, StringComparison.OrdinalIgnoreCase))
+                ?? valid.FirstOrDefault(t => string.Equals(Squash(t.Name), Squash(typeName), StringComparison.OrdinalIgnoreCase));
+            if (match == null)
+                throw new Exception(
+                    $"Type '{typeName}' is not valid for operator '{op.GetType().Name}'. Valid: {string.Join(", ", valid.Select(t => t.Name))}");
+            return match;
+        }
+
+        private static bool HasMethod(object op, string name, int paramCount) =>
+            op.GetType().GetMethods(AllInstance).Any(m => m.Name == name && m.GetParameters().Length == paramCount);
+
+        /// <summary>
+        /// Add an operand (input) to a cascaded numeric operator (Add/Multiply/… — VFXOperatorNumericCascaded).
+        /// Optional `operandType` (defaults to the operator's current default type). Slots grow by one.
+        /// </summary>
+        private static object AddOperatorInput(JObject parameters)
+        {
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+            var operandType = parameters?["operandType"]?.ToString() ?? parameters?["type"]?.ToString();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var op = ResolveOperatorByIndex(graph, operatorIndex);
+            if (!HasMethod(op, "AddOperand", 1))
+                return new
+                {
+                    error =
+                        $"Operator '{op.GetType().Name}' is not a cascaded operator — it has no add/remove input " +
+                        "(only operators like Add/Multiply do)."
+                };
+
+            Type t = string.IsNullOrEmpty(operandType) ? null : ResolveOperandType(op, operandType);
+            Call(op, op.GetType(), "AddOperand", t);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "add_operator_input",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["operandCount"] = ToJToken(Prop(op, "operandCount"))
+            };
+        }
+
+        /// <summary>
+        /// Remove an operand (input) from a cascaded numeric operator. Optional `index` (default: last).
+        /// Refuses to drop below the operator's MinimalOperandCount.
+        /// </summary>
+        private static object RemoveOperatorInput(JObject parameters)
+        {
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+            var idxTok = parameters?["index"];
+            bool hasIndex = idxTok != null && idxTok.Type != JTokenType.Null;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var op = ResolveOperatorByIndex(graph, operatorIndex);
+            if (!HasMethod(op, "RemoveOperand", 1))
+                return new
+                {
+                    error =
+                        $"Operator '{op.GetType().Name}' is not a cascaded operator — it has no add/remove input."
+                };
+
+            int count = Convert.ToInt32(Prop(op, "operandCount"));
+            int minimal = 2;
+            try { minimal = Convert.ToInt32(Prop(op, "MinimalOperandCount")); } catch { /* default 2 */ }
+            if (count <= minimal)
+                return new { error = $"Cannot remove input: operator '{op.GetType().Name}' is at its minimum of {minimal} operand(s)." };
+
+            if (hasIndex)
+            {
+                int idx = idxTok.ToObject<int>();
+                if (idx < 0 || idx >= count)
+                    return new { error = $"index {idx} out of range; operator has {count} operand(s)." };
+                Call(op, op.GetType(), "RemoveOperand", idx); // RemoveOperand(int)
+            }
+            else
+            {
+                Call(op, op.GetType(), "RemoveOperand"); // removes the last operand
+            }
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "remove_operator_input",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["operandCount"] = ToJToken(Prop(op, "operandCount"))
+            };
+        }
+
+        /// <summary>
+        /// Set a dynamic operator's operand type. Uniform operators (one shared type) take just
+        /// `operandType`; unified/cascaded operators take an `index` (else all operands are set). The
+        /// type must be one of the operator's validTypes (e.g. "Float", "Vector3"). Slots re-type.
+        /// </summary>
+        private static object SetOperatorOperandType(JObject parameters)
+        {
+            var operandType = parameters?["operandType"]?.ToString() ?? parameters?["type"]?.ToString();
+            if (string.IsNullOrEmpty(operandType))
+                return new { error = "operandType is required (e.g. \"Float\", \"Vector3\")" };
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+            var idxTok = parameters?["index"];
+            bool hasIndex = idxTok != null && idxTok.Type != JTokenType.Null;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var op = ResolveOperatorByIndex(graph, operatorIndex);
+            Type t = ResolveOperandType(op, operandType);
+
+            string via;
+            if (HasMethod(op, "SetOperandType", 1)) // uniform: SetOperandType(Type)
+            {
+                Call(op, op.GetType(), "SetOperandType", t);
+                via = "uniform";
+            }
+            else if (HasMethod(op, "SetOperandType", 2)) // unified/cascaded: SetOperandType(int, Type)
+            {
+                int count = Convert.ToInt32(Prop(op, "operandCount"));
+                if (hasIndex)
+                {
+                    int idx = idxTok.ToObject<int>();
+                    if (idx < 0 || idx >= count)
+                        return new { error = $"index {idx} out of range; operator has {count} operand(s)." };
+                    Call(op, op.GetType(), "SetOperandType", idx, t);
+                    via = $"operand[{idx}]";
+                }
+                else
+                {
+                    for (int i = 0; i < count; i++) Call(op, op.GetType(), "SetOperandType", i, t);
+                    via = "all-operands";
+                }
+            }
+            else
+            {
+                return new { error = $"Operator '{op.GetType().Name}' has no settable operand type (not a dynamic operator)." };
+            }
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_operator_operand_type",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["operandType"] = t.Name,
+                ["via"] = via
             };
         }
 
