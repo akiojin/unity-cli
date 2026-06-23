@@ -188,8 +188,10 @@ and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[
 `colorTheme` int 1–3, `textSize` "Small"/"Medium"/"Large"/"Huge"), `update_sticky_note` (edit an
 existing note by `index` — only the supplied fields change, the rest stay) and `remove_sticky_note`
 (delete by `index`; describe's `stickyNotes[]` array shrinks), and `set_instancing` (write the
-asset's `VisualEffectResource.instancingMode` — values include `Auto`/`Disabled`/`ForceOn` — and
-optional `capacity` int), and `set_initial_event_name` (`eventName` = the asset's default play event,
+asset's `VisualEffectResource.instancingMode` — values are `Auto`/`Custom`/`Disabled` (`Custom` =
+explicit force-enable with a custom batch capacity) — and optional `capacity` int; describe surfaces
+`instancing` as `{mode, capacity, disabledReason}`, where `disabledReason` is the graph-level
+force-disable validation (`OutputEvent`/`MeshOutput`/`None`)), and `set_initial_event_name` (`eventName` = the asset's default play event,
 default `"OnPlay"`; stored on the resource's `m_Infos.m_InitialEventName`; describe surfaces it as a
 top-level `initialEventName`). Describe surfaces sticky notes via a top-level `stickyNotes` array and the
 resource's current instancing via a top-level `instancing: {mode, capacity}` block.
