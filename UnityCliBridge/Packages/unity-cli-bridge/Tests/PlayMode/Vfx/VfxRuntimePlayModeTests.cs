@@ -29,6 +29,7 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
 
         private GameObject _rig;
         private GameObject _camera;
+        private readonly System.Collections.Generic.List<GameObject> _rigs = new System.Collections.Generic.List<GameObject>();
 
         [TearDown]
         public void TearDown()
@@ -38,6 +39,11 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
                 UnityEngine.Object.DestroyImmediate(_rig);
                 _rig = null;
             }
+            foreach (var r in _rigs)
+            {
+                if (r != null) UnityEngine.Object.DestroyImmediate(r);
+            }
+            _rigs.Clear();
             if (_camera != null)
             {
                 UnityEngine.Object.DestroyImmediate(_camera);
@@ -432,9 +438,169 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             CleanupAuthored();
         }
 
+        /// <summary>
+        /// Instancing multi-instance render + 3-gate reconciliation (#16 runtime tail). Builds N live
+        /// VisualEffects that share ONE asset (each fires the same fixed burst) and asserts every
+        /// instance independently reaches the expected alive count — the headless stand-in for
+        /// "N instances render with the same asset" (instancing is a C++ batching optimization with no
+        /// public per-component observable, so we assert the simultaneously-live instances + the gate
+        /// state rather than the batch itself). Then it reconciles the three instancing gates' resolved
+        /// state: (1) the project preference master (vfx_settings preferences `instancingEnabled`),
+        /// (2) the asset mode (set to Custom, read via describe `instancing.mode`), and (3) the
+        /// graph-level force-disable validation (describe `instancing.disabledReason` — "None" for this
+        /// plain Quad system, "OutputEvent" for an Output-Event variant that is ineligible regardless of
+        /// the other two gates).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_Instancing_MultiInstanceSharedAsset_ResolvesThreeGates()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            const int burst = 12;
+            const int instances = 3;
+            string asset = AuthorInstancingFixture("Instancing.vfx", burst, withOutputEvent: false);
+            if (asset == null)
+            {
+                yield break; // already Assert.Ignore-d
+            }
+
+            // Gate 2 (asset mode) + Gate 3 (validation) via the describe oracle.
+            JObject desc = InvokeDescribe(new JObject { ["assetPath"] = asset });
+            Assert.IsNull(desc.Value<string>("error"), $"describe should not error; got: {desc}");
+            JObject inst = desc["instancing"] as JObject;
+            Assert.IsNotNull(inst, $"describe should report an instancing block; got: {desc}");
+            Assert.AreEqual("Custom", inst.Value<string>("mode"),
+                "Gate 2: the asset instancing mode should read back as Custom (explicit force-enable)");
+            Assert.AreEqual("None", inst.Value<string>("disabledReason"),
+                "Gate 3: a plain Quad-output system has no graph-level force-disable reason");
+
+            // Gate 1 (project preference master) — resolved state must be readable.
+            JObject prefs = InvokeSettings(new JObject { ["op"] = "get", ["scope"] = "preferences" });
+            Assert.IsNull(prefs.Value<string>("error"), $"vfx_settings preferences should not error; got: {prefs}");
+            JObject props = prefs["properties"] as JObject;
+            Assert.IsNotNull(props?["instancingEnabled"],
+                "Gate 1: the instancing master preference should be readable");
+
+            // A camera so the VFX manager fully processes the rendered effects.
+            _camera = new GameObject("VfxRuntimeCam");
+            var cam = _camera.AddComponent<Camera>();
+            _camera.transform.position = new Vector3(0f, 0f, -8f);
+            _camera.transform.rotation = Quaternion.identity;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+
+            // N instances of the SAME asset, each at its own position, bound through the handler.
+            var vfxs = new VisualEffect[instances];
+            for (int k = 0; k < instances; k++)
+            {
+                var go = new GameObject("VfxInst" + k);
+                go.transform.position = new Vector3((k - 1) * 2f, 0f, 0f);
+                vfxs[k] = go.AddComponent<VisualEffect>();
+                _rigs.Add(go);
+
+                JObject bound = InvokeRuntime(new JObject
+                {
+                    ["op"] = "set_asset",
+                    ["gameObject"] = go.name,
+                    ["assetPath"] = asset
+                });
+                Assert.IsNull(bound.Value<string>("error"), $"set_asset (instance {k}) should not error; got: {bound}");
+            }
+
+            // Drive every instance per frame — the bind-time OnPlay fires each burst; the particles live
+            // ~1s by default, well past this read window.
+            for (int f = 0; f < 16; f++)
+            {
+                foreach (var v in vfxs) v.Simulate(0.05f, 1);
+                yield return null;
+            }
+
+            for (int k = 0; k < instances; k++)
+            {
+                Assert.AreEqual(burst, vfxs[k].aliveParticleCount,
+                    $"instance {k} of the shared asset should independently hold its full burst; got {vfxs[k].aliveParticleCount}");
+            }
+
+            // Gate 3, the force-disable case: an Output-Event variant is ineligible for instancing no
+            // matter the asset mode or the preference master.
+            string oeAsset = AuthorInstancingFixture("InstancingOE.vfx", burst, withOutputEvent: true);
+            JObject oeDesc = InvokeDescribe(new JObject { ["assetPath"] = oeAsset });
+            JObject oeInst = oeDesc["instancing"] as JObject;
+            Assert.IsNotNull(oeInst, $"describe should report an instancing block; got: {oeDesc}");
+            Assert.AreEqual("OutputEvent", oeInst.Value<string>("disabledReason"),
+                "Gate 3: an Output Event context force-disables instancing (disabledReason=OutputEvent)");
+
+            CleanupAuthored();
+        }
+
         // ---- Rig + handler plumbing (reflection — no compile-time Editor reference) -----------
 
         private string _authoredFolder;
+
+        /// <summary>
+        /// Copy the fixture, give the Spawner a fixed Single Burst of <paramref name="burstCount"/>
+        /// (particles use the default ~1s lifetime, so they stay alive across the read window), set the
+        /// asset instancing mode to Custom (explicit force-enable), and — when <paramref name="withOutputEvent"/> — add an
+        /// Output Event context (which force-disables instancing). Returns the asset path or null.
+        /// </summary>
+        private string AuthorInstancingFixture(string fileName, int burstCount, bool withOutputEvent)
+        {
+            if (FindType("UnityCliBridge.Handlers.VfxGraphHandler") == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/" + fileName;
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            JObject burst = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Single Burst"
+            });
+            Assert.IsNull(burst.Value<string>("error"), $"add_block (single burst) should not error; got: {burst}");
+
+            JObject count = InvokeApply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = dest,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block",
+                    ["contextType"] = "Spawner",
+                    ["blockIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = burstCount
+            });
+            Assert.IsNull(count.Value<string>("error"), $"set_slot_value (burst count) should not error; got: {count}");
+
+            JObject mode = InvokeApply(new JObject
+            {
+                ["op"] = "set_instancing",
+                ["assetPath"] = dest,
+                ["mode"] = "Custom"
+            });
+            Assert.IsNull(mode.Value<string>("error"), $"set_instancing should not error; got: {mode}");
+
+            if (withOutputEvent)
+            {
+                JObject oe = InvokeApply(new JObject
+                {
+                    ["op"] = "add_context",
+                    ["assetPath"] = dest,
+                    ["contextName"] = "Output Event",
+                    ["settings"] = new JObject { ["eventName"] = "OnInst" }
+                });
+                Assert.IsNull(oe.Value<string>("error"), $"add_context (output event) should not error; got: {oe}");
+            }
+            return dest;
+        }
 
         /// <summary>
         /// Copy the fixture and give its Spawner a fixed Single Burst of <paramref name="burstCount"/>
@@ -726,15 +892,21 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             return true;
         }
 
-        private static JObject InvokeApply(JObject parameters)
+        private static JObject InvokeApply(JObject parameters) => InvokeHandler("Apply", parameters);
+
+        private static JObject InvokeDescribe(JObject parameters) => InvokeHandler("DescribeGraph", parameters);
+
+        private static JObject InvokeSettings(JObject parameters) => InvokeHandler("Settings", parameters);
+
+        private static JObject InvokeHandler(string methodName, JObject parameters)
         {
             Type handlerType = FindType("UnityCliBridge.Handlers.VfxGraphHandler");
             if (handlerType == null)
             {
                 Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
             }
-            MethodInfo method = handlerType.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static);
-            Assert.IsNotNull(method, "VfxGraphHandler.Apply not found");
+            MethodInfo method = handlerType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            Assert.IsNotNull(method, $"VfxGraphHandler.{methodName} not found");
             object result = method.Invoke(null, new object[] { parameters });
             return result as JObject ?? JObject.FromObject(result);
         }

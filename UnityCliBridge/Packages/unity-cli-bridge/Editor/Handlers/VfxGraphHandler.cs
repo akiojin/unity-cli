@@ -490,7 +490,7 @@ namespace UnityCliBridge.Handlers
             try { initialEventName = InitialEventNameOf(Prop(graph, "visualEffectResource")); }
             catch { /* resource unavailable — leave null */ }
             JObject instancing = null;
-            try { instancing = InstancingJson(Prop(graph, "visualEffectResource")); }
+            try { instancing = InstancingJson(graph); }
             catch { /* resource unavailable — leave null */ }
 
             // Opt-in Tier-2 oracle: collect per-model validation errors. Off by default to
@@ -2657,18 +2657,42 @@ namespace UnityCliBridge.Handlers
         }
 
         /// <summary>
-        /// Read the asset's VisualEffectResource instancing settings (mode + capacity)
-        /// as a JSON block for describe; null when the resource doesn't surface either.
+        /// Read the asset's VisualEffectResource instancing settings (mode + capacity) plus the
+        /// graph-derived force-disable reason as a JSON block for describe; null when the resource
+        /// surfaces neither setting.
+        ///
+        /// <para>`disabledReason` mirrors <c>VFXGraphCompiledData.ValidateInstancing</c>: instancing
+        /// is force-disabled (regardless of the asset mode or the project-wide preference) when the
+        /// graph contains an Output Event context (<c>VFXOutputEvent</c>) or a static-mesh output
+        /// (<c>VFXStaticMeshOutput</c>). We recompute it from the live context types so the oracle
+        /// needs no access to the editor compiler's internal compiled-data state. "None" means no
+        /// graph-level block — the effective state then depends on the asset mode + the preference
+        /// master (the other two of the three instancing gates).</para>
         /// </summary>
-        private static JObject InstancingJson(object resource)
+        private static JObject InstancingJson(object graph)
         {
+            var resource = graph == null ? null : Prop(graph, "visualEffectResource");
             if (resource == null) return null;
             JToken modeTok = null;
             JToken capTok = null;
             try { modeTok = ToJToken(Prop(resource, "instancingMode")); } catch { }
             try { capTok = ToJToken(Prop(resource, "instancingCapacity")); } catch { }
             if (modeTok == null && capTok == null) return null;
-            return new JObject { ["mode"] = modeTok, ["capacity"] = capTok };
+
+            var reasons = new List<string>();
+            foreach (var child in Children(graph))
+            {
+                if (!ContextType.IsInstanceOfType(child)) continue;
+                var typeName = child.GetType().Name;
+                if (typeName == "VFXOutputEvent" && !reasons.Contains("OutputEvent")) reasons.Add("OutputEvent");
+                else if (typeName == "VFXStaticMeshOutput" && !reasons.Contains("MeshOutput")) reasons.Add("MeshOutput");
+            }
+            return new JObject
+            {
+                ["mode"] = modeTok,
+                ["capacity"] = capTok,
+                ["disabledReason"] = reasons.Count == 0 ? "None" : string.Join(", ", reasons)
+            };
         }
 
         /// <summary>Set VisualEffectResource.instancingMode (+ optional instancingCapacity).</summary>
