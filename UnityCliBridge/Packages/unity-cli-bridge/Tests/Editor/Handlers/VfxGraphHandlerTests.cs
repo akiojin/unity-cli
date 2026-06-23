@@ -304,6 +304,17 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_DuplicateBlock_WithoutContextType_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "duplicate_block",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["blockIndex"] = 0
+            }), "contextType is required");
+        }
+
+        [Test]
         public void Apply_UpdateStickyNote_WithoutIndex_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -667,6 +678,137 @@ namespace UnityCliBridge.Tests
                 new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(1, after.Value<int>("operatorCount"));
             Assert.AreEqual("Add", ((JArray)after["operators"])[0].Value<string>("type"));
+        }
+
+        [Test]
+        public void ApplyDuplicateBlock_ClonesBlockWithSettingsAndSlotValueWithinContext()
+        {
+            string copy = CopyFixture("dupblock");
+
+            // Add a Set Velocity block and make it distinctive: Composition=Add + a velocity slot value.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockName"] = "|Set|_Velocity"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0,
+                ["setting"] = "Composition",
+                ["value"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block",
+                    ["contextType"] = "Update",
+                    ["blockIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = new JObject
+                {
+                    ["vector"] = new JObject { ["x"] = 1.5f, ["y"] = 2.5f, ["z"] = 3.5f }
+                }
+            });
+
+            JObject dup = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "duplicate_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0
+            }));
+            Assert.AreEqual("SetAttribute", dup.Value<string>("duplicatedBlock"));
+            Assert.AreEqual(2, dup.Value<int>("blockCountInTarget"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var blocks = (JArray)FindContext(after, "Update")["blocks"];
+            Assert.AreEqual(2, blocks.Count, "duplicate should add a second block");
+            // The clone (index 1) carries the same setting + slot value as the source.
+            Assert.AreEqual("Add", blocks[1]["settings"]?["Composition"]?.ToString());
+            JToken cloneVec = blocks[1]["inputSlots"][0]["value"]["vector"];
+            Assert.AreEqual(1.5f, cloneVec.Value<float>("x"), 1e-4f);
+            Assert.AreEqual(2.5f, cloneVec.Value<float>("y"), 1e-4f);
+            Assert.AreEqual(3.5f, cloneVec.Value<float>("z"), 1e-4f);
+        }
+
+        [Test]
+        public void ApplyDuplicateBlock_CopiesIntoAnotherCompatibleContext()
+        {
+            string copy = CopyFixture("dupblockcross");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockName"] = "|Set|_Velocity"
+            });
+
+            // Copy the Update block into the Init context (Set Velocity is valid in both).
+            JObject dup = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "duplicate_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Update",
+                ["blockIndex"] = 0,
+                ["toContextType"] = "Init"
+            }));
+            Assert.AreEqual("Init", dup.Value<string>("toContextType"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            // Source survives in Update; clone lands in Init.
+            Assert.AreEqual(1, ((JArray)FindContext(after, "Update")["blocks"]).Count);
+            Assert.AreEqual(1, ((JArray)FindContext(after, "Init")["blocks"]).Count);
+        }
+
+        [Test]
+        public void ApplyDuplicateOperator_ClonesOperatorWithSlotValue()
+        {
+            string copy = CopyFixture("dupop");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "operator",
+                    ["operatorIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = 7.25f
+            });
+
+            JObject dup = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "duplicate_operator",
+                ["assetPath"] = copy,
+                ["operatorIndex"] = 0
+            }));
+            Assert.AreEqual("Add", dup.Value<string>("duplicatedOperator"));
+            Assert.AreEqual(2, dup.Value<int>("operatorCount"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var ops = (JArray)after["operators"];
+            Assert.AreEqual(2, ops.Count);
+            Assert.AreEqual(7.25f, ops[1]["inputSlots"][0]["value"].Value<float>(), 1e-4f,
+                "clone should carry the source operator's slot value");
         }
 
         [Test]

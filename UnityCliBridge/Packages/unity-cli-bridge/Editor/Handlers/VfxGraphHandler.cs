@@ -52,6 +52,7 @@ namespace UnityCliBridge.Handlers
         private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
         private static Type VFXManagerType => T("UnityEngine.VFX.VFXManager");
         private static Type VFXViewPreferenceType => T("UnityEditor.VFX.VFXViewPreference");
+        private static Type MemorySerializerType => T("UnityEditor.VFX.VFXMemorySerializer");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -761,6 +762,8 @@ namespace UnityCliBridge.Handlers
                 case "set_block_enabled": return SetBlockEnabled(parameters);
                 case "reorder_block": return ReorderBlock(parameters);
                 case "move_block": return MoveBlock(parameters);
+                case "duplicate_block": return DuplicateBlock(parameters);
+                case "duplicate_operator": return DuplicateOperator(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
                 case "remove_parameter": return RemoveParameter(parameters);
                 case "rename_parameter": return RenameParameter(parameters);
@@ -782,7 +785,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 default:
-                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
+                    return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
         }
 
@@ -2162,6 +2165,31 @@ namespace UnityCliBridge.Handlers
             }
         }
 
+        /// <summary>
+        /// Clone a VFXModel (block or operator) via the editor's VFXMemorySerializer.DuplicateObjects —
+        /// the clone carries the same [VFXSetting]s + slot values but fresh GUIDs (mirrors the GraphView's
+        /// VFXContextController.DuplicateBlock). The clone's slots (incl. a block's activationSlot) are
+        /// unlinked so the duplicate is detached; the caller AddChilds it into the target. Shared by
+        /// duplicate_block / duplicate_operator.
+        /// </summary>
+        private static object DuplicateModelViaSerializer(object model, Type wantedType)
+        {
+            var deps = new HashSet<UnityEngine.ScriptableObject> { (UnityEngine.ScriptableObject)model };
+            Call(model, ModelType, "CollectDependencies", deps, true);
+            // Box the array as a single arg so Call's params object[] doesn't splat it into N args.
+            var duplicated = (Array)Call(null, MemorySerializerType, "DuplicateObjects", (object)deps.ToArray());
+            var clone = duplicated.Cast<object>().FirstOrDefault(o => wantedType.IsInstanceOfType(o));
+            if (clone == null)
+                throw new Exception($"DuplicateObjects produced no {wantedType.Name} clone");
+
+            object actSlot = null;
+            try { actSlot = Prop(clone, "activationSlot"); } catch { /* operators have no activationSlot */ }
+            if (actSlot != null)
+                try { Call(actSlot, SlotType, "UnlinkAll", true, false); } catch { }
+            UnlinkContainerSlots(clone);
+            return clone;
+        }
+
         private static object RemoveBlock(JObject parameters)
         {
             var wantContext = parameters?["contextType"]?.ToString();
@@ -2322,6 +2350,88 @@ namespace UnityCliBridge.Handlers
                 ["toContextType"] = toContext,
                 ["toIndex"] = newIndex,
                 ["remainingInSource"] = Children(srcCtx).Count()
+            };
+        }
+
+        /// <summary>
+        /// Duplicate a block (clone all settings + slot values via VFXMemorySerializer) into its own
+        /// context, or into another compatible context when `toContextType` is given (validated via
+        /// VFXContext.Accept, like move_block). Optional `index` sets the insert position (-1 = append).
+        /// </summary>
+        private static object DuplicateBlock(JObject parameters)
+        {
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType is required (the source context)" };
+            int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
+            int toIndex = parameters?["index"]?.ToObject<int>() ?? -1;
+            var toContext = parameters?["toContextType"]?.ToString(); // optional: copy into another context
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (srcCtx, block) = LocateBlock(graph, wantContext, blockIndex);
+
+            object dstCtx = srcCtx;
+            if (!string.IsNullOrEmpty(toContext))
+            {
+                dstCtx = FindContext(graph, toContext);
+                if (dstCtx == null)
+                    throw new Exception($"No destination context of type '{toContext}' found in {assetPath}");
+            }
+
+            var clone = DuplicateModelViaSerializer(block, BlockType);
+
+            if (!ReferenceEquals(dstCtx, srcCtx))
+            {
+                bool accept = (bool)Call(dstCtx, ContextType, "Accept", clone, -1);
+                if (!accept)
+                    return new { error = $"Block '{clone.GetType().Name}' is not compatible with context '{toContext}'." };
+            }
+
+            Call(dstCtx, ContextType, "AddChild", clone, toIndex, true);
+            Persist(graph, assetPath);
+
+            int newIndex = Children(dstCtx).ToList().FindIndex(b => ReferenceEquals(b, clone));
+            return new JObject
+            {
+                ["op"] = "duplicate_block",
+                ["assetPath"] = assetPath,
+                ["sourceContextType"] = wantContext,
+                ["sourceBlockIndex"] = blockIndex,
+                ["toContextType"] = toContext ?? wantContext,
+                ["duplicatedBlock"] = clone.GetType().Name,
+                ["toIndex"] = newIndex,
+                ["blockCountInTarget"] = Children(dstCtx).Count()
+            };
+        }
+
+        /// <summary>
+        /// Duplicate a graph operator (clone all settings + slot values via VFXMemorySerializer). Mirrors
+        /// duplicate_block; the clone is appended to the graph with its slots unlinked.
+        /// </summary>
+        private static object DuplicateOperator(JObject parameters)
+        {
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+
+            var srcOps = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            if (operatorIndex < 0 || operatorIndex >= srcOps.Count)
+                throw new Exception(
+                    $"operatorIndex {operatorIndex} out of range; graph has {srcOps.Count} operator(s)");
+            var op = srcOps[operatorIndex];
+
+            var clone = DuplicateModelViaSerializer(op, OperatorType);
+            Call(graph, ModelType, "AddChild", clone, -1, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "duplicate_operator",
+                ["assetPath"] = assetPath,
+                ["sourceOperatorIndex"] = operatorIndex,
+                ["duplicatedOperator"] = clone.GetType().Name,
+                ["operatorCount"] = Children(graph).Count(c => OperatorType.IsInstanceOfType(c))
             };
         }
 

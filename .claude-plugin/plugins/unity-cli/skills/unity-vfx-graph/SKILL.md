@@ -50,8 +50,10 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"set_block_enabled","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"enabled":false}'
 unity-cli raw vfx_apply --json '{"op":"reorder_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toIndex":1}'
 unity-cli raw vfx_apply --json '{"op":"move_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toContextType":"Init"}'
+unity-cli raw vfx_apply --json '{"op":"duplicate_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
+unity-cli raw vfx_apply --json '{"op":"duplicate_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector3"}'
 unity-cli raw vfx_apply --json '{"op":"remove_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
@@ -117,7 +119,10 @@ unity-cli raw get_compilation_state --json '{}'
 `enabled` state by `contextType`+`blockIndex`+`enabled` bool — describe surfaces `blocks[].enabled`),
 `reorder_block` (move a block to `toIndex` within its context) and `move_block` (relocate a block to a
 compatible `toContextType` — validated via `VFXContext.Accept`, so an incompatible target returns a
-clear error rather than corrupting the graph), `set_operator_setting` (symmetrical to
+clear error rather than corrupting the graph), `duplicate_block` (clone a block by `contextType`+`blockIndex`
+— same `[VFXSetting]`s + slot values, fresh GUIDs, slots unlinked; optional `index` insert position and
+`toContextType` to copy into another compatible context, also `Accept`-validated) and its operator twin
+`duplicate_operator` (clone a graph operator by `operatorIndex`), `set_operator_setting` (symmetrical to
 `set_block_setting` for operators: target by `operatorIndex` from describe, set a `[VFXSetting]` field —
 e.g. a Custom HLSL operator's `m_HLSLCode`/`m_OperatorName`, or an Operator subgraph's `m_Subgraph`
 asset path; some settings reshape the operator's ports, and `operators[].settings` in describe reflects
