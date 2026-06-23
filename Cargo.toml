@@ -36,7 +36,7 @@ regex = "1.12"
 walkdir = "2.5"
 sha2 = "0.11"
 ureq = { version = "3.3", features = ["json"] }
-serde_yml = "0.0.12"
+serde_yml = "0.0.13"
 similar = "2"
 zip = "2"
 fastembed = { version = "4", default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries"] }
