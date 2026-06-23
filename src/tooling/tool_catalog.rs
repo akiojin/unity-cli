@@ -2460,6 +2460,7 @@ fn tool_params_schema(name: &str) -> Value {
                 ("name", string_schema()),
                 ("value", any_schema()),
                 ("eventName", string_schema()),
+                ("attributes", any_schema()),
             ],
             &["op", "gameObject"],
             false,

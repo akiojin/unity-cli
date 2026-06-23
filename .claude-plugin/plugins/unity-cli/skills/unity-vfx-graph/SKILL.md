@@ -270,7 +270,11 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 `set_vector4` (`name` = the exposed parameter name), `set_texture`/`set_mesh` (`name` = the exposed
 Texture2D/Mesh parameter, `assetPath` = the asset to bind; the exposed param must be USED in the graph
 to survive into the runtime sheet — e.g. wire it into an Output's `mainTexture`/`mesh` slot),
-`send_event` (`eventName`), `set_initial_event_name` (`name` = the per-instance
+`send_event` (`eventName`, plus an optional `attributes` payload object — e.g.
+`{"lifetime":2.0,"position":[0,1,0]}` — carried as a `VFXEventAttribute`: numbers become
+`SetFloat`, 2–4-element arrays `SetVector2/3/4`, booleans `SetBool`. The payload seeds spawn-event
+source attributes that spawned particles inherit when Init reads them with `Source = Source`),
+`set_initial_event_name` (`name` = the per-instance
 `VisualEffect.initialEventName` override of the asset default; `""` suppresses auto-play; then
 `Reinit`), `reinit`, and `get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`, `playRate`,
 `initialEventName`, and — when `name` is given — `hasFloat`/`floatValue`, `hasTexture`/`textureName`,

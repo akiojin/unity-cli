@@ -3033,8 +3033,52 @@ namespace UnityCliBridge.Handlers
                     {
                         var eventName = parameters?["eventName"]?.ToString();
                         if (string.IsNullOrEmpty(eventName)) return new { error = "eventName is required" };
-                        Call(comp2, VisualEffectType, "SendEvent", eventName);
-                        return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
+
+                        // Optional event-attribute payload: { "spawnCount": 17, "position": [x,y,z], ... }.
+                        // Each entry becomes a value on a VFXEventAttribute carried by the event — the
+                        // payload bus that seeds spawn-state (spawnCount/spawnTime) and source particle
+                        // attributes for the spawned particles (see VFXSpawnerState.vfxEventAttribute).
+                        var attrs = parameters?["attributes"] as JObject;
+                        if (attrs == null || attrs.Count == 0)
+                        {
+                            Call(comp2, VisualEffectType, "SendEvent", eventName);
+                            return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
+                        }
+
+                        var evtAttr = Call(comp2, VisualEffectType, "CreateVFXEventAttribute");
+                        if (evtAttr == null) return new { error = "CreateVFXEventAttribute returned null" };
+                        var evtAttrType = evtAttr.GetType();
+                        var applied = new JObject();
+                        foreach (var kv in attrs)
+                        {
+                            var an = kv.Key;
+                            var tok = kv.Value;
+                            if (tok is JArray ja)
+                            {
+                                switch (ja.Count)
+                                {
+                                    case 2: Call(evtAttr, evtAttrType, "SetVector2", an, ToVector(tok, 2)); break;
+                                    case 3: Call(evtAttr, evtAttrType, "SetVector3", an, ToVector(tok, 3)); break;
+                                    case 4: Call(evtAttr, evtAttrType, "SetVector4", an, ToVector(tok, 4)); break;
+                                    default: return new { error = $"attribute '{an}': array payload must have 2-4 numbers" };
+                                }
+                            }
+                            else if (tok.Type == JTokenType.Boolean)
+                            {
+                                Call(evtAttr, evtAttrType, "SetBool", an, tok.ToObject<bool>());
+                            }
+                            else
+                            {
+                                // VFX attributes (including the special spawnCount/spawnTime) are float-typed.
+                                Call(evtAttr, evtAttrType, "SetFloat", an, tok.ToObject<float>());
+                            }
+                            applied[an] = tok;
+                        }
+
+                        var sendWithAttr = VisualEffectType.GetMethod("SendEvent", new[] { typeof(string), evtAttrType });
+                        if (sendWithAttr == null) return new { error = "VisualEffect.SendEvent(string, VFXEventAttribute) not found" };
+                        sendWithAttr.Invoke(comp2, new object[] { eventName, evtAttr });
+                        return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName, ["attributes"] = applied };
                     }
                 case "set_initial_event_name":
                     {

@@ -324,9 +324,186 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             CleanupAuthored();
         }
 
+        /// <summary>
+        /// Event payload propagation (#6 runtime tail). The spawner fires a fixed Single Burst of N
+        /// particles per OnPlay; the SendEvent payload sets the <c>lifetime</c> SOURCE attribute that
+        /// those particles inherit. Sending OnPlay with a long lifetime keeps all N alive; re-sending
+        /// (after Reinit) with a near-zero lifetime makes the same burst die on the next step. The burst
+        /// count, graph, and event name are identical across both sends — only the payload differs — so
+        /// the difference in aliveParticleCount is unambiguous proof the VFXEventAttribute payload
+        /// propagated through the Event→Spawn bus onto the spawned particles.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_SendEvent_LifetimePayload_PropagatesToSpawnedParticles()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            const int burst = 23;
+            string authored = AuthorSpawningFixture(burst);
+            if (authored == null)
+            {
+                yield break; // already Assert.Ignore-d
+            }
+
+            // A camera framing the rig — the VFX manager only fully processes (and spawns for) a
+            // rendered effect; a culled one barely simulates (same rig as the output-event test).
+            _camera = new GameObject("VfxRuntimeCam");
+            var cam = _camera.AddComponent<Camera>();
+            _camera.transform.position = new Vector3(0f, 0f, -5f);
+            _camera.transform.rotation = Quaternion.identity;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+
+            _rig = new GameObject(RigName);
+            _rig.transform.position = Vector3.zero;
+            var vfx = _rig.AddComponent<VisualEffect>();
+
+            JObject bound = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_asset",
+                ["gameObject"] = RigName,
+                ["assetPath"] = authored
+            });
+            Assert.IsNull(bound.Value<string>("error"), $"set_asset should not error; got: {bound}");
+
+            // Suppress the asset's auto-play (OnPlay) so the only bursts are the ones we send with a
+            // controlled payload — otherwise the bind-time OnPlay fires the burst with a default lifetime.
+            JObject noAuto = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_initial_event_name",
+                ["gameObject"] = RigName,
+                ["name"] = ""
+            });
+            Assert.IsNull(noAuto.Value<string>("error"), $"set_initial_event_name should not error; got: {noAuto}");
+            // Warm-up: let the just-authored asset finish compiling + the effect initialize. A freshly
+            // (re)init'd effect that has not yet ticked reports aliveParticleCount == -1; warm up until
+            // it settles. With auto-play suppressed and no event sent, no particles should be alive.
+            for (int i = 0; i < 12; i++)
+            {
+                vfx.Simulate(0.05f, 1);
+                yield return null;
+            }
+            Assert.LessOrEqual(vfx.aliveParticleCount, 0,
+                $"with auto-play suppressed and no event sent, nothing should spawn; got {vfx.aliveParticleCount}");
+
+            // Fire the SAME OnPlay burst twice — once with a long lifetime payload, once with a near-zero
+            // one. Reinit between resets the spawn context so the Single Burst fires again. Each send is
+            // followed by frame-by-frame Simulate (the rig only spawns/ticks when Simulate is called per
+            // rendered frame — see HANDOFF §6b). The yields are why this loop is inline, not a helper.
+            var lifetimes = new[] { 50f, 0.001f };
+            var counts = new int[lifetimes.Length];
+            for (int k = 0; k < lifetimes.Length; k++)
+            {
+                if (k > 0)
+                {
+                    InvokeRuntime(new JObject { ["op"] = "reinit", ["gameObject"] = RigName });
+                    for (int i = 0; i < 4; i++)
+                    {
+                        vfx.Simulate(0.05f, 1);
+                        yield return null;
+                    }
+                }
+
+                JObject sent = InvokeRuntime(new JObject
+                {
+                    ["op"] = "send_event",
+                    ["gameObject"] = RigName,
+                    ["eventName"] = "OnPlay",
+                    ["attributes"] = new JObject { ["lifetime"] = lifetimes[k] }
+                });
+                Assert.IsNull(sent.Value<string>("error"), $"send_event (lifetime payload) should not error; got: {sent}");
+                Assert.AreEqual(lifetimes[k], sent["attributes"]?["lifetime"]?.ToObject<float>(), 0.0001f,
+                    "the op result should echo the applied payload");
+
+                for (int i = 0; i < 16; i++)
+                {
+                    vfx.Simulate(0.05f, 1);
+                    yield return null;
+                }
+                counts[k] = vfx.aliveParticleCount;
+            }
+
+            int longLived = counts[0];
+            int shortLived = counts[1];
+            Assert.AreEqual(burst, longLived,
+                $"a long-lifetime payload should leave the whole burst alive; got {longLived}");
+            Assert.AreEqual(0, shortLived,
+                $"a near-zero-lifetime payload should reap the same burst immediately; got {shortLived}");
+
+            CleanupAuthored();
+        }
+
         // ---- Rig + handler plumbing (reflection — no compile-time Editor reference) -----------
 
         private string _authoredFolder;
+
+        /// <summary>
+        /// Copy the fixture and give its Spawner a fixed Single Burst of <paramref name="burstCount"/>
+        /// particles. The burst fixes how MANY particles spawn per OnPlay; the SendEvent payload then
+        /// varies a SOURCE attribute (lifetime) those particles inherit — so the count is constant and
+        /// only the payload changes whether the spawned particles survive, isolating payload effect.
+        /// </summary>
+        private string AuthorSpawningFixture(int burstCount)
+        {
+            if (FindType("UnityCliBridge.Handlers.VfxGraphHandler") == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/SpawnPayload.vfx";
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            JObject burst = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Single Burst"
+            });
+            Assert.IsNull(burst.Value<string>("error"), $"add_block (single burst) should not error; got: {burst}");
+
+            JObject count = InvokeApply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = dest,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block",
+                    ["contextType"] = "Spawner",
+                    ["blockIndex"] = 0,
+                    ["slot"] = 0
+                },
+                ["value"] = burstCount
+            });
+            Assert.IsNull(count.Value<string>("error"), $"set_slot_value (burst count) should not error; got: {count}");
+
+            // Initialize reads lifetime FROM the spawn event's source attribute (Source = Source), so the
+            // SendEvent payload's `lifetime` becomes each spawned particle's lifetime. Without this block
+            // the source attribute is never consumed and the payload would have no observable effect.
+            JObject life = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Init",
+                ["blockName"] = "|Set|_Lifetime"
+            });
+            Assert.IsNull(life.Value<string>("error"), $"add_block (set lifetime) should not error; got: {life}");
+
+            JObject src = InvokeApply(new JObject
+            {
+                ["op"] = "set_block_setting",
+                ["assetPath"] = dest,
+                ["contextType"] = "Init",
+                ["blockIndex"] = 0,
+                ["setting"] = "Source",
+                ["value"] = "Source"
+            });
+            Assert.IsNull(src.Value<string>("error"), $"set_block_setting (Source) should not error; got: {src}");
+            return dest;
+        }
 
         /// <summary>
         /// Copy the fixture, give the Spawner a Constant Spawn Rate so the system runs, and add an
