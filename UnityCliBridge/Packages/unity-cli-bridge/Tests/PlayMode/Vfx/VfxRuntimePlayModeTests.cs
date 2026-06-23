@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.VFX;
 
 namespace UnityCliBridge.Tests.PlayMode.Vfx
 {
@@ -27,6 +28,7 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
         private const string RigName = "VfxRuntimeRig";
 
         private GameObject _rig;
+        private GameObject _camera;
 
         [TearDown]
         public void TearDown()
@@ -35,6 +37,11 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             {
                 UnityEngine.Object.DestroyImmediate(_rig);
                 _rig = null;
+            }
+            if (_camera != null)
+            {
+                UnityEngine.Object.DestroyImmediate(_camera);
+                _camera = null;
             }
             CleanupAuthored();
         }
@@ -239,9 +246,134 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             CleanupAuthored();
         }
 
-        // ---- Rig + handler plumbing (reflection — no compile-time Editor/VFX reference) -------
+        /// <summary>
+        /// Output Event CPU callback (#6 runtime tail). Authors a graph with an Output Event context
+        /// (named "OnTest") flow-linked from the Spawner, subscribes a C# handler to the live
+        /// VisualEffect.outputEventReceived, plays, and asserts the callback fires with the matching
+        /// event nameId — the CPU round-trip from the GPU/spawn machinery back into managed code.
+        /// This is why the VFX PlayMode tests have their own asmdef that references the VFX runtime:
+        /// the event delegate (Action&lt;VFXOutputEventArgs&gt;) can't be built by pure reflection.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_OutputEvent_FiresCpuCallbackForNamedEvent()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            string authored = AuthorOutputEventFixture();
+            if (authored == null)
+            {
+                yield break; // already Assert.Ignore-d
+            }
+
+            // A camera that frames the rig — output events are dispatched during the VFX render/update
+            // tick, which a culled (unrendered) effect skips.
+            _camera = new GameObject("VfxRuntimeCam");
+            var cam = _camera.AddComponent<Camera>();
+            _camera.transform.position = new Vector3(0f, 0f, -5f);
+            _camera.transform.rotation = Quaternion.identity;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+
+            _rig = new GameObject(RigName);
+            _rig.transform.position = Vector3.zero;
+            var vfx = _rig.AddComponent<VisualEffect>();
+
+            int total = 0;
+            int wantId = Shader.PropertyToID("OnTest");
+            bool sawWanted = false;
+            void OnOutputEvent(VFXOutputEventArgs args)
+            {
+                total++;
+                if (args.nameId == wantId)
+                {
+                    sawWanted = true;
+                }
+            }
+            vfx.outputEventReceived += OnOutputEvent;
+
+            try
+            {
+                // Bind via the handler (loads the asset by path) and play long enough for the spawn
+                // machinery to emit the output event back to the CPU.
+                JObject bound = InvokeRuntime(new JObject
+                {
+                    ["op"] = "set_asset",
+                    ["gameObject"] = RigName,
+                    ["assetPath"] = authored
+                });
+                Assert.IsNull(bound.Value<string>("error"), $"set_asset should not error; got: {bound}");
+
+                // Let Reinit settle, then advance frames; the camera renders the effect so the VFX
+                // manager processes it and dispatches the Output Event back to the CPU. Simulate()
+                // additionally guarantees the spawn machinery ticks even if rendering is throttled.
+                yield return null;
+                for (int i = 0; i < 240 && !sawWanted; i++)
+                {
+                    vfx.Simulate(0.05f, 1);
+                    yield return null;
+                }
+            }
+            finally
+            {
+                vfx.outputEventReceived -= OnOutputEvent;
+            }
+
+            Assert.Greater(total, 0, "the Output Event context should have fired at least one CPU callback");
+            Assert.IsTrue(sawWanted,
+                "the callback should report the 'OnTest' event nameId from the Output Event context");
+
+            CleanupAuthored();
+        }
+
+        // ---- Rig + handler plumbing (reflection — no compile-time Editor reference) -----------
 
         private string _authoredFolder;
+
+        /// <summary>
+        /// Copy the fixture, give the Spawner a Constant Spawn Rate so the system runs, and add an
+        /// Output Event context ("OnTest") flow-linked from the Spawner. Returns the asset path or null.
+        /// </summary>
+        private string AuthorOutputEventFixture()
+        {
+            if (FindType("UnityCliBridge.Handlers.VfxGraphHandler") == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/OutEvent.vfx";
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            JObject rate = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Constant Spawn Rate"
+            });
+            Assert.IsNull(rate.Value<string>("error"), $"add_block (spawn rate) should not error; got: {rate}");
+
+            JObject add = InvokeApply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = dest,
+                ["contextName"] = "Output Event",
+                ["settings"] = new JObject { ["eventName"] = "OnTest" }
+            });
+            Assert.IsNull(add.Value<string>("error"), $"add_context (output event) should not error; got: {add}");
+
+            JObject link = InvokeApply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = dest,
+                ["from"] = new JObject { ["contextType"] = "Spawner" },
+                ["to"] = new JObject { ["contextType"] = "OutputEvent" }
+            });
+            Assert.IsNull(link.Value<string>("error"), $"link_flow should not error; got: {link}");
+            return dest;
+        }
 
         /// <summary>
         /// Copy the fixture, swap its Quad output for an Unlit Mesh output (so contextType "Output"
