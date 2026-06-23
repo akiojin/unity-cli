@@ -160,8 +160,9 @@ optional `exposed:false` for a constant (non-exposed) param, `min`/`max` for a n
 …address, slot: index}` where an operator uses `operatorIndex`, a parameter uses `parameterIndex`, a
 block/context uses `contextType` (+ `blockIndex` for blocks)), `set_slot_value` (write a constant into
 an unlinked input slot: `target` is the same `{node, …address, slot}` shape as a `link_slots` endpoint;
-the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color —
-while an optional `subPath` walks into a compound value struct, e.g. `["center"]` sets a sub-vector and
+the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color, or
+an **asset path string for an Object-typed slot** (Texture2D/Texture3D/Cubemap/Mesh — loaded by path,
+e.g. an Output's `mainTexture` slot) — while an optional `subPath` walks into a compound value struct, e.g. `["center"]` sets a sub-vector and
 `["size","x"]` sets one nested component, leaving the rest untouched; describe re-reads it via
 `inputSlots[].value`), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
 `{node, …address, slot}` whose link(s) to remove — by default all of them, or pass a specific `from`

@@ -2226,6 +2226,45 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySetSlotValue_SetsObjectTypedTextureSlotByAssetPath()
+        {
+            const string texPath = "Assets/Materials/Dice/DiceTexture.png";
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(texPath) == null)
+            {
+                Assert.Ignore($"Texture fixture {texPath} not present in this project.");
+            }
+            string copy = CopyFixture("slotobject");
+
+            // The Output context's mainTexture slot is Object-typed (Texture2D) and defaults to null,
+            // so its CLR type can't be read from the (null) current value — this exercises the
+            // declared-type fallback (SlotClrType) plus the asset-path load path in CoerceToType.
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "context",
+                    ["contextType"] = "Output",
+                    ["slot"] = 0
+                },
+                ["value"] = texPath
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"set_slot_value should not error; got: {result}");
+            Assert.AreEqual("mainTexture", result["target"].Value<string>("slotName"));
+            Assert.AreEqual("DiceTexture", result["value"].Value<string>("name"),
+                "the op result should report the bound texture asset");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var slots = (JArray)FindContext(after, "Output")["inputSlots"];
+            JToken main = slots.First(s => (string)s["name"] == "mainTexture")["value"];
+            Assert.AreEqual("DiceTexture", main.Value<string>("name"),
+                "the mainTexture slot value should round-trip through describe as the bound asset");
+            Assert.AreEqual("Texture2D", main.Value<string>("type"));
+        }
+
+        [Test]
         public void ApplySetSlotValue_RecompilesCleanWithNoErrors()
         {
             string copy = CopyFixture("slotclean");

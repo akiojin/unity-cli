@@ -241,18 +241,23 @@ namespace UnityCliBridge.Handlers
             catch { return null; }
         }
 
-        /// <summary>The slot's declared value type name (e.g. "Single"/"Vector3") — surfaces operand-type
-        /// changes on dynamic operators. `property.type` is a struct field on VFXSlot (like `name`).</summary>
-        private static string SlotValueTypeName(object slot)
+        /// <summary>The slot's declared CLR value type (e.g. Single/Vector3/Texture2D), resolved from
+        /// `VFXProperty.type` (a property on VFXSlot). Survives a null current value — Object-typed slots
+        /// (Texture/Mesh) default to null, so this is the only way to know what to coerce a value into.</summary>
+        private static Type SlotClrType(object slot)
         {
             try
             {
                 var property = Prop(slot, "property");
                 var typeProp = property.GetType().GetProperty("type"); // VFXProperty.type is a property
-                return (typeProp?.GetValue(property) as Type)?.Name;
+                return typeProp?.GetValue(property) as Type;
             }
             catch { return null; }
         }
+
+        /// <summary>The slot's declared value type name (e.g. "Single"/"Vector3") — surfaces operand-type
+        /// changes on dynamic operators.</summary>
+        private static string SlotValueTypeName(object slot) => SlotClrType(slot)?.Name;
 
         /// <summary>Log an error and return it as a { error } result.</summary>
         private static object Fail(string command, Exception ex)
@@ -1747,6 +1752,18 @@ namespace UnityCliBridge.Handlers
                     ? Enum.Parse(targetType, value.ToString(), true)
                     : Enum.ToObject(targetType, value.ToObject<long>());
             }
+            // Object-typed slots (Texture2D/Texture3D/Cubemap/Mesh/…) take an asset PATH — load it,
+            // same convention as set_block_setting/set_operator_setting for Object-typed fields.
+            if (typeof(UnityEngine.Object).IsAssignableFrom(targetType))
+            {
+                var path = value.ToString();
+                if (string.IsNullOrEmpty(path))
+                    throw new Exception($"value for a {targetType.Name} slot must be an asset path string");
+                var asset = AssetDatabase.LoadAssetAtPath(path, targetType);
+                if (asset == null)
+                    throw new Exception($"No {targetType.Name} asset at path: {path}");
+                return asset;
+            }
             try { return value.ToObject(targetType); }
             catch (Exception e)
             {
@@ -1815,9 +1832,12 @@ namespace UnityCliBridge.Handlers
             }
             else
             {
-                var targetType = current?.GetType()
+                // Prefer the current value's type (preserves existing behavior for value-type leaves);
+                // fall back to the slot's declared CLR type so Object-typed slots (Texture/Mesh), whose
+                // default value is null, can still be set — by asset path (see CoerceToType).
+                var targetType = current?.GetType() ?? SlotClrType(slot)
                     ?? throw new Exception(
-                        "Slot value type could not be inferred (slot has a null value); subPath/typed slots unsupported here");
+                        "Slot value type could not be inferred (null value and no declared property type)");
                 newValue = CoerceToType(valueToken, targetType);
             }
 
