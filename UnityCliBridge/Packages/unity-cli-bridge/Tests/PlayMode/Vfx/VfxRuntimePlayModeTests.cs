@@ -36,6 +36,7 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
                 UnityEngine.Object.DestroyImmediate(_rig);
                 _rig = null;
             }
+            CleanupAuthored();
         }
 
         /// <summary>
@@ -127,7 +128,169 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
                 "clearing the initial event name must change it away from the prior value");
         }
 
+        /// <summary>
+        /// Runtime SetTexture on an Object-typed exposed property (#9 runtime tail). Authors a copy
+        /// of the fixture with an exposed Texture2D parameter wired into the Output's mainTexture slot
+        /// (exposed params only survive into the runtime sheet when USED), binds it to a live effect,
+        /// then sets a texture by path and confirms the round-trip via get_state (hasTexture +
+        /// textureName). Edit-mode authoring goes through the handler; the bind/set/read is runtime.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_SetTexture_BindsObjectPropertyAndReadsBack()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            const string texPath = "Assets/Materials/Dice/DiceTexture.png";
+            string authored = AuthorTexturedFixture(texPath);
+            if (authored == null)
+            {
+                yield break; // AuthorTexturedFixture already Assert.Ignore-d (missing inputs)
+            }
+
+            _rig = new GameObject(RigName);
+            Type vfxType = FindType("UnityEngine.VFX.VisualEffect");
+            if (vfxType == null)
+            {
+                Assert.Ignore("VisualEffect type not found (VFX package not installed).");
+            }
+            _rig.AddComponent(vfxType);
+
+            JObject bound = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_asset",
+                ["gameObject"] = RigName,
+                ["assetPath"] = authored
+            });
+            Assert.IsNull(bound.Value<string>("error"), $"set_asset should not error; got: {bound}");
+
+            for (int i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            JObject set = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_texture",
+                ["gameObject"] = RigName,
+                ["name"] = "Tex",
+                ["assetPath"] = texPath
+            });
+            Assert.IsNull(set.Value<string>("error"), $"set_texture should not error; got: {set}");
+            Assert.IsTrue(set.Value<bool>("hasTexture"),
+                "the wired exposed Texture2D param should be present in the runtime property sheet");
+            Assert.AreEqual("DiceTexture", set.Value<string>("textureName"),
+                "GetTexture should report the bound texture asset name");
+
+            CleanupAuthored();
+        }
+
         // ---- Rig + handler plumbing (reflection — no compile-time Editor/VFX reference) -------
+
+        private string _authoredFolder;
+
+        /// <summary>
+        /// Copy the fixture into a temp folder, add an exposed Texture2D parameter, and link it into
+        /// the Output context's mainTexture slot so it is "used" (and therefore survives compilation
+        /// into the runtime property sheet). Returns the authored asset path, or null after an Ignore.
+        /// </summary>
+        private string AuthorTexturedFixture(string texPath)
+        {
+            // Copy the fixture, then author against the copy via handler ops (which operate by path).
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/Textured.vfx";
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            // Exposed Texture2D parameter.
+            JObject param = InvokeApply(new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = dest,
+                ["parameterName"] = "Tex",
+                ["type"] = "Texture2D"
+            });
+            Assert.IsNull(param.Value<string>("error"), $"add_parameter should not error; got: {param}");
+
+            // Wire the parameter output into the Output context's mainTexture input (slot 0) so it is
+            // used by the compiled graph.
+            JObject link = InvokeApply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = dest,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject
+                {
+                    ["node"] = "context",
+                    ["contextType"] = "Output",
+                    ["slot"] = 0
+                }
+            });
+            Assert.IsNull(link.Value<string>("error"), $"link_slots should not error; got: {link}");
+            return dest;
+        }
+
+        private void CleanupAuthored()
+        {
+            if (_authoredFolder != null)
+            {
+                DeleteAsset("Assets/UnityCliBridgeTests");
+                _authoredFolder = null;
+            }
+        }
+
+        // AssetDatabase is editor-only; reach it reflectively so this all-platforms assembly compiles.
+        private static bool CopyAsset(string from, string to)
+        {
+            Type adb = FindType("UnityEditor.AssetDatabase");
+            if (adb == null) return false;
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder("Assets/UnityCliBridgeTests/VfxRuntime");
+            bool ok = (bool)adb.GetMethod("CopyAsset", new[] { typeof(string), typeof(string) })
+                .Invoke(null, new object[] { from, to });
+            if (ok)
+            {
+                ImportAsset(to);
+            }
+            return ok;
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            Type adb = FindType("UnityEditor.AssetDatabase");
+            if (adb == null) return;
+            bool valid = (bool)adb.GetMethod("IsValidFolder").Invoke(null, new object[] { path });
+            if (valid) return;
+            int slash = path.LastIndexOf('/');
+            adb.GetMethod("CreateFolder").Invoke(null,
+                new object[] { path.Substring(0, slash), path.Substring(slash + 1) });
+        }
+
+        private static void ImportAsset(string path)
+        {
+            Type adb = FindType("UnityEditor.AssetDatabase");
+            adb?.GetMethod("ImportAsset", new[] { typeof(string) })?.Invoke(null, new object[] { path });
+        }
+
+        private static void DeleteAsset(string path)
+        {
+            Type adb = FindType("UnityEditor.AssetDatabase");
+            adb?.GetMethod("DeleteAsset", new[] { typeof(string) })?.Invoke(null, new object[] { path });
+        }
+
+        private static JObject InvokeApply(JObject parameters)
+        {
+            Type handlerType = FindType("UnityCliBridge.Handlers.VfxGraphHandler");
+            if (handlerType == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+            MethodInfo method = handlerType.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static);
+            Assert.IsNotNull(method, "VfxGraphHandler.Apply not found");
+            object result = method.Invoke(null, new object[] { parameters });
+            return result as JObject ?? JObject.FromObject(result);
+        }
 
         /// <summary>
         /// Create a named GameObject carrying a live VisualEffect bound to the fixture, binding the

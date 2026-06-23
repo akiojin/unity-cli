@@ -2971,7 +2971,7 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>
         /// Runtime control of a VisualEffect component via its public API. Ops:
-        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event,
+        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, send_event,
         /// set_initial_event_name, reinit, get_state.
         /// </summary>
         public static object Runtime(JObject parameters)
@@ -3049,6 +3049,23 @@ namespace UnityCliBridge.Handlers
                         s["op"] = op;
                         return s;
                     }
+                case "set_texture":
+                    {
+                        // Object-typed exposed property: load a Texture by path and bind it through
+                        // the public SetTexture(string, Texture). Round-trips via HasTexture/GetTexture
+                        // in get_state (only survives if the exposed param is USED in the graph).
+                        if (string.IsNullOrEmpty(name)) return new { error = "name is required (exposed texture parameter name)" };
+                        var texPath = parameters?["assetPath"]?.ToString() ?? valueToken?.ToString();
+                        if (string.IsNullOrEmpty(texPath)) return new { error = "assetPath is required (path to a Texture asset)" };
+                        var tex = AssetDatabase.LoadAssetAtPath(texPath, typeof(Texture));
+                        if (tex == null) return new { error = $"No Texture asset at path: {texPath}" };
+                        var setTex = VisualEffectType.GetMethod("SetTexture", new[] { typeof(string), typeof(Texture) });
+                        if (setTex == null) return new { error = "VisualEffect.SetTexture(string, Texture) not found" };
+                        setTex.Invoke(comp2, new object[] { name, tex });
+                        var s = RuntimeState(comp2, gameObject, name);
+                        s["op"] = op;
+                        return s;
+                    }
                 case "reinit":
                     Call(comp2, VisualEffectType, "Reinit");
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject };
@@ -3058,7 +3075,7 @@ namespace UnityCliBridge.Handlers
                     return new
                     {
                         error = $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
-                                "set_vector2, set_vector3, set_vector4, send_event, set_initial_event_name, reinit, get_state"
+                                "set_vector2, set_vector3, set_vector4, set_texture, send_event, set_initial_event_name, reinit, get_state"
                     };
             }
 
@@ -3089,6 +3106,9 @@ namespace UnityCliBridge.Handlers
                 try { state["hasFloat"] = (bool)Call(comp, VisualEffectType, "HasFloat", name); } catch { }
                 if (state.Value<bool?>("hasFloat") == true)
                     try { state["floatValue"] = (float)Call(comp, VisualEffectType, "GetFloat", name); } catch { }
+                try { state["hasTexture"] = (bool)Call(comp, VisualEffectType, "HasTexture", name); } catch { }
+                if (state.Value<bool?>("hasTexture") == true)
+                    try { state["textureName"] = (Call(comp, VisualEffectType, "GetTexture", name) as UnityEngine.Object)?.name; } catch { }
             }
             return state;
         }
