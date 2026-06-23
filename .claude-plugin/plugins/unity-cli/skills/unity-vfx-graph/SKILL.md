@@ -170,7 +170,12 @@ e.g. an Output's `mainTexture` slot) — while an optional `subPath` walks into 
 `inputSlots[].value`), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
 `{node, …address, slot}` whose link(s) to remove — by default all of them, or pass a specific `from`
 output-slot endpoint to remove just that edge; returns `linksRemoved`/`remainingLinks`, and describe
-re-reads it via `inputSlots[].hasLink`/`links`), the `remove_*` family (`remove_block` by
+re-reads it via `inputSlots[].hasLink`/`links`), `convert_to_property` (promote an inline-constant
+operator — `target` `{node:"operator", operatorIndex}` of an Operator/Inline node like `float`/`Vector2`
+— into a blackboard parameter, carrying its value + output links; `name` sets the exposed name and
+`exposed` (default false) toggles blackboard exposure) and `convert_to_inline` (the inverse: bake a
+parameter — `target` `{node:"parameter", parameterIndex}` — back into an inline-constant operator,
+value + links intact), the `remove_*` family (`remove_block` by
 `contextType`+`blockIndex`, `remove_operator` by `operatorIndex`, `remove_parameter` by
 `parameterIndex`, `remove_context` by `contextType` or `index` — each unlinks the node's slots (and a
 context's flow edges) before deleting, so no dangling links remain; describe's counts/arrays shrink and

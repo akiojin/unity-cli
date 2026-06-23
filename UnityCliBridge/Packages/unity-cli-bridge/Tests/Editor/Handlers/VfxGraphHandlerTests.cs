@@ -2335,6 +2335,98 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyConvert_InlineToPropertyAndBack_PreservesValueAndLinks()
+        {
+            string copy = CopyFixture("convert");
+            // An Add operator (float inputs a/b) fed by a float inline-constant operator set to 7.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "float"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 },
+                ["value"] = 7.0
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 }
+            });
+
+            // inline → property: a new exposed parameter takes the inline's value AND its output link.
+            JObject toProp = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "convert_to_property",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1 },
+                ["name"] = "MyFloat",
+                ["exposed"] = true
+            }));
+            Assert.IsNull(toProp.Value<string>("error"), $"convert_to_property should not error; got: {toProp}");
+
+            JObject afterProp = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var opsP = (JArray)afterProp["operators"];
+            Assert.IsFalse(opsP.Any(o => (string)o["type"] == "VFXInlineOperator"),
+                "the inline operator should be gone after convert_to_property");
+            var param = (JArray)afterProp["parameters"];
+            Assert.AreEqual(1, param.Count, "a parameter should have been created");
+            Assert.AreEqual("MyFloat", param[0].Value<string>("exposedName"));
+            Assert.IsTrue(param[0].Value<bool>("exposed"));
+            Assert.AreEqual(7f, param[0].Value<float>("value"), 1e-4f, "the constant value should carry over");
+            var paramLinks = (JArray)param[0]["outputSlots"][0]["links"];
+            Assert.AreEqual("a", paramLinks[0].Value<string>("name"),
+                "the parameter should inherit the inline operator's output link (into Add's 'a')");
+
+            // property → inline: round-trips back to an inline constant, value + link intact.
+            JObject toInline = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "convert_to_inline",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0 }
+            }));
+            Assert.IsNull(toInline.Value<string>("error"), $"convert_to_inline should not error; got: {toInline}");
+
+            JObject afterInline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(0, ((JArray)afterInline["parameters"]).Count,
+                "the parameter should be gone after convert_to_inline");
+            var inline = ((JArray)afterInline["operators"]).First(o => (string)o["type"] == "VFXInlineOperator");
+            Assert.AreEqual(7f, inline["inputSlots"][0].Value<float>("value"), 1e-4f,
+                "the value should round-trip back onto the inline operator");
+            Assert.AreEqual("a", ((JArray)inline["outputSlots"][0]["links"])[0].Value<string>("name"),
+                "the output link should round-trip back to Add's 'a'");
+            var errors = ((JArray)afterInline["errors"]).Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count, "the round-trip should recompile with zero Error-tier entries");
+        }
+
+        [Test]
+        public void ApplyConvertToProperty_OnNonInlineOperator_ReturnsError()
+        {
+            string copy = CopyFixture("convertbad");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add"
+            });
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "convert_to_property",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0 }
+            }));
+            StringAssert.Contains("must be an inline operator", result.Value<string>("error"),
+                "converting a non-inline operator should return a clear validation error");
+        }
+
+        [Test]
         public void ApplySetSlotValue_RecompilesCleanWithNoErrors()
         {
             string copy = CopyFixture("slotclean");

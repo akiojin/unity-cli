@@ -731,6 +731,8 @@ namespace UnityCliBridge.Handlers
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
                 case "set_slot_value": return SetSlotValue(parameters);
+                case "convert_to_property": return ConvertToProperty(parameters);
+                case "convert_to_inline": return ConvertToInline(parameters);
                 case "unlink_slots": return UnlinkSlots(parameters);
                 case "remove_block": return RemoveBlock(parameters);
                 case "set_block_enabled": return SetBlockEnabled(parameters);
@@ -1896,6 +1898,113 @@ namespace UnityCliBridge.Handlers
                 },
                 ["subPath"] = subPath == null ? null : new JArray(subPath),
                 ["value"] = ToJToken(Prop(slot, "value"))
+            };
+        }
+
+        private static Type InlineOperatorType => T("UnityEditor.VFX.VFXInlineOperator");
+        private static Type SerializableTypeType => T("UnityEditor.VFX.SerializableType");
+
+        /// <summary>
+        /// Convert an inline-constant operator (VFXInlineOperator) into an exposed/constant blackboard
+        /// parameter (VFXParameter), preserving its value and moving its output links — the headless
+        /// equivalent of the editor's "Convert to Property". `target` addresses the inline operator
+        /// ({node:"operator", operatorIndex}); `name` sets the exposed name; `exposed` (default false)
+        /// toggles whether it's a blackboard-exposed parameter or a non-exposed constant.
+        /// </summary>
+        private static object ConvertToProperty(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            if (target == null)
+                return new { error = "target is required (the inline operator to convert, {node:\"operator\", operatorIndex})" };
+            bool exposed = parameters?["exposed"]?.ToObject<bool>() ?? false;
+            var name = parameters?["name"]?.ToString();
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            if (!InlineOperatorType.IsInstanceOfType(node))
+                return new { error = $"target must be an inline operator (VFXInlineOperator); got {node.GetType().Name}. " +
+                                     "Inline operators come from add_operator with an Operator/Inline type (e.g. \"float\", \"Vector2\")." };
+
+            var inlineType = Prop(node, "type") as Type;
+            if (inlineType == null) return new { error = "could not read the inline operator's value type" };
+
+            var descriptors = (Call(null, LibraryType, "GetParameters") as IEnumerable).Cast<object>().ToList();
+            var desc = descriptors.FirstOrDefault(d => (Prop(d, "modelType") as Type) == inlineType);
+            if (desc == null)
+                return new { error = $"no blackboard parameter type matches the inline operator's type '{inlineType.Name}'" };
+
+            var param = Call(desc, desc.GetType(), "CreateInstance");
+            Call(param, ModelType, "SetSettingValue", "m_Exposed", exposed);
+            if (!string.IsNullOrEmpty(name))
+                Call(param, ModelType, "SetSettingValue", "m_ExposedName", name);
+
+            // Move the inline operator's output links onto the new parameter's output (CopyLinks
+            // re-points the single-link inputs, so the inline op is left link-free for a clean remove).
+            var inlineOut = GetSlot(node, false, 0, "inline");
+            var paramOut = GetSlot(param, false, 0, "parameter");
+            Call(null, SlotType, "CopyLinks", paramOut, inlineOut, false);
+
+            Call(graph, ModelType, "AddChild", param, -1, true);
+
+            // Carry the constant over: the inline operator holds it on input slot 0.
+            try { SetProp(param, "value", Prop(GetSlot(node, true, 0, "inline"), "value")); } catch { }
+
+            Call(graph, ModelType, "RemoveChild", node, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "convert_to_property",
+                ["assetPath"] = assetPath,
+                ["exposedName"] = name,
+                ["exposed"] = exposed,
+                ["type"] = inlineType.Name
+            };
+        }
+
+        /// <summary>
+        /// Convert a blackboard parameter (VFXParameter) into an inline-constant operator
+        /// (VFXInlineOperator) of the same type, preserving its value and moving its output links — the
+        /// headless equivalent of "Convert to Inline". `target` addresses the parameter
+        /// ({node:"parameter", parameterIndex}).
+        /// </summary>
+        private static object ConvertToInline(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            if (target == null)
+                return new { error = "target is required (the parameter to convert, {node:\"parameter\", parameterIndex})" };
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            if (!ParameterType.IsInstanceOfType(node))
+                return new { error = $"target must be a blackboard parameter (VFXParameter); got {node.GetType().Name}" };
+
+            var paramType = Prop(node, "type") as Type;
+            if (paramType == null) return new { error = "could not read the parameter's value type" };
+
+            var inline = ScriptableObject.CreateInstance(InlineOperatorType);
+            // m_Type is a SerializableType setting; setting it resyncs the inline op's typed slots.
+            var serType = Activator.CreateInstance(SerializableTypeType, new object[] { paramType });
+            Call(inline, ModelType, "SetSettingValue", "m_Type", serType);
+            Call(graph, ModelType, "AddChild", inline, -1, true);
+
+            // Carry the value over to the inline operator's input slot, then move the output links.
+            try { SetProp(GetSlot(inline, true, 0, "inline"), "value", Prop(node, "value")); } catch { }
+
+            var paramOut = GetSlot(node, false, 0, "parameter");
+            var inlineOut = GetSlot(inline, false, 0, "inline");
+            Call(null, SlotType, "CopyLinks", inlineOut, paramOut, false);
+
+            Call(graph, ModelType, "RemoveChild", node, true);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "convert_to_inline",
+                ["assetPath"] = assetPath,
+                ["type"] = paramType.Name
             };
         }
 
