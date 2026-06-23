@@ -72,6 +72,61 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
                 "aliveParticleCount should be readable from the live component");
         }
 
+        /// <summary>
+        /// Per-instance Initial Event Name override (#6 runtime tail). The asset default is set
+        /// authoring-side (vfx_apply set_initial_event_name); this is the live
+        /// VisualEffect.initialEventName property that overrides it per component. Proves the
+        /// runtime op writes the property and it round-trips through get_state.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_SetInitialEventName_OverridesPerInstanceAndReadsBack()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            BuildRig();
+            for (int i = 0; i < 3; i++)
+            {
+                yield return null;
+            }
+
+            // Override the per-instance initial event name to a sentinel value.
+            JObject set = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_initial_event_name",
+                ["gameObject"] = RigName,
+                ["name"] = "OnCustomStart"
+            });
+            Assert.IsNull(set.Value<string>("error"), $"set_initial_event_name should not error; got: {set}");
+            Assert.AreEqual("OnCustomStart", set.Value<string>("initialEventName"),
+                "the op result should echo the applied initial event name");
+
+            for (int i = 0; i < 3; i++)
+            {
+                yield return null;
+            }
+
+            // The override persists on the live component and is visible to a fresh get_state read.
+            JObject state = InvokeRuntime(new JObject
+            {
+                ["op"] = "get_state",
+                ["gameObject"] = RigName
+            });
+            Assert.AreEqual("OnCustomStart", state.Value<string>("initialEventName"),
+                "the per-instance initialEventName override should round-trip via get_state");
+
+            // Empty string is a distinct, valid value (suppresses auto-play) — proves it's a real
+            // read/write of the property, not a constant echo.
+            JObject cleared = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_initial_event_name",
+                ["gameObject"] = RigName,
+                ["name"] = ""
+            });
+            Assert.IsNull(cleared.Value<string>("error"), $"clearing should not error; got: {cleared}");
+            Assert.AreNotEqual("OnCustomStart", cleared.Value<string>("initialEventName"),
+                "clearing the initial event name must change it away from the prior value");
+        }
+
         // ---- Rig + handler plumbing (reflection — no compile-time Editor/VFX reference) -------
 
         /// <summary>

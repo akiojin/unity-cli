@@ -2971,7 +2971,8 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>
         /// Runtime control of a VisualEffect component via its public API. Ops:
-        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event, reinit, get_state.
+        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, send_event,
+        /// set_initial_event_name, reinit, get_state.
         /// </summary>
         public static object Runtime(JObject parameters)
         {
@@ -3035,6 +3036,19 @@ namespace UnityCliBridge.Handlers
                         Call(comp2, VisualEffectType, "SendEvent", eventName);
                         return new JObject { ["op"] = op, ["gameObject"] = gameObject, ["eventName"] = eventName };
                     }
+                case "set_initial_event_name":
+                    {
+                        // Per-instance override of the asset's default initial event (OnPlay). The
+                        // asset default is set authoring-side via vfx_apply set_initial_event_name;
+                        // this is the runtime VisualEffect.initialEventName property. Empty string
+                        // suppresses auto-play. Reinit so the change takes effect immediately.
+                        if (name == null) return new { error = "name is required (the initial event name; \"\" suppresses auto-play)" };
+                        SetProp(comp2, "initialEventName", name);
+                        Call(comp2, VisualEffectType, "Reinit");
+                        var s = RuntimeState(comp2, gameObject, null);
+                        s["op"] = op;
+                        return s;
+                    }
                 case "reinit":
                     Call(comp2, VisualEffectType, "Reinit");
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject };
@@ -3044,7 +3058,7 @@ namespace UnityCliBridge.Handlers
                     return new
                     {
                         error = $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
-                                "set_vector2, set_vector3, set_vector4, send_event, reinit, get_state"
+                                "set_vector2, set_vector3, set_vector4, send_event, set_initial_event_name, reinit, get_state"
                     };
             }
 
@@ -3067,6 +3081,7 @@ namespace UnityCliBridge.Handlers
             try { state["aliveParticleCount"] = (int)Prop(comp, "aliveParticleCount"); } catch { }
             try { state["pause"] = (bool)Prop(comp, "pause"); } catch { }
             try { state["playRate"] = (float)Prop(comp, "playRate"); } catch { }
+            try { state["initialEventName"] = (string)Prop(comp, "initialEventName"); } catch { }
 
             if (!string.IsNullOrEmpty(name))
             {
