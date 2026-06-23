@@ -267,13 +267,14 @@ unity-cli raw vfx_runtime --json '{"op":"get_state","gameObject":"VfxRig","name"
 
 `vfx_runtime` ops target a named scene object's `VisualEffect`: `set_asset` (load + bind a
 `VisualEffectAsset`, then `Reinit`), `set_float`/`set_int`/`set_bool`/`set_vector2`/`set_vector3`/
-`set_vector4` (`name` = the exposed parameter name), `set_texture` (`name` = the exposed Texture2D
-parameter, `assetPath` = the texture to bind; the exposed param must be USED in the graph to survive
-into the runtime sheet), `send_event` (`eventName`), `set_initial_event_name` (`name` = the
-per-instance `VisualEffect.initialEventName` override of the asset default; `""` suppresses auto-play;
-then `Reinit`), `reinit`, and `get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`,
-`playRate`, `initialEventName`, and — when `name` is given — `hasFloat`/`floatValue` plus
-`hasTexture`/`textureName`). Set ops echo `get_state` so you can confirm the round-trip in one call.
+`set_vector4` (`name` = the exposed parameter name), `set_texture`/`set_mesh` (`name` = the exposed
+Texture2D/Mesh parameter, `assetPath` = the asset to bind; the exposed param must be USED in the graph
+to survive into the runtime sheet — e.g. wire it into an Output's `mainTexture`/`mesh` slot),
+`send_event` (`eventName`), `set_initial_event_name` (`name` = the per-instance
+`VisualEffect.initialEventName` override of the asset default; `""` suppresses auto-play; then
+`Reinit`), `reinit`, and `get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`, `playRate`,
+`initialEventName`, and — when `name` is given — `hasFloat`/`floatValue`, `hasTexture`/`textureName`,
+`hasMesh`/`meshName`). Set ops echo `get_state` so you can confirm the round-trip in one call.
 
 For **VFX environment settings** (not a graph), use `vfx_settings` with a `scope`:
 

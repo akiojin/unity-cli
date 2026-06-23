@@ -2971,8 +2971,8 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>
         /// Runtime control of a VisualEffect component via its public API. Ops:
-        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, send_event,
-        /// set_initial_event_name, reinit, get_state.
+        /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh,
+        /// send_event, set_initial_event_name, reinit, get_state.
         /// </summary>
         public static object Runtime(JObject parameters)
         {
@@ -3066,6 +3066,22 @@ namespace UnityCliBridge.Handlers
                         s["op"] = op;
                         return s;
                     }
+                case "set_mesh":
+                    {
+                        // Object-typed exposed property: load a Mesh by path and bind it through the
+                        // public SetMesh(string, Mesh). Same used-param survival rule as set_texture.
+                        if (string.IsNullOrEmpty(name)) return new { error = "name is required (exposed mesh parameter name)" };
+                        var meshPath = parameters?["assetPath"]?.ToString() ?? valueToken?.ToString();
+                        if (string.IsNullOrEmpty(meshPath)) return new { error = "assetPath is required (path to a Mesh asset)" };
+                        var mesh = AssetDatabase.LoadAssetAtPath(meshPath, typeof(Mesh));
+                        if (mesh == null) return new { error = $"No Mesh asset at path: {meshPath}" };
+                        var setMesh = VisualEffectType.GetMethod("SetMesh", new[] { typeof(string), typeof(Mesh) });
+                        if (setMesh == null) return new { error = "VisualEffect.SetMesh(string, Mesh) not found" };
+                        setMesh.Invoke(comp2, new object[] { name, mesh });
+                        var s = RuntimeState(comp2, gameObject, name);
+                        s["op"] = op;
+                        return s;
+                    }
                 case "reinit":
                     Call(comp2, VisualEffectType, "Reinit");
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject };
@@ -3075,7 +3091,7 @@ namespace UnityCliBridge.Handlers
                     return new
                     {
                         error = $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
-                                "set_vector2, set_vector3, set_vector4, set_texture, send_event, set_initial_event_name, reinit, get_state"
+                                "set_vector2, set_vector3, set_vector4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, get_state"
                     };
             }
 
@@ -3109,6 +3125,9 @@ namespace UnityCliBridge.Handlers
                 try { state["hasTexture"] = (bool)Call(comp, VisualEffectType, "HasTexture", name); } catch { }
                 if (state.Value<bool?>("hasTexture") == true)
                     try { state["textureName"] = (Call(comp, VisualEffectType, "GetTexture", name) as UnityEngine.Object)?.name; } catch { }
+                try { state["hasMesh"] = (bool)Call(comp, VisualEffectType, "HasMesh", name); } catch { }
+                if (state.Value<bool?>("hasMesh") == true)
+                    try { state["meshName"] = (Call(comp, VisualEffectType, "GetMesh", name) as UnityEngine.Object)?.name; } catch { }
             }
             return state;
         }

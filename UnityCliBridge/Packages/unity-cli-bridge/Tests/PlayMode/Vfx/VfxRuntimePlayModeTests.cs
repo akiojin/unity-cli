@@ -184,9 +184,131 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
             CleanupAuthored();
         }
 
+        /// <summary>
+        /// Runtime SetMesh on an Object-typed exposed property (#9 runtime tail). Authors a copy of the
+        /// fixture whose output is swapped to an Unlit Mesh output, with an exposed Mesh parameter wired
+        /// into that output's slot-0 mesh (so it survives compilation), binds it, then sets a Mesh asset
+        /// and confirms the round-trip via get_state (hasMesh + meshName).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_SetMesh_BindsObjectPropertyAndReadsBack()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            string meshPath;
+            string authored = AuthorMeshFixture(out meshPath);
+            if (authored == null)
+            {
+                yield break; // AuthorMeshFixture already Assert.Ignore-d
+            }
+
+            _rig = new GameObject(RigName);
+            Type vfxType = FindType("UnityEngine.VFX.VisualEffect");
+            if (vfxType == null)
+            {
+                Assert.Ignore("VisualEffect type not found (VFX package not installed).");
+            }
+            _rig.AddComponent(vfxType);
+
+            JObject bound = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_asset",
+                ["gameObject"] = RigName,
+                ["assetPath"] = authored
+            });
+            Assert.IsNull(bound.Value<string>("error"), $"set_asset should not error; got: {bound}");
+
+            for (int i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            JObject set = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_mesh",
+                ["gameObject"] = RigName,
+                ["name"] = "Msh",
+                ["assetPath"] = meshPath
+            });
+            Assert.IsNull(set.Value<string>("error"), $"set_mesh should not error; got: {set}");
+            Assert.IsTrue(set.Value<bool>("hasMesh"),
+                "the wired exposed Mesh param should be present in the runtime property sheet");
+            Assert.AreEqual("RuntimeTestMesh", set.Value<string>("meshName"),
+                "GetMesh should report the bound mesh asset name");
+
+            CleanupAuthored();
+        }
+
         // ---- Rig + handler plumbing (reflection — no compile-time Editor/VFX reference) -------
 
         private string _authoredFolder;
+
+        /// <summary>
+        /// Copy the fixture, swap its Quad output for an Unlit Mesh output (so contextType "Output"
+        /// unambiguously resolves to it), add an exposed Mesh parameter wired into the mesh output's
+        /// slot-0 mesh, and create a small Mesh asset to bind. Returns the authored asset path (and the
+        /// mesh asset path via out), or null after an Ignore.
+        /// </summary>
+        private string AuthorMeshFixture(out string meshPath)
+        {
+            meshPath = null;
+            Type handlerType = FindType("UnityCliBridge.Handlers.VfxGraphHandler");
+            if (handlerType == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/MeshOut.vfx";
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            // Swap the Quad output for a Mesh output so a single "Output" context remains.
+            JObject rm = InvokeApply(new JObject
+            {
+                ["op"] = "remove_context",
+                ["assetPath"] = dest,
+                ["contextType"] = "Output"
+            });
+            Assert.IsNull(rm.Value<string>("error"), $"remove_context should not error; got: {rm}");
+
+            JObject addOut = InvokeApply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = dest,
+                ["contextName"] = "Output Particle|Unlit|Mesh",
+                ["linkFrom"] = "Update"
+            });
+            Assert.IsNull(addOut.Value<string>("error"), $"add_context (mesh output) should not error; got: {addOut}");
+
+            // Exposed Mesh parameter, wired into the mesh output's slot-0 mesh (makes it used).
+            JObject param = InvokeApply(new JObject
+            {
+                ["op"] = "add_parameter",
+                ["assetPath"] = dest,
+                ["parameterName"] = "Msh",
+                ["type"] = "Mesh"
+            });
+            Assert.IsNull(param.Value<string>("error"), $"add_parameter should not error; got: {param}");
+
+            JObject link = InvokeApply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = dest,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "context", ["contextType"] = "Output", ["slot"] = 0 }
+            });
+            Assert.IsNull(link.Value<string>("error"), $"link_slots should not error; got: {link}");
+
+            meshPath = _authoredFolder + "/RuntimeTestMesh.asset";
+            if (!CreateMeshAsset(meshPath, "RuntimeTestMesh"))
+            {
+                Assert.Ignore("Could not create a Mesh asset (AssetDatabase unavailable).");
+            }
+            return dest;
+        }
 
         /// <summary>
         /// Copy the fixture into a temp folder, add an exposed Texture2D parameter, and link it into
@@ -277,6 +399,22 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
         {
             Type adb = FindType("UnityEditor.AssetDatabase");
             adb?.GetMethod("DeleteAsset", new[] { typeof(string) })?.Invoke(null, new object[] { path });
+        }
+
+        // Create a tiny named Mesh asset on disk (content irrelevant — only identity is asserted).
+        private static bool CreateMeshAsset(string path, string name)
+        {
+            Type adb = FindType("UnityEditor.AssetDatabase");
+            if (adb == null) return false;
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder("Assets/UnityCliBridgeTests/VfxRuntime");
+            var mesh = new Mesh { name = name };
+            mesh.vertices = new[] { Vector3.zero, Vector3.right, Vector3.up };
+            mesh.triangles = new[] { 0, 1, 2 };
+            adb.GetMethod("CreateAsset", new[] { typeof(UnityEngine.Object), typeof(string) })
+                .Invoke(null, new object[] { mesh, path });
+            ImportAsset(path);
+            return true;
         }
 
         private static JObject InvokeApply(JObject parameters)
