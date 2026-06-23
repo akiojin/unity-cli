@@ -2427,6 +2427,105 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyLinkSlots_ImplicitlyConvertsCompatibleTypes()
+        {
+            string copy = CopyFixture("castlink");
+            // A float inline output linked into a Vector (Vector3) inline input — VFX inserts an
+            // implicit float->Vector3 broadcast conversion rather than rejecting the link.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "float"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Vector"
+            });
+
+            JObject link = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 }
+            }));
+            Assert.IsNull(link.Value<string>("error"),
+                $"a compatible-type (float->Vector3) link should be accepted; got: {link}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var vec = ((JArray)after["operators"])
+                .First(o => (string)o["inputSlots"][0]["valueType"] == "Vector");
+            Assert.IsTrue(vec["inputSlots"][0].Value<bool>("hasLink"),
+                "the implicitly-converted link should be present on the Vector input");
+            var errors = ((JArray)after["errors"]).Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count, "an implicitly-converted link should recompile cleanly");
+        }
+
+        [Test]
+        public void ApplySetSlotValue_SetsCurveAndGradientSlots()
+        {
+            string copy = CopyFixture("curvegrad");
+
+            // Curve slot: |Set|_Size|Over Life exposes a `Size` AnimationCurve at slot 0.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "|Set|_Size|Over Life"
+            });
+            JObject curve = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 0 },
+                ["value"] = new JObject
+                {
+                    ["keys"] = new JArray(
+                        new JObject { ["time"] = 0f, ["value"] = 0f },
+                        new JObject { ["time"] = 1f, ["value"] = 5f })
+                }
+            }));
+            Assert.IsNull(curve.Value<string>("error"), $"curve slot set should not error; got: {curve}");
+
+            JObject afterCurve = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            JToken sizeVal = ((JArray)((JArray)FindContext(afterCurve, "Update")["blocks"])[0]["inputSlots"])
+                .First(s => (string)s["name"] == "Size")["value"];
+            var keys = (JArray)sizeVal["keys"];
+            Assert.AreEqual(2, keys.Count, "the curve should round-trip with its two keys");
+            Assert.AreEqual(5f, keys[1].Value<float>("value"), 1e-4f, "the last key value should round-trip");
+
+            // Gradient slot: |Set|_Color|Over Life exposes a `Color` Gradient at slot 0 (block index 1).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "|Set|_Color|Over Life"
+            });
+            JObject grad = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 1, ["slot"] = 0 },
+                ["value"] = new JObject
+                {
+                    ["colorKeys"] = new JArray(
+                        new JObject { ["color"] = new JObject { ["r"] = 1f, ["g"] = 0f, ["b"] = 0f, ["a"] = 1f }, ["time"] = 0f },
+                        new JObject { ["color"] = new JObject { ["r"] = 0f, ["g"] = 0f, ["b"] = 1f, ["a"] = 1f }, ["time"] = 1f }),
+                    ["alphaKeys"] = new JArray(
+                        new JObject { ["alpha"] = 1f, ["time"] = 0f },
+                        new JObject { ["alpha"] = 1f, ["time"] = 1f })
+                }
+            }));
+            Assert.IsNull(grad.Value<string>("error"), $"gradient slot set should not error; got: {grad}");
+
+            JObject afterGrad = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            JToken colorVal = ((JArray)((JArray)FindContext(afterGrad, "Update")["blocks"])[1]["inputSlots"])
+                .First(s => (string)s["name"] == "Color")["value"];
+            var colorKeys = (JArray)colorVal["colorKeys"];
+            Assert.AreEqual(2, colorKeys.Count, "the gradient should round-trip with its two color keys");
+            Assert.AreEqual(1f, colorKeys[0]["color"].Value<float>("r"), 1e-4f, "first color key should be red");
+            Assert.AreEqual(1f, colorKeys[1]["color"].Value<float>("b"), 1e-4f, "second color key should be blue");
+        }
+
+        [Test]
         public void ApplySetSlotValue_RecompilesCleanWithNoErrors()
         {
             string copy = CopyFixture("slotclean");

@@ -165,9 +165,13 @@ into a Sphere slot's `radius` with `to.subPath:["radius"]`, or a nested `["trans
 an unlinked input slot: `target` is the same `{node, …address, slot}` shape as a `link_slots` endpoint;
 the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color, or
 an **asset path string for an Object-typed slot** (Texture2D/Texture3D/Cubemap/Mesh — loaded by path,
-e.g. an Output's `mainTexture` slot) — while an optional `subPath` walks into a compound value struct, e.g. `["center"]` sets a sub-vector and
+e.g. an Output's `mainTexture` slot), a **curve** (`{"keys":[{"time":0,"value":0},{"time":1,"value":5}]}`
+for an AnimationCurve slot), or a **gradient** (`{"colorKeys":[{"color":{"r":1,"g":0,"b":0,"a":1},"time":0},…],
+"alphaKeys":[{"alpha":1,"time":0},…]}` for a Gradient slot) — while an optional `subPath` walks into a
+compound value struct, e.g. `["center"]` sets a sub-vector and
 `["size","x"]` sets one nested component, leaving the rest untouched; describe re-reads it via
-`inputSlots[].value`), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
+`inputSlots[].value` (gradients surface as `{colorKeys,alphaKeys,mode}`). `link_slots` applies VFX's
+implicit type conversion automatically (e.g. a float output into a Vector3 input broadcasts)), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
 `{node, …address, slot}` whose link(s) to remove — by default all of them, or pass a specific `from`
 output-slot endpoint to remove just that edge; returns `linksRemoved`/`remainingLinks`, and describe
 re-reads it via `inputSlots[].hasLink`/`links`), `convert_to_property` (promote an inline-constant

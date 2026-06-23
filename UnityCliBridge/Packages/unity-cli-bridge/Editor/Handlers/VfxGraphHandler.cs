@@ -147,6 +147,18 @@ namespace UnityCliBridge.Handlers
             if (t == typeof(Vector4)) { var v = (Vector4)value; return new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z, ["w"] = v.w }; }
             if (t == typeof(Color)) { var c = (Color)value; return new JObject { ["r"] = c.r, ["g"] = c.g, ["b"] = c.b, ["a"] = c.a }; }
             if (t == typeof(Rect)) { var r = (Rect)value; return new JObject { ["x"] = r.x, ["y"] = r.y, ["width"] = r.width, ["height"] = r.height }; }
+            // Gradient is a plain class — Newtonsoft would emit its ToString ("UnityEngine.Gradient"),
+            // hiding the keys. Hand-serialize color/alpha keys so a gradient value round-trips in describe.
+            if (value is Gradient grad)
+            {
+                var ck = new JArray();
+                foreach (var k in grad.colorKeys)
+                    ck.Add(new JObject { ["color"] = ToJToken(k.color), ["time"] = k.time });
+                var ak = new JArray();
+                foreach (var k in grad.alphaKeys)
+                    ak.Add(new JObject { ["alpha"] = k.alpha, ["time"] = k.time });
+                return new JObject { ["colorKeys"] = ck, ["alphaKeys"] = ak, ["mode"] = grad.mode.ToString() };
+            }
             // MultipleValuesChoice<T> (the Custom HLSL function selector): selection/selectedIndex are
             // private; `values` is a rebuilt (non-serialized) list. Surface the active selection + choices
             // so the function selector is verifiable in describe.
