@@ -377,7 +377,7 @@ namespace UnityCliBridge.Handlers
                     JToken value = null;
                     try { value = ToJToken(Prop(slot, "value")); }
                     catch { /* some slot types may not have a readable value */ }
-                    arr.Add(new JObject
+                    var entry = new JObject
                     {
                         ["index"] = idx++,
                         ["name"] = SlotName(slot),
@@ -385,7 +385,17 @@ namespace UnityCliBridge.Handlers
                         ["hasLink"] = links.Count > 0,
                         ["links"] = links,
                         ["value"] = value
-                    });
+                    };
+                    // Spaceable slots (Position/Vector/Direction-style) carry a coordinate space —
+                    // surface it only when present so set_slot_space round-trips and non-spaceable
+                    // slots stay uncluttered.
+                    try
+                    {
+                        if ((bool)Prop(slot, "spaceable"))
+                            entry["space"] = ToJToken(Prop(slot, "space"));
+                    }
+                    catch { }
+                    arr.Add(entry);
                 }
                 return arr;
             }
@@ -743,6 +753,7 @@ namespace UnityCliBridge.Handlers
                 case "add_parameter": return AddParameter(parameters);
                 case "link_slots": return LinkSlots(parameters);
                 case "set_slot_value": return SetSlotValue(parameters);
+                case "set_slot_space": return SetSlotSpace(parameters);
                 case "convert_to_property": return ConvertToProperty(parameters);
                 case "convert_to_inline": return ConvertToInline(parameters);
                 case "unlink_slots": return UnlinkSlots(parameters);
@@ -1910,6 +1921,54 @@ namespace UnityCliBridge.Handlers
                 },
                 ["subPath"] = subPath == null ? null : new JArray(subPath),
                 ["value"] = ToJToken(Prop(slot, "value"))
+            };
+        }
+
+        /// <summary>
+        /// Set the coordinate space (World/Local/None) of a spaceable slot — Position/Vector/Direction
+        /// -style inputs. `target` addresses the slot ({node, …address, slot}, optional `subPath`); `space`
+        /// is the enum name. The space lives on the slot's master data, so non-spaceable slots return a
+        /// quiet error (writing one would log an error). Describe surfaces it as `inputSlots[].space`.
+        /// </summary>
+        private static object SetSlotSpace(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            var spaceToken = parameters?["space"];
+            if (target == null)
+                return new { error = "target is required (an object {node, …address, slot})" };
+            if (spaceToken == null || spaceToken.Type == JTokenType.Null)
+                return new { error = "space is required (World/Local/None)" };
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
+            var slot = GetSlot(node, true, slotIndex, "target");
+            var targetSub = (target["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+            slot = DescendSlot(slot, targetSub, "target");
+
+            bool spaceable = false;
+            try { spaceable = (bool)Prop(slot, "spaceable"); } catch { }
+            if (!spaceable)
+                return new { error = $"slot '{SlotName(slot)}' is not spaceable; only Position/Vector/Direction-style slots carry a space" };
+
+            var spaceType = Prop(slot, "space").GetType(); // VFXSpace enum value → its type
+            object spaceVal;
+            try { spaceVal = Enum.Parse(spaceType, spaceToken.ToString(), true); }
+            catch
+            {
+                return new { error = $"invalid space '{spaceToken}'; valid: {string.Join(", ", Enum.GetNames(spaceType))}" };
+            }
+
+            SetProp(slot, "space", spaceVal);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_slot_space",
+                ["assetPath"] = assetPath,
+                ["slotName"] = SlotName(slot),
+                ["space"] = spaceVal.ToString()
             };
         }
 

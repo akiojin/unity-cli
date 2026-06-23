@@ -171,7 +171,10 @@ for an AnimationCurve slot), or a **gradient** (`{"colorKeys":[{"color":{"r":1,"
 compound value struct, e.g. `["center"]` sets a sub-vector and
 `["size","x"]` sets one nested component, leaving the rest untouched; describe re-reads it via
 `inputSlots[].value` (gradients surface as `{colorKeys,alphaKeys,mode}`). `link_slots` applies VFX's
-implicit type conversion automatically (e.g. a float output into a Vector3 input broadcasts)), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
+implicit type conversion automatically (e.g. a float output into a Vector3 input broadcasts)),
+`set_slot_space` (set the coordinate `space` — `World`/`Local`/`None` — of a spaceable slot
+(Position/Vector/Direction-style); `target` is the same `{node, …address, slot}` shape; non-spaceable
+slots return a clear error; describe surfaces it as `inputSlots[].space`), `unlink_slots` (break a slot connection: `target` is the input-slot endpoint
 `{node, …address, slot}` whose link(s) to remove — by default all of them, or pass a specific `from`
 output-slot endpoint to remove just that edge; returns `linksRemoved`/`remainingLinks`, and describe
 re-reads it via `inputSlots[].hasLink`/`links`), `convert_to_property` (promote an inline-constant

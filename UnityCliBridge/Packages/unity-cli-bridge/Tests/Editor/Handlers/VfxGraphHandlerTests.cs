@@ -2526,6 +2526,58 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySetSlotSpace_SetsSpaceOnSpaceableSlot()
+        {
+            string copy = CopyFixture("slotspace");
+            // |Set|_Position has a spaceable Position slot (slot 0), defaulting to Local.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockName"] = "|Set|_Position"
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            JToken posBefore = ((JArray)((JArray)FindContext(before, "Init")["blocks"])[0]["inputSlots"])[0];
+            Assert.AreEqual("Local", posBefore.Value<string>("space"),
+                "a spaceable Position slot should default to Local and surface in describe");
+
+            JObject res = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_space",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["slot"] = 0 },
+                ["space"] = "World"
+            }));
+            Assert.IsNull(res.Value<string>("error"), $"set_slot_space should not error; got: {res}");
+            Assert.AreEqual("World", res.Value<string>("space"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            JToken posAfter = ((JArray)((JArray)FindContext(after, "Init")["blocks"])[0]["inputSlots"])[0];
+            Assert.AreEqual("World", posAfter.Value<string>("space"),
+                "the slot's coordinate space should round-trip through describe");
+        }
+
+        [Test]
+        public void ApplySetSlotSpace_OnNonSpaceableSlot_ReturnsError()
+        {
+            string copy = CopyFixture("slotspacebad");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate"
+            });
+            JObject res = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_slot_space",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
+                ["space"] = "World"
+            }));
+            StringAssert.Contains("not spaceable", res.Value<string>("error"),
+                "setting space on a non-spaceable slot should return a clear validation error (not log one)");
+        }
+
+        [Test]
         public void ApplySetSlotValue_RecompilesCleanWithNoErrors()
         {
             string copy = CopyFixture("slotclean");
