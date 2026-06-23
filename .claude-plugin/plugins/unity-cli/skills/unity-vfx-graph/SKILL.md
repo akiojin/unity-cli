@@ -158,7 +158,10 @@ optional `exposed:false` for a constant (non-exposed) param, `min`/`max` for a n
 `tooltip`/`category`), `link_slots` (connect a
 `from` output slot to a `to` input slot; each endpoint is `{node: operator|parameter|context|block,
 …address, slot: index}` where an operator uses `operatorIndex`, a parameter uses `parameterIndex`, a
-block/context uses `contextType` (+ `blockIndex` for blocks)), `set_slot_value` (write a constant into
+block/context uses `contextType` (+ `blockIndex` for blocks); either endpoint also accepts an optional
+`subPath` of descriptor-named **child sub-slots** to descend into a compound slot — e.g. link a float
+into a Sphere slot's `radius` with `to.subPath:["radius"]`, or a nested `["transform","position"]`;
+`unlink_slots` `target` takes the same `subPath`), `set_slot_value` (write a constant into
 an unlinked input slot: `target` is the same `{node, …address, slot}` shape as a `link_slots` endpoint;
 the bare op coerces `value` to the slot's type — number, bool, `[x,y,z]` vector, `[r,g,b,a]` color, or
 an **asset path string for an Object-typed slot** (Texture2D/Texture3D/Cubemap/Mesh — loaded by path,

@@ -1681,6 +1681,39 @@ namespace UnityCliBridge.Handlers
             return coll[index];
         }
 
+        /// <summary>
+        /// Walk into a compound slot's descriptor-named child sub-slots. Each `subPath` element selects a
+        /// child by name (e.g. a Sphere slot's "radius"/"transform") or by integer index; nesting is
+        /// supported (e.g. ["transform","position"]). Returns the slot itself when subPath is null/empty.
+        /// Lets link_slots/unlink_slots target a sub-slot (e.g. link a float into `sphere`'s `radius`),
+        /// the link-side analogue of set_slot_value's value-struct `subPath`.
+        /// </summary>
+        private static object DescendSlot(object slot, string[] subPath, string label)
+        {
+            if (subPath == null || subPath.Length == 0) return slot;
+            foreach (var key in subPath)
+            {
+                var children = (Prop(slot, "children") as IEnumerable)?.Cast<object>().ToList()
+                               ?? new List<object>();
+                object next = null;
+                if (int.TryParse(key, out int idx))
+                {
+                    if (idx >= 0 && idx < children.Count) next = children[idx];
+                }
+                else
+                {
+                    next = children.FirstOrDefault(c =>
+                        string.Equals(SlotName(c), key, StringComparison.OrdinalIgnoreCase));
+                }
+                if (next == null)
+                    throw new Exception(
+                        $"{label} sub-slot '{key}' not found; available children: " +
+                        $"[{string.Join(", ", children.Select(SlotName))}]");
+                slot = next;
+            }
+            return slot;
+        }
+
         private static object LinkSlots(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -1698,6 +1731,13 @@ namespace UnityCliBridge.Handlers
 
             var outSlot = GetSlot(fromNode, false, fromSlot, "from");
             var inSlot = GetSlot(toNode, true, toSlot, "to");
+
+            // Optional descriptor-named sub-slot descent on either endpoint (e.g. link a float into a
+            // Sphere slot's `radius` child via to.subPath = ["radius"]).
+            var fromSub = (from["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+            var toSub = (to["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+            outSlot = DescendSlot(outSlot, fromSub, "from");
+            inSlot = DescendSlot(inSlot, toSub, "to");
 
             bool ok = (bool)Call(outSlot, SlotType, "Link", inSlot, true);
             if (!ok)
@@ -1883,6 +1923,8 @@ namespace UnityCliBridge.Handlers
             var node = ResolveNode(graph, target, "target");
             int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
             var slot = GetSlot(node, true, slotIndex, "target");
+            var targetSub = (target["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+            slot = DescendSlot(slot, targetSub, "target");
 
             int before = LinkCount(slot);
 
@@ -1892,6 +1934,8 @@ namespace UnityCliBridge.Handlers
                 var fromNode = ResolveNode(graph, from, "from");
                 int fromSlot = from["slot"]?.ToObject<int>() ?? 0;
                 var outSlot = GetSlot(fromNode, false, fromSlot, "from");
+                var fromSub = (from["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
+                outSlot = DescendSlot(outSlot, fromSub, "from");
                 Call(slot, SlotType, "Unlink", outSlot, true); // (other, notify)
             }
             else

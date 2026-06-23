@@ -706,6 +706,76 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyLinkSlots_DescendsIntoDescriptorNamedSubSlot()
+        {
+            string copy = CopyFixture("subslotlink");
+            // Volume (Sphere) has a compound `sphere` input slot (TSphere) whose children include the
+            // descriptor-named scalar `radius`; an exposed Float parameter supplies the value.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Volume (Sphere)"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "R", ["type"] = "Float"
+            });
+
+            // Link the parameter's float output into the sphere slot's `radius` CHILD sub-slot.
+            JObject link = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject
+                {
+                    ["node"] = "operator",
+                    ["operatorIndex"] = 0,
+                    ["slot"] = 0,
+                    ["subPath"] = new JArray("radius")
+                }
+            }));
+            Assert.IsNull(link.Value<string>("error"), $"sub-slot link should not error; got: {link}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+
+            // The link landed on the `radius` child, not the top-level `sphere` slot: the parameter's
+            // output link resolves to a slot NAMED "radius", and the parent sphere slot stays unlinked.
+            var paramOut = (JArray)((JArray)after["parameters"])[0]["outputSlots"];
+            var links = (JArray)paramOut[0]["links"];
+            Assert.AreEqual(1, links.Count, "the parameter output should have exactly one link");
+            Assert.AreEqual("radius", links[0].Value<string>("name"),
+                "the link should resolve to the descriptor-named 'radius' sub-slot");
+            Assert.AreEqual("operator", links[0]["node"].Value<string>("kind"));
+
+            var sphereSlot = (JArray)((JArray)after["operators"])
+                .First(o => (string)o["type"] == "SphereVolume")["inputSlots"];
+            Assert.IsFalse(sphereSlot[0].Value<bool>("hasLink"),
+                "the top-level sphere slot itself should remain unlinked — the link is on its child");
+
+            // Unlinking the same sub-slot clears it.
+            JObject unlink = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_slots",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "operator",
+                    ["operatorIndex"] = 0,
+                    ["slot"] = 0,
+                    ["subPath"] = new JArray("radius")
+                }
+            }));
+            Assert.IsNull(unlink.Value<string>("error"), $"sub-slot unlink should not error; got: {unlink}");
+
+            JObject afterUnlink = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var paramOut2 = (JArray)((JArray)afterUnlink["parameters"])[0]["outputSlots"];
+            Assert.AreEqual(0, ((JArray)paramOut2[0]["links"]).Count,
+                "unlinking the sub-slot should clear the parameter output link");
+        }
+
+        [Test]
         public void ApplyAddParameter_CreatesExposedFloatReportedByDescribe()
         {
             string copy = CopyFixture("addparam");
