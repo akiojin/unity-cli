@@ -15,7 +15,7 @@ jobs:
     name: Rust Tests (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -40,7 +40,7 @@ jobs:
     name: LSP Tests (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
         uses: actions/setup-dotnet@v5
@@ -54,7 +54,7 @@ jobs:
     name: Rust Coverage >= 90% (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -96,7 +96,7 @@ jobs:
     name: LSP Coverage >= 90% (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
         uses: actions/setup-dotnet@v5
@@ -132,7 +132,7 @@ jobs:
         && contains(github.event.head_commit.message, 'chore(release):')
       )
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
