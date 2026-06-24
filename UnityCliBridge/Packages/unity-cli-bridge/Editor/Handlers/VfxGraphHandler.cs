@@ -3810,7 +3810,12 @@ namespace UnityCliBridge.Handlers
         // that have no public static property (e.g. max capacity, batch empty lifetime).
         private static readonly string[] VfxManagerSerializedFields =
         {
-            "m_FixedTimeStep", "m_MaxDeltaTime", "m_MaxScrubTime", "m_MaxCapacity", "m_BatchEmptyLifetime"
+            "m_FixedTimeStep", "m_MaxDeltaTime", "m_MaxScrubTime", "m_MaxCapacity", "m_BatchEmptyLifetime",
+            // Object-ref plumbing (usually Unity-managed defaults): the compute/empty shaders +
+            // the runtime-resources ScriptableObject + the render-pipe settings path. Surfaced for
+            // inspection; settable by asset path via AssignSerialized's ObjectReference branch.
+            "m_IndirectShader", "m_CopyBufferShader", "m_PrefixSumShader", "m_SortShader",
+            "m_StripUpdateShader", "m_EmptyShader", "m_RuntimeResources", "m_RenderPipeSettingsPath",
         };
 
         /// <summary>Read/write VFX project settings (no graph — environment capability).</summary>
@@ -3937,6 +3942,18 @@ namespace UnityCliBridge.Handlers
                 case SerializedPropertyType.Integer: sp.longValue = value.ToObject<long>(); break;
                 case SerializedPropertyType.Boolean: sp.boolValue = value.ToObject<bool>(); break;
                 case SerializedPropertyType.String: sp.stringValue = value.ToString(); break;
+                case SerializedPropertyType.ObjectReference:
+                {
+                    // Object-typed setting (e.g. a VFXManager compute shader / runtime-resources):
+                    // load the asset by path; an empty/null value clears the reference.
+                    var path = value.Type == JTokenType.Null ? null : value.ToString();
+                    if (string.IsNullOrEmpty(path))
+                        sp.objectReferenceValue = null;
+                    else
+                        sp.objectReferenceValue = AssetDatabase.LoadMainAssetAtPath(path)
+                            ?? throw new Exception($"No asset at path '{path}' for object-reference setting.");
+                    break;
+                }
                 default:
                     throw new Exception($"Unsupported serialized property type for set: {sp.propertyType}");
             }

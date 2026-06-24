@@ -2825,6 +2825,51 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Settings_GetSurfacesShaderRefs_AndSetWritesObjectRefByPath()
+        {
+            // The VFXManager Object-ref plumbing (compute shaders + runtime resources) is now surfaced
+            // by get and settable by asset path. These are project-global, so capture + restore.
+            JObject before = ToJObject(VfxGraphHandler.Settings(new JObject { ["op"] = "get" }));
+            var serialized = before["serialized"];
+
+            JToken indirect = serialized["m_IndirectShader"];
+            Assert.IsNotNull(indirect, "get should now surface m_IndirectShader");
+            Assert.AreEqual("ComputeShader", indirect.Value<string>("type"));
+            string indirectPath = indirect.Value<string>("assetPath");
+            Assert.IsFalse(string.IsNullOrEmpty(indirectPath));
+
+            JToken copy = serialized["m_CopyBufferShader"];
+            Assert.IsNotNull(copy, "get should surface m_CopyBufferShader");
+            string originalCopyPath = copy.Value<string>("assetPath");
+            Assert.AreNotEqual(indirectPath, originalCopyPath,
+                "the two shaders should differ so the cross-assign proves a real write");
+
+            try
+            {
+                // Cross-assign the copy-buffer ref to the indirect shader (a different asset) by path.
+                JObject set = ToJObject(VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set", ["setting"] = "m_CopyBufferShader", ["value"] = indirectPath
+                }));
+                Assert.AreEqual("serialized", set.Value<string>("via"));
+                Assert.AreEqual(indirectPath, set["value"].Value<string>("assetPath"),
+                    "the object reference should now point at the indirect shader");
+
+                JObject after = ToJObject(VfxGraphHandler.Settings(new JObject { ["op"] = "get" }));
+                Assert.AreEqual(indirectPath,
+                    after["serialized"]["m_CopyBufferShader"].Value<string>("assetPath"),
+                    "re-read should reflect the reassigned object reference");
+            }
+            finally
+            {
+                VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set", ["setting"] = "m_CopyBufferShader", ["value"] = originalCopyPath
+                });
+            }
+        }
+
+        [Test]
         public void ApplyAttributes_ComposesViaSetAttributeBlockAndGetAttributeOperator()
         {
             // Attributes (#7) Pass-1 compose-confirm: no new op needed — the library exposes

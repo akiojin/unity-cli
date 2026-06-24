@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.22.0
+  version: 0.23.0
   category: assets
   triggers:
     - vfx
@@ -353,6 +353,9 @@ For **VFX environment settings** (not a graph), use `vfx_settings` with a `scope
 unity-cli raw vfx_settings --json '{"op":"get"}'
 unity-cli raw vfx_settings --json '{"op":"set","setting":"fixedTimeStep","value":0.02}'
 unity-cli raw vfx_settings --json '{"op":"set","setting":"maxCapacity","value":50000000}'
+# Object-ref plumbing (compute shaders + runtime resources) — get surfaces them as {type,name,assetPath};
+# settable by asset path (usually Unity-managed defaults — only override if you know why):
+unity-cli raw vfx_settings --json '{"op":"set","setting":"m_SortShader","value":"Packages/com.unity.visualeffectgraph/Shaders/Sort.compute"}'
 
 # Per-machine preferences — EditorPrefs via UnityEditor.VFX.VFXViewPreference
 unity-cli raw vfx_settings --json '{"op":"get","scope":"preferences"}'
