@@ -350,6 +350,20 @@ def system_named(d, args):
     return ok, f"namedAs[{name}]={ok}"
 
 
+def particle_strip_system(d, args):
+    out = next((c for c in contexts(d) if c.get("type") == "VFXComposedParticleStripOutput"), None)
+    return bool(out), f"stripOutput={'yes' if out else 'no'}"
+
+
+def mesh_output_system(d, args):
+    out = next((c for c in contexts(d) if c.get("type") == "VFXMeshOutput"), None)
+    shares = bool(out) and any(
+        c.get("contextType") in ("Init", "Update") and c.get("dataInstanceId") == out.get("dataInstanceId")
+        for c in contexts(d)
+    )
+    return shares, f"meshOutput={'yes' if out else 'no'}, sharesData={shares}"
+
+
 GRADERS = {
     "turbulence_in_update": turbulence_in_update,
     "exposed_param_into_spawner": exposed_param_into_spawner,
@@ -366,6 +380,8 @@ GRADERS = {
     "flipbook_output": flipbook_output,
     "sticky_note_titled": sticky_note_titled,
     "system_named": system_named,
+    "particle_strip_system": particle_strip_system,
+    "mesh_output_system": mesh_output_system,
 }
 
 bench = load_jsonl(benchmark_path)

@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.31.0
+  version: 0.32.0
   category: assets
   triggers:
     - vfx
@@ -300,7 +300,13 @@ the shared `Update Particle` → `Output ParticleStrip|Shader Graph|Quad` (Init 
 `ParticleStrip` data); a **mesh-output** system swaps the output for `Output Particle|Unlit|Mesh`,
 and a standalone `Output Single Mesh` (`VFXStaticMeshOutput`) is its own single-context system that
 force-disables instancing (`instancing.disabledReason:"MeshOutput"`). Name any system with
-`set_system_name` (see above) — describe surfaces `contexts[].systemName`.
+`set_system_name` (see above) — describe surfaces `contexts[].systemName`. **To CHANGE an existing
+system's output type** (e.g. quad → strip or mesh) there is no convert op: `remove_context` the old
+Output (and, for a strip, the old `Initialize Particle` too), then `add_context` the variant with
+`linkFrom`, and `link_flow` the chain back together. **Verify the variant landed** with describe's
+`contexts[].type` (the underlying class): a quad output is `VFXPlanarPrimitiveOutput`, a strip output
+`VFXComposedParticleStripOutput`, a per-particle mesh output `VFXMeshOutput`, a static single mesh
+`VFXStaticMeshOutput`.
 
 Subgraph: `create_subgraph_asset` makes a subgraph asset (`subgraphPath` + `kind`). For
 `kind:"block"|"operator"` it copies the package's default `.vfxblock`/`.vfxoperator` template; the
