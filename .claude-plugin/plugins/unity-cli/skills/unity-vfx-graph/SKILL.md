@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.13.0
+  version: 0.14.0
   category: assets
   triggers:
     - vfx
@@ -145,7 +145,10 @@ surfaced in describe as `contexts[].simulationSpace`); `contexts[].settings` in 
 writes), `delete_system` (delete a whole particle system in one op — every context sharing the addressed
 context's `VFXData`, i.e. the Init/Update/Output of one system; address any member by `contextType` or
 `index`; the cascade matches `remove_context` so a disjoint system is left intact — the response reports
-`removedContexts`/`removedContextTypes`/`remainingContexts`), `add_custom_attribute` (declare a
+`removedContexts`/`removedContextTypes`/`remainingContexts`), `set_system_name` (set a system's display
+label; address any member context by `contextType`/`index` + `name` — for a particle system the name is
+written to the shared `VFXData.title` so every Init/Update/Output member reports it, for a Spawner it is
+the context label; surfaced in describe as `contexts[].systemName`), `add_custom_attribute` (declare a
 blackboard-managed custom attribute: `attributeName` + `attributeType` = one of
 `Float`/`Vector2`/`Vector3`/`Vector4`/`Bool`/`Uint`/`Int`, optional `description`/`isReadOnly`; describe
 surfaces them in a top-level `customAttributes` array. To USE it, add a Set/Get attribute block/operator
@@ -238,6 +241,12 @@ variant), then `link_flow` them by `{index}` — `VFXContext.LinkTo` auto-merges
 `VFXData`, so each chain becomes its own system. Describe emits a `dataInstanceId` per context;
 equal ids prove system membership, different ids prove disjoint systems. Use this to verify a
 from-scratch chain landed in a fresh system rather than accidentally attaching to an existing one.
+Variants compose the same way: a **particle-strip** system is `Initialize Particle Strip` →
+the shared `Update Particle` → `Output ParticleStrip|Shader Graph|Quad` (Init Strip seeds
+`ParticleStrip` data); a **mesh-output** system swaps the output for `Output Particle|Unlit|Mesh`,
+and a standalone `Output Single Mesh` (`VFXStaticMeshOutput`) is its own single-context system that
+force-disables instancing (`instancing.disabledReason:"MeshOutput"`). Name any system with
+`set_system_name` (see above) — describe surfaces `contexts[].systemName`.
 
 Subgraph: `create_subgraph_asset` copies a default Block or Operator subgraph template into a target
 path (`subgraphPath` + `kind: "block"|"operator"`); the parent graph references it by adding the

@@ -53,6 +53,7 @@ namespace UnityCliBridge.Handlers
         private static Type VFXManagerType => T("UnityEngine.VFX.VFXManager");
         private static Type VFXViewPreferenceType => T("UnityEditor.VFX.VFXViewPreference");
         private static Type MemorySerializerType => T("UnityEditor.VFX.VFXMemorySerializer");
+        private static Type SystemNamesType => T("UnityEditor.VFX.VFXSystemNames");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -445,6 +446,17 @@ namespace UnityCliBridge.Handlers
                 }
                 catch { /* contexts without data (Spawn/Event) — leave null */ }
 
+                // systemName — the system's display label. Stored on VFXData.title (particle
+                // systems) or VFXContext.label (Spawner), surfaced via the static helper
+                // VFXSystemNames.GetSystemName. Contexts sharing one VFXData report the same name;
+                // empty/unset systems return null.
+                string systemName = null;
+                try
+                {
+                    systemName = Call(null, SystemNamesType, "GetSystemName", ctx) as string;
+                }
+                catch { /* contexts whose data has no name helper — leave null */ }
+
                 contexts.Add(new JObject
                 {
                     ["index"] = i,
@@ -458,6 +470,7 @@ namespace UnityCliBridge.Handlers
                     ["outputSlots"] = SlotsJson(ctx, false),
                     ["dataInstanceId"] = dataId,
                     ["simulationSpace"] = simSpace,
+                    ["systemName"] = systemName,
                     ["blocks"] = blocks
                 });
             }
@@ -773,6 +786,7 @@ namespace UnityCliBridge.Handlers
                 case "duplicate_parameter": return DuplicateParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
                 case "delete_system": return DeleteSystem(parameters);
+                case "set_system_name": return SetSystemName(parameters);
                 case "add_custom_attribute": return AddCustomAttribute(parameters);
                 case "link_flow": return LinkFlow(parameters);
                 case "unlink_flow": return UnlinkFlow(parameters);
@@ -1302,6 +1316,42 @@ namespace UnityCliBridge.Handlers
                 ["removedContexts"] = members.Count,
                 ["removedContextTypes"] = new JArray(members.Select(m => (JToken)(Prop(m, "contextType")?.ToString()))),
                 ["remainingContexts"] = Children(graph).Count(c => ContextType.IsInstanceOfType(c))
+            };
+        }
+
+        /// <summary>
+        /// Set a system's display label, addressing the system by any one member context
+        /// (`contextType` or `index`). The name lives on VFXData.title for a particle system
+        /// (so every Init/Update/Output member reports it) or VFXContext.label for a Spawner —
+        /// VFXSystemNames.SetSystemName routes to the right one. Verified via the describe oracle's
+        /// per-context `systemName`.
+        /// </summary>
+        private static object SetSystemName(JObject parameters)
+        {
+            bool hasIndex = parameters?["index"] != null && parameters["index"].Type != JTokenType.Null;
+            var wantContext = parameters?["contextType"]?.ToString();
+            if (!hasIndex && string.IsNullOrEmpty(wantContext))
+                return new { error = "contextType (or index) is required" };
+            var name = parameters?["name"]?.ToString();
+            if (name == null)
+                return new { error = "name is required" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var target = ResolveContextRef(graph, parameters, ctxList, "context");
+
+            // Static helper: routes Spawner→context.label, data-backed context→VFXData.title.
+            Call(null, SystemNamesType, "SetSystemName", target, name);
+            var applied = Call(null, SystemNamesType, "GetSystemName", target) as string;
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "set_system_name",
+                ["assetPath"] = assetPath,
+                ["contextType"] = Prop(target, "contextType")?.ToString(),
+                ["systemName"] = applied
             };
         }
 

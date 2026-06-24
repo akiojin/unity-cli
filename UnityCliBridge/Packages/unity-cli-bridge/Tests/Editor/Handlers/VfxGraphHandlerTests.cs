@@ -181,6 +181,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_SetSystemName_WithoutContextTypeOrIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_system_name",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["name"] = "X"
+            }), "contextType (or index) is required");
+        }
+
+        [Test]
+        public void Apply_SetSystemName_WithoutName_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_system_name",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["index"] = 1
+            }), "name is required");
+        }
+
+        [Test]
         public void Apply_UnlinkFlow_WithoutFrom_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1482,6 +1504,41 @@ namespace UnityCliBridge.Tests
             var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blocking.Count,
                 $"mesh + static-mesh systems should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ApplySetSystemName_NamesParticleSystemAndSpawnerIndependently()
+        {
+            string copy = CopyFixture("systemname");
+
+            // Naming the particle system via any member context writes the shared VFXData.title,
+            // so all of Init/Update/Output report it; the Spawner is a separate system (its label).
+            JObject namedParticles = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_system_name", ["assetPath"] = copy, ["index"] = 1, ["name"] = "Fireworks"
+            }));
+            Assert.AreEqual("Fireworks", namedParticles.Value<string>("systemName"));
+            Assert.AreEqual("Init", namedParticles.Value<string>("contextType"));
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_system_name", ["assetPath"] = copy, ["index"] = 0, ["name"] = "MainSpawner"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var contexts = (JArray)after["contexts"];
+
+            Assert.AreEqual("MainSpawner", contexts[0].Value<string>("systemName"),
+                "the Spawner's name lives on its context label");
+            Assert.AreEqual("Fireworks", contexts[1].Value<string>("systemName"),
+                "Init reports the shared VFXData title");
+            Assert.AreEqual("Fireworks", contexts[2].Value<string>("systemName"),
+                "Update shares the same VFXData title");
+            Assert.AreEqual("Fireworks", contexts[3].Value<string>("systemName"),
+                "Output shares the same VFXData title");
+
+            AssertNoErrorTier(after);
         }
 
         [Test]
