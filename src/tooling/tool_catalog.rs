@@ -2417,6 +2417,7 @@ fn tool_params_schema(name: &str) -> Value {
                 ("space", string_schema()),
                 ("type", string_schema()),
                 ("exposed", boolean_schema()),
+                ("isOutput", boolean_schema()),
                 ("tooltip", string_schema()),
                 ("category", string_schema()),
                 ("min", any_schema()),

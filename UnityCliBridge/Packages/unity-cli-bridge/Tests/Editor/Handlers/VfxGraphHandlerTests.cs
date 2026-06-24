@@ -1318,6 +1318,46 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySubgraphOperator_OutputParameterSurfacesAsParentOutputSlot()
+        {
+            string copy = CopyFixture("subgraphoutput");
+            string subPath = $"{TempFolder}/OutputOp.vfxoperator";
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "create_subgraph_asset", ["subgraphPath"] = subPath, ["kind"] = "operator" });
+
+            // Define an output: a parameter with isOutput=true becomes a subgraph OUTPUT, surfacing as
+            // an output port on the parent's subgraph node (VFXSubgraphOperator.OutputPredicate).
+            JObject outParam = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = subPath,
+                ["type"] = "Vector3", ["parameterName"] = "Result", ["isOutput"] = true
+            }));
+            Assert.IsTrue(outParam.Value<bool>("isOutput"), "the parameter should be flagged as an output");
+            Assert.IsFalse(outParam.Value<bool>("exposed"),
+                "isOutput forces the param non-exposed (it is an output, not an input)");
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Empty Subgraph Operator" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["setting"] = "m_Subgraph", ["value"] = subPath
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            JToken op = ((JArray)after["operators"])[0];
+            Assert.AreEqual("VFXSubgraphOperator", op.Value<string>("type"));
+
+            var outputNames = ((JArray)op["outputSlots"]).Select(s => s.Value<string>("name")).ToList();
+            CollectionAssert.Contains(outputNames, "Result",
+                "the subgraph's output parameter should surface as an output slot on the parent's subgraph operator");
+
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplySubgraphSystem_CreatesVfxAndReferencesItAsASubgraphContext()
         {
             string copy = CopyFixture("subgraphsys");

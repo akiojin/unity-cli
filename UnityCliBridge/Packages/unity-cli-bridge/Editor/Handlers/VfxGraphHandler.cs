@@ -497,9 +497,11 @@ namespace UnityCliBridge.Handlers
                 var p = paramList[i];
                 string exposedName = null, category = null, tooltip = null;
                 bool exposed = false;
+                bool isOutput = false;
                 JToken value = null, min = null, max = null, valueFilter = null, order = null;
                 try { exposedName = Prop(p, "exposedName") as string; } catch { }
                 try { exposed = (bool)Prop(p, "exposed"); } catch { }
+                try { isOutput = (bool)Prop(p, "isOutput"); } catch { }
                 try { category = Prop(p, "category") as string; } catch { }
                 try { tooltip = Prop(p, "tooltip") as string; } catch { }
                 try { value = ToJToken(Prop(p, "value")); } catch { }
@@ -514,6 +516,7 @@ namespace UnityCliBridge.Handlers
                     ["parameterType"] = (Prop(p, "type") as Type)?.Name,
                     ["exposedName"] = exposedName,
                     ["exposed"] = exposed,
+                    ["isOutput"] = isOutput,
                     ["category"] = category,
                     ["order"] = order,
                     ["tooltip"] = tooltip,
@@ -1687,6 +1690,14 @@ namespace UnityCliBridge.Handlers
             var category = parameters?["category"]?.ToString();
             if (!string.IsNullOrEmpty(category)) SetProp(parameter, "category", category);
 
+            // Output parameter (operator/system subgraph): isOutput=true makes the param a SUBGRAPH
+            // OUTPUT — VFXSubgraphOperator's OutputPredicate is `param.isOutput`, so the parent's
+            // subgraph node surfaces it as an output slot. The property setter swaps the param's slot
+            // from output→input (the value flows IN from inside the subgraph) and forces m_Exposed=false,
+            // so set it LAST (after value, which the swap preserves).
+            bool isOutput = parameters?["isOutput"]?.ToObject<bool>() ?? false;
+            if (isOutput) SetProp(parameter, "isOutput", true);
+
             Persist(graph, assetPath);
 
             int parameterIndex = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList()
@@ -1699,7 +1710,8 @@ namespace UnityCliBridge.Handlers
                 ["parameterName"] = parameterName,
                 ["parameterType"] = (Prop(parameter, "type") as Type)?.Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
-                ["exposed"] = exposed,
+                ["exposed"] = (bool)Prop(parameter, "exposed"),
+                ["isOutput"] = (bool)Prop(parameter, "isOutput"),
                 ["value"] = appliedValue,
                 ["min"] = appliedMin,
                 ["max"] = appliedMax,

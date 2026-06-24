@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.16.0
+  version: 0.17.0
   category: assets
   triggers:
     - vfx
@@ -262,8 +262,10 @@ references it differently: `add_context "Subgraph"` + `subgraphPath` (the System
 node's `settings.m_Subgraph` (verified end-to-end). **Expose inputs:** add an exposed parameter inside
 the subgraph asset (`add_parameter ... exposed:true` against the subgraph's path) — it automatically
 surfaces as an input slot on the parent's subgraph node (verified for the operator kind; describe shows
-the new `inputSlots[].name`). (Defining operator-subgraph outputs / block Suitable Contexts /
-convert-selection are not yet wired.)
+the new `inputSlots[].name`). **Define outputs:** `add_parameter ... isOutput:true` makes the param a
+subgraph OUTPUT — it surfaces as an `outputSlots[]` port on the parent's subgraph operator
+(`isOutput` forces the param non-exposed and is reported in describe `parameters[].isOutput`).
+(Block Suitable Contexts / convert-selection are not yet wired.)
 
 **Set/Get Attribute** also needs no dedicated op. Every `Set <Attribute>` ships as descriptor
 `|Set|_<AttrName>` (e.g. `|Set|_Color`, `|Set|_Position`, `|Set|_Lifetime`) — all instantiate the
