@@ -618,6 +618,7 @@ namespace UnityCliBridge.Tests
 
         private const string Fixture = "Assets/VfxFixtures/Minimal.vfx";
         private const string ShaderIncludeFixture = "Assets/VfxFixtures/HLSLInclude.hlsl";
+        private const string ShaderMainFixture = "Assets/VfxFixtures/HLSLMain.hlsl";
         private const string ShaderGraphFixture = "Assets/VfxFixtures/VfxUnlit.shadergraph";
         private const string TempFolder = "Assets/UnityCliBridgeTests/Vfx";
 
@@ -2349,6 +2350,69 @@ namespace UnityCliBridge.Tests
                 ((JArray)block["inputSlots"]).Select(s => (string)s["name"]).ToList(),
                 "the block's slots should derive from the external file's function signature");
             Assert.AreEqual(ShaderIncludeFixture, (string)block["settings"]["m_ShaderFile"]["assetPath"]);
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyCustomHLSL_ResolvesBufferAndTextureTypes()
+        {
+            string copy = CopyFixture("hlsltex");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            // VFXSampler2D maps to a Texture2D slot, StructuredBuffer<float> to a GraphicsBuffer slot —
+            // the HLSLParser resolves these via s_KnownTypes when the source is set (no new op needed).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0, ["setting"] = "m_HLSLCode",
+                ["value"] =
+                    "void Read(inout VFXAttributes attributes, in VFXSampler2D tex, in StructuredBuffer<float> buf)" +
+                    "{ attributes.color = SampleTexture(tex, float2(0.5,0.5), 0).rgb * buf[0]; }"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var block = ((JArray)FindContext(after, "Update")["blocks"])[0];
+            var slots = ((JArray)block["inputSlots"])
+                .ToDictionary(s => (string)s["name"], s => (string)s["valueType"]);
+            Assert.AreEqual("Texture2D", slots["_tex"], "VFXSampler2D should map to a Texture2D slot");
+            Assert.AreEqual("GraphicsBuffer", slots["_buf"], "StructuredBuffer should map to a GraphicsBuffer slot");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
+        public void ApplyCustomHLSL_ResolvesMultiFileInclude()
+        {
+            if (!System.IO.File.Exists(ShaderMainFixture) || !System.IO.File.Exists(ShaderIncludeFixture))
+            {
+                Assert.Ignore($"HLSL include fixtures not present: {ShaderMainFixture}");
+            }
+            string copy = CopyFixture("hlslinclude");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            // HLSLMain.hlsl does `#include "HLSLInclude.hlsl"` and calls its Squash() helper. The parser
+            // must resolve the include for SquashTwice(inout VFXAttributes, in float k) to compile.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0,
+                ["setting"] = "m_ShaderFile", ["value"] = ShaderMainFixture
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var block = ((JArray)FindContext(after, "Update")["blocks"])[0];
+            CollectionAssert.AreEqual(new[] { "_k" },
+                ((JArray)block["inputSlots"]).Select(s => (string)s["name"]).ToList(),
+                "slots derive from the main function; the included helper resolves with no Error-tier");
             AssertNoErrorTier(after);
         }
 

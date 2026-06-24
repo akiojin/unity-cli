@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.27.0
+  version: 0.28.0
   category: assets
   triggers:
     - vfx
@@ -330,7 +330,11 @@ on the block, `m_AvailableFunctions` (plural) on the operator; pass the bare nam
 `MultipleValuesChoice` selection is coerced for you). Describe surfaces these as `settings` (the oracle
 reports every `[VFXSetting]`, including `ReadOnly` fields like `m_HLSLCode`; the selector shows as
 `{selection, values}`), and the node's input slots are re-parsed from the selected function's signature —
-so confirm a source/file/selector change by re-describing the reshaped `inputSlots`.
+so confirm a source/file/selector change by re-describing the reshaped `inputSlots`. The HLSL parser also
+handles **buffer/texture parameter types** (`VFXSampler2D`/`VFXSampler3D` → Texture2D/3D slots,
+`StructuredBuffer<T>`/`RWStructuredBuffer<T>` → GraphicsBuffer slots) and **multi-file `#include`**
+resolution (an `#include "Other.hlsl"` in the `m_ShaderFile` resolves relative to that file) — both are
+automatic, no extra params; just write source/point at a file that uses them and re-describe the slots.
 `vfx_describe_graph` reports each context's `settings` (including `boundsMode` on Init), `inputSlots`
 (each slot's resolved `value` for unlinked slots — e.g. the bounds AABox center/size), each block's
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
