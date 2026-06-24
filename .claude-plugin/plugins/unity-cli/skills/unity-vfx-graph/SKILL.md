@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.28.0
+  version: 0.29.0
   category: assets
   triggers:
     - vfx
@@ -27,6 +27,7 @@ Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts an
 - The user wants to modify a graph, such as adding a block to a context.
 - The user is verifying agent control over Visual Effect Graph authoring.
 - The user wants to drive an exposed (blackboard) parameter on a live `VisualEffect` via the public API (`vfx_runtime`).
+- The user wants to bake a Mesh into a Signed Distance Field (SDF) Texture3D for use in a VFX (`vfx_bake_sdf`).
 
 ## Do Not Use When
 
@@ -402,6 +403,24 @@ so it's read/written via `EditorPrefs` directly by its key constant). `set` writ
 `EditorPrefs.SetBool/SetInt/SetFloat` and calls `VFXViewPreference.SetDirty()` so the next re-read
 returns the new value; the result echoes the resolved `editorPrefsKey` (e.g. `VFX.InstancingEnabled`,
 `VFX.allowShaderExternalization`).
+
+To **bake a Mesh into a Signed Distance Field Texture3D** (the programmatic SDF Bake Tool), use `vfx_bake_sdf`:
+
+```bash
+unity-cli raw vfx_bake_sdf --json '{"meshPath":"Assets/Models/Statue.fbx","outputPath":"Assets/SDF/Statue.asset","maxResolution":64}'
+unity-cli raw vfx_bake_sdf --json '{"meshPath":"Assets/Models/Statue.fbx","outputPath":"Assets/SDF/Statue.asset","maxResolution":32,"center":[0,1,0],"size":[2,2,2],"signPassCount":2,"threshold":0.5,"overwrite":true}'
+```
+
+`vfx_bake_sdf` consumes a *Mesh asset* and produces a *Texture3D `.asset`* — it does NOT touch a `.vfx`
+graph. It uses the package's public `MeshToSDFBaker` (construct → `BakeSDF()` → read back the 3D SDF
+RenderTexture → save as Texture3D). Params: `meshPath` + `outputPath` (required; output must be under
+`Assets/` and end in `.asset`), `maxResolution` (voxels on the longest axis, default 64), `center`/`size`
+(`[x,y,z]` baking box; default = the mesh's bounds — fit-to-mesh), `signPassCount` (default 1),
+`threshold` (default 0.5), `sdfOffset` (default 0), `overwrite` (default false). Returns the actual
+`resolution` (grid), `actualBoxSize`, and the asset `guid`. To then drive a VFX with it, wire an exposed
+Texture3D parameter into a Distance Field input (e.g. a Collision/Conform-to-SDF block) and at runtime
+`vfx_runtime set_texture`. **Requires compute shader support** (baking is GPU work) — returns a clear
+error if unavailable.
 
 ## Examples
 

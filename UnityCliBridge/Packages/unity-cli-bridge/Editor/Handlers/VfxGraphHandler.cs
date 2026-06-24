@@ -4185,6 +4185,145 @@ namespace UnityCliBridge.Handlers
         };
 
         /// <summary>Read/write VFX project settings (no graph — environment capability).</summary>
+        // ---- SDF baking (public UnityEngine.VFX.SDF.MeshToSDFBaker API) -------
+
+        private static Type MeshToSdfBakerType => T("UnityEngine.VFX.SDF.MeshToSDFBaker");
+
+        /// <summary>
+        /// Bake a Mesh into a Signed Distance Field Texture3D asset — the programmatic equivalent of the
+        /// SDF Bake Tool window. Uses the package's PUBLIC runtime MeshToSDFBaker (one of the few public
+        /// VFX APIs): construct → BakeSDF() → read back the 3D SdfTexture RenderTexture → save as a
+        /// Texture3D asset. The package's own SaveToAsset is internal and routes through an interactive
+        /// SaveFilePanel (a headless blocker), so we do our own AsyncGPUReadback + AssetDatabase.CreateAsset
+        /// at the caller's path. Baking is GPU-compute work — returns a clean error when compute is
+        /// unavailable (e.g. some headless CI).
+        /// </summary>
+        public static object BakeSdf(JObject parameters)
+        {
+            try { return BakeSdfCore(parameters); }
+            catch (Exception ex) { return Fail("vfx_bake_sdf", ex); }
+        }
+
+        private static object BakeSdfCore(JObject parameters)
+        {
+            var meshPath = parameters?["meshPath"]?.ToString();
+            if (string.IsNullOrEmpty(meshPath))
+                return new { error = "meshPath is required (asset path to the source Mesh)" };
+            var outputPath = parameters?["outputPath"]?.ToString();
+            if (string.IsNullOrEmpty(outputPath))
+                return new { error = "outputPath is required (where to save the .asset Texture3D)" };
+            if (!outputPath.StartsWith("Assets/") || !outputPath.EndsWith(".asset"))
+                return new { error = "outputPath must start with 'Assets/' and end with '.asset'" };
+
+            // Arg/asset validation first (so a bad mesh/path reports clearly regardless of GPU capability).
+            var mesh = AssetDatabase.LoadAssetAtPath(meshPath, typeof(Mesh)) as Mesh;
+            if (mesh == null)
+                return new { error = $"No Mesh asset at path: {meshPath}" };
+
+            var outDir = System.IO.Path.GetDirectoryName(outputPath).Replace('\\', '/');
+            if (!AssetDatabase.IsValidFolder(outDir))
+                return new { error = $"Output folder '{outDir}' does not exist; create it first." };
+
+            // Capability checks after validation.
+            var bakerType = MeshToSdfBakerType;
+            if (bakerType == null)
+                return new { error = "MeshToSDFBaker not found (the VFX Graph package's SDF Bake Tool is unavailable)." };
+            if (!SystemInfo.supportsComputeShaders)
+                return new { error = "SDF baking requires compute shader support, which this device/editor lacks." };
+
+            bool overwrite = parameters?["overwrite"]?.ToObject<bool>() ?? false;
+            var existing = AssetDatabase.LoadAssetAtPath(outputPath, typeof(Texture3D));
+            if (existing != null && !overwrite)
+                return new { error = $"An asset already exists at {outputPath}; set overwrite:true to replace it." };
+
+            int maxRes = parameters?["maxResolution"]?.ToObject<int>() ?? 64;
+            if (maxRes < 1) maxRes = 1;
+            int signPassCount = parameters?["signPassCount"]?.ToObject<int>() ?? 1;
+            float threshold = parameters?["threshold"]?.ToObject<float>() ?? 0.5f;
+            float sdfOffset = parameters?["sdfOffset"]?.ToObject<float>() ?? 0f;
+
+            // Box defaults to the mesh's local bounds (fit-to-mesh) when center/size aren't given.
+            Vector3 center = mesh.bounds.center;
+            if (parameters?["center"] is JArray ca && ca.Count >= 3) center = (Vector3)ToVector(ca, 3);
+            Vector3 size = mesh.bounds.size;
+            if (parameters?["size"] is JArray sa && sa.Count >= 3) size = (Vector3)ToVector(sa, 3);
+            // A zero dimension produces a degenerate box — clamp each axis to a small positive size.
+            size = new Vector3(Mathf.Max(size.x, 1e-4f), Mathf.Max(size.y, 1e-4f), Mathf.Max(size.z, 1e-4f));
+
+            var ctor = bakerType.GetConstructor(new[]
+            {
+                typeof(Vector3), typeof(Vector3), typeof(int), typeof(Mesh),
+                typeof(int), typeof(float), typeof(float), typeof(UnityEngine.Rendering.CommandBuffer)
+            });
+            if (ctor == null)
+                return new { error = "MeshToSDFBaker(sizeBox,center,maxRes,mesh,signPasses,threshold,sdfOffset,cmd) ctor not found." };
+
+            object baker = ctor.Invoke(new object[] { size, center, maxRes, mesh, signPassCount, threshold, sdfOffset, null });
+            try
+            {
+                Call(baker, bakerType, "BakeSDF");
+                if (!(Prop(baker, "SdfTexture") is RenderTexture rt))
+                    return new { error = "BakeSDF produced no SdfTexture." };
+                var gridSize = (Vector3Int)Call(baker, bakerType, "GetGridSize");
+                var actualBox = (Vector3)Call(baker, bakerType, "GetActualBoxSize");
+
+                var tex = ReadbackSdfToTexture3D(rt, gridSize);
+
+                if (existing != null) AssetDatabase.DeleteAsset(outputPath);
+                AssetDatabase.CreateAsset(tex, outputPath);
+                AssetDatabase.ImportAsset(outputPath, ImportAssetOptions.ForceUpdate);
+                AssetDatabase.SaveAssets();
+
+                return new JObject
+                {
+                    ["op"] = "vfx_bake_sdf",
+                    ["meshPath"] = meshPath,
+                    ["outputPath"] = outputPath,
+                    ["resolution"] = new JArray { gridSize.x, gridSize.y, gridSize.z },
+                    ["actualBoxSize"] = new JArray { actualBox.x, actualBox.y, actualBox.z },
+                    ["guid"] = AssetDatabase.AssetPathToGUID(outputPath)
+                };
+            }
+            finally
+            {
+                try { Call(baker, bakerType, "Dispose"); }
+                catch { /* best-effort cleanup */ }
+            }
+        }
+
+        /// <summary>Read a 1-channel (RHalf / R16_SFloat) 3D RenderTexture back into a Texture3D via a
+        /// synchronous AsyncGPUReadback — the readback the package's internal SaveToAsset does, but to an
+        /// explicit path (its own path goes through an interactive save dialog).</summary>
+        private static Texture3D ReadbackSdfToTexture3D(RenderTexture rt, Vector3Int grid)
+        {
+            // Request the full 3D region explicitly — the basic Request(rt, mip) overload reads only the
+            // first depth slice of a Tex3D RenderTexture.
+            var req = UnityEngine.Rendering.AsyncGPUReadback.Request(
+                rt, 0, 0, grid.x, 0, grid.y, 0, grid.z, null);
+            req.WaitForCompletion();
+            if (req.hasError)
+                throw new Exception("AsyncGPUReadback failed to read the baked SDF RenderTexture.");
+
+            // A 3D readback exposes one depth slice per layer (GetData(layer)); concatenate them into the
+            // full volume (RHalf = R16_SFloat = 1 ushort/voxel).
+            int perLayer = grid.x * grid.y;
+            var all = new ushort[perLayer * grid.z];
+            for (int layer = 0; layer < req.layerCount; layer++)
+            {
+                var slice = req.GetData<ushort>(layer);
+                Unity.Collections.NativeArray<ushort>.Copy(slice, 0, all, layer * perLayer, perLayer);
+            }
+
+            var tex = new Texture3D(grid.x, grid.y, grid.z, TextureFormat.RHalf, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            tex.SetPixelData(all, 0);
+            tex.Apply(false);
+            return tex;
+        }
+
         public static object Settings(JObject parameters)
         {
             try { return SettingsCore(parameters); }

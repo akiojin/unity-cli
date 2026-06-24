@@ -947,6 +947,10 @@ namespace UnityCliBridge.Core
                         var vfxSettingsResult = VfxGraphHandler.Settings(command.Parameters);
                         response = Response.SuccessResult(command.Id, vfxSettingsResult);
                         break;
+                    case "vfx_bake_sdf":
+                        var vfxBakeSdfResult = VfxGraphHandler.BakeSdf(command.Parameters);
+                        response = Response.SuccessResult(command.Id, vfxBakeSdfResult);
+                        break;
                     // Test Execution commands
                     case "run_tests":
                         var runTestsResult = TestExecutionHandler.RunTests(command.Parameters);

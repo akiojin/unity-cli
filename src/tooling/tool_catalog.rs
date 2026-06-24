@@ -136,6 +136,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "vfx_apply",
     "vfx_runtime",
     "vfx_settings",
+    "vfx_bake_sdf",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -223,6 +224,9 @@ fn tool_description(name: &str) -> &'static str {
         }
         "vfx_settings" => {
             "Read or write VFX environment settings — ops: get (read all), set (write one named setting). Scope: 'project' (default — ProjectSettings/VFXManager.asset; fixedTimeStep, maxDeltaTime, maxCapacity, ...) or 'preferences' (per-machine EditorPrefs via UnityEditor.VFX.VFXViewPreference; instancingEnabled, displayExperimentalOperator, multithreadUpdateEnabled, ...)"
+        }
+        "vfx_bake_sdf" => {
+            "Bake a Mesh asset into a Signed Distance Field Texture3D asset (programmatic SDF Bake Tool, via the public MeshToSDFBaker). Params: meshPath (source Mesh), outputPath (.asset to create), maxResolution (default 64), center/size ([x,y,z]; default = mesh bounds), signPassCount (default 1), threshold (default 0.5), sdfOffset (default 0), overwrite (default false). Requires compute shader support."
         }
         _ => "Unity CLI tool operation",
     }
@@ -2480,6 +2484,21 @@ fn tool_params_schema(name: &str) -> Value {
             &["op"],
             false,
         ),
+        "vfx_bake_sdf" => object_schema(
+            &[
+                ("meshPath", string_schema()),
+                ("outputPath", string_schema()),
+                ("maxResolution", integer_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("signPassCount", integer_schema()),
+                ("threshold", number_schema()),
+                ("sdfOffset", number_schema()),
+                ("overwrite", boolean_schema()),
+            ],
+            &["meshPath", "outputPath"],
+            false,
+        ),
         _ => default_params_schema(),
     }
 }
@@ -2594,7 +2613,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 134);
+        assert_eq!(TOOL_NAMES.len(), 135);
     }
 
     #[test]

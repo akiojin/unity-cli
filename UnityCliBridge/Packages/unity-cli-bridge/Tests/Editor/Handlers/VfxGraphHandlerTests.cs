@@ -619,6 +619,7 @@ namespace UnityCliBridge.Tests
         private const string Fixture = "Assets/VfxFixtures/Minimal.vfx";
         private const string ShaderIncludeFixture = "Assets/VfxFixtures/HLSLInclude.hlsl";
         private const string ShaderMainFixture = "Assets/VfxFixtures/HLSLMain.hlsl";
+        private const string CubeMeshFixture = "Assets/VfxFixtures/Cube.obj";
         private const string ShaderGraphFixture = "Assets/VfxFixtures/VfxUnlit.shadergraph";
         private const string TempFolder = "Assets/UnityCliBridgeTests/Vfx";
 
@@ -3012,6 +3013,66 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "designate_template", ["assetPath"] = copy
             }), "name is required");
+        }
+
+        [Test]
+        public void BakeSdf_GeneratesTexture3DFromMesh()
+        {
+            if (!UnityEngine.SystemInfo.supportsComputeShaders)
+            {
+                Assert.Ignore("SDF baking requires compute shader support, unavailable on this device/editor.");
+            }
+            if (!System.IO.File.Exists(CubeMeshFixture))
+            {
+                Assert.Ignore($"Cube mesh fixture not present: {CubeMeshFixture}");
+            }
+
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder(TempFolder);
+            string outPath = $"{TempFolder}/CubeSDF.asset";
+
+            JObject result = ToJObject(VfxGraphHandler.BakeSdf(new JObject
+            {
+                ["meshPath"] = CubeMeshFixture, ["outputPath"] = outPath, ["maxResolution"] = 16
+            }));
+            Assert.IsTrue(result["error"] == null || result["error"].Type == JTokenType.Null,
+                $"bake returned an error: {result["error"]}");
+            CollectionAssert.AreEqual(new[] { 16, 16, 16 },
+                ((JArray)result["resolution"]).Select(t => (int)t).ToList(),
+                "a cube box bakes to a 16^3 grid at maxResolution 16");
+
+            var tex = AssetDatabase.LoadAssetAtPath<UnityEngine.Texture3D>(outPath);
+            Assert.IsNotNull(tex, "a Texture3D asset should be created at the output path");
+            Assert.AreEqual(16, tex.width);
+            Assert.AreEqual(16, tex.depth);
+            // The baked SDF must carry a real distance field — values vary across the volume.
+            var distinct = tex.GetPixels(0).Select(p => p.r).Distinct().Count();
+            Assert.Greater(distinct, 1, "the baked SDF should contain varying distance values, not a flat texture");
+
+            // Overwrite guard, then overwrite at a new resolution.
+            AssertError(VfxGraphHandler.BakeSdf(new JObject
+            {
+                ["meshPath"] = CubeMeshFixture, ["outputPath"] = outPath, ["maxResolution"] = 16
+            }), "already exists");
+            JObject ov = ToJObject(VfxGraphHandler.BakeSdf(new JObject
+            {
+                ["meshPath"] = CubeMeshFixture, ["outputPath"] = outPath, ["maxResolution"] = 8, ["overwrite"] = true
+            }));
+            Assert.IsTrue(ov["error"] == null || ov["error"].Type == JTokenType.Null,
+                $"overwrite bake returned an error: {ov["error"]}");
+            Assert.AreEqual(8, ((JArray)ov["resolution"])[0].Value<int>());
+        }
+
+        [Test]
+        public void BakeSdf_MissingMeshReturnsError()
+        {
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder(TempFolder);
+            AssertError(VfxGraphHandler.BakeSdf(new JObject
+            {
+                ["meshPath"] = "Assets/VfxFixtures/DoesNotExist.obj",
+                ["outputPath"] = $"{TempFolder}/Nope.asset"
+            }), "Mesh");
         }
 
         [Test]
