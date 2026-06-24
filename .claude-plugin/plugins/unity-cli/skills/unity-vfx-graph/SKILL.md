@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.26.0
+  version: 0.27.0
   category: assets
   triggers:
     - vfx
@@ -119,6 +119,7 @@ unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Gr
 unity-cli raw vfx_list_library --json '{"kind":"template"}'
 unity-cli raw vfx_apply --json '{"op":"create_from_template","targetPath":"Assets/Basic Graphs/Burst.vfx","template":"03_Simple_Burst"}'
 unity-cli raw vfx_apply --json '{"op":"insert_template","assetPath":"Assets/Basic Graphs/Minimal.vfx","template":"03_Simple_Burst"}'
+unity-cli raw vfx_apply --json '{"op":"designate_template","assetPath":"Assets/Basic Graphs/Minimal.vfx","name":"My Burst","category":"My Custom","description":"reusable burst"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -266,6 +267,11 @@ graph by copying the template's serialized graph (`VisualEffectAssetEditorUtilit
 making a new asset: it clones every top-level context/operator/parameter (with the template's internal
 flow + slot links and nested blocks intact) via `VFXMemorySerializer.DuplicateObjects` and adds them
 as a new disjoint system alongside the existing ones (response `addedNodes`/`addedTypes`).
+`designate_template` (`assetPath` = an existing `.vfx`, `name` required, optional `category`/`description`/
+`icon`/`thumbnail` by Texture2D path) marks that asset as a **custom template** so it appears in the
+Templates window — it writes the VFX importer's template metadata + `useAsTemplate` flag via the package's
+`VFXTemplateHelperInternal.TrySetTemplateStatic` and reimports. Describe surfaces it as the top-level
+`template` field (`{name, category, description}`; null when the asset isn't a template).
 
 Systems: a full particle system is just the descriptor chain Init→Update→Output sharing one
 `VFXDataParticle`. Build a fresh system by `add_context "Initialize Particle"` +

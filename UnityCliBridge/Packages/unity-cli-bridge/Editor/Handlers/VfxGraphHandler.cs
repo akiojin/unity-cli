@@ -48,6 +48,8 @@ namespace UnityCliBridge.Handlers
         private static Type UIInfoType => T("UnityEditor.VFX.VFXUI+UIInfo");
         private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
         private static Type CategoryInfoType => T("UnityEditor.VFX.VFXUI+CategoryInfo");
+        private static Type TemplateHelperType => T("UnityEditor.VFX.VFXTemplateHelperInternal");
+        private static Type TemplateDescriptorType => T("UnityEditor.Experimental.GraphView.GraphViewTemplateDescriptor");
         private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
         private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
         private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
@@ -586,6 +588,7 @@ namespace UnityCliBridge.Handlers
                 ["customAttributes"] = customAttributes,
                 ["initialEventName"] = initialEventName,
                 ["instancing"] = instancing,
+                ["template"] = TemplateInfoJson(assetPath),
                 ["errors"] = errors
             };
         }
@@ -862,6 +865,7 @@ namespace UnityCliBridge.Handlers
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
                 case "insert_template": return InsertTemplate(parameters);
+                case "designate_template": return DesignateTemplate(parameters);
                 default:
                     return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
@@ -3476,6 +3480,96 @@ namespace UnityCliBridge.Handlers
                 ["addedNodes"] = added,
                 ["addedTypes"] = addedTypes
             };
+        }
+
+        /// <summary>
+        /// Designate an existing .vfx as a custom template (it shows up in the Templates window). Writes
+        /// the VFX importer's template metadata (name/category/description + optional icon/thumbnail by
+        /// asset path) and flips useAsTemplate, via the package's official VFXTemplateHelperInternal.
+        /// TrySetTemplateStatic (the same entry the GraphView's "Set as Template" uses) — then persists
+        /// the importer settings and reimports so the .meta carries the `template:` block. Describe
+        /// surfaces it as the top-level `template` field.
+        /// </summary>
+        private static object DesignateTemplate(JObject parameters)
+        {
+            var name = parameters?["name"]?.ToString();
+            if (string.IsNullOrEmpty(name))
+                return new { error = "name is required (the template's display name)" };
+            var assetPath = parameters?["assetPath"]?.ToString();
+            if (string.IsNullOrEmpty(assetPath))
+                return new { error = "assetPath is required" };
+            if (!System.IO.File.Exists(assetPath))
+                return new { error = $"No .vfx asset at path: {assetPath}" };
+
+            var descType = TemplateDescriptorType
+                ?? throw new Exception("GraphViewTemplateDescriptor type not found (UnityEditor.Experimental.GraphView).");
+            var helperType = TemplateHelperType
+                ?? throw new Exception("VFXTemplateHelperInternal type not found.");
+
+            object desc = Activator.CreateInstance(descType);
+            FindField(descType, "name")?.SetValue(desc, name);
+            FindField(descType, "category")?.SetValue(desc, parameters?["category"]?.ToString() ?? "");
+            FindField(descType, "description")?.SetValue(desc, parameters?["description"]?.ToString() ?? "");
+            var iconPath = parameters?["icon"]?.ToString();
+            if (!string.IsNullOrEmpty(iconPath))
+            {
+                var icon = AssetDatabase.LoadAssetAtPath(iconPath, typeof(Texture2D));
+                if (icon == null) return new { error = $"No Texture2D icon at path: {iconPath}" };
+                FindField(descType, "icon")?.SetValue(desc, icon);
+            }
+            var thumbPath = parameters?["thumbnail"]?.ToString();
+            if (!string.IsNullOrEmpty(thumbPath))
+            {
+                var thumb = AssetDatabase.LoadAssetAtPath(thumbPath, typeof(Texture2D));
+                if (thumb == null) return new { error = $"No Texture2D thumbnail at path: {thumbPath}" };
+                FindField(descType, "thumbnail")?.SetValue(desc, thumb);
+            }
+
+            var setMethod = helperType.GetMethod("TrySetTemplateStatic",
+                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            if (setMethod == null)
+                throw new Exception("VFXTemplateHelperInternal.TrySetTemplateStatic not found.");
+            bool ok = (bool)setMethod.Invoke(null, new[] { assetPath, desc });
+            if (!ok)
+                return new { error = $"Failed to set template metadata on {assetPath}." };
+
+            // The helper sets the importer's properties (dirtying it) but leaves persisting to the caller.
+            AssetDatabase.WriteImportSettingsIfDirty(assetPath);
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.SaveAssets();
+
+            return new JObject
+            {
+                ["op"] = "designate_template",
+                ["assetPath"] = assetPath,
+                ["template"] = TemplateInfoJson(assetPath)
+            };
+        }
+
+        /// <summary>Read an asset's custom-template metadata via VFXTemplateHelperInternal.TryGetTemplateStatic
+        /// (name/category/description). Returns null when the asset is not designated as a template.</summary>
+        private static JObject TemplateInfoJson(string assetPath)
+        {
+            try
+            {
+                var helperType = TemplateHelperType;
+                var descType = TemplateDescriptorType;
+                if (helperType == null || descType == null || string.IsNullOrEmpty(assetPath)) return null;
+                var getMethod = helperType.GetMethod("TryGetTemplateStatic",
+                    BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                if (getMethod == null) return null;
+                var args = new object[] { assetPath, null };
+                bool ok = (bool)getMethod.Invoke(null, args);
+                if (!ok) return null;
+                var d = args[1];
+                return new JObject
+                {
+                    ["name"] = FindField(descType, "name")?.GetValue(d) as string,
+                    ["category"] = FindField(descType, "category")?.GetValue(d) as string,
+                    ["description"] = FindField(descType, "description")?.GetValue(d) as string
+                };
+            }
+            catch { return null; }
         }
 
         /// <summary>

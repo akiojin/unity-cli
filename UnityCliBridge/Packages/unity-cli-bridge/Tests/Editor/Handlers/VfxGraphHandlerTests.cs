@@ -2915,6 +2915,42 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyDesignateTemplate_MarksAssetAsCustomTemplate()
+        {
+            string copy = CopyFixture("designate");
+
+            // Not a template to begin with.
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.IsTrue(before["template"] == null || before["template"].Type == JTokenType.Null,
+                "a fresh asset should not be a designated template");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "designate_template", ["assetPath"] = copy,
+                ["name"] = "My Burst", ["category"] = "My Custom", ["description"] = "a test template"
+            }));
+            var t = result["template"];
+            Assert.AreEqual("My Burst", (string)t["name"]);
+            Assert.AreEqual("My Custom", (string)t["category"]);
+            Assert.AreEqual("a test template", (string)t["description"]);
+
+            // Persists: describe (which reads the importer) reports the same metadata after reimport.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var td = after["template"];
+            Assert.IsNotNull(td, "describe should surface the designated template metadata");
+            Assert.AreEqual("My Burst", (string)td["name"]);
+            Assert.AreEqual("My Custom", (string)td["category"]);
+            AssertNoErrorTier(after);
+
+            // Missing name is rejected.
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "designate_template", ["assetPath"] = copy
+            }), "name is required");
+        }
+
+        [Test]
         public void Runtime_SetFloatOnExposedParameter_RoundTripsViaPublicApi()
         {
             string copy = CopyFixture("runtime");
