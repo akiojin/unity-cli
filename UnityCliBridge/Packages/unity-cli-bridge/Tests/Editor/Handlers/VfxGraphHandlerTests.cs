@@ -1542,6 +1542,77 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyLinkFlow_CrossSystemSpawning_OneSpawnerDrivesTwoSystemsAndAnotherSpawner()
+        {
+            string copy = CopyFixture("xspawn");
+
+            int data1 = FindContext(
+                ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy })),
+                "Init").Value<int>("dataInstanceId");
+
+            // Build a second, disjoint particle system (contexts 4,5,6).
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 }, ["to"] = new JObject { ["index"] = 5 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 5 }, ["to"] = new JObject { ["index"] = 6 }
+            });
+
+            // Cross-system spawning #1: the original Spawner (0) also drives the second system's Init (4).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 0 }, ["to"] = new JObject { ["index"] = 4 }
+            });
+
+            // Cross-system spawning #2: a second Spawner (7) controlled by the first via its Start
+            // flow input (toIndex 0) — spawner→spawner chaining.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Spawn" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 0 }, ["to"] = new JObject { ["index"] = 7 },
+                ["toIndex"] = 0
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var contexts = (JArray)after["contexts"];
+
+            // The one Spawner fans out to both systems' Init and to the second Spawner.
+            var spawnerOutTargets = ((JArray)contexts[0]["outputs"])
+                .Select(o => o.Value<int>("index")).OrderBy(x => x).ToList();
+            CollectionAssert.AreEquivalent(new[] { 1, 4, 7 }, spawnerOutTargets,
+                "the shared Spawner should flow into Init(1), Init(4), and Spawner(7)");
+
+            // The two particle systems stay disjoint (different VFXData) despite the shared spawner.
+            int data2 = contexts[4].Value<int>("dataInstanceId");
+            Assert.AreEqual(data2, contexts[5].Value<int>("dataInstanceId"));
+            Assert.AreEqual(data2, contexts[6].Value<int>("dataInstanceId"));
+            Assert.AreNotEqual(data1, data2,
+                "a shared spawner must NOT merge the two systems' particle data");
+
+            // The second Spawner reports the first as its flow input (Start control).
+            var spawner2Inputs = ((JArray)contexts[7]["inputs"])
+                .Select(o => o.Value<int>("index")).ToList();
+            CollectionAssert.Contains(spawner2Inputs, 0,
+                "the second Spawner's Start input should come from the first Spawner");
+
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplyDeleteSystem_RemovesAllContextsOfTheAddressedSystemOnly()
         {
             string copy = CopyFixture("delsystem");
