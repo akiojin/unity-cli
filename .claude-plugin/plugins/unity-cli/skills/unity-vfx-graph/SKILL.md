@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.19.0
+  version: 0.20.0
   category: assets
   triggers:
     - vfx
@@ -141,10 +141,14 @@ loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`a
 `reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`). **Flipbook:** setting
 `uvMode:"Flipbook"`/`"FlipbookBlend"` surfaces a `flipBookSize` input slot on the Output (a FlipBook x/y
 grid — set via `set_slot_value` `target:{node:"context",contextType:"Output",slot:0}` + `subPath:["x"|"y"]`);
-`flipbookBlendFrames`/`flipbookMotionVectors` are plain `[VFXSetting]` bools. **shaderGraph asset:** the
-Output's `shaderGraph` field is an Object (`ShaderGraphVfxAsset`) loaded by path the same way `m_Subgraph`
-is — `set_context_setting setting:"shaderGraph" value:"<path>.shadergraph"` (the `.shadergraph` must be
-authored with the *Visual Effect* target, else it's rejected). It also reaches the context's
+`flipbookBlendFrames`/`flipbookMotionVectors` are plain `[VFXSetting]` bools. **shaderGraph asset:** use a
+**dedicated Shader Graph output** (`add_context "Output Particle|Shader Graph|Quad"` → `VFXComposedParticleOutput`;
+assigning a shaderGraph to a plain Unlit output raises `WrongOutputShaderGraph`), then
+`set_context_setting index:<sgOutput> setting:"shaderGraph" value:"<path>.shadergraph"`. The `shaderGraph`
+field lives on the composed output's nested shading sub-object, so the op resolves it via the model's
+`GetSetting` (response `via:"context-composed"`); the `.shadergraph` must be authored with **Support VFX
+Graph** enabled (a URP target toggle) so it imports as a `ShaderGraphVfxAsset`, else it's rejected. The op
+also reaches the context's
 particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too — the response's `via` field
 reports `context` vs `data`; it also falls back to a writable **property** (`via:"…-property"`) for
 settings that aren't `[VFXSetting]` fields, notably **simulation space** (`setting:"space"`,

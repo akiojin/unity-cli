@@ -1225,6 +1225,23 @@ namespace UnityCliBridge.Handlers
                 return SetContextSettingResult(assetPath, ctx, settingName, via, ToJToken(convertedSetting));
             }
 
+            // Composed-output settings (e.g. a Shader Graph output's `shaderGraph`) live on a nested
+            // sub-object, so FindField on the context/data TYPE misses them. The model's own virtual
+            // GetSetting resolves composed/nested settings (returns the FieldInfo + its owning instance);
+            // use that field for coercion and the model's SetSettingValue, which writes the nested
+            // instance and runs the proper invalidation.
+            var composedSetting = Call(ctx, ModelType, "GetSetting", settingName);
+            var composedField = composedSetting?.GetType()
+                .GetField("field", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(composedSetting) as FieldInfo;
+            if (composedField != null)
+            {
+                object convertedComposed = CoerceSettingValue(composedField, valueToken, settingName);
+                Call(ctx, ModelType, "SetSettingValue", settingName, convertedComposed);
+                Persist(graph, assetPath);
+                return SetContextSettingResult(assetPath, ctx, settingName, "context-composed", ToJToken(convertedComposed));
+            }
+
             // Property fallback: a few "settings" are exposed as public properties rather than
             // [VFXSetting] fields — notably VFXDataParticle.space (simulation Local/World), whose
             // m_Space field is private and explicitly not a setting yet. Setting the property runs the

@@ -586,6 +586,7 @@ namespace UnityCliBridge.Tests
 
         private const string Fixture = "Assets/VfxFixtures/Minimal.vfx";
         private const string ShaderIncludeFixture = "Assets/VfxFixtures/HLSLInclude.hlsl";
+        private const string ShaderGraphFixture = "Assets/VfxFixtures/VfxUnlit.shadergraph";
         private const string TempFolder = "Assets/UnityCliBridgeTests/Vfx";
 
         [TearDown]
@@ -1524,6 +1525,45 @@ namespace UnityCliBridge.Tests
             var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blocking.Count,
                 $"a from-scratch particle system should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ApplySetContextSetting_AssignsShaderGraphAssetToComposedOutput()
+        {
+            string copy = CopyFixture("shadergraph");
+
+            // A Shader Graph output is the dedicated composed output (VFXComposedParticleOutput);
+            // assigning a shaderGraph to the legacy Unlit output instead raises WrongOutputShaderGraph.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Shader Graph|Quad" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 2 }, ["to"] = new JObject { ["index"] = 4 }
+            });
+
+            // shaderGraph lives on the composed output's nested shading sub-object, so set_context_setting
+            // resolves it through the model's GetSetting (via:"context-composed") rather than FindField.
+            JObject set = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy, ["index"] = 4,
+                ["setting"] = "shaderGraph", ["value"] = ShaderGraphFixture
+            }));
+            Assert.AreEqual("context-composed", set.Value<string>("via"),
+                "the composed-output nested setting should resolve via GetSetting, not a direct field");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var sgOutput = ((JArray)after["contexts"])[4];
+            Assert.AreEqual("VFXComposedParticleOutput", sgOutput.Value<string>("type"));
+
+            JToken sgRef = sgOutput["settings"]?["shaderGraph"];
+            Assert.IsNotNull(sgRef, "the composed output should report a shaderGraph setting");
+            Assert.AreEqual("ShaderGraphVfxAsset", sgRef.Value<string>("type"));
+            Assert.AreEqual(ShaderGraphFixture, sgRef.Value<string>("assetPath"),
+                "shaderGraph should resolve to the assigned VFX-target .shadergraph fixture");
+
+            AssertNoErrorTier(after);
         }
 
         [Test]
