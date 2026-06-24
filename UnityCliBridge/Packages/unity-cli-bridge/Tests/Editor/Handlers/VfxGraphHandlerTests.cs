@@ -1340,6 +1340,86 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyAddSystem_BuildsParticleStripChainSharingNewStripData()
+        {
+            string copy = CopyFixture("stripsystem");
+
+            // Baseline: the existing particle system's data id (so we can prove disjointness).
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            int originalInitData = FindContext(baseline, "Init").Value<int>("dataInstanceId");
+
+            // A particle-strip system is the strip Initialize + the shared Update Particle +
+            // a strip-flavoured output. The Update context adapts to the strip VFXData seeded by
+            // Initialize Particle Strip; there is no separate "Update Particle Strip" descriptor.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Initialize Particle Strip"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Update Particle"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Output ParticleStrip|Shader Graph|Quad"
+            });
+
+            // Wire the strip system by index (new contexts land at 4, 5, 6).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 },
+                ["to"] = new JObject { ["index"] = 5 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 5 },
+                ["to"] = new JObject { ["index"] = 6 }
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(7, after.Value<int>("contextCount"),
+                "graph should now hold the original system plus the strip system");
+
+            var contexts = (JArray)after["contexts"];
+            var initStrip = contexts[4];
+            var updateStrip = contexts[5];
+            var outputStrip = contexts[6];
+
+            // The strip Initialize seeds ParticleStrip data (vs the plain "Particle" original).
+            Assert.AreEqual("ParticleStrip", initStrip["settings"].Value<string>("dataType"),
+                "Initialize Particle Strip should produce ParticleStrip data");
+            Assert.AreEqual("VFXComposedParticleStripOutput", outputStrip.Value<string>("type"),
+                "the strip output context should be the composed strip output");
+
+            // All three strip contexts share one VFXData, distinct from the original system's.
+            int stripData = initStrip.Value<int>("dataInstanceId");
+            Assert.AreEqual(stripData, updateStrip.Value<int>("dataInstanceId"),
+                "the shared Update should adopt the strip VFXData via LinkTo");
+            Assert.AreEqual(stripData, outputStrip.Value<int>("dataInstanceId"),
+                "the strip output should share the same strip VFXData");
+            Assert.AreNotEqual(originalInitData, stripData,
+                "the strip system's VFXData must be distinct from the original particle system's");
+
+            // Tier-2: composing the strip chain registers no Error-tier issues.
+            var errors = (JArray)after["errors"];
+            var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blocking.Count,
+                $"a from-scratch strip system should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
         public void ApplyDeleteSystem_RemovesAllContextsOfTheAddressedSystemOnly()
         {
             string copy = CopyFixture("delsystem");
