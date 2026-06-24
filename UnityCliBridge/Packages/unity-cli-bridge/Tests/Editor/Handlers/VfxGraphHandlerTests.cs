@@ -1041,6 +1041,75 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyLinkSlots_DrivesBlockActivationFromGraphLink()
+        {
+            string copy = CopyFixture("blockactivation");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Init", ["blockName"] = "|Set|_Velocity"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy,
+                ["parameterName"] = "Active", ["type"] = "Bool", ["exposed"] = true
+            });
+
+            // Link a bool parameter output into the block's activation slot (NOT a regular input slot;
+            // addressed by the `activation` flag, since the activation slot is not in inputSlots).
+            JObject link = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject
+                {
+                    ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["activation"] = true
+                }
+            }));
+            Assert.IsTrue(link["to"].Value<bool>("activation"),
+                "link response should report the activation endpoint");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+
+            // The describe oracle surfaces the block's activation slot with the incoming link.
+            var block = FindContext(after, "Init")["blocks"][0];
+            var actSlot = block["activationSlot"];
+            Assert.IsNotNull(actSlot, "block should report an activationSlot");
+            Assert.IsTrue(actSlot.Value<bool>("hasLink"), "activation slot should report a link");
+            Assert.AreEqual("parameter", ((JArray)actSlot["links"])[0]["node"].Value<string>("kind"),
+                "activation slot should be driven by the parameter");
+
+            // The parameter output reciprocally reports driving the block.
+            var paramOut = (JArray)((JArray)after["parameters"])[0]["outputSlots"][0]["links"];
+            Assert.AreEqual(1, paramOut.Count, "parameter output should drive one slot");
+            Assert.AreEqual("block", paramOut[0]["node"].Value<string>("kind"));
+
+            var errors = ((JArray)after["errors"])
+                .Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, errors.Count,
+                "graph should recompile with zero Error-tier entries after link-driven activation");
+
+            // Unlinking the activation slot round-trips clean.
+            JObject unlink = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "unlink_slots",
+                ["assetPath"] = copy,
+                ["target"] = new JObject
+                {
+                    ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["activation"] = true
+                }
+            }));
+            Assert.AreEqual(1, unlink.Value<int>("linksRemoved"));
+
+            JObject cleared = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            Assert.IsFalse(FindContext(cleared, "Init")["blocks"][0]["activationSlot"].Value<bool>("hasLink"),
+                "activation slot should report no link after unlink");
+        }
+
+        [Test]
         public void ApplyAddContextAndLinkFlow_WiresCustomEventIntoSpawn()
         {
             string copy = CopyFixture("event");

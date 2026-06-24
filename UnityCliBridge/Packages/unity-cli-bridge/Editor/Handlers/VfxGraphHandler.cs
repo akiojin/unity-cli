@@ -403,6 +403,30 @@ namespace UnityCliBridge.Handlers
                 return arr;
             }
 
+            // A block's activation slot is the per-particle/frame boolean "Activation" port. It is NOT
+            // in the block's inputSlots collection (it's the special `activationSlot`), so the regular
+            // SlotsJson misses it — surface it here so link-driven activation (link_slots …activation:true)
+            // is verifiable. Returns null for blocks/models without one.
+            JObject ActivationSlotJson(object block)
+            {
+                object actSlot = null;
+                try { actSlot = Prop(block, "activationSlot"); }
+                catch { return null; }
+                if (actSlot == null) return null;
+                var links = LinksJson(actSlot);
+                JToken value = null;
+                try { value = ToJToken(Prop(actSlot, "value")); }
+                catch { }
+                return new JObject
+                {
+                    ["name"] = SlotName(actSlot),
+                    ["valueType"] = SlotValueTypeName(actSlot),
+                    ["hasLink"] = links.Count > 0,
+                    ["links"] = links,
+                    ["value"] = value
+                };
+            }
+
             var contexts = new JArray();
             for (int i = 0; i < ctxList.Count; i++)
             {
@@ -421,7 +445,8 @@ namespace UnityCliBridge.Handlers
                         ["enabled"] = blockEnabled,
                         ["settings"] = BlockSettings(b),
                         ["inputSlots"] = SlotsJson(b, true),
-                        ["outputSlots"] = SlotsJson(b, false)
+                        ["outputSlots"] = SlotsJson(b, false),
+                        ["activationSlot"] = ActivationSlotJson(b)
                     });
                 }
                 string ctxType;
@@ -1806,6 +1831,29 @@ namespace UnityCliBridge.Handlers
             }
         }
 
+        /// <summary>
+        /// Resolve the input slot an endpoint addresses. Normally the index-th input slot, but when the
+        /// endpoint carries `activation:true` it's the block's special `activationSlot` — the boolean
+        /// "Activation" port the editor exposes to drive a block on/off per particle/frame. That slot is
+        /// NOT in `inputSlots`, so it can only be reached by the flag. Only blocks have an activation slot.
+        /// </summary>
+        private static object ResolveInputSlot(object node, JObject endpoint, string label)
+        {
+            if (endpoint?["activation"]?.ToObject<bool>() == true)
+            {
+                object actSlot = null;
+                try { actSlot = Prop(node, "activationSlot"); }
+                catch { /* operators/contexts have no activation slot */ }
+                if (actSlot == null)
+                    throw new Exception(
+                        $"{label} activation:true requires a block with an activation slot; " +
+                        $"'{node.GetType().Name}' has none");
+                return actSlot;
+            }
+            int idx = endpoint?["slot"]?.ToObject<int>() ?? 0;
+            return GetSlot(node, true, idx, label);
+        }
+
         /// <summary>Get a top-level input/output slot of a slot container by index.</summary>
         private static object GetSlot(object container, bool isInput, int index, string label)
         {
@@ -1863,10 +1911,11 @@ namespace UnityCliBridge.Handlers
             var fromNode = ResolveNode(graph, from, "from");
             var toNode = ResolveNode(graph, to, "to");
             int fromSlot = from["slot"]?.ToObject<int>() ?? 0;
-            int toSlot = to["slot"]?.ToObject<int>() ?? 0;
+            bool toActivation = to["activation"]?.ToObject<bool>() == true;
+            int toSlot = toActivation ? -1 : (to["slot"]?.ToObject<int>() ?? 0);
 
             var outSlot = GetSlot(fromNode, false, fromSlot, "from");
-            var inSlot = GetSlot(toNode, true, toSlot, "to");
+            var inSlot = ResolveInputSlot(toNode, to, "to");
 
             // Optional descriptor-named sub-slot descent on either endpoint (e.g. link a float into a
             // Sphere slot's `radius` child via to.subPath = ["radius"]).
@@ -1897,6 +1946,7 @@ namespace UnityCliBridge.Handlers
                 {
                     ["node"] = toNode.GetType().Name,
                     ["slot"] = toSlot,
+                    ["activation"] = toActivation,
                     ["slotName"] = SlotName(inSlot)
                 }
             };
@@ -2212,8 +2262,10 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
             var node = ResolveNode(graph, target, "target");
-            int slotIndex = target["slot"]?.ToObject<int>() ?? 0;
-            var slot = GetSlot(node, true, slotIndex, "target");
+            var slot = ResolveInputSlot(node, target, "target");
+            int slotIndex = target["activation"]?.ToObject<bool>() == true
+                ? -1
+                : (target["slot"]?.ToObject<int>() ?? 0);
             var targetSub = (target["subPath"] as JArray)?.Select(t => t.ToString()).ToArray();
             slot = DescendSlot(slot, targetSub, "target");
 

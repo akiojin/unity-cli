@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.23.0
+  version: 0.24.0
   category: assets
   triggers:
     - vfx
@@ -48,6 +48,7 @@ unity-cli raw vfx_list_library --json '{"kind":"operator","filter":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Turbulence"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"NoiseType","value":"Perlin"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_enabled","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"enabled":false}'
+unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Update","blockIndex":0,"activation":true}}'
 unity-cli raw vfx_apply --json '{"op":"reorder_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toIndex":1}'
 unity-cli raw vfx_apply --json '{"op":"move_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toContextType":"Init"}'
 unity-cli raw vfx_apply --json '{"op":"duplicate_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0}'
@@ -120,7 +121,10 @@ unity-cli raw get_compilation_state --json '{}'
 
 `vfx_apply` ops: `add_block` (descriptor by name), `set_block_setting` (target a block by `contextType`
 + `blockIndex` from describe, set a `[VFXSetting]` field), `set_block_enabled` (toggle a block's
-`enabled` state by `contextType`+`blockIndex`+`enabled` bool — describe surfaces `blocks[].enabled`),
+`enabled` state by `contextType`+`blockIndex`+`enabled` bool — describe surfaces `blocks[].enabled`;
+for *dynamic* per-particle/frame activation instead of a static toggle, `link_slots`/`unlink_slots` a bool
+output into the block's activation port by adding `"activation":true` to the `to`/`target` block endpoint
+— describe surfaces it as `blocks[].activationSlot` with its `links`),
 `reorder_block` (move a block to `toIndex` within its context) and `move_block` (relocate a block to a
 compatible `toContextType` — validated via `VFXContext.Accept`, so an incompatible target returns a
 clear error rather than corrupting the graph), `duplicate_block` (clone a block by `contextType`+`blockIndex`
