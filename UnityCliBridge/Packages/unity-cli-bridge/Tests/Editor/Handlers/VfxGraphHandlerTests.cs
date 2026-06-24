@@ -1420,6 +1420,71 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyAddSystem_MeshOutputChainSharesData_AndStaticMeshIsDisjoint()
+        {
+            string copy = CopyFixture("meshsystem");
+
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            int originalInitData = FindContext(baseline, "Init").Value<int>("dataInstanceId");
+
+            // A particle system whose output renders meshes: Init -> Update -> Output Particle|Unlit|Mesh.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Mesh" });
+            // A standalone static-mesh output: its own single-context system (no Init/Update).
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Single Mesh" });
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 4 }, ["to"] = new JObject { ["index"] = 5 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = 5 }, ["to"] = new JObject { ["index"] = 6 }
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(8, after.Value<int>("contextCount"),
+                "original system + mesh-output system (3) + standalone static mesh (1)");
+
+            var contexts = (JArray)after["contexts"];
+            var meshOut = contexts[6];
+            var staticMesh = contexts[7];
+
+            Assert.AreEqual("VFXMeshOutput", meshOut.Value<string>("type"),
+                "the particle output should be the mesh output context");
+            int meshData = contexts[4].Value<int>("dataInstanceId");
+            Assert.AreEqual(meshData, contexts[5].Value<int>("dataInstanceId"),
+                "Init and Update of the mesh system share one VFXData");
+            Assert.AreEqual(meshData, meshOut.Value<int>("dataInstanceId"),
+                "the mesh output shares the same VFXData via the Update link");
+            Assert.AreNotEqual(originalInitData, meshData,
+                "the mesh system's VFXData must be distinct from the original system's");
+
+            // The static mesh output is a disjoint single-context system with its own data.
+            Assert.AreEqual("VFXStaticMeshOutput", staticMesh.Value<string>("type"));
+            Assert.AreNotEqual(meshData, staticMesh.Value<int>("dataInstanceId"),
+                "the static mesh output owns its own VFXData, not the particle system's");
+
+            // A static-mesh output force-disables instancing (mirrors ValidateInstancing).
+            Assert.AreEqual("MeshOutput", after["instancing"].Value<string>("disabledReason"),
+                "a VFXStaticMeshOutput in the graph force-disables instancing");
+
+            var errors = (JArray)after["errors"];
+            var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
+            Assert.AreEqual(0, blocking.Count,
+                $"mesh + static-mesh systems should not register Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
         public void ApplyDeleteSystem_RemovesAllContextsOfTheAddressedSystemOnly()
         {
             string copy = CopyFixture("delsystem");
