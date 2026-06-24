@@ -542,6 +542,16 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_InsertTemplate_WithoutTemplate_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "insert_template",
+                ["assetPath"] = "Assets/Some.vfx"
+            }), "template is required");
+        }
+
+        [Test]
         public void Apply_SetInstancing_WithoutAnyArgs_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -2686,6 +2696,49 @@ namespace UnityCliBridge.Tests
             var blocking = errors.Where(e => (string)e["type"] == "Error").ToList();
             Assert.AreEqual(0, blocking.Count,
                 $"a template-instantiated asset should have no Error-tier issues; got: {string.Join(", ", blocking.Select(e => (string)e["description"]))}");
+        }
+
+        [Test]
+        public void ApplyInsertTemplate_MergesTemplateNodesIntoExistingGraph()
+        {
+            string copy = CopyFixture("inserttemplate");
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            int beforeContexts = before.Value<int>("contextCount");
+            Assert.AreEqual(4, beforeContexts, "Minimal starts with one 4-context system");
+            int beforeBlocks = ((JArray)before["contexts"]).Sum(c => ((JArray)c["blocks"]).Count);
+            Assert.AreEqual(0, beforeBlocks, "Minimal has no blocks");
+            int origInitData = FindContext(before, "Init").Value<int>("dataInstanceId");
+
+            // Merge a populated template into the EXISTING graph (vs create_from_template, a new asset).
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = "03_Simple_Burst"
+            }));
+            Assert.AreEqual(4, result.Value<int>("addedNodes"),
+                "the burst template contributes a Spawner/Init/Update/Output system");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            Assert.AreEqual(beforeContexts + 4, after.Value<int>("contextCount"),
+                "the original system survives and the template's 4 contexts are added alongside it");
+
+            // The template's nested children (spawn/init blocks) came along with internal links intact.
+            int afterBlocks = ((JArray)after["contexts"]).Sum(c => ((JArray)c["blocks"]).Count);
+            Assert.Greater(afterBlocks, 0,
+                "the inserted template should bring its blocks (proves nested clone, not just bare contexts)");
+
+            // The inserted system is disjoint: its contexts share a VFXData distinct from the original.
+            var spawners = ((JArray)after["contexts"]).Where(c => (string)c["contextType"] == "Spawner").ToList();
+            Assert.AreEqual(2, spawners.Count, "the merge adds a second spawner system");
+            var insertedData = ((JArray)after["contexts"])
+                .Select(c => c.Value<int>("dataInstanceId"))
+                .Where(id => id != 0).Distinct().ToList();
+            Assert.IsTrue(insertedData.Contains(origInitData), "the original system's data id should persist");
+            Assert.Greater(insertedData.Count, 2,
+                "the inserted system introduces new, distinct VFXData ids (disjoint from the original)");
+
+            AssertNoErrorTier(after);
         }
 
         [Test]

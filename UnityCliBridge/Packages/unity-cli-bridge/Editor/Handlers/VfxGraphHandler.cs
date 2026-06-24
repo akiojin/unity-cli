@@ -803,6 +803,7 @@ namespace UnityCliBridge.Handlers
                 case "set_initial_event_name": return SetInitialEventName(parameters);
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
                 case "create_from_template": return CreateFromTemplate(parameters);
+                case "insert_template": return InsertTemplate(parameters);
                 default:
                     return new { error = $"Unsupported op: '{op}'. Supported: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, unlink_slots, set_operator_setting, set_context_setting, remove_block, remove_operator, remove_parameter, remove_context, link_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, set_instancing, create_subgraph_asset, create_from_template" };
             }
@@ -3104,22 +3105,7 @@ namespace UnityCliBridge.Handlers
             if (string.IsNullOrEmpty(template))
                 return new { error = "template is required (a template name or path to a .vfx template)" };
 
-            // Resolve template → an absolute/asset path. Accept an explicit path, else a name
-            // resolved against the package template dir.
-            var templateDir = AssetEditorUtilityType
-                .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
-            string templateFile;
-            if (template.EndsWith(".vfx", StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(template))
-                templateFile = template;
-            else
-            {
-                if (string.IsNullOrEmpty(templateDir))
-                    throw new Exception("Could not resolve the VFX package template directory.");
-                templateFile = System.IO.Path.Combine(templateDir, template + ".vfx");
-                if (!System.IO.File.Exists(templateFile))
-                    throw new Exception(
-                        $"No template '{template}' in {templateDir}. Use vfx_list_library kind 'template' to discover names.");
-            }
+            var templateFile = ResolveTemplateFile(template);
 
             var parentDir = System.IO.Path.GetDirectoryName(targetPath)?.Replace('\\', '/');
             if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
@@ -3137,6 +3123,86 @@ namespace UnityCliBridge.Handlers
                 ["template"] = template,
                 ["templateFile"] = templateFile.Replace('\\', '/'),
                 ["assetType"] = created?.GetType().Name
+            };
+        }
+
+        /// <summary>
+        /// Resolve a `template` (a built-in template name like "01_Minimal_System", or an explicit
+        /// `.vfx` path) to an AssetDatabase path. Returns forward-slash form so it works for both the
+        /// File APIs (CreateTemplateAsset) and GetResourceAtPath (insert_template).
+        /// </summary>
+        private static string ResolveTemplateFile(string template)
+        {
+            if (template.EndsWith(".vfx", StringComparison.OrdinalIgnoreCase) &&
+                (System.IO.File.Exists(template) || AssetDatabase.LoadMainAssetAtPath(template) != null))
+                return template.Replace('\\', '/');
+
+            var templateDir = AssetEditorUtilityType
+                .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
+            if (string.IsNullOrEmpty(templateDir))
+                throw new Exception("Could not resolve the VFX package template directory.");
+            var templateFile = (templateDir.TrimEnd('/', '\\') + "/" + template + ".vfx");
+            if (!System.IO.File.Exists(templateFile) && AssetDatabase.LoadMainAssetAtPath(templateFile) == null)
+                throw new Exception(
+                    $"No template '{template}' in {templateDir}. Use vfx_list_library kind 'template' to discover names.");
+            return templateFile;
+        }
+
+        /// <summary>
+        /// Merge a template's nodes into an EXISTING graph (vs create_from_template, which makes a new
+        /// asset). Clones every top-level node (context/operator/parameter) of the template — with the
+        /// template's internal flow + slot links preserved — via VFXMemorySerializer.DuplicateObjects,
+        /// then AddChilds the clones into the target graph. The GraphView's merge path (VFXCopy/VFXPaste)
+        /// is Controller/View-coupled; this is the model-level equivalent (a template is self-contained,
+        /// so no boundary-I/O inference is needed).
+        /// </summary>
+        private static object InsertTemplate(JObject parameters)
+        {
+            var template = parameters?["template"]?.ToString();
+            if (string.IsNullOrEmpty(template))
+                return new { error = "template is required (a template name or path to a .vfx template)" };
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var templateFile = ResolveTemplateFile(template);
+            var templateGraph = LoadGraph(templateFile);
+
+            // Top-level functional nodes of the template (skip VFXUI etc.).
+            bool IsNode(object m) => ContextType.IsInstanceOfType(m)
+                || OperatorType.IsInstanceOfType(m) || ParameterType.IsInstanceOfType(m);
+            var topLevel = Children(templateGraph).Where(IsNode).ToList();
+            if (topLevel.Count == 0)
+                return new { error = $"Template '{template}' has no insertable nodes." };
+
+            // Collect the whole object graph (nodes + blocks + slots) so DuplicateObjects clones it
+            // with internal flow/slot links intact, then add back only the graph-level clones.
+            var deps = new HashSet<UnityEngine.ScriptableObject>();
+            foreach (var node in topLevel)
+            {
+                deps.Add((UnityEngine.ScriptableObject)node);
+                Call(node, ModelType, "CollectDependencies", deps, true);
+            }
+            var duplicated = (Array)Call(null, MemorySerializerType, "DuplicateObjects", (object)deps.ToArray());
+
+            int added = 0;
+            var addedTypes = new JArray();
+            foreach (var clone in duplicated.Cast<object>())
+            {
+                if (!IsNode(clone)) continue;
+                Call(graph, ModelType, "AddChild", clone, -1, true);
+                added++;
+                addedTypes.Add(clone.GetType().Name);
+            }
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "insert_template",
+                ["assetPath"] = assetPath,
+                ["template"] = template,
+                ["templateFile"] = templateFile.Replace('\\', '/'),
+                ["addedNodes"] = added,
+                ["addedTypes"] = addedTypes
             };
         }
 

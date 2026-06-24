@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.21.0
+  version: 0.22.0
   category: assets
   triggers:
     - vfx
@@ -114,6 +114,7 @@ unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"As
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Subgraph","subgraphPath":"Assets/Basic Graphs/MySysSub.vfx"}'
 unity-cli raw vfx_list_library --json '{"kind":"template"}'
 unity-cli raw vfx_apply --json '{"op":"create_from_template","targetPath":"Assets/Basic Graphs/Burst.vfx","template":"03_Simple_Burst"}'
+unity-cli raw vfx_apply --json '{"op":"insert_template","assetPath":"Assets/Basic Graphs/Minimal.vfx","template":"03_Simple_Burst"}'
 unity-cli raw get_compilation_state --json '{}'
 ```
 
@@ -248,7 +249,11 @@ Templates: `vfx_list_library kind:"template"` enumerates the VFX package's built
 (`01_Minimal_System` … `06_Firework`) with their on-disk paths. `create_from_template`
 (`targetPath` = new `.vfx`, `template` = a template name or explicit `.vfx` path) instantiates a fresh
 graph by copying the template's serialized graph (`VisualEffectAssetEditorUtility.CreateTemplateAsset`)
-— the result is a real describable graph, not an empty asset.
+— the result is a real describable graph, not an empty asset. `insert_template` (`assetPath` = an
+*existing* graph, `template` = name/path) **merges** the template's nodes into that graph instead of
+making a new asset: it clones every top-level context/operator/parameter (with the template's internal
+flow + slot links and nested blocks intact) via `VFXMemorySerializer.DuplicateObjects` and adds them
+as a new disjoint system alongside the existing ones (response `addedNodes`/`addedTypes`).
 
 Systems: a full particle system is just the descriptor chain Init→Update→Output sharing one
 `VFXDataParticle`. Build a fresh system by `add_context "Initialize Particle"` +
