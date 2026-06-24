@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.15.0
+  version: 0.16.0
   category: assets
   triggers:
     - vfx
@@ -259,7 +259,10 @@ parent references it by adding the matching library node (`add_block "Empty Subg
 references it differently: `add_context "Subgraph"` + `subgraphPath` (the System subgraph node, a
 `VFXSubgraphContext`, is NOT in the node library, so add_context instantiates it directly and points
 `m_Subgraph` at the `.vfx`). All three surface the reference as `{type, name, assetPath}` under the
-node's `settings.m_Subgraph` (verified end-to-end). (Exposing subgraph inputs / defining outputs /
+node's `settings.m_Subgraph` (verified end-to-end). **Expose inputs:** add an exposed parameter inside
+the subgraph asset (`add_parameter ... exposed:true` against the subgraph's path) — it automatically
+surfaces as an input slot on the parent's subgraph node (verified for the operator kind; describe shows
+the new `inputSlots[].name`). (Defining operator-subgraph outputs / block Suitable Contexts /
 convert-selection are not yet wired.)
 
 **Set/Get Attribute** also needs no dedicated op. Every `Set <Attribute>` ships as descriptor

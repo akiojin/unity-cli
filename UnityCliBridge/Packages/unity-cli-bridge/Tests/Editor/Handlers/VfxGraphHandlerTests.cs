@@ -1281,6 +1281,43 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySubgraphOperator_ExposedInputParameterSurfacesAsParentInputSlot()
+        {
+            string copy = CopyFixture("subgraphexpose");
+            string subPath = $"{TempFolder}/ExposeOp.vfxoperator";
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "create_subgraph_asset", ["subgraphPath"] = subPath, ["kind"] = "operator" });
+
+            // Expose an input on the subgraph: an exposed parameter inside the subgraph asset becomes
+            // an input port on the parent's subgraph node.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = subPath,
+                ["type"] = "Float", ["parameterName"] = "Strength", ["exposed"] = true
+            });
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Empty Subgraph Operator" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["setting"] = "m_Subgraph", ["value"] = subPath
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            JToken op = ((JArray)after["operators"])[0];
+            Assert.AreEqual("VFXSubgraphOperator", op.Value<string>("type"));
+
+            var inputNames = ((JArray)op["inputSlots"]).Select(s => s.Value<string>("name")).ToList();
+            CollectionAssert.Contains(inputNames, "Strength",
+                "the subgraph's exposed parameter should surface as an input slot on the parent's subgraph operator");
+
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplySubgraphSystem_CreatesVfxAndReferencesItAsASubgraphContext()
         {
             string copy = CopyFixture("subgraphsys");
