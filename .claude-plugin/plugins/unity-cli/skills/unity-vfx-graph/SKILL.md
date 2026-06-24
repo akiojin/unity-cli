@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.14.0
+  version: 0.15.0
   category: assets
   triggers:
     - vfx
@@ -109,6 +109,8 @@ unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Ba
 unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MyOpSub.vfxoperator","kind":"operator"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Empty Subgraph Operator"}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_Subgraph","value":"Assets/Basic Graphs/MyOpSub.vfxoperator"}'
+unity-cli raw vfx_apply --json '{"op":"create_subgraph_asset","subgraphPath":"Assets/Basic Graphs/MySysSub.vfx","kind":"system"}'
+unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Subgraph","subgraphPath":"Assets/Basic Graphs/MySysSub.vfx"}'
 unity-cli raw vfx_list_library --json '{"kind":"template"}'
 unity-cli raw vfx_apply --json '{"op":"create_from_template","targetPath":"Assets/Basic Graphs/Burst.vfx","template":"03_Simple_Burst"}'
 unity-cli raw get_compilation_state --json '{}'
@@ -248,13 +250,17 @@ and a standalone `Output Single Mesh` (`VFXStaticMeshOutput`) is its own single-
 force-disables instancing (`instancing.disabledReason:"MeshOutput"`). Name any system with
 `set_system_name` (see above) — describe surfaces `contexts[].systemName`.
 
-Subgraph: `create_subgraph_asset` copies a default Block or Operator subgraph template into a target
-path (`subgraphPath` + `kind: "block"|"operator"`); the parent graph references it by adding the
-matching library node (`add_block "Empty Subgraph Block"` / `add_operator "Empty Subgraph Operator"`)
-and then writing the asset path into the `m_Subgraph` setting — via `set_block_setting` for the block
-kind, `set_operator_setting` for the operator kind. Both ops auto-detect `UnityEngine.Object`-derived
-fields and load the value as an asset path via `AssetDatabase`, so describe surfaces the reference as
-`{type, name, assetPath}` under the node's `settings.m_Subgraph` (verified end-to-end for both kinds).
+Subgraph: `create_subgraph_asset` makes a subgraph asset (`subgraphPath` + `kind`). For
+`kind:"block"|"operator"` it copies the package's default `.vfxblock`/`.vfxoperator` template; the
+parent references it by adding the matching library node (`add_block "Empty Subgraph Block"` /
+`add_operator "Empty Subgraph Operator"`) and writing the asset path into `m_Subgraph` via
+`set_block_setting`/`set_operator_setting`. For `kind:"system"` it creates a plain `.vfx`
+(`VisualEffectAssetEditorUtility.CreateNewAsset`) — author content in it like any graph — and the parent
+references it differently: `add_context "Subgraph"` + `subgraphPath` (the System subgraph node, a
+`VFXSubgraphContext`, is NOT in the node library, so add_context instantiates it directly and points
+`m_Subgraph` at the `.vfx`). All three surface the reference as `{type, name, assetPath}` under the
+node's `settings.m_Subgraph` (verified end-to-end). (Exposing subgraph inputs / defining outputs /
+convert-selection are not yet wired.)
 
 **Set/Get Attribute** also needs no dedicated op. Every `Set <Attribute>` ships as descriptor
 `|Set|_<AttrName>` (e.g. `|Set|_Color`, `|Set|_Position`, `|Set|_Lifetime`) — all instantiate the

@@ -54,6 +54,7 @@ namespace UnityCliBridge.Handlers
         private static Type VFXViewPreferenceType => T("UnityEditor.VFX.VFXViewPreference");
         private static Type MemorySerializerType => T("UnityEditor.VFX.VFXMemorySerializer");
         private static Type SystemNamesType => T("UnityEditor.VFX.VFXSystemNames");
+        private static Type SubgraphContextType => T("UnityEditor.VFX.VFXSubgraphContext");
 
         private const BindingFlags AllInstance =
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
@@ -1479,25 +1480,51 @@ namespace UnityCliBridge.Handlers
 
             var graph = LoadGraph(assetPath);
 
-            // Find context descriptor by name (exact, then contains).
-            var descriptors = (Call(null, LibraryType, "GetContexts") as IEnumerable).Cast<object>().ToList();
-            var match = descriptors.FirstOrDefault(d =>
-                            string.Equals(Prop(d, "name") as string, contextName, StringComparison.OrdinalIgnoreCase))
-                        ?? descriptors.FirstOrDefault(d =>
-                            ((Prop(d, "name") as string)?.IndexOf(contextName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
-            if (match == null)
+            object context;
+            string matchedDescriptor;
+            // System-subgraph reference: VFXSubgraphContext is NOT in the node library (it's added by
+            // dropping a .vfx onto the canvas), so instantiate it directly and point m_Subgraph at the
+            // referenced .vfx by path. Mirrors VFXConvertSubgraph's CreateInstance + AddChild + m_Subgraph.
+            if (contextName.IndexOf("subgraph", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                var available = string.Join(", ", descriptors
-                    .Select(d => Prop(d, "name") as string)
-                    .Where(n => !string.IsNullOrEmpty(n)).Distinct());
-                throw new Exception($"No context descriptor matching '{contextName}'. Available: {available}");
+                context = ScriptableObject.CreateInstance(SubgraphContextType);
+                if (context == null)
+                    throw new Exception("Failed to instantiate VFXSubgraphContext");
+                Call(graph, ModelType, "AddChild", context, -1, true);
+
+                var subgraphPath = parameters?["subgraphPath"]?.ToString();
+                if (!string.IsNullOrEmpty(subgraphPath))
+                {
+                    var subAsset = AssetDatabase.LoadAssetAtPath(subgraphPath, VisualEffectAssetType);
+                    if (subAsset == null)
+                        throw new Exception($"No VisualEffectAsset (.vfx) at subgraphPath: {subgraphPath}");
+                    Call(context, ModelType, "SetSettingValue", "m_Subgraph", subAsset);
+                }
+                matchedDescriptor = "Subgraph";
             }
+            else
+            {
+                // Find context descriptor by name (exact, then contains).
+                var descriptors = (Call(null, LibraryType, "GetContexts") as IEnumerable).Cast<object>().ToList();
+                var match = descriptors.FirstOrDefault(d =>
+                                string.Equals(Prop(d, "name") as string, contextName, StringComparison.OrdinalIgnoreCase))
+                            ?? descriptors.FirstOrDefault(d =>
+                                ((Prop(d, "name") as string)?.IndexOf(contextName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
+                if (match == null)
+                {
+                    var available = string.Join(", ", descriptors
+                        .Select(d => Prop(d, "name") as string)
+                        .Where(n => !string.IsNullOrEmpty(n)).Distinct());
+                    throw new Exception($"No context descriptor matching '{contextName}'. Available: {available}");
+                }
 
-            var context = Call(match, match.GetType(), "CreateInstance");
-            if (context == null)
-                throw new Exception($"CreateInstance returned null for context '{contextName}'");
+                context = Call(match, match.GetType(), "CreateInstance");
+                if (context == null)
+                    throw new Exception($"CreateInstance returned null for context '{contextName}'");
 
-            Call(graph, ModelType, "AddChild", context, -1, true);
+                Call(graph, ModelType, "AddChild", context, -1, true);
+                matchedDescriptor = Prop(match, "name") as string;
+            }
 
             // Optional context settings (e.g. an Event context's eventName).
             var appliedSettings = ApplySettings(context, parameters?["settings"] as JObject);
@@ -1527,7 +1554,7 @@ namespace UnityCliBridge.Handlers
                 ["op"] = "add_context",
                 ["assetPath"] = assetPath,
                 ["addedContext"] = context.GetType().Name,
-                ["matchedDescriptor"] = Prop(match, "name") as string,
+                ["matchedDescriptor"] = matchedDescriptor,
                 ["settingsApplied"] = appliedSettings,
                 ["linked"] = linked
             };
@@ -2964,7 +2991,30 @@ namespace UnityCliBridge.Handlers
                 return new { error = "subgraphPath is required (target .vfxblock or .vfxoperator path)" };
             var kind = parameters?["kind"]?.ToString()?.ToLowerInvariant();
             if (string.IsNullOrEmpty(kind))
-                return new { error = "kind is required (block or operator)" };
+                return new { error = "kind is required (block, operator, or system)" };
+
+            // System subgraph = a plain .vfx (no .vfxblock/.vfxoperator template); created via
+            // VisualEffectAssetEditorUtility.CreateNewAsset, then referenced in a parent graph by
+            // add_context "Subgraph" + subgraphPath (which instantiates a VFXSubgraphContext).
+            if (kind == "system")
+            {
+                if (!subgraphPath.EndsWith(".vfx", StringComparison.OrdinalIgnoreCase))
+                    return new { error = "subgraphPath must end with '.vfx' for kind 'system'." };
+                var parentDirSys = System.IO.Path.GetDirectoryName(subgraphPath)?.Replace('\\', '/');
+                if (!string.IsNullOrEmpty(parentDirSys) && !AssetDatabase.IsValidFolder(parentDirSys))
+                    throw new Exception($"Parent folder does not exist: {parentDirSys}");
+                var createdSys = Call(null, AssetEditorUtilityType, "CreateNewAsset", subgraphPath);
+                if (createdSys == null)
+                    throw new Exception($"CreateNewAsset returned null for '{subgraphPath}'.");
+                AssetDatabase.ImportAsset(subgraphPath, ImportAssetOptions.ForceUpdate);
+                return new JObject
+                {
+                    ["op"] = "create_subgraph_asset",
+                    ["subgraphPath"] = subgraphPath,
+                    ["kind"] = kind,
+                    ["assetType"] = (createdSys as UnityEngine.Object)?.GetType().Name
+                };
+            }
 
             string templatePath;
             string expectedExt;
@@ -2979,7 +3029,7 @@ namespace UnityCliBridge.Handlers
                     expectedExt = ".vfxoperator";
                     break;
                 default:
-                    return new { error = $"Unknown kind '{kind}'. Supported: block, operator." };
+                    return new { error = $"Unknown kind '{kind}'. Supported: block, operator, system." };
             }
             if (!subgraphPath.EndsWith(expectedExt, StringComparison.OrdinalIgnoreCase))
                 return new { error = $"subgraphPath must end with '{expectedExt}' for kind '{kind}'." };

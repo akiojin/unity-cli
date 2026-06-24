@@ -1281,6 +1281,61 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySubgraphSystem_CreatesVfxAndReferencesItAsASubgraphContext()
+        {
+            string copy = CopyFixture("subgraphsys");
+            string subPath = $"{TempFolder}/SubSystem.vfx";
+
+            // A System subgraph is a plain .vfx (no .vfxblock/.vfxoperator template).
+            JObject created = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "create_subgraph_asset",
+                ["subgraphPath"] = subPath,
+                ["kind"] = "system"
+            }));
+            Assert.AreEqual("VisualEffectAsset", created.Value<string>("assetType"));
+            Assert.IsTrue(System.IO.File.Exists(subPath),
+                $"system subgraph .vfx should exist on disk: {subPath}");
+
+            // Give the subgraph real content so the reference is a genuine reusable system, not a
+            // degenerate empty graph: Spawn -> Init -> Update -> Output.
+            foreach (var ctx in new[] { "Spawn", "Initialize Particle", "Update Particle", "Output Particle|Unlit|Quad" })
+                VfxGraphHandler.Apply(new JObject
+                { ["op"] = "add_context", ["assetPath"] = subPath, ["contextName"] = ctx });
+            for (int i = 0; i < 3; i++)
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_flow", ["assetPath"] = subPath,
+                    ["from"] = new JObject { ["index"] = i }, ["to"] = new JObject { ["index"] = i + 1 }
+                });
+
+            // Reference it from the parent: VFXSubgraphContext is not in the node library, so
+            // add_context "Subgraph" + subgraphPath instantiates it and points m_Subgraph at the .vfx.
+            JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Subgraph",
+                ["subgraphPath"] = subPath
+            }));
+            Assert.AreEqual("VFXSubgraphContext", added.Value<string>("addedContext"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var subgraphCtx = FindContext(after, "Subgraph");
+            Assert.IsNotNull(subgraphCtx, "the parent should now hold a Subgraph context");
+            Assert.AreEqual("VFXSubgraphContext", subgraphCtx.Value<string>("type"));
+
+            JToken subRef = subgraphCtx["settings"]?["m_Subgraph"];
+            Assert.IsNotNull(subRef, "m_Subgraph should be reported in the subgraph context's settings");
+            Assert.AreEqual("VisualEffectAsset", subRef.Value<string>("type"));
+            Assert.AreEqual(subPath, subRef.Value<string>("assetPath"),
+                "m_Subgraph.assetPath should resolve to the created system subgraph .vfx");
+
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplyAddSystem_BuildsFreshInitUpdateOutputChainSharingNewData()
         {
             string copy = CopyFixture("system");
