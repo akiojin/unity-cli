@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.24.0
+  version: 0.25.0
   category: assets
   triggers:
     - vfx
@@ -59,6 +59,8 @@ unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets
 unity-cli raw vfx_apply --json '{"op":"add_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector3"}'
 unity-cli raw vfx_apply --json '{"op":"remove_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_operand_type","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector2"}'
+unity-cli raw vfx_apply --json '{"op":"rename_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"index":0,"name":"Alpha"}'
+unity-cli raw vfx_apply --json '{"op":"reorder_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"index":0,"toIndex":2}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Spawner","setting":"loopDuration","value":"Constant"}'
 unity-cli raw vfx_apply --json '{"op":"set_context_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Init","setting":"capacity","value":256}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"operator","operatorIndex":1,"slot":0}}'
@@ -142,7 +144,9 @@ below the operator's minimum, normally 2); `set_operator_operand_type` retypes o
 operators (`Sine`/`Distance`/… one shared type) take just `operandType`, **unified/cascaded** operators
 take an optional `index` (else all operands change). `operandType` must be one of the operator's valid
 types (`Float`/`Vector2`/`Vector3`/`Vector4`/…); describe's `inputSlots[].valueType` reflects the result
-and `inputSlots` grow/shrink. Non-dynamic operators return a clear error), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
+and `inputSlots` grow/shrink. `rename_operator_input` (`index`+`name` → renames a cascaded operand; the name
+drives `inputSlots[].name`) and `reorder_operator_input` (`index`+`toIndex` → moves an operand, links survive)
+are cascaded-only. Non-dynamic operators return a clear error), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
 loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
 `reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`). **Flipbook:** setting
 `uvMode:"Flipbook"`/`"FlipbookBlend"` surfaces a `flipBookSize` input slot on the Output (a FlipBook x/y

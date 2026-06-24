@@ -2545,6 +2545,63 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyOperator_RenameAndReorderCascadedInputs()
+        {
+            string copy = CopyFixture("opinputname");
+
+            // Add is cascaded — start with a, b; grow to 3 so reorder is observable.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator_input", ["assetPath"] = copy, ["operatorIndex"] = 0 });
+
+            // Rename operand 0 → "Alpha"; the operand name drives the input slot name.
+            JObject renamed = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_operator_input", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["index"] = 0, ["name"] = "Alpha"
+            }));
+            Assert.AreEqual("Alpha", renamed.Value<string>("name"));
+
+            JObject afterRename = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var namesAfterRename = ((JArray)((JArray)afterRename["operators"])[0]["inputSlots"])
+                .Select(s => (string)s["name"]).ToList();
+            CollectionAssert.AreEqual(new[] { "Alpha", "b", "c" }, namesAfterRename,
+                "operand 0 should be renamed to Alpha in the input slots");
+
+            // Move operand 0 (Alpha) to the end → order becomes b, c, Alpha.
+            JObject reordered = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_operator_input", ["assetPath"] = copy,
+                ["operatorIndex"] = 0, ["index"] = 0, ["toIndex"] = 2
+            }));
+            Assert.AreEqual(3, reordered.Value<int>("operandCount"));
+
+            JObject afterReorder = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var namesAfterReorder = ((JArray)((JArray)afterReorder["operators"])[0]["inputSlots"])
+                .Select(s => (string)s["name"]).ToList();
+            CollectionAssert.AreEqual(new[] { "b", "c", "Alpha" }, namesAfterReorder,
+                "moving operand 0 to index 2 should place Alpha last");
+            AssertNoErrorTier(afterReorder);
+
+            // Both ops reject a non-cascaded operator (Sine) with a clear error.
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Sine" });
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "rename_operator_input", ["assetPath"] = copy,
+                ["operatorIndex"] = 1, ["index"] = 0, ["name"] = "x"
+            }), "named operands");
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_operator_input", ["assetPath"] = copy,
+                ["operatorIndex"] = 1, ["index"] = 0, ["toIndex"] = 0
+            }), "reorderable operands");
+        }
+
+        [Test]
         public void ApplyBlackboard_RenameCategoryReorderDuplicate()
         {
             string copy = CopyFixture("blackboard");

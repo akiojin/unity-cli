@@ -790,6 +790,8 @@ namespace UnityCliBridge.Handlers
                 case "add_operator_input": return AddOperatorInput(parameters);
                 case "remove_operator_input": return RemoveOperatorInput(parameters);
                 case "set_operator_operand_type": return SetOperatorOperandType(parameters);
+                case "rename_operator_input": return RenameOperatorInput(parameters);
+                case "reorder_operator_input": return ReorderOperatorInput(parameters);
                 case "set_context_setting": return SetContextSetting(parameters);
                 case "add_context": return AddContext(parameters);
                 case "add_operator": return AddOperator(parameters);
@@ -1204,6 +1206,100 @@ namespace UnityCliBridge.Handlers
                 ["operator"] = op.GetType().Name,
                 ["operandType"] = t.Name,
                 ["via"] = via
+            };
+        }
+
+        /// <summary>
+        /// Rename a cascaded operator's operand (input) — `SetOperandName(index, name)`. The operand name
+        /// drives the input slot's name, so describe surfaces the change as `operators[].inputSlots[].name`.
+        /// Only cascaded operators (Add/Multiply/Append-style) have named operands.
+        /// </summary>
+        private static object RenameOperatorInput(JObject parameters)
+        {
+            var name = parameters?["name"]?.ToString();
+            if (string.IsNullOrEmpty(name))
+                return new { error = "name is required" };
+            var idxTok = parameters?["index"];
+            if (idxTok == null || idxTok.Type == JTokenType.Null)
+                return new { error = "index is required (which operand to rename)" };
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var op = ResolveOperatorByIndex(graph, operatorIndex);
+            if (!HasMethod(op, "SetOperandName", 2))
+                return new
+                {
+                    error =
+                        $"Operator '{op.GetType().Name}' has no named operands — only cascaded operators " +
+                        "(Add/Multiply/Append-style) can rename inputs."
+                };
+
+            int count = Convert.ToInt32(Prop(op, "operandCount"));
+            int idx = idxTok.ToObject<int>();
+            if (idx < 0 || idx >= count)
+                return new { error = $"index {idx} out of range; operator has {count} operand(s)." };
+
+            Call(op, op.GetType(), "SetOperandName", idx, name);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "rename_operator_input",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["index"] = idx,
+                ["name"] = ToJToken(Call(op, op.GetType(), "GetOperandName", idx))
+            };
+        }
+
+        /// <summary>
+        /// Reorder a cascaded operator's operands — `OperandMoved(movedIndex, targetIndex)` (it moves the
+        /// matching input slot in lockstep so links survive). `index` = the operand to move, `toIndex` =
+        /// its new position. Describe surfaces the new order via `operators[].inputSlots[]`.
+        /// </summary>
+        private static object ReorderOperatorInput(JObject parameters)
+        {
+            var idxTok = parameters?["index"];
+            if (idxTok == null || idxTok.Type == JTokenType.Null)
+                return new { error = "index is required (which operand to move)" };
+            var toTok = parameters?["toIndex"];
+            if (toTok == null || toTok.Type == JTokenType.Null)
+                return new { error = "toIndex is required (the operand's new position)" };
+            int operatorIndex = parameters?["operatorIndex"]?.ToObject<int>() ?? 0;
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var op = ResolveOperatorByIndex(graph, operatorIndex);
+            if (!HasMethod(op, "OperandMoved", 2))
+                return new
+                {
+                    error =
+                        $"Operator '{op.GetType().Name}' has no reorderable operands — only cascaded operators " +
+                        "(Add/Multiply/Append-style) can reorder inputs."
+                };
+
+            int count = Convert.ToInt32(Prop(op, "operandCount"));
+            int idx = idxTok.ToObject<int>();
+            int toIndex = toTok.ToObject<int>();
+            if (idx < 0 || idx >= count)
+                return new { error = $"index {idx} out of range; operator has {count} operand(s)." };
+            if (toIndex < 0 || toIndex >= count)
+                return new { error = $"toIndex {toIndex} out of range; operator has {count} operand(s)." };
+
+            Call(op, op.GetType(), "OperandMoved", idx, toIndex);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "reorder_operator_input",
+                ["assetPath"] = assetPath,
+                ["operatorIndex"] = operatorIndex,
+                ["operator"] = op.GetType().Name,
+                ["index"] = idx,
+                ["toIndex"] = toIndex,
+                ["operandCount"] = ToJToken(Prop(op, "operandCount"))
             };
         }
 
