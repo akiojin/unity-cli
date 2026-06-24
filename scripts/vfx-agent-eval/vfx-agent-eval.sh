@@ -278,6 +278,78 @@ def sdf_asset_exists(d, args):
     return ok, f"target={d.get('target')}, exists={ok}"
 
 
+def hlsl_operator(d, args):
+    ops = [o for o in (d.get("operators") or []) if (o.get("settings") or {}).get("m_HLSLCode")]
+    return bool(ops), f"customHlslOps={len(ops)}"
+
+
+def gpu_event_chain(d, args):
+    gpu = any(c.get("contextType") == "SpawnerGPU" for c in contexts(d))
+    particle_ids = {
+        c.get("dataInstanceId")
+        for c in contexts(d)
+        if c.get("contextType") in ("Init", "Update", "Output") and c.get("dataInstanceId") is not None
+    }
+    ok = gpu and len(particle_ids) >= 2
+    return ok, f"gpuEventCtx={gpu}, particleSystems={len(particle_ids)}"
+
+
+def params_in_category(d, args):
+    cat = (args or {}).get("category")
+    need = (args or {}).get("count", 2)
+    matched = [
+        p for p in (d.get("parameters") or [])
+        if p.get("exposed") and p.get("category") == cat and (
+            p.get("parameterType") == "Single"
+            or any(s.get("valueType") == "Single" for s in (p.get("outputSlots") or []))
+        )
+    ]
+    return len(matched) >= need, f"floatsInCategory[{cat}]={len(matched)} (need {need})"
+
+
+def instancing_custom(d, args):
+    inst = d.get("instancing") or {}
+    cap = (args or {}).get("capacity")
+    ok = inst.get("mode") == "Custom" and inst.get("capacity") == cap
+    return ok, f"instancing={inst}"
+
+
+def custom_attribute_set(d, args):
+    name = (args or {}).get("name")
+    defined = any((a.get("attributeName") or a.get("name")) == name for a in (d.get("customAttributes") or []))
+    set_in_init = False
+    for c in contexts(d):
+        if c.get("contextType") != "Init":
+            continue
+        for b in blocks(c):
+            if str((b.get("settings") or {}).get("attribute", "")).lower() == str(name).lower():
+                set_in_init = True
+    return (defined and set_in_init), f"defined={defined}, setInInit={set_in_init}"
+
+
+def flipbook_output(d, args):
+    for c in contexts(d):
+        if c.get("contextType") != "Output":
+            continue
+        s = c.get("settings") or {}
+        if s.get("uvMode") == "Flipbook":
+            on = bool(s.get("flipbookMotionVectors")) or bool(s.get("flipbookBlendFrames"))
+            return on, f"uvMode=Flipbook, mv={s.get('flipbookMotionVectors')}, blend={s.get('flipbookBlendFrames')}"
+    return False, "no Output with uvMode=Flipbook"
+
+
+def sticky_note_titled(d, args):
+    title = ((args or {}).get("title") or "").lower()
+    matched = [n for n in (d.get("stickyNotes") or []) if title in (n.get("title") or "").lower()]
+    return bool(matched), f"matchingNotes={len(matched)}"
+
+
+def system_named(d, args):
+    name = (args or {}).get("name")
+    ok = any(c.get("systemName") == name for c in contexts(d))
+    return ok, f"namedAs[{name}]={ok}"
+
+
 GRADERS = {
     "turbulence_in_update": turbulence_in_update,
     "exposed_param_into_spawner": exposed_param_into_spawner,
@@ -286,6 +358,14 @@ GRADERS = {
     "block_activation_from_bool": block_activation_from_bool,
     "custom_template_named": custom_template_named,
     "sdf_asset_exists": sdf_asset_exists,
+    "hlsl_operator": hlsl_operator,
+    "gpu_event_chain": gpu_event_chain,
+    "params_in_category": params_in_category,
+    "instancing_custom": instancing_custom,
+    "custom_attribute_set": custom_attribute_set,
+    "flipbook_output": flipbook_output,
+    "sticky_note_titled": sticky_note_titled,
+    "system_named": system_named,
 }
 
 bench = load_jsonl(benchmark_path)

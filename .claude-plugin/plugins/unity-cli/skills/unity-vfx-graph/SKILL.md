@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.30.0
+  version: 0.31.0
   category: assets
   triggers:
     - vfx
@@ -163,9 +163,10 @@ drives `inputSlots[].name`) and `reorder_operator_input` (`index`+`toIndex` → 
 are cascaded-only. Non-dynamic operators return a clear error), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
 loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
 `reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`). **Flipbook:** setting
-`uvMode:"Flipbook"`/`"FlipbookBlend"` surfaces a `flipBookSize` input slot on the Output (a FlipBook x/y
-grid — set via `set_slot_value` `target:{node:"context",contextType:"Output",slot:0}` + `subPath:["x"|"y"]`);
-`flipbookBlendFrames`/`flipbookMotionVectors` are plain `[VFXSetting]` bools. **shaderGraph asset:** use a
+`uvMode:"Flipbook"` surfaces a `flipBookSize` input slot on the Output (a FlipBook x/y
+grid — set via `set_slot_value` `target:{node:"context",contextType:"Output",slot:0}` + `subPath:["x"|"y"]`).
+Frame blending and motion vectors are NOT uvMode variants — they are the separate plain `[VFXSetting]` bools
+`flipbookBlendFrames`/`flipbookMotionVectors`. **shaderGraph asset:** use a
 **dedicated Shader Graph output** (`add_context "Output Particle|Shader Graph|Quad"` → `VFXComposedParticleOutput`;
 assigning a shaderGraph to a plain Unlit output raises `WrongOutputShaderGraph`), then
 `set_context_setting index:<sgOutput> setting:"shaderGraph" value:"<path>.shadergraph"`. The `shaderGraph`
@@ -199,7 +200,9 @@ added to the graph, with optional `settings` like an Event context's `eventName`
 type — number/bool, `[x,y,z]` vector, `[r,g,b,a]` color, or an asset-path string for Texture/Mesh;
 optional `exposed:false` for a constant (non-exposed) param, `min`/`max` for a numeric Range (sets
 `valueFilter=Range`, surfaced in describe as `parameters[].valueFilter`/`min`/`max`),
-`tooltip`/`category`), `link_slots` (connect a
+`tooltip`/`category` — note the `category` string groups the param immediately (`parameters[].category`),
+but the top-level `categories[]` array stays empty until a category op runs (see `reorder_category` below),
+so grade grouping off `parameters[].category`, not `categories[]`), `link_slots` (connect a
 `from` output slot to a `to` input slot; each endpoint is `{node: operator|parameter|context|block,
 …address, slot: index}` where an operator uses `operatorIndex`, a parameter uses `parameterIndex`, a
 block/context uses `contextType` (+ `blockIndex` for blocks); either endpoint also accepts an optional

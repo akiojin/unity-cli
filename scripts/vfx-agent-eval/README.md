@@ -56,9 +56,9 @@ runtime (e.g. Claude Code headless or the Agent SDK) with the skill mounted.
 
 The clean-room-subagent + oracle mechanism was validated manually first (the master agent launched a
 fresh subagent per task via the Agent tool, given only the skill + a probe, then graded with
-`vfx_describe_graph`). All 7 tasks passed; the run also surfaced the block-op `contextIndex`
-addressing gap (since fixed) and minor skill-doc gaps. See `VFX-Graph-LOG.md` §D/§D.2 in the project
-root for the full write-up.
+`vfx_describe_graph`). All 15 tasks passed; the runs also surfaced the block-op `contextIndex`
+addressing gap (since fixed), a flipbook `uvMode` doc bug (since fixed), and minor skill-doc gaps. See
+`VFX-Graph-LOG.md` §D/§D.2/§D.4 in the project root for the full write-up.
 
 ## Caveats
 
@@ -66,4 +66,4 @@ root for the full write-up.
   designed for a Linux CI with a real `python3`. On Windows, `python3` is often the Microsoft Store
   stub — run the harness on the CI runner, not locally.
 - The graders are ported verbatim from the node-based oracles used in the manual proof, so they
-  encode the same assertions that already passed all 7 tasks.
+  encode the same assertions that already passed all 15 tasks.
