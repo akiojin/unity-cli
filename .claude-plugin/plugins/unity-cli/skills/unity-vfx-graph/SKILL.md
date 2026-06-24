@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.18.0
+  version: 0.19.0
   category: assets
   triggers:
     - vfx
@@ -138,7 +138,13 @@ take an optional `index` (else all operands change). `operandType` must be one o
 types (`Float`/`Vector2`/`Vector3`/`Vector4`/…); describe's `inputSlots[].valueType` reflects the result
 and `inputSlots` grow/shrink. Non-dynamic operators return a clear error), `set_context_setting` (set a `[VFXSetting]` on a context by `contextType` or `index` — Spawn
 loop settings (`loopDuration`/`loopCount`/`delayBeforeLoop`), Update toggles (`ageParticles`/
-`reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`); also reaches the context's
+`reapParticles`), Output blend/UV/shader knobs (`blendMode`/`uvMode`). **Flipbook:** setting
+`uvMode:"Flipbook"`/`"FlipbookBlend"` surfaces a `flipBookSize` input slot on the Output (a FlipBook x/y
+grid — set via `set_slot_value` `target:{node:"context",contextType:"Output",slot:0}` + `subPath:["x"|"y"]`);
+`flipbookBlendFrames`/`flipbookMotionVectors` are plain `[VFXSetting]` bools. **shaderGraph asset:** the
+Output's `shaderGraph` field is an Object (`ShaderGraphVfxAsset`) loaded by path the same way `m_Subgraph`
+is — `set_context_setting setting:"shaderGraph" value:"<path>.shadergraph"` (the `.shadergraph` must be
+authored with the *Visual Effect* target, else it's rejected). It also reaches the context's
 particle **data** as a fallback, so Init `capacity`/`stripCapacity` work too — the response's `via` field
 reports `context` vs `data`; it also falls back to a writable **property** (`via:"…-property"`) for
 settings that aren't `[VFXSetting]` fields, notably **simulation space** (`setting:"space"`,

@@ -1527,6 +1527,57 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySetContextSetting_FlipbookUvModeSurfacesSizeSlotAndMotionVectors()
+        {
+            string copy = CopyFixture("flipbook");
+
+            // Flipbook layout is gated behind uvMode: switching to Flipbook surfaces a flipBookSize
+            // input slot on the Output and enables the flipbook blend / motion-vector settings.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Output", ["setting"] = "uvMode", ["value"] = "Flipbook"
+            });
+
+            // flipBookSize is a FlipBook struct slot (x/y grid). Set each component via subPath.
+            foreach (var (axis, val) in new[] { ("x", 8), ("y", 2) })
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "set_slot_value", ["assetPath"] = copy,
+                    ["target"] = new JObject { ["node"] = "context", ["contextType"] = "Output", ["slot"] = 0 },
+                    ["subPath"] = new JArray { axis }, ["value"] = val
+                });
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Output", ["setting"] = "flipbookBlendFrames", ["value"] = true
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextType"] = "Output", ["setting"] = "flipbookMotionVectors", ["value"] = true
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            var output = FindContext(after, "Output");
+
+            Assert.AreEqual("Flipbook", output["settings"].Value<string>("uvMode"));
+            Assert.IsTrue(output["settings"].Value<bool>("flipbookBlendFrames"));
+            Assert.IsTrue(output["settings"].Value<bool>("flipbookMotionVectors"));
+
+            // The flipBookSize slot is now present and holds the 8x2 grid we set.
+            var sizeSlot = ((JArray)output["inputSlots"])
+                .FirstOrDefault(s => s.Value<string>("name") == "flipBookSize");
+            Assert.IsNotNull(sizeSlot, "uvMode=Flipbook should surface a flipBookSize input slot");
+            Assert.AreEqual(8, sizeSlot["value"].Value<int>("x"));
+            Assert.AreEqual(2, sizeSlot["value"].Value<int>("y"));
+
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplyAddSystem_BuildsParticleStripChainSharingNewStripData()
         {
             string copy = CopyFixture("stripsystem");
