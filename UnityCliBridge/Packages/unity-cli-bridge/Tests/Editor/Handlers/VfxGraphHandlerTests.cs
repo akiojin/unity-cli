@@ -157,7 +157,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "remove_block",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["blockIndex"] = 0
-            }), "contextType is required");
+            }), "contextType or contextIndex is required");
         }
 
         [Test]
@@ -322,7 +322,7 @@ namespace UnityCliBridge.Tests
                 ["assetPath"] = "Assets/Some.vfx",
                 ["contextType"] = "Update",
                 ["blockIndex"] = 0
-            }), "toContextType is required");
+            }), "toContextType or toContextIndex is required");
         }
 
         [Test]
@@ -333,7 +333,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "duplicate_block",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["blockIndex"] = 0
-            }), "contextType is required");
+            }), "contextType or contextIndex is required");
         }
 
         [Test]
@@ -665,6 +665,62 @@ namespace UnityCliBridge.Tests
             var blocks = (JArray)FindContext(after, "Update")["blocks"];
             Assert.AreEqual(1, blocks.Count);
             Assert.AreEqual("Turbulence", blocks[0].Value<string>("name"));
+        }
+
+        [Test]
+        public void ApplyAddBlock_ContextIndexTargetsSameTypedSiblingContext()
+        {
+            string copy = CopyFixture("ctxindex");
+
+            // Add a SECOND Spawner so the graph holds two contexts of the same type.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_context",
+                ["assetPath"] = copy,
+                ["contextName"] = "Spawn"
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var contexts = (JArray)before["contexts"];
+            var spawnerIndices = Enumerable.Range(0, contexts.Count)
+                .Where(i => (string)contexts[i]["contextType"] == "Spawner")
+                .ToList();
+            Assert.AreEqual(2, spawnerIndices.Count, "fixture + add_context should yield two Spawners");
+            int firstSpawner = spawnerIndices[0];
+            int secondSpawner = spawnerIndices[1];
+
+            // Target the SECOND spawner explicitly by absolute contextIndex.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextIndex"] = secondSpawner,
+                ["blockName"] = "Single Burst"
+            });
+            // Target a spawner by contextType — must keep hitting the FIRST match (backward-compatible).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = copy,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Constant Spawn Rate"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var afterContexts = (JArray)after["contexts"];
+            var firstBlocks = ((JArray)afterContexts[firstSpawner]["blocks"])
+                .Select(b => (string)b["type"]).ToList();
+            var secondBlocks = ((JArray)afterContexts[secondSpawner]["blocks"])
+                .Select(b => (string)b["type"]).ToList();
+
+            CollectionAssert.Contains(secondBlocks, "VFXSpawnerBurst",
+                "contextIndex must place the burst on the second Spawner");
+            CollectionAssert.DoesNotContain(secondBlocks, "VFXSpawnerConstantRate");
+            CollectionAssert.Contains(firstBlocks, "VFXSpawnerConstantRate",
+                "contextType must keep hitting the first Spawner");
+            CollectionAssert.DoesNotContain(firstBlocks, "VFXSpawnerBurst");
         }
 
         [Test]

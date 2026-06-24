@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.29.0
+  version: 0.30.0
   category: assets
   triggers:
     - vfx
@@ -42,11 +42,14 @@ Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts an
 3. Apply the narrowest mutation with `vfx_apply`.
 4. Re-run `vfx_describe_graph` to confirm the change landed, then `get_compilation_state` to confirm the asset recompiled without errors.
 
+Invocation: every tool runs as `unity-cli raw <tool> --json '<json>'`. Add `--output json` for a structured (parseable) result, and `--port <N>` to target a specific bridge (default `6400`).
+
 ```bash
 unity-cli raw vfx_describe_graph --json '{"assetPath":"Assets/Basic Graphs/Minimal.vfx"}'
 unity-cli raw vfx_list_library --json '{"filter":"turbulence"}'
 unity-cli raw vfx_list_library --json '{"kind":"operator","filter":"Add"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Turbulence"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextIndex":4,"blockName":"Single Burst"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"setting":"NoiseType","value":"Perlin"}'
 unity-cli raw vfx_apply --json '{"op":"set_block_enabled","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"enabled":false}'
 unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/Basic Graphs/Minimal.vfx","from":{"node":"parameter","parameterIndex":0,"slot":0},"to":{"node":"block","contextType":"Update","blockIndex":0,"activation":true}}'
@@ -124,8 +127,16 @@ unity-cli raw vfx_apply --json '{"op":"designate_template","assetPath":"Assets/B
 unity-cli raw get_compilation_state --json '{}'
 ```
 
+Addressing a context for a block op: every block op (`add_block`, `set_block_setting`, `set_block_enabled`,
+`remove_block`, `reorder_block`, `move_block`, `duplicate_block`) targets its context by `contextType` (the
+**first** context of that type) **or** by `contextIndex` (the absolute position in the graph's context list,
+from describe). Use `contextIndex` when a graph has two contexts of the same type — e.g. two Spawners across
+two systems — since `contextType` alone always resolves to the first match. `move_block`/`duplicate_block`
+likewise accept `toContextIndex` alongside `toContextType` for the destination. The same `contextIndex` works
+on `link_slots`/`unlink_slots`/`set_slot_value` block and context endpoints.
+
 `vfx_apply` ops: `add_block` (descriptor by name), `set_block_setting` (target a block by `contextType`
-+ `blockIndex` from describe, set a `[VFXSetting]` field), `set_block_enabled` (toggle a block's
+(or `contextIndex`) + `blockIndex` from describe, set a `[VFXSetting]` field), `set_block_enabled` (toggle a block's
 `enabled` state by `contextType`+`blockIndex`+`enabled` bool — describe surfaces `blocks[].enabled`;
 for *dynamic* per-particle/frame activation instead of a static toggle, `link_slots`/`unlink_slots` a bool
 output into the block's activation port by adding `"activation":true` to the `to`/`target` block endpoint

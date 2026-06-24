@@ -884,6 +884,37 @@ namespace UnityCliBridge.Handlers
             return null;
         }
 
+        /// <summary>
+        /// Resolve the context a block op (or a link endpoint) targets. Prefers an explicit
+        /// `contextIndex` — the absolute position in the graph's context list — so a caller can
+        /// disambiguate two contexts of the SAME `contextType` (e.g. two Spawners across two systems);
+        /// otherwise falls back to the first context whose `contextType` matches. `idxKey`/`typeKey`
+        /// let move/duplicate address a *destination* (`toContextIndex`/`toContextType`). `defaultType`
+        /// supplies a fallback contextType when neither is given (only AddBlock uses it, default "Update").
+        /// Throws on out-of-range / not-found / neither-supplied.
+        /// </summary>
+        private static object ResolveBlockContext(object graph, JObject node, string idxKey = "contextIndex",
+            string typeKey = "contextType", string defaultType = null)
+        {
+            var ciTok = node?[idxKey];
+            if (ciTok != null && ciTok.Type != JTokenType.Null)
+            {
+                var ctxList = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+                int ci = ciTok.ToObject<int>();
+                if (ci < 0 || ci >= ctxList.Count)
+                    throw new Exception($"{idxKey} {ci} out of range; graph has {ctxList.Count} context(s)");
+                return ctxList[ci];
+            }
+            var ct = node?[typeKey]?.ToString();
+            if (string.IsNullOrEmpty(ct)) ct = defaultType;
+            if (string.IsNullOrEmpty(ct))
+                throw new Exception($"{typeKey} or {idxKey} is required");
+            var ctx = FindContext(graph, ct);
+            if (ctx == null)
+                throw new Exception($"No context of type '{ct}' found (or use {idxKey} to address it by position)");
+            return ctx;
+        }
+
         /// <summary>Find a field by name, walking the type hierarchy.</summary>
         private static FieldInfo FindField(Type type, string name)
         {
@@ -932,16 +963,14 @@ namespace UnityCliBridge.Handlers
         private static object AddBlock(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
-            var wantContext = parameters?["contextType"]?.ToString() ?? "Update";
             var blockName = parameters?["blockName"]?.ToString();
             if (string.IsNullOrEmpty(blockName))
                 return new { error = "blockName is required" };
 
             var graph = LoadGraph(assetPath);
 
-            var targetContext = FindContext(graph, wantContext);
-            if (targetContext == null)
-                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            var targetContext = ResolveBlockContext(graph, parameters, defaultType: "Update");
+            var wantContext = Prop(targetContext, "contextType")?.ToString();
 
             // Find block descriptor by name (exact, then contains).
             var descriptors = (Call(null, LibraryType, "GetBlocks") as IEnumerable).Cast<object>().ToList();
@@ -1606,7 +1635,6 @@ namespace UnityCliBridge.Handlers
         private static object SetBlockSetting(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
-            var wantContext = parameters?["contextType"]?.ToString() ?? "Update";
             var settingName = parameters?["setting"]?.ToString();
             if (string.IsNullOrEmpty(settingName))
                 return new { error = "setting is required" };
@@ -1617,9 +1645,8 @@ namespace UnityCliBridge.Handlers
 
             var graph = LoadGraph(assetPath);
 
-            var targetContext = FindContext(graph, wantContext);
-            if (targetContext == null)
-                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            var targetContext = ResolveBlockContext(graph, parameters, defaultType: "Update");
+            var wantContext = Prop(targetContext, "contextType")?.ToString();
 
             var blocks = Children(targetContext).ToList();
             if (blockIndex < 0 || blockIndex >= blocks.Count)
@@ -1939,22 +1966,15 @@ namespace UnityCliBridge.Handlers
                     }
                 case "context":
                     {
-                        var ct = node["contextType"]?.ToString();
-                        var ctx = FindContext(graph, ct);
-                        if (ctx == null)
-                            throw new Exception($"{label} context of type '{ct}' not found");
-                        return ctx;
+                        return ResolveBlockContext(graph, node);
                     }
                 case "block":
                     {
-                        var ct = node["contextType"]?.ToString();
-                        var ctx = FindContext(graph, ct);
-                        if (ctx == null)
-                            throw new Exception($"{label} context of type '{ct}' not found");
+                        var ctx = ResolveBlockContext(graph, node);
                         int bi = node["blockIndex"]?.ToObject<int>() ?? 0;
                         var blocks = Children(ctx).ToList();
                         if (bi < 0 || bi >= blocks.Count)
-                            throw new Exception($"{label} blockIndex {bi} out of range; context '{ct}' has {blocks.Count} block(s)");
+                            throw new Exception($"{label} blockIndex {bi} out of range; context has {blocks.Count} block(s)");
                         return blocks[bi];
                     }
                 default:
@@ -2483,16 +2503,14 @@ namespace UnityCliBridge.Handlers
 
         private static object RemoveBlock(JObject parameters)
         {
-            var wantContext = parameters?["contextType"]?.ToString();
-            if (string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType is required" };
+            if (!HasContextRef(parameters))
+                return new { error = "contextType or contextIndex is required" };
             int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
-            var ctx = FindContext(graph, wantContext);
-            if (ctx == null)
-                throw new Exception($"No context of type '{wantContext}' found in {assetPath}");
+            var ctx = ResolveBlockContext(graph, parameters);
+            var wantContext = Prop(ctx, "contextType")?.ToString();
 
             var blocks = Children(ctx).ToList();
             if (blockIndex < 0 || blockIndex >= blocks.Count)
@@ -2515,16 +2533,29 @@ namespace UnityCliBridge.Handlers
             };
         }
 
-        /// <summary>Locate a block by (contextType, blockIndex); returns its context + the block.</summary>
-        private static (object ctx, object block) LocateBlock(object graph, string contextType, int blockIndex)
+        /// <summary>True when an endpoint supplies either a `contextType` or a `contextIndex`.</summary>
+        private static bool HasContextRef(JObject node, string idxKey = "contextIndex", string typeKey = "contextType")
         {
-            var ctx = FindContext(graph, contextType);
-            if (ctx == null)
-                throw new Exception($"No context of type '{contextType}' found");
+            var ci = node?[idxKey];
+            if (ci != null && ci.Type != JTokenType.Null) return true;
+            return !string.IsNullOrEmpty(node?[typeKey]?.ToString());
+        }
+
+        /// <summary>
+        /// Locate a block by (context, blockIndex); returns its context + the block. The context is
+        /// resolved via <see cref="ResolveBlockContext"/>, so callers can address it by `contextType`
+        /// OR by `contextIndex` (to disambiguate two same-typed contexts).
+        /// </summary>
+        private static (object ctx, object block) LocateBlock(object graph, JObject parameters, int blockIndex)
+        {
+            var ctx = ResolveBlockContext(graph, parameters);
             var blocks = Children(ctx).ToList();
             if (blockIndex < 0 || blockIndex >= blocks.Count)
+            {
+                var ctName = Prop(ctx, "contextType")?.ToString();
                 throw new Exception(
-                    $"blockIndex {blockIndex} out of range; context '{contextType}' has {blocks.Count} block(s)");
+                    $"blockIndex {blockIndex} out of range; context '{ctName}' has {blocks.Count} block(s)");
+            }
             return (ctx, blocks[blockIndex]);
         }
 
@@ -2535,9 +2566,8 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object SetBlockEnabled(JObject parameters)
         {
-            var wantContext = parameters?["contextType"]?.ToString();
-            if (string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType is required" };
+            if (!HasContextRef(parameters))
+                return new { error = "contextType or contextIndex is required" };
             var enabledTok = parameters?["enabled"];
             if (enabledTok == null || enabledTok.Type == JTokenType.Null)
                 return new { error = "enabled is required (bool)" };
@@ -2546,7 +2576,8 @@ namespace UnityCliBridge.Handlers
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
-            var (_, block) = LocateBlock(graph, wantContext, blockIndex);
+            var (ctx, block) = LocateBlock(graph, parameters, blockIndex);
+            var wantContext = Prop(ctx, "contextType")?.ToString();
 
             var actSlot = Prop(block, "activationSlot");
             if (actSlot != null) SetProp(actSlot, "value", enabled);
@@ -2568,9 +2599,8 @@ namespace UnityCliBridge.Handlers
         /// <summary>Move a block to a new position within its own context (RemoveChild → AddChild at index).</summary>
         private static object ReorderBlock(JObject parameters)
         {
-            var wantContext = parameters?["contextType"]?.ToString();
-            if (string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType is required" };
+            if (!HasContextRef(parameters))
+                return new { error = "contextType or contextIndex is required" };
             var toTok = parameters?["toIndex"];
             if (toTok == null || toTok.Type == JTokenType.Null)
                 return new { error = "toIndex is required" };
@@ -2579,7 +2609,8 @@ namespace UnityCliBridge.Handlers
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
-            var (ctx, block) = LocateBlock(graph, wantContext, blockIndex);
+            var (ctx, block) = LocateBlock(graph, parameters, blockIndex);
+            var wantContext = Prop(ctx, "contextType")?.ToString();
 
             int count = Children(ctx).Count();
             if (toIndex < 0 || toIndex >= count)
@@ -2607,21 +2638,19 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object MoveBlock(JObject parameters)
         {
-            var wantContext = parameters?["contextType"]?.ToString();
-            if (string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType is required (the source context)" };
-            var toContext = parameters?["toContextType"]?.ToString();
-            if (string.IsNullOrEmpty(toContext))
-                return new { error = "toContextType is required (the destination context)" };
+            if (!HasContextRef(parameters))
+                return new { error = "contextType or contextIndex is required (the source context)" };
+            if (!HasContextRef(parameters, "toContextIndex", "toContextType"))
+                return new { error = "toContextType or toContextIndex is required (the destination context)" };
             int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
             int toIndex = parameters?["toIndex"]?.ToObject<int>() ?? -1;
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
-            var (srcCtx, block) = LocateBlock(graph, wantContext, blockIndex);
-            var dstCtx = FindContext(graph, toContext);
-            if (dstCtx == null)
-                throw new Exception($"No destination context of type '{toContext}' found in {assetPath}");
+            var (srcCtx, block) = LocateBlock(graph, parameters, blockIndex);
+            var wantContext = Prop(srcCtx, "contextType")?.ToString();
+            var dstCtx = ResolveBlockContext(graph, parameters, "toContextIndex", "toContextType");
+            var toContext = Prop(dstCtx, "contextType")?.ToString();
 
             bool accept = (bool)Call(dstCtx, ContextType, "Accept", block, -1);
             if (!accept)
@@ -2651,24 +2680,22 @@ namespace UnityCliBridge.Handlers
         /// </summary>
         private static object DuplicateBlock(JObject parameters)
         {
-            var wantContext = parameters?["contextType"]?.ToString();
-            if (string.IsNullOrEmpty(wantContext))
-                return new { error = "contextType is required (the source context)" };
+            if (!HasContextRef(parameters))
+                return new { error = "contextType or contextIndex is required (the source context)" };
             int blockIndex = parameters?["blockIndex"]?.ToObject<int>() ?? 0;
             int toIndex = parameters?["index"]?.ToObject<int>() ?? -1;
-            var toContext = parameters?["toContextType"]?.ToString(); // optional: copy into another context
+            // optional: copy into another context (toContextType / toContextIndex)
+            bool hasDest = HasContextRef(parameters, "toContextIndex", "toContextType");
 
             var assetPath = parameters?["assetPath"]?.ToString();
             var graph = LoadGraph(assetPath);
-            var (srcCtx, block) = LocateBlock(graph, wantContext, blockIndex);
+            var (srcCtx, block) = LocateBlock(graph, parameters, blockIndex);
+            var wantContext = Prop(srcCtx, "contextType")?.ToString();
 
-            object dstCtx = srcCtx;
-            if (!string.IsNullOrEmpty(toContext))
-            {
-                dstCtx = FindContext(graph, toContext);
-                if (dstCtx == null)
-                    throw new Exception($"No destination context of type '{toContext}' found in {assetPath}");
-            }
+            object dstCtx = hasDest
+                ? ResolveBlockContext(graph, parameters, "toContextIndex", "toContextType")
+                : srcCtx;
+            var toContext = Prop(dstCtx, "contextType")?.ToString();
 
             var clone = DuplicateModelViaSerializer(block, BlockType);
 
@@ -2689,7 +2716,7 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["sourceContextType"] = wantContext,
                 ["sourceBlockIndex"] = blockIndex,
-                ["toContextType"] = toContext ?? wantContext,
+                ["toContextType"] = toContext,
                 ["duplicatedBlock"] = clone.GetType().Name,
                 ["toIndex"] = newIndex,
                 ["blockCountInTarget"] = Children(dstCtx).Count()
