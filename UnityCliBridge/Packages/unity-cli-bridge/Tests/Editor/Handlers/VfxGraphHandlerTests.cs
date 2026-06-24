@@ -1358,6 +1358,39 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplySubgraphBlock_SetSuitableContextsRestrictsWhereTheSubgraphApplies()
+        {
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder(TempFolder);
+            string subPath = $"{TempFolder}/SuitableBlk.vfxblock";
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "create_subgraph_asset", ["subgraphPath"] = subPath, ["kind"] = "block" });
+
+            // A block subgraph asset holds a single VFXBlockSubgraphContext whose m_SuitableContexts
+            // [VFXSetting] (a flags enum: Spawner/Init/Update/Output + combos) controls which contexts
+            // accept the subgraph block. Default is InitAndUpdateAndOutput.
+            JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = subPath }));
+            var blkCtx = FindContext(baseline, "BlockSubgraph");
+            Assert.IsNotNull(blkCtx, "the block subgraph asset should hold a BlockSubgraph context");
+            Assert.AreEqual("InitAndUpdateAndOutput", blkCtx["settings"].Value<string>("m_SuitableContexts"),
+                "fresh block subgraphs default to InitAndUpdateAndOutput");
+
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = subPath,
+                ["contextType"] = "BlockSubgraph",
+                ["setting"] = "m_SuitableContexts", ["value"] = "UpdateAndOutput"
+            });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = subPath, ["includeErrors"] = true }));
+            Assert.AreEqual("UpdateAndOutput",
+                FindContext(after, "BlockSubgraph")["settings"].Value<string>("m_SuitableContexts"),
+                "set_context_setting should restrict the block subgraph's suitable contexts");
+            AssertNoErrorTier(after);
+        }
+
+        [Test]
         public void ApplySubgraphSystem_CreatesVfxAndReferencesItAsASubgraphContext()
         {
             string copy = CopyFixture("subgraphsys");
