@@ -358,6 +358,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_ReorderStickyNote_WithoutIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_sticky_note",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["toIndex"] = 1
+            }), "index is required");
+        }
+
+        [Test]
+        public void Apply_ReorderStickyNote_WithoutToIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_sticky_note",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["index"] = 0
+            }), "toIndex is required");
+        }
+
+        [Test]
         public void Apply_SetContextSetting_WithoutContextTypeOrIndex_ReturnsRequiredError()
         {
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -1113,6 +1135,41 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(50f, pos.Value<float>("y"), 0.001f);
             Assert.AreEqual(240f, pos.Value<float>("width"), 0.001f);
             Assert.AreEqual(120f, pos.Value<float>("height"), 0.001f);
+        }
+
+        [Test]
+        public void ApplyReorderStickyNote_MovesNoteWithinTheArray()
+        {
+            string copy = CopyFixture("stickyreorder");
+
+            foreach (var title in new[] { "Alpha", "Bravo", "Charlie" })
+                VfxGraphHandler.Apply(new JObject
+                { ["op"] = "add_sticky_note", ["assetPath"] = copy, ["title"] = title });
+
+            string[] Titles(JObject g) => ((JArray)g["stickyNotes"])
+                .Select(n => n.Value<string>("title")).ToArray();
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            CollectionAssert.AreEqual(new[] { "Alpha", "Bravo", "Charlie" }, Titles(before));
+
+            // Move Alpha (index 0) to the end (index 2).
+            JObject res = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_sticky_note", ["assetPath"] = copy, ["index"] = 0, ["toIndex"] = 2
+            }));
+            Assert.AreEqual(3, res.Value<int>("count"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            CollectionAssert.AreEqual(new[] { "Bravo", "Charlie", "Alpha" }, Titles(after),
+                "the note should move to the requested array position, others shifting up");
+
+            // Move it back to the front (index 2 -> 0).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_sticky_note", ["assetPath"] = copy, ["index"] = 2, ["toIndex"] = 0
+            });
+            JObject restored = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            CollectionAssert.AreEqual(new[] { "Alpha", "Bravo", "Charlie" }, Titles(restored));
         }
 
         [Test]

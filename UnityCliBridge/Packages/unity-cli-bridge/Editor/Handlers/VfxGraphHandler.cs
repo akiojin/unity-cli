@@ -798,6 +798,7 @@ namespace UnityCliBridge.Handlers
                 case "add_sticky_note": return AddStickyNote(parameters);
                 case "update_sticky_note": return UpdateStickyNote(parameters);
                 case "remove_sticky_note": return RemoveStickyNote(parameters);
+                case "reorder_sticky_note": return ReorderStickyNote(parameters);
                 case "set_instancing": return SetInstancing(parameters);
                 case "set_initial_event_name": return SetInitialEventName(parameters);
                 case "create_subgraph_asset": return CreateSubgraphAsset(parameters);
@@ -3442,6 +3443,58 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["index"] = index,
                 ["remaining"] = len - 1
+            };
+        }
+
+        /// <summary>
+        /// Reorder a sticky note: move the entry at `index` to `toIndex` within stickyNoteInfos.
+        /// The array position IS the note's order (StickyNoteInfo has no order field), so this is a
+        /// plain array move (mirrors reorder_block/reorder_parameter, which reorder their containers).
+        /// </summary>
+        private static object ReorderStickyNote(JObject parameters)
+        {
+            var idxTok = parameters?["index"];
+            if (idxTok == null || idxTok.Type == JTokenType.Null)
+                return new { error = "index is required" };
+            var toTok = parameters?["toIndex"];
+            if (toTok == null || toTok.Type == JTokenType.Null)
+                return new { error = "toIndex is required" };
+            int index = idxTok.ToObject<int>();
+            int toIndex = toTok.ToObject<int>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (ui, notesField, arr) = GetStickyNotes(graph);
+            int len = arr?.Length ?? 0;
+            if (index < 0 || index >= len)
+                throw new Exception($"index {index} out of range; graph has {len} sticky note(s)");
+            if (toIndex < 0 || toIndex >= len)
+                throw new Exception($"toIndex {toIndex} out of range; graph has {len} sticky note(s)");
+
+            var noteType = StickyNoteInfoType;
+            var moved = arr.GetValue(index);
+            var newArr = Array.CreateInstance(noteType, len);
+            int w = 0;
+            // Copy all but the moved element, inserting it at toIndex in the compacted sequence.
+            for (int r = 0; r < len; r++)
+            {
+                if (w == toIndex) newArr.SetValue(moved, w++);
+                if (r == index) continue;
+                newArr.SetValue(arr.GetValue(r), w++);
+            }
+            if (w == toIndex) newArr.SetValue(moved, w); // moved goes last
+            notesField.SetValue(ui, newArr);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "reorder_sticky_note",
+                ["assetPath"] = assetPath,
+                ["index"] = index,
+                ["toIndex"] = toIndex,
+                ["count"] = len
             };
         }
 

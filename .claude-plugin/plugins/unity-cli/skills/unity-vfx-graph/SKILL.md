@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.20.0
+  version: 0.21.0
   category: assets
   triggers:
     - vfx
@@ -90,6 +90,7 @@ unity-cli raw vfx_apply --json '{"op":"set_bounds","assetPath":"Assets/Basic Gra
 unity-cli raw vfx_apply --json '{"op":"add_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"TODO","contents":"wire up bursts","position":[10,20,240,120],"colorTheme":2,"textSize":"Medium"}'
 unity-cli raw vfx_apply --json '{"op":"update_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"title":"DONE","contents":"bursts wired"}'
 unity-cli raw vfx_apply --json '{"op":"remove_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0}'
+unity-cli raw vfx_apply --json '{"op":"reorder_sticky_note","assetPath":"Assets/Basic Graphs/Minimal.vfx","index":0,"toIndex":2}'
 unity-cli raw vfx_apply --json '{"op":"set_instancing","assetPath":"Assets/Basic Graphs/Minimal.vfx","mode":"Disabled"}'
 unity-cli raw vfx_apply --json '{"op":"set_initial_event_name","assetPath":"Assets/Basic Graphs/Minimal.vfx","eventName":"Launch"}'
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockName":"Trigger Event|On Die"}'
@@ -222,8 +223,11 @@ bounds: `mode` switches `boundsMode` Manual/Recorded/Automatic; `center`/`size` 
 the bounds AABox when the mode exposes one; `padding` writes `boundsPadding` for Recorded/Automatic),
 and `add_sticky_note` (UI metadata: `title`, `contents`, optional `position` (`[x,y,width,height]`),
 `colorTheme` int 1–3, `textSize` "Small"/"Medium"/"Large"/"Huge"), `update_sticky_note` (edit an
-existing note by `index` — only the supplied fields change, the rest stay) and `remove_sticky_note`
-(delete by `index`; describe's `stickyNotes[]` array shrinks), and `set_instancing` (write the
+existing note by `index` — only the supplied fields change, the rest stay), `remove_sticky_note`
+(delete by `index`; describe's `stickyNotes[]` array shrinks) and `reorder_sticky_note` (move the note at
+`index` to `toIndex` — the array position is the note's order; describe's `stickyNotes[]` reflects the new
+order). *(Fit-to-text is a UI text-measurement with no model-level size, so it's out of scope headless.)*
+And `set_instancing` (write the
 asset's `VisualEffectResource.instancingMode` — values are `Auto`/`Custom`/`Disabled` (`Custom` =
 explicit force-enable with a custom batch capacity) — and optional `capacity` int; describe surfaces
 `instancing` as `{mode, capacity, disabledReason}`, where `disabledReason` is the graph-level
