@@ -2668,6 +2668,53 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyReorderCategory_MovesCategoryWithinBlackboard()
+        {
+            string copy = CopyFixture("catorder");
+
+            // Three params, each in its own category — added in order Alpha, Beta, Gamma.
+            foreach (var c in new[] { "Alpha", "Beta", "Gamma" })
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "add_parameter", ["assetPath"] = copy,
+                    ["parameterName"] = "p_" + c, ["type"] = "Float", ["category"] = c
+                });
+
+            // Headless set-category doesn't populate VFXUI.categories, so it's empty until a category op syncs it.
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, ((JArray)before["categories"]).Count,
+                "categories list is unsynced (empty) before any category op");
+
+            // Move Gamma to the front; reorder_category syncs the list from params first, then moves.
+            JObject moved = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_category", ["assetPath"] = copy,
+                ["category"] = "Gamma", ["toIndex"] = 0
+            }));
+            CollectionAssert.AreEqual(new[] { "Gamma", "Alpha", "Beta" },
+                ((JArray)moved["categories"]).Select(c => (string)c["name"]).ToList(),
+                "Gamma should move to the front, others keep their param-add order");
+
+            // The new order persists in describe with zero Error-tier.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            CollectionAssert.AreEqual(new[] { "Gamma", "Alpha", "Beta" },
+                ((JArray)after["categories"]).Select(c => (string)c["name"]).ToList(),
+                "category order should persist after reload");
+            AssertNoErrorTier(after);
+
+            // Error paths: unknown category and out-of-range toIndex.
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_category", ["assetPath"] = copy, ["category"] = "Nope", ["toIndex"] = 0
+            }), "not found");
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "reorder_category", ["assetPath"] = copy, ["category"] = "Alpha", ["toIndex"] = 9
+            }), "out of range");
+        }
+
+        [Test]
         public void ApplyRenameParameter_PreservesSlotLink()
         {
             string copy = CopyFixture("renamelink");

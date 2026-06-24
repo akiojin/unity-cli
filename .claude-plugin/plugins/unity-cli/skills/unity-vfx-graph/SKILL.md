@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.25.0
+  version: 0.26.0
   category: assets
   triggers:
     - vfx
@@ -80,6 +80,7 @@ unity-cli raw vfx_apply --json '{"op":"remove_parameter","assetPath":"Assets/Bas
 unity-cli raw vfx_apply --json '{"op":"rename_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"exposedName":"SpawnRate"}'
 unity-cli raw vfx_apply --json '{"op":"set_parameter_category","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"category":"Tuning"}'
 unity-cli raw vfx_apply --json '{"op":"rename_category","assetPath":"Assets/Basic Graphs/Minimal.vfx","category":"Tuning","newCategory":"Spawning"}'
+unity-cli raw vfx_apply --json '{"op":"reorder_category","assetPath":"Assets/Basic Graphs/Minimal.vfx","category":"Spawning","toIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"reorder_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0,"order":2}'
 unity-cli raw vfx_apply --json '{"op":"duplicate_parameter","assetPath":"Assets/Basic Graphs/Minimal.vfx","parameterIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"remove_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Output"}'
@@ -220,7 +221,10 @@ the response reports `remaining*`), the **blackboard-management** ops (all by `p
 `rename_parameter` (`exposedName` = new name; the node + its slot links survive — same VFXParameter;
 rejects a duplicate name), `set_parameter_category` (`category` string — a new string creates that
 category), `rename_category` (`category` → `newCategory` across every parameter in it; reports
-`parametersMoved`), `reorder_parameter` (`order` int — position within the category), and
+`parametersMoved`), `reorder_category` (`category`+`toIndex` — moves a whole category within the
+blackboard's display order; it lazily syncs `VFXUI.categories` from the params first, so describe's
+top-level `categories[]` array — empty until the first category op — reflects the order), `reorder_parameter`
+(`order` int — position within the category), and
 `duplicate_parameter` (clones type/default/category with `order`+1 and name `"<name> (1)"`, or an explicit
 `exposedName`); describe's `parameters[]` carries `exposedName`/`category`/`order` to confirm each. And
 `link_flow` (context→context flow

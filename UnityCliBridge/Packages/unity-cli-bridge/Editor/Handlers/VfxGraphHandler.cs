@@ -47,6 +47,7 @@ namespace UnityCliBridge.Handlers
         private static Type VisualEffectAssetType => T("UnityEngine.VFX.VisualEffectAsset");
         private static Type UIInfoType => T("UnityEditor.VFX.VFXUI+UIInfo");
         private static Type StickyNoteInfoType => T("UnityEditor.VFX.VFXUI+StickyNoteInfo");
+        private static Type CategoryInfoType => T("UnityEditor.VFX.VFXUI+CategoryInfo");
         private static Type ErrorReporterType => T("UnityEditor.VFX.VFXErrorReporter");
         private static Type ErrorOriginType => T("UnityEditor.VFX.VFXErrorOrigin");
         private static Type AssetEditorUtilityType => T("UnityEditor.VisualEffectAssetEditorUtility");
@@ -555,6 +556,7 @@ namespace UnityCliBridge.Handlers
             }
 
             var stickyNotes = StickyNotesJson(graph);
+            var categories = CategoriesJson(graph);
             var customAttributes = CustomAttributesJson(graph);
             string initialEventName = null;
             try { initialEventName = InitialEventNameOf(Prop(graph, "visualEffectResource")); }
@@ -579,6 +581,7 @@ namespace UnityCliBridge.Handlers
                 ["parameters"] = paramsJson,
                 ["stickyNoteCount"] = stickyNotes.Count,
                 ["stickyNotes"] = stickyNotes,
+                ["categories"] = categories,
                 ["customAttributeCount"] = customAttributes.Count,
                 ["customAttributes"] = customAttributes,
                 ["initialEventName"] = initialEventName,
@@ -700,6 +703,33 @@ namespace UnityCliBridge.Handlers
             return arr;
         }
 
+        /// <summary>Read the graph's blackboard category list (order = display order) as JSON. Reflects the
+        /// stored VFXUI.categories; an unsynced graph may report fewer entries than the params reference until
+        /// a category op (e.g. reorder_category) syncs them.</summary>
+        private static JArray CategoriesJson(object graph)
+        {
+            var arr = new JArray();
+            object ui;
+            try { ui = Prop(graph, "UIInfos"); }
+            catch { return arr; }
+            if (ui == null) return arr;
+            var list = FindField(ui.GetType(), "categories")?.GetValue(ui) as IEnumerable;
+            if (list == null) return arr;
+            int idx = 0;
+            var nameField = FindField(CategoryInfoType, "name");
+            var collapsedField = FindField(CategoryInfoType, "collapsed");
+            foreach (var c in list)
+            {
+                arr.Add(new JObject
+                {
+                    ["index"] = idx++,
+                    ["name"] = nameField?.GetValue(c) as string,
+                    ["collapsed"] = (bool)(collapsedField?.GetValue(c) ?? false)
+                });
+            }
+            return arr;
+        }
+
         /// <summary>Discovery oracle: list available descriptors. kind = block (default)|operator|context|parameter.</summary>
         public static object ListLibrary(JObject parameters)
         {
@@ -813,6 +843,7 @@ namespace UnityCliBridge.Handlers
                 case "rename_parameter": return RenameParameter(parameters);
                 case "set_parameter_category": return SetParameterCategory(parameters);
                 case "rename_category": return RenameCategory(parameters);
+                case "reorder_category": return ReorderCategory(parameters);
                 case "reorder_parameter": return ReorderParameter(parameters);
                 case "duplicate_parameter": return DuplicateParameter(parameters);
                 case "remove_context": return RemoveContext(parameters);
@@ -2843,6 +2874,99 @@ namespace UnityCliBridge.Handlers
                 ["newCategory"] = newCategory,
                 ["parametersMoved"] = moved
             };
+        }
+
+        /// <summary>
+        /// Reorder a blackboard *category* (vs reorder_parameter, which orders params within a category).
+        /// Category order lives on VFXUI.categories (a List&lt;CategoryInfo&gt;; list position = display
+        /// order). The VFXView's MoveCategory is controller-coupled, so this replicates it at model level:
+        /// first sync any param categories missing from the list (mirrors VFXViewController, which lazily
+        /// populates categories from the params), then move `category` to `toIndex`. Describe surfaces the
+        /// result as the top-level `categories` array.
+        /// </summary>
+        private static object ReorderCategory(JObject parameters)
+        {
+            var category = parameters?["category"]?.ToString();
+            if (string.IsNullOrEmpty(category))
+                return new { error = "category (the category name to move) is required" };
+            var toTok = parameters?["toIndex"];
+            if (toTok == null || toTok.Type == JTokenType.Null)
+                return new { error = "toIndex is required (the category's new position)" };
+            int toIndex = toTok.ToObject<int>();
+
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var graph = LoadGraph(assetPath);
+            var (ui, list) = GetCategories(graph);
+            SyncCategoriesFromParams(graph, list);
+
+            var nameField = FindField(CategoryInfoType, "name");
+            int oldIndex = -1;
+            for (int i = 0; i < list.Count; i++)
+                if (string.Equals(nameField?.GetValue(list[i]) as string, category, StringComparison.Ordinal))
+                { oldIndex = i; break; }
+            if (oldIndex < 0)
+            {
+                var names = list.Cast<object>().Select(c => nameField?.GetValue(c) as string);
+                return new { error = $"category '{category}' not found; existing: [{string.Join(", ", names)}]" };
+            }
+            if (toIndex < 0 || toIndex >= list.Count)
+                return new { error = $"toIndex {toIndex} out of range; graph has {list.Count} categor(ies)." };
+
+            var moved = list[oldIndex];
+            list.RemoveAt(oldIndex);
+            list.Insert(toIndex, moved);
+
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "reorder_category",
+                ["assetPath"] = assetPath,
+                ["category"] = category,
+                ["toIndex"] = toIndex,
+                ["categories"] = CategoriesJson(graph)
+            };
+        }
+
+        /// <summary>Resolve the graph's VFXUI.categories list (creating it if null).</summary>
+        private static (object ui, System.Collections.IList list) GetCategories(object graph)
+        {
+            var ui = Prop(graph, "UIInfos");
+            if (ui == null)
+                throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
+            var field = FindField(ui.GetType(), "categories");
+            if (field == null)
+                throw new Exception("categories field not found on VFXUI.");
+            var list = field.GetValue(ui) as System.Collections.IList;
+            if (list == null)
+            {
+                list = (System.Collections.IList)Activator.CreateInstance(field.FieldType);
+                field.SetValue(ui, list);
+            }
+            return (ui, list);
+        }
+
+        /// <summary>Append any param-referenced category names not already in the list (preserving the
+        /// list's existing order) — the model-level equivalent of VFXViewController's lazy category sync.</summary>
+        private static void SyncCategoriesFromParams(object graph, System.Collections.IList list)
+        {
+            var nameField = FindField(CategoryInfoType, "name");
+            var existing = new HashSet<string>(
+                list.Cast<object>().Select(c => nameField?.GetValue(c) as string));
+            var paramCats = Children(graph)
+                .Where(c => ParameterType.IsInstanceOfType(c))
+                .Select(p => Prop(p, "category") as string)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct();
+            foreach (var pc in paramCats)
+            {
+                if (existing.Contains(pc)) continue;
+                object boxed = Activator.CreateInstance(CategoryInfoType);
+                nameField?.SetValue(boxed, pc);
+                list.Add(boxed);
+                existing.Add(pc);
+            }
         }
 
         /// <summary>Set a parameter's blackboard order (its position within its category).</summary>
