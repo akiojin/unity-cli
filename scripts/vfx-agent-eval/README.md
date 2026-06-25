@@ -13,12 +13,26 @@ eval tests the **skill + agent reasoning**.
 
 ## Layout
 
+Two tiers:
+
+**Authoring tier (static, via `vfx_describe_graph`):**
 - `tests/fixtures/vfx-agent-eval/benchmark.jsonl` — the tasks. Each row: `id`, `prompt` (the NL
   request), `fixture` (pristine input), `grader` (a function in the scorer), `args` (grader params),
   `oracle` (human-readable assertion), `difficulty`.
 - `scripts/vfx-agent-eval/vfx-agent-eval.sh` — the runner + embedded Python scorer/graders.
-- `.github/workflows/vfx-agent-eval.yml` — nightly, opt-in behind `secrets.VFX_AGENT_EVAL_AGENT_CMD`
-  (needs a Unity-equipped runner; skips cleanly when unset).
+
+**Runtime tier (behavioral, on a live `VisualEffect` via `vfx_runtime`):**
+- `tests/fixtures/vfx-agent-eval/runtime-benchmark.jsonl` — runtime tasks (set an exposed float/texture,
+  override the initial event name). Same row shape; `args.param` names the exposed param to read back.
+- `scripts/vfx-agent-eval/vfx-runtime-eval.sh` — builds a rig (GameObject + VisualEffect + `set_asset`),
+  lets the agent drive `vfx_runtime` ops, then grades `vfx_runtime get_state`. These value round-trips
+  are deterministic in the editor (no play mode). **SPAWN behavior** (`aliveParticleCount > 0`) needs
+  play mode + a Camera + per-frame `simulate`-with-yields, so it is proven C#-side by the PlayMode test
+  `Runtime_SimulateOp_AdvancesSpawnUntilBurstAlive` (which exercises the `vfx_runtime simulate` op), not
+  by the raw-driving agent.
+
+**Shared:** `.github/workflows/vfx-agent-eval.yml` — nightly, opt-in behind
+`secrets.VFX_AGENT_EVAL_AGENT_CMD` (needs a Unity-equipped runner; skips cleanly when unset).
 
 ## Prerequisites
 

@@ -4,7 +4,7 @@ description: Author and inspect Unity Visual Effect Graph (vfx) assets with unit
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.32.0
+  version: 0.33.0
   category: assets
   triggers:
     - vfx
@@ -385,9 +385,16 @@ to survive into the runtime sheet — e.g. wire it into an Output's `mainTexture
 source attributes that spawned particles inherit when Init reads them with `Source = Source`),
 `set_initial_event_name` (`name` = the per-instance
 `VisualEffect.initialEventName` override of the asset default; `""` suppresses auto-play; then
-`Reinit`), `reinit`, and `get_state` (reports `hasAsset`, `aliveParticleCount`, `pause`, `playRate`,
-`initialEventName`, and — when `name` is given — `hasFloat`/`floatValue`, `hasTexture`/`textureName`,
-`hasMesh`/`meshName`). Set ops echo `get_state` so you can confirm the round-trip in one call.
+`Reinit`), `reinit`, `simulate` (advance the live sim headlessly via `VisualEffect.Simulate` — params
+`deltaTime` default 0.05, `steps` default 1), and `get_state` (reports `hasAsset`, `aliveParticleCount`,
+`pause`, `playRate`, `initialEventName`, and — when `name` is given — `hasFloat`/`floatValue`,
+`hasTexture`/`textureName`, `hasMesh`/`meshName`). Set ops echo `get_state` so you can confirm the
+round-trip in one call. **`hasFloat`/`hasTexture`/`hasMesh` are scoped to the single queried `name`** —
+e.g. a `set_texture` echo shows `hasFloat:false` (it queried the texture name, not a float); query each
+param by its own name. The value round-trips (`set_*` → `get_state`) need NO play mode. **Spawning is
+different:** `aliveParticleCount` only rises for a *rendered* effect advanced *per frame* (a Camera
+framing it + repeated `simulate`/`Simulate` with frame yields, HANDOFF §6b) — a single edit-mode
+`simulate` call won't spawn, so spawn/aliveParticleCount verification belongs in a play-mode harness.
 
 For **VFX environment settings** (not a graph), use `vfx_settings` with a `scope`:
 

@@ -3991,7 +3991,7 @@ namespace UnityCliBridge.Handlers
         /// <summary>
         /// Runtime control of a VisualEffect component via its public API. Ops:
         /// set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh,
-        /// send_event, set_initial_event_name, reinit, get_state.
+        /// send_event, set_initial_event_name, reinit, simulate, get_state.
         /// </summary>
         public static object Runtime(JObject parameters)
         {
@@ -4148,13 +4148,33 @@ namespace UnityCliBridge.Handlers
                 case "reinit":
                     Call(comp2, VisualEffectType, "Reinit");
                     return new JObject { ["op"] = op, ["gameObject"] = gameObject };
+                case "simulate":
+                    {
+                        // Advance the effect's simulation headlessly via the public
+                        // VisualEffect.Simulate(float deltaTime, uint stepCount). Without this an
+                        // effect outside Play mode never ticks, so aliveParticleCount stays 0/-1.
+                        // NOTE: a culled (unrendered) effect spawns nothing — the caller's rig should
+                        // frame it with a Camera (and, in Play mode, advance frames) for spawn/output
+                        // behaviour; see the runtime eval harness. `deltaTime` defaults to 0.05s,
+                        // `steps` to 1.
+                        float dt = parameters?["deltaTime"]?.ToObject<float>() ?? 0.05f;
+                        uint steps = parameters?["steps"]?.ToObject<uint>() ?? 1u;
+                        var simulate = VisualEffectType.GetMethod("Simulate", new[] { typeof(float), typeof(uint) });
+                        if (simulate == null) return new { error = "VisualEffect.Simulate(float, uint) not found" };
+                        simulate.Invoke(comp2, new object[] { dt, steps });
+                        var s = RuntimeState(comp2, gameObject, name);
+                        s["op"] = op;
+                        s["deltaTime"] = dt;
+                        s["steps"] = (int)steps;
+                        return s;
+                    }
                 case "get_state":
                     return RuntimeState(comp2, gameObject, name);
                 default:
                     return new
                     {
                         error = $"Unsupported runtime op: '{op}'. Supported: set_asset, set_float, set_int, set_bool, " +
-                                "set_vector2, set_vector3, set_vector4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, get_state"
+                                "set_vector2, set_vector3, set_vector4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state"
                     };
             }
 

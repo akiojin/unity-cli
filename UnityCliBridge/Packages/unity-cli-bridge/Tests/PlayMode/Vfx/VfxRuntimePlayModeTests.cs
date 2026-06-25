@@ -439,6 +439,67 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
         }
 
         /// <summary>
+        /// The vfx_runtime `simulate` op advances a live effect's simulation headlessly via the public
+        /// VisualEffect.Simulate(float,uint). Authors a fixed Single Burst (N) with a constant lifetime,
+        /// binds it, then drives the SIMULATE OP frame-by-frame (one step per rendered frame + yield — a
+        /// culled/un-yielded effect doesn't spawn, HANDOFF §6b) and asserts the live aliveParticleCount
+        /// reaches the burst. Proves the op ticks the spawn machinery — the building block the runtime
+        /// eval's spawn tier needs (an agent driving raw can't yield frames, so spawn grading stays here).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Runtime_SimulateOp_AdvancesSpawnUntilBurstAlive()
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+
+            const int burst = 15;
+            string authored = AuthorLivingBurstFixture(burst, 100f);
+            if (authored == null)
+            {
+                yield break; // already Assert.Ignore-d
+            }
+
+            // Camera framing the rig — a culled effect barely simulates (same rig as the payload test).
+            _camera = new GameObject("VfxRuntimeCam");
+            var cam = _camera.AddComponent<Camera>();
+            _camera.transform.position = new Vector3(0f, 0f, -5f);
+            _camera.transform.rotation = Quaternion.identity;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+
+            _rig = new GameObject(RigName);
+            _rig.transform.position = Vector3.zero;
+            _rig.AddComponent<VisualEffect>();
+
+            JObject bound = InvokeRuntime(new JObject
+            {
+                ["op"] = "set_asset",
+                ["gameObject"] = RigName,
+                ["assetPath"] = authored
+            });
+            Assert.IsNull(bound.Value<string>("error"), $"set_asset should not error; got: {bound}");
+
+            yield return null;
+            int alive = 0;
+            for (int i = 0; i < 120 && alive < burst; i++)
+            {
+                JObject sim = InvokeRuntime(new JObject
+                {
+                    ["op"] = "simulate",
+                    ["gameObject"] = RigName,
+                    ["deltaTime"] = 0.05f,
+                    ["steps"] = 1
+                });
+                Assert.IsNull(sim.Value<string>("error"), $"simulate op should not error; got: {sim}");
+                alive = sim.Value<int>("aliveParticleCount");
+                yield return null;
+            }
+
+            Assert.AreEqual(burst, alive,
+                $"the simulate op should advance the spawn machinery until the full burst is alive; got {alive}");
+
+            CleanupAuthored();
+        }
+
+        /// <summary>
         /// Instancing multi-instance render + 3-gate reconciliation (#16 runtime tail). Builds N live
         /// VisualEffects that share ONE asset (each fires the same fixed burst) and asserts every
         /// instance independently reaches the expected alive count — the headless stand-in for
@@ -668,6 +729,62 @@ namespace UnityCliBridge.Tests.PlayMode.Vfx
                 ["value"] = "Source"
             });
             Assert.IsNull(src.Value<string>("error"), $"set_block_setting (Source) should not error; got: {src}");
+            return dest;
+        }
+
+        /// <summary>
+        /// Copy the fixture and give the Spawner a fixed Single Burst of `count` with a CONSTANT lifetime
+        /// (a |Set|_Lifetime block, default Source = Slot), so an OnPlay burst leaves exactly `count`
+        /// particles alive for `lifetime` seconds. Returns the asset path or null (Assert.Ignore on absence).
+        /// </summary>
+        private string AuthorLivingBurstFixture(int count, float lifetime)
+        {
+            if (FindType("UnityCliBridge.Handlers.VfxGraphHandler") == null)
+            {
+                Assert.Ignore("VfxGraphHandler not found (Editor assembly not loaded).");
+            }
+            _authoredFolder = "Assets/UnityCliBridgeTests/VfxRuntime";
+            string dest = _authoredFolder + "/LivingBurst.vfx";
+            if (!CopyAsset(Fixture, dest))
+            {
+                Assert.Ignore($"Could not copy fixture {Fixture} (likely absent).");
+            }
+
+            JObject burst = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Spawner",
+                ["blockName"] = "Single Burst"
+            });
+            Assert.IsNull(burst.Value<string>("error"), $"add_block (single burst) should not error; got: {burst}");
+
+            JObject countSet = InvokeApply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = dest,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
+                ["value"] = count
+            });
+            Assert.IsNull(countSet.Value<string>("error"), $"set_slot_value (burst count) should not error; got: {countSet}");
+
+            JObject life = InvokeApply(new JObject
+            {
+                ["op"] = "add_block",
+                ["assetPath"] = dest,
+                ["contextType"] = "Init",
+                ["blockName"] = "|Set|_Lifetime"
+            });
+            Assert.IsNull(life.Value<string>("error"), $"add_block (set lifetime) should not error; got: {life}");
+
+            JObject lifeVal = InvokeApply(new JObject
+            {
+                ["op"] = "set_slot_value",
+                ["assetPath"] = dest,
+                ["target"] = new JObject { ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["slot"] = 0 },
+                ["value"] = lifetime
+            });
+            Assert.IsNull(lifeVal.Value<string>("error"), $"set_slot_value (lifetime) should not error; got: {lifeVal}");
             return dest;
         }
 

@@ -34,8 +34,10 @@
   overrides the asset default at the component level; read it back via `get_state` → `initialEventName`.
 - **Headless particle behaviour** (output events, `aliveParticleCount` > 0): a culled/unrendered effect
   barely simulates and never dispatches output events. In a PlayMode test, frame the rig with a `Camera`
-  and call `vfx.Simulate(0.05f, 1)` each frame. Output-event CPU callbacks come from
-  `VisualEffect.outputEventReceived`; `args.nameId == Shader.PropertyToID(eventName)`.
+  and advance one step per rendered frame — either `vfx.Simulate(0.05f, 1)` directly or the
+  `vfx_runtime` `simulate` op (`deltaTime`/`steps`) — with a frame yield between steps. A single
+  multi-`steps` `simulate` call in edit mode does NOT spawn (no render/yield). Output-event CPU callbacks
+  come from `VisualEffect.outputEventReceived`; `args.nameId == Shader.PropertyToID(eventName)`.
 
 ## CI Notes
 
