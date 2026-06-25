@@ -4,8 +4,12 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
+
+const MAX_HEALTH_RESPONSE_BYTES: i32 = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct InstanceRecord {
@@ -151,10 +155,55 @@ fn parse_id(id: &str) -> Result<(String, u16)> {
 }
 
 async fn can_connect(host: &str, port: u16, timeout_duration: Duration) -> bool {
-    matches!(
-        timeout(timeout_duration, TcpStream::connect((host, port))).await,
-        Ok(Ok(_))
-    )
+    bridge_ping(host, port, timeout_duration)
+        .await
+        .unwrap_or(false)
+}
+
+async fn bridge_ping(host: &str, port: u16, timeout_duration: Duration) -> Result<bool> {
+    let mut stream = timeout(timeout_duration, TcpStream::connect((host, port))).await??;
+    let request = json!({
+        "id": "health",
+        "type": "ping",
+        "params": {},
+    });
+    let payload = serde_json::to_vec(&request)?;
+    let payload_len = i32::try_from(payload.len()).context("Health check payload too large")?;
+
+    let mut frame = Vec::with_capacity(4 + payload.len());
+    frame.extend_from_slice(&payload_len.to_be_bytes());
+    frame.extend_from_slice(&payload);
+    timeout(timeout_duration, stream.write_all(&frame)).await??;
+
+    let mut header = [0_u8; 4];
+    timeout(timeout_duration, stream.read_exact(&mut header)).await??;
+    let response_len = i32::from_be_bytes(header);
+    if !(1..=MAX_HEALTH_RESPONSE_BYTES).contains(&response_len) {
+        return Ok(false);
+    }
+
+    let mut response_payload = vec![0_u8; response_len as usize];
+    timeout(timeout_duration, stream.read_exact(&mut response_payload)).await??;
+    let response: Value = serde_json::from_slice(&response_payload)?;
+    Ok(is_successful_bridge_response(&response))
+}
+
+fn is_successful_bridge_response(response: &Value) -> bool {
+    if response.get("error").is_some()
+        || matches!(response.get("success"), Some(Value::Bool(false)))
+    {
+        return false;
+    }
+
+    let status = response
+        .get("status")
+        .and_then(Value::as_str)
+        .map(str::to_ascii_lowercase);
+
+    matches!(status.as_deref(), Some("success" | "ok"))
+        || matches!(response.get("success"), Some(Value::Bool(true)))
+        || response.get("result").is_some()
+        || response.get("data").is_some()
 }
 
 fn registry_path() -> Result<PathBuf> {
@@ -222,9 +271,11 @@ mod tests {
         list_instances, load_registry, parse_id, registry_path, set_active_instance,
         InstanceRecord, Registry,
     };
+    use serde_json::json;
     use std::path::PathBuf;
     use std::sync::Mutex;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpListener;
 
     fn env_lock() -> &'static Mutex<()> {
@@ -239,6 +290,50 @@ mod tests {
         let mut path = std::env::temp_dir();
         path.push(format!("unity-cli-{label}-{nanos}.json"));
         path
+    }
+
+    async fn spawn_mock_bridge(accept_count: usize) -> (u16, tokio::task::JoinHandle<()>) {
+        let listener = TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .expect("listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should have local addr")
+            .port();
+
+        let task = tokio::spawn(async move {
+            for _ in 0..accept_count {
+                let (mut socket, _) = listener.accept().await.expect("accept should succeed");
+                let mut len_buf = [0_u8; 4];
+                socket
+                    .read_exact(&mut len_buf)
+                    .await
+                    .expect("request header should be readable");
+                let payload_len = i32::from_be_bytes(len_buf);
+                let mut payload = vec![0_u8; payload_len as usize];
+                socket
+                    .read_exact(&mut payload)
+                    .await
+                    .expect("request payload should be readable");
+
+                let response = json!({
+                    "status": "success",
+                    "result": {"pong": true}
+                });
+                let response_bytes =
+                    serde_json::to_vec(&response).expect("response should serialize");
+                socket
+                    .write_all(&(response_bytes.len() as i32).to_be_bytes())
+                    .await
+                    .expect("response header should write");
+                socket
+                    .write_all(&response_bytes)
+                    .await
+                    .expect("response payload should write");
+            }
+        });
+
+        (port, task)
     }
 
     #[test]
@@ -309,6 +404,31 @@ mod tests {
         let registry_path = temp_registry_path("instances-up");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
 
+        let (port, accept_task) = spawn_mock_bridge(1).await;
+
+        let statuses = list_instances("127.0.0.1", &[port], 300)
+            .await
+            .expect("list should succeed");
+        assert_eq!(statuses.len(), 1);
+        assert_eq!(statuses[0].status, "up");
+
+        tokio::time::timeout(Duration::from_secs(1), accept_task)
+            .await
+            .expect("bridge task should finish")
+            .expect("bridge task should succeed");
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        let _ = std::fs::remove_file(&registry_path);
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn list_instances_reports_down_for_tcp_listener_that_is_not_unity_bridge() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry_path = temp_registry_path("instances-zombie");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+
         let listener = TcpListener::bind(("127.0.0.1", 0))
             .await
             .expect("listener should bind");
@@ -324,9 +444,12 @@ mod tests {
             .await
             .expect("list should succeed");
         assert_eq!(statuses.len(), 1);
-        assert_eq!(statuses[0].status, "up");
+        assert_eq!(statuses[0].status, "down");
 
-        accept_task.abort();
+        tokio::time::timeout(Duration::from_secs(1), accept_task)
+            .await
+            .expect("listener should observe the health check connection")
+            .expect("listener task should succeed");
         std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
         let _ = std::fs::remove_file(&registry_path);
     }
@@ -388,18 +511,7 @@ mod tests {
         let registry_path = temp_registry_path("instances-active");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
 
-        let listener = TcpListener::bind(("127.0.0.1", 0))
-            .await
-            .expect("listener should bind");
-        let port = listener
-            .local_addr()
-            .expect("listener should expose local addr")
-            .port();
-        let accept_task = tokio::spawn(async move {
-            for _ in 0..2 {
-                let _ = listener.accept().await;
-            }
-        });
+        let (port, accept_task) = spawn_mock_bridge(2).await;
 
         let id = format!("127.0.0.1:{port}");
         let first = set_active_instance(&id, 300)
@@ -413,7 +525,10 @@ mod tests {
             .expect("second set-active should succeed");
         assert_eq!(second.previous_id.as_deref(), Some(id.as_str()));
 
-        accept_task.abort();
+        tokio::time::timeout(Duration::from_secs(1), accept_task)
+            .await
+            .expect("bridge task should finish")
+            .expect("bridge task should succeed");
         std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
         let _ = std::fs::remove_file(&registry_path);
     }

@@ -11,11 +11,11 @@ Rules:
 - Prefer each merged PR's `## Closing Issues` section when present
 - Otherwise fall back to closing keywords in the PR body
 - Also include closing keywords from commit bodies in the release range
-- Exclude SPEC issues (`gwt-spec` label or `gwt-spec:` title prefix)
+- Promote referenced gwt-spec issues from PR and commit bodies into closing lines
 
 Output:
 - `Closes #N` lines, one per issue, sorted and deduplicated
-- `None` when no closable non-SPEC issues are found
+- `None` when no closable issues are found
 EOF
 }
 
@@ -51,6 +51,10 @@ extract_keyword_issue_numbers() {
     | tr -d '#'
 }
 
+extract_issue_numbers() {
+  grep -Eo '#[0-9]+' | tr -d '#'
+}
+
 extract_closing_issues_section() {
   awk '
     BEGIN { in_section = 0 }
@@ -73,11 +77,22 @@ is_spec_issue() {
   local issue_number="$1"
   local issue_json
 
-  issue_json="$(gh issue view "${issue_number}" --json labels,title)"
+  issue_json="$(gh issue view "${issue_number}" --json labels,title)" || return 1
   jq -e '
     ([.labels[]?.name] | index("gwt-spec")) != null
     or (.title | startswith("gwt-spec:"))
   ' >/dev/null <<<"${issue_json}"
+}
+
+filter_spec_issue_numbers() {
+  local issue_number
+
+  while IFS= read -r issue_number; do
+    [[ -n "${issue_number}" ]] || continue
+    if is_spec_issue "${issue_number}"; then
+      printf '%s\n' "${issue_number}"
+    fi
+  done
 }
 
 merged_pr_numbers="$(
@@ -95,17 +110,17 @@ raw_issue_numbers="$(
       else
         printf '%s\n' "${pr_body}" | extract_keyword_issue_numbers || true
       fi
+      printf '%s\n' "${pr_body}" | extract_issue_numbers | sort -u | filter_spec_issue_numbers || true
     done
 
-    git log --format=%B "${RANGE}" | extract_keyword_issue_numbers || true
+    commit_bodies="$(git log --format=%B "${RANGE}")"
+    printf '%s\n' "${commit_bodies}" | extract_keyword_issue_numbers || true
+    printf '%s\n' "${commit_bodies}" | extract_issue_numbers | sort -u | filter_spec_issue_numbers || true
   } | awk 'NF' | sort -nu
 )"
 
 closing_lines="$(
   for issue_number in ${raw_issue_numbers}; do
-    if is_spec_issue "${issue_number}"; then
-      continue
-    fi
     printf 'Closes #%s\n' "${issue_number}"
   done | sort -u
 )"

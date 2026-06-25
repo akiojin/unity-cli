@@ -25,6 +25,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run skill contract lint
+        run: cargo run --quiet -- skills lint --severity error --format text
+
       - name: Configure Git identity
         run: |
           git config user.name "github-actions[bot]"

@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json.Linq;
 using UnityCliBridge.Core;
+using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
 
 namespace UnityCliBridge.Handlers
@@ -61,13 +62,11 @@ namespace UnityCliBridge.Handlers
                     return CreateError("Invalid capture mode. Must be 'game', 'scene', or 'window'");
                 }
                 
-                // 保存先は固定: <unityProjectRoot>/.unity/captures/image_<mode>_<timestamp>.png
+                // 保存先は固定: <unityProjectRoot>/.unity/capture/image_<mode>_<timestamp>.png
                 {
                     string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                    var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                    var captureDir = Path.Combine(projectRoot, ".unity", "captures");
-                    outputPath = Path.Combine(captureDir, $"image_{captureMode}_{timestamp}.png");
-                    outputPath = outputPath.Replace('\\', '/');
+                    var projectRoot = CapturePathResolver.GetProjectRootFromAssetsPath(Application.dataPath);
+                    outputPath = CapturePathResolver.BuildCaptureFilePath(projectRoot, "image", captureMode, timestamp, ".png");
                 }
                 
                 var timings = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);

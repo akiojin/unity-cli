@@ -1,3 +1,21 @@
+## [0.12.0] - 2026-06-23
+
+### 🚀 Features
+
+- Complete gwt spec implementation
+
+## [0.11.5] - 2026-06-20
+
+### 🚜 Refactor
+
+- *(core)* Split bridge and lsp services
+
+### 📚 Documentation
+
+- *(skills)* Clarify unity-cli-usage — raw/tool call is primary, not fallback
+- *(skills)* Correct typed-subcommand enumeration in unity-cli-usage
+- Clarify contribution branch policy
+
 ## [0.11.4] - 2026-06-02
 
 ### 🐛 Bug Fixes

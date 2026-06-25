@@ -32,7 +32,8 @@
 
 <!-- GUIDE: Issues to auto-close when this change is released to main.
      Use "Closes #N" syntax (one per line). Write "None" if no issues to close.
-     SPEC issues must stay in Related Issues / Links and must never appear here.
+     Include gwt-spec issues here when they should close on release.
+     Release tooling also promotes referenced gwt-spec issues into the release PR Closing Issues section.
      Any issue listed only in Related Issues / Links is treated as reference-only. -->
 
 - Closes #{issue number}
@@ -40,7 +41,8 @@
 ## Related Issues / Links
 
 <!-- GUIDE: Use #number or full URL. Write "None" if no related issues.
-     SPEC issues belong here, not in Closing Issues. -->
+     Normal issues listed only here will not auto-close.
+     Referenced gwt-spec issues are promoted into release PR Closing Issues by release tooling. -->
 
 - {#issue or URL or "None"}
 

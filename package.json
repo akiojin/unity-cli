@@ -1,13 +1,13 @@
 {
   "name": "unity-cli-workspace",
-  "version": "0.11.4",
+  "version": "0.12.0",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "description": "Development environment for unity-cli",
   "scripts": {
     "prepare": "husky",
     "release": "echo \"Use scripts/publish.sh for manual release orchestration.\" && exit 1",
-    "lint:md": "markdownlint README.md CONTRIBUTING.md CLAUDE.md RELEASE.md docs/development.md docs/constitution.md UnityCliBridge/Packages/unity-cli-bridge/**/*.md .github/workflows/README.md --config .markdownlint.json --ignore-path .markdownlintignore",
+    "lint:md": "markdownlint README.md CONTRIBUTING.md CLAUDE.md RELEASE.md docs/configuration.md docs/development.md docs/constitution.md UnityCliBridge/Packages/unity-cli-bridge/**/*.md .github/workflows/README.md --config .markdownlint.json --ignore-path .markdownlintignore",
     "lint:format": "prettier --check .",
     "lint:format:write": "prettier --write .",
     "test:rust": "cargo test",
@@ -15,16 +15,16 @@
     "test": "npm run test:rust && npm run test:lsp"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.0",
-    "@commitlint/config-conventional": "^21.0.0",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
-    "@google/gemini-cli": "^0.41.2",
-    "@openai/codex": "^0.130.0",
-    "eslint": "^10.3.0",
+    "@google/gemini-cli": "^0.46.0",
+    "@openai/codex": "^0.139.0",
+    "eslint": "^10.5.0",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "markdownlint-cli": "^0.48.0",
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.4"
   },
   "overrides": {
     "markdownlint-cli": {

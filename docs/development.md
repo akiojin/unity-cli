@@ -14,12 +14,12 @@ This document covers internal development workflow for `unity-cli`.
 
 ## Prerequisites
 
-| Tool | Version | Purpose |
-| ------ | --------- | -------- |
-| Rust toolchain (stable) | latest | CLI build and test |
-| .NET SDK | 9.0 | LSP server build and test |
-| Unity Editor | 2022.3+ | E2E tests (requires live connection) |
-| Python + `tiktoken` | 3.9+ | LSP perf token measurement (`scripts/lsp-perf-check.sh`) |
+| Tool                    | Version               | Purpose                                                  |
+| ----------------------- | --------------------- | -------------------------------------------------------- |
+| Rust toolchain (stable) | latest                | CLI build and test                                       |
+| .NET SDK                | 10.0                  | LSP server build and test                                |
+| Unity Editor            | 2022.3 LTS or Unity 6 | E2E tests (requires live connection)                     |
+| Python + `tiktoken`     | 3.9+                  | LSP perf token measurement (`scripts/lsp-perf-check.sh`) |
 
 ### Installation
 
@@ -28,7 +28,7 @@ This document covers internal development workflow for `unity-cli`.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # .NET SDK 10
-# https://dotnet.microsoft.com/download/dotnet/9.0
+# https://dotnet.microsoft.com/download/dotnet/10.0
 ```
 
 ### Docker
@@ -51,15 +51,15 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 
 `unity-cli` works with defaults, but these variables are recommended for CI and multi-instance setups.
 
-| Env | Default | Notes |
-| --- | ---: | --- |
-| `UNITY_PROJECT_ROOT` | auto-detect | Directory containing `Assets/` and `Packages/` |
-| `UNITY_CLI_HOST` | `localhost` | Unity TCP listener host |
-| `UNITY_CLI_PORT` | `6400` | Unity TCP listener port |
-| `UNITY_CLI_TIMEOUT_MS` | `30000` | Command timeout (ms) |
-| `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
-| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` | `600` | Daemon idle timeout (seconds) |
-| `UNITY_CLI_TOOLS_ROOT` | platform default | Root directory for downloaded tools |
+| Env                             |          Default | Notes                                          |
+| ------------------------------- | ---------------: | ---------------------------------------------- |
+| `UNITY_PROJECT_ROOT`            |      auto-detect | Directory containing `Assets/` and `Packages/` |
+| `UNITY_CLI_HOST`                |      `localhost` | Unity TCP listener host                        |
+| `UNITY_CLI_PORT`                |           `6400` | Unity TCP listener port                        |
+| `UNITY_CLI_TIMEOUT_MS`          |          `30000` | Command timeout (ms)                           |
+| `UNITY_CLI_LSP_MODE`            |            `off` | `off`, `auto`, `required`                      |
+| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` |            `600` | Daemon idle timeout (seconds)                  |
+| `UNITY_CLI_TOOLS_ROOT`          | platform default | Root directory for downloaded tools            |
 
 Minimal setup:
 
@@ -74,6 +74,9 @@ Unity setting path: `Edit -> Project Settings -> Unity CLI Bridge`
 - `Host`: bind/listen host
 - `Port`: TCP port (must match `UNITY_CLI_PORT`)
 - `Apply & Restart`: restarts Unity listener
+
+For Docker, WSL2, and multi-instance examples, see
+[`docs/configuration.md`](configuration.md).
 
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 `UNITY_CLI_UNITYD` has been removed; unityd is always auto-managed.
@@ -130,8 +133,8 @@ unity-cli tool call find_refs --json '{"name":"MyClass","pageSize":20}'
 
 Tool catalog sources:
 
-- Rust catalog: `src/tool_catalog.rs`
-- Local tool implementation: `src/local_tools.rs`
+- Rust catalog: `src/tooling/tool_catalog.rs`
+- Local tool implementation: `src/tooling/local_tools.rs`
 - Snapshot list: `docs/tools.md` (`Tool Catalog`)
 
 ## Local Commands
@@ -148,7 +151,11 @@ dotnet test lsp/Server.Tests.csproj
 dotnet test lsp/Server.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:Threshold=90 /p:ThresholdType=line /p:ThresholdStat=total
 
 # Unity (EditMode tests)
-unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+./scripts/switch-unity-manifest.sh 6
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity6.xml
+
+./scripts/switch-unity-manifest.sh 2022
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity2022.xml
 ```
 
 Rust coverage gate is enforced at repository level (all Rust targets, line >= 90%).
@@ -240,18 +247,18 @@ scripts/perf-media-benchmark.sh
 
 ### Connection Issues
 
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| `Connection timeout` | Unity not running | Start Unity Editor |
-| `ECONNREFUSED` | Listener not active / wrong port | Reopen Unity project settings and restart listener |
-| `invalid response` | Protocol mismatch or stale build | Reimport package and restart Unity |
+| Symptom              | Cause                            | Fix                                                |
+| -------------------- | -------------------------------- | -------------------------------------------------- |
+| `Connection timeout` | Unity not running                | Start Unity Editor                                 |
+| `ECONNREFUSED`       | Listener not active / wrong port | Reopen Unity project settings and restart listener |
+| `invalid response`   | Protocol mismatch or stale build | Reimport package and restart Unity                 |
 
 ### LSP Issues
 
-| Symptom | Fix |
-| --- | --- |
-| LSP command not found | Run `unity-cli lsp install` and retry |
-| LSP timeout | Increase `UNITY_CLI_TIMEOUT_MS` and retry |
+| Symptom                      | Fix                                        |
+| ---------------------------- | ------------------------------------------ |
+| LSP command not found        | Run `unity-cli lsp install` and retry      |
+| LSP timeout                  | Increase `UNITY_CLI_TIMEOUT_MS` and retry  |
 | LSP required but unavailable | Use `UNITY_CLI_LSP_MODE=auto` during setup |
 
 ### WSL2/Docker -> Windows Unity
@@ -278,13 +285,13 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and `.github/workflows/skill-routing-eval.yml`.
 
-| Job | Trigger | Description |
-| ----- | --------- | ------------- |
-| Skill Contract Lint (required) | push / PR | `cargo run -- skills lint --severity error` (Skill Contract v1; SPEC #160) |
-| Rust Tests (required) | push / PR | `cargo test` |
-| LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
-| LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh` (full cases + history artifact) |
-| Skill Routing Eval | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
+| Job                            | Trigger                 | Description                                                                           |
+| ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
+| Skill Contract Lint (required) | push / PR               | `cargo run -- skills lint --severity error` (Skill Contract v1; SPEC #160)            |
+| Rust Tests (required)          | push / PR               | `cargo test`                                                                          |
+| LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                 |
+| LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh` (full cases + history artifact)                           |
+| Skill Routing Eval             | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
 
 Skill Contract Check, Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
 
@@ -307,13 +314,13 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 These are guidance values and vary by host:
 
-| Scenario | Mean (target) | Notes |
-| --- | --- | --- |
-| `unity-cli --help` | ~2-5 ms | Local startup only |
-| `unity-cli tool list` | ~2-5 ms | Local list generation |
-| `unity-cli system ping` | ~10-50 ms | Requires running Unity Editor |
-| `unity-cli system ping` (via unityd) | ~5-20 ms | Daemon keeps TCP connection open |
-| `unity-cli batch` (5 commands) | ~25-100 ms | Single IPC round-trip via daemon |
+| Scenario                             | Mean (target) | Notes                            |
+| ------------------------------------ | ------------- | -------------------------------- |
+| `unity-cli --help`                   | ~2-5 ms       | Local startup only               |
+| `unity-cli tool list`                | ~2-5 ms       | Local list generation            |
+| `unity-cli system ping`              | ~10-50 ms     | Requires running Unity Editor    |
+| `unity-cli system ping` (via unityd) | ~5-20 ms      | Daemon keeps TCP connection open |
+| `unity-cli batch` (5 commands)       | ~25-100 ms    | Single IPC round-trip via daemon |
 
 ### Run
 
@@ -405,14 +412,14 @@ Periodically verify that docs and issue-first workflow references match the curr
 
 ### Check Targets
 
-| Directory / File | Contents |
-| ------------------ | ---------- |
-| `docs/architecture.md` | Architecture overview |
-| `docs/migration-notes.md` | Migration and deprecation notes |
-| `docs/` | Development guide and constitution |
-| `README.md` | Project overview |
-| `UnityCliBridge/Packages/unity-cli-bridge/README.md` | UPM package docs (EN) |
-| `UnityCliBridge/Packages/unity-cli-bridge/README.ja.md` | UPM package docs (JA) |
+| Directory / File                                        | Contents                           |
+| ------------------------------------------------------- | ---------------------------------- |
+| `docs/architecture.md`                                  | Architecture overview              |
+| `docs/migration-notes.md`                               | Migration and deprecation notes    |
+| `docs/`                                                 | Development guide and constitution |
+| `README.md`                                             | Project overview                   |
+| `UnityCliBridge/Packages/unity-cli-bridge/README.md`    | UPM package docs (EN)              |
+| `UnityCliBridge/Packages/unity-cli-bridge/README.ja.md` | UPM package docs (JA)              |
 
 ### Check Procedure
 
@@ -424,10 +431,10 @@ Periodically verify that docs and issue-first workflow references match the curr
 
    - `docs/migration-notes.md` intentionally contains old names for migration/deprecation documentation.
 
-2. **Environment variable consistency**: Compare the variables listed in this document with `src/config.rs`.
+2. **Environment variable consistency**: Compare the variables listed in this document with `src/core/config.rs`.
 
    ```bash
-   grep -oE 'UNITY_CLI_[A-Z_]+' src/config.rs | sort -u
+   grep -oE 'UNITY_CLI_[A-Z_]+' src/core/config.rs | sort -u
    grep -oE 'UNITY_CLI_[A-Z_]+' docs/development.md | sort -u
    ```
 
@@ -465,12 +472,12 @@ The Unity-side codebase uses `unity-mcp-server` as its base copy. Differences ar
 
 ## 前提条件
 
-| ツール | バージョン | 用途 |
-| -------- | ----------- | ------ |
-| Rust toolchain (stable) | latest | CLI 本体のビルド・テスト |
-| .NET SDK | 10.0 | LSP サーバーのビルド・テスト |
-| Unity Editor | 2022.3+ | ローカル Unity listener / ローカル E2E 検証 |
-| Python + `tiktoken` | 3.9+ | LSP 性能計測時のトークン算出（`scripts/lsp-perf-check.sh`） |
+| ツール                  | バージョン                | 用途                                                        |
+| ----------------------- | ------------------------- | ----------------------------------------------------------- |
+| Rust toolchain (stable) | latest                    | CLI 本体のビルド・テスト                                    |
+| .NET SDK                | 10.0                      | LSP サーバーのビルド・テスト                                |
+| Unity Editor            | 2022.3 LTS または Unity 6 | ローカル Unity listener / ローカル E2E 検証                 |
+| Python + `tiktoken`     | 3.9+                      | LSP 性能計測時のトークン算出（`scripts/lsp-perf-check.sh`） |
 
 ### インストール
 
@@ -502,15 +509,15 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 
 `unity-cli` はデフォルトでも動作しますが、CI や複数インスタンス運用では以下の環境変数の利用を推奨します。
 
-| 環境変数 | デフォルト | 補足 |
-| --- | ---: | --- |
-| `UNITY_PROJECT_ROOT` | 自動検出 | `Assets/` と `Packages/` を含むディレクトリ |
-| `UNITY_CLI_HOST` | `localhost` | Unity TCP リスナーのホスト |
-| `UNITY_CLI_PORT` | `6400` | Unity TCP リスナーのポート |
-| `UNITY_CLI_TIMEOUT_MS` | `30000` | コマンドタイムアウト (ms) |
-| `UNITY_CLI_LSP_MODE` | `off` | `off`, `auto`, `required` |
-| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` | `600` | デーモンアイドルタイムアウト（秒） |
-| `UNITY_CLI_TOOLS_ROOT` | OS依存既定 | ツール配置ルート |
+| 環境変数                        |  デフォルト | 補足                                        |
+| ------------------------------- | ----------: | ------------------------------------------- |
+| `UNITY_PROJECT_ROOT`            |    自動検出 | `Assets/` と `Packages/` を含むディレクトリ |
+| `UNITY_CLI_HOST`                | `localhost` | Unity TCP リスナーのホスト                  |
+| `UNITY_CLI_PORT`                |      `6400` | Unity TCP リスナーのポート                  |
+| `UNITY_CLI_TIMEOUT_MS`          |     `30000` | コマンドタイムアウト (ms)                   |
+| `UNITY_CLI_LSP_MODE`            |       `off` | `off`, `auto`, `required`                   |
+| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` |       `600` | デーモンアイドルタイムアウト（秒）          |
+| `UNITY_CLI_TOOLS_ROOT`          |  OS依存既定 | ツール配置ルート                            |
 
 最小設定:
 
@@ -525,6 +532,9 @@ Unity 側設定: `Edit -> Project Settings -> Unity CLI Bridge`
 - `Host`: 待受ホスト
 - `Port`: TCP ポート（`UNITY_CLI_PORT` と一致させる）
 - `Apply & Restart`: Unity 側リスナー再起動
+
+Docker、WSL2、複数インスタンスの設定例は
+[`docs/configuration.md`](configuration.md) を参照してください。
 
 旧 MCP プレフィックス環境変数は未サポートです。`UNITY_CLI_*` のみ使用してください。
 `UNITY_CLI_UNITYD` は廃止済みで、unityd は常時自動管理です。
@@ -581,8 +591,8 @@ unity-cli tool call find_refs --json '{"name":"MyClass","pageSize":20}'
 
 参照先:
 
-- Rustツールカタログ: `src/tool_catalog.rs`
-- ローカルツール実装: `src/local_tools.rs`
+- Rustツールカタログ: `src/tooling/tool_catalog.rs`
+- ローカルツール実装: `src/tooling/local_tools.rs`
 - スナップショット一覧: `docs/tools.md`（`Tool Catalog`）
 
 ## ローカル実行コマンド
@@ -597,7 +607,11 @@ cargo test --all-targets
 dotnet test lsp/Server.Tests.csproj
 
 # Unity（EditModeテスト）
-unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode.xml -quit
+./scripts/switch-unity-manifest.sh 6
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity6.xml
+
+./scripts/switch-unity-manifest.sh 2022
+unity -batchmode -nographics -projectPath UnityCliBridge -runTests -testPlatform editmode -testResults test-results/editmode-unity2022.xml
 ```
 
 ### プッシュ前フック
@@ -681,19 +695,19 @@ scripts/perf-media-benchmark.sh
 
 ### 接続エラー
 
-| 症状 | 原因 | 対処 |
-| --- | --- | --- |
-| `Connection timeout` | Unity未起動 | Unity Editorを起動 |
-| `ECONNREFUSED` | リスナー未起動 / ポート不一致 | Project Settingsで再起動 |
-| `invalid response` | プロトコル不一致 / 古いビルド | パッケージ再import後にUnity再起動 |
+| 症状                 | 原因                          | 対処                              |
+| -------------------- | ----------------------------- | --------------------------------- |
+| `Connection timeout` | Unity未起動                   | Unity Editorを起動                |
+| `ECONNREFUSED`       | リスナー未起動 / ポート不一致 | Project Settingsで再起動          |
+| `invalid response`   | プロトコル不一致 / 古いビルド | パッケージ再import後にUnity再起動 |
 
 ### LSP関連
 
-| 症状 | 対処 |
-| --- | --- |
-| LSP実行ファイルが見つからない | `unity-cli lsp install` を実行して再試行 |
-| LSPタイムアウト | `UNITY_CLI_TIMEOUT_MS` を延長 |
-| 必須LSPモードで失敗 | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用 |
+| 症状                          | 対処                                              |
+| ----------------------------- | ------------------------------------------------- |
+| LSP実行ファイルが見つからない | `unity-cli lsp install` を実行して再試行          |
+| LSPタイムアウト               | `UNITY_CLI_TIMEOUT_MS` を延長                     |
+| 必須LSPモードで失敗           | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用 |
 
 ### WSL2/Docker -> Windows Unity
 
@@ -719,13 +733,13 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
 
-| ジョブ | トリガー | 内容 |
-| -------- | --------- | ------ |
-| Skill Contract Lint (required) | push / PR | `cargo run -- skills lint --severity error` (Skill Contract v1; SPEC #160) |
-| Rust Tests (required) | push / PR | `cargo test` |
-| LSP Tests (required) | push / PR | `dotnet test lsp/Server.Tests.csproj` |
-| LSP Performance (required) | push / PR | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact） |
-| Skill Routing Eval | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
+| ジョブ                         | トリガー                | 内容                                                                                   |
+| ------------------------------ | ----------------------- | -------------------------------------------------------------------------------------- |
+| Skill Contract Lint (required) | push / PR               | `cargo run -- skills lint --severity error` (Skill Contract v1; SPEC #160)             |
+| Rust Tests (required)          | push / PR               | `cargo test`                                                                           |
+| LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                  |
+| LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact）                             |
+| Skill Routing Eval             | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
 
 Skill Contract Check / Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
 
@@ -748,13 +762,13 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 環境依存ですが、目安は次のとおりです。
 
-| シナリオ | 平均（目安） | 備考 |
-| --- | --- | --- |
-| `unity-cli --help` | ~2-5 ms | ローカル起動時間のみ |
-| `unity-cli tool list` | ~2-5 ms | ローカル一覧生成 |
-| `unity-cli system ping` | ~10-50 ms | Unity Editor 起動時のみ |
-| `unity-cli system ping` (unityd経由) | ~5-20 ms | デーモンがTCP接続を保持 |
-| `unity-cli batch` (5コマンド) | ~25-100 ms | デーモン経由の単一IPCラウンドトリップ |
+| シナリオ                             | 平均（目安） | 備考                                  |
+| ------------------------------------ | ------------ | ------------------------------------- |
+| `unity-cli --help`                   | ~2-5 ms      | ローカル起動時間のみ                  |
+| `unity-cli tool list`                | ~2-5 ms      | ローカル一覧生成                      |
+| `unity-cli system ping`              | ~10-50 ms    | Unity Editor 起動時のみ               |
+| `unity-cli system ping` (unityd経由) | ~5-20 ms     | デーモンがTCP接続を保持               |
+| `unity-cli batch` (5コマンド)        | ~25-100 ms   | デーモン経由の単一IPCラウンドトリップ |
 
 ### 実行
 
@@ -846,13 +860,13 @@ cargo run -- skills lint --severity error
 
 ### チェック対象
 
-| ディレクトリ / ファイル | 内容 |
-| ------------------------ | ------ |
-| `docs/architecture.md` | アーキテクチャ概要 |
-| `docs/migration-notes.md` | 移行と廃止の記録 |
-| `docs/` | 開発ガイドと憲章 |
-| `README.md` | プロジェクト概要 |
-| `UnityCliBridge/Packages/unity-cli-bridge/README.md` | UPM パッケージドキュメント（英語） |
+| ディレクトリ / ファイル                                 | 内容                                 |
+| ------------------------------------------------------- | ------------------------------------ |
+| `docs/architecture.md`                                  | アーキテクチャ概要                   |
+| `docs/migration-notes.md`                               | 移行と廃止の記録                     |
+| `docs/`                                                 | 開発ガイドと憲章                     |
+| `README.md`                                             | プロジェクト概要                     |
+| `UnityCliBridge/Packages/unity-cli-bridge/README.md`    | UPM パッケージドキュメント（英語）   |
 | `UnityCliBridge/Packages/unity-cli-bridge/README.ja.md` | UPM パッケージドキュメント（日本語） |
 
 ### チェック手順
@@ -863,10 +877,10 @@ cargo run -- skills lint --severity error
    grep -rni "mcp" docs/ README.md | grep -v migration-notes.md
    ```
 
-2. **環境変数の整合確認**: 本ドキュメントの変数一覧と `src/config.rs` の実装を比較します。
+2. **環境変数の整合確認**: 本ドキュメントの変数一覧と `src/core/config.rs` の実装を比較します。
 
    ```bash
-   grep -oE 'UNITY_CLI_[A-Z_]+' src/config.rs | sort -u
+   grep -oE 'UNITY_CLI_[A-Z_]+' src/core/config.rs | sort -u
    grep -oE 'UNITY_CLI_[A-Z_]+' docs/development.md | sort -u
    ```
 

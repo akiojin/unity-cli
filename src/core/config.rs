@@ -3,8 +3,6 @@ use std::time::Duration;
 
 use anyhow::{bail, Result};
 
-use crate::cli::Cli;
-
 use super::endpoint::{resolve_endpoint, ResolvedEndpoint};
 
 const DEFAULT_HOST: &str = "localhost";
@@ -37,16 +35,6 @@ pub struct ExecutionContext {
 }
 
 impl RuntimeConfig {
-    pub fn from_cli(cli: &Cli) -> Result<Self> {
-        Self::from_overrides(&RuntimeOverrides {
-            host: cli.host.clone(),
-            port: cli.port,
-            timeout_ms: cli.timeout_ms,
-            dry_run: cli.dry_run,
-            project_root: None,
-        })
-    }
-
     pub fn from_overrides(overrides: &RuntimeOverrides) -> Result<Self> {
         fail_if_legacy_env_set()?;
 
@@ -62,16 +50,6 @@ impl RuntimeConfig {
 }
 
 impl ExecutionContext {
-    pub fn from_cli(cli: &Cli) -> Result<Self> {
-        Self::from_overrides(&RuntimeOverrides {
-            host: cli.host.clone(),
-            port: cli.port,
-            timeout_ms: cli.timeout_ms,
-            dry_run: cli.dry_run,
-            project_root: None,
-        })
-    }
-
     pub fn from_overrides(overrides: &RuntimeOverrides) -> Result<Self> {
         fail_if_legacy_env_set()?;
 

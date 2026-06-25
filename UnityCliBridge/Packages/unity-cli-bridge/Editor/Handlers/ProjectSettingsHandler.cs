@@ -144,7 +144,7 @@ namespace UnityCliBridge.Handlers
                 {
                     return new { error = "value is required", code = "INVALID_ARGUMENT" };
                 }
-                if (!parameters["confirmChanges"]?.ToObject<bool>() ?? false)
+                if (!(parameters["confirmChanges"]?.ToObject<bool>() ?? false))
                 {
                     return new
                     {
@@ -206,7 +206,7 @@ namespace UnityCliBridge.Handlers
             try
             {
                 // Require explicit confirmation
-                if (!parameters["confirmChanges"]?.ToObject<bool>() ?? false)
+                if (!(parameters["confirmChanges"]?.ToObject<bool>() ?? false))
                 {
                     return new
                     {

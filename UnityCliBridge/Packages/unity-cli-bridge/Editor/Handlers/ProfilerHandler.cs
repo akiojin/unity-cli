@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityCliBridge.Core;
+using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
 
 namespace UnityCliBridge.Handlers
@@ -101,7 +102,7 @@ namespace UnityCliBridge.Handlers
                     var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
                     var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                     var workspaceRoot = ResolveWorkspaceRoot(projectRoot);
-                    var captureDir = Path.Combine(workspaceRoot, ".unity", "capture");
+                    var captureDir = CapturePathResolver.GetCaptureDirectory(workspaceRoot);
                     s_OutputPath = Path.Combine(captureDir, $"profiler_{s_SessionId}_{timestamp}.data");
                     s_OutputPath = s_OutputPath.Replace('\\', '/');
                     var ioStopwatch = Stopwatch.StartNew();

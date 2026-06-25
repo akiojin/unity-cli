@@ -24,6 +24,7 @@ namespace UnityCliBridge.Handlers
     public static class InputSystemHandler
     {
         private const string VirtualMouseName = "UnityCliVirtualMouse";
+        private const string VirtualKeyboardName = "UnityCliVirtualKeyboard";
         private const string VirtualGamepadName = "UnityCliVirtualGamepad";
         private const string VirtualTouchscreenName = "UnityCliVirtualTouchscreen";
 
@@ -34,10 +35,18 @@ namespace UnityCliBridge.Handlers
         private class ScheduledRelease
         {
             public double ReleaseTime;
+            public int MinimumFrame;
+            public int ReleaseFrame;
             public Action Callback;
         }
 
         private static readonly List<ScheduledRelease> scheduledReleases = new List<ScheduledRelease>();
+        private static readonly System.Reflection.MethodInfo InputSystemUpdateWithType = typeof(InputSystem).GetMethod(
+            "Update",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic,
+            null,
+            new[] { typeof(InputUpdateType) },
+            null);
 
         // Virtual keyboard management
         private static Keyboard virtualKeyboard;
@@ -64,6 +73,10 @@ namespace UnityCliBridge.Handlers
         private static float simulatedGamepadRightTrigger;
         private static Vector2 simulatedGamepadDpad;
         private static readonly List<object> simulatedActiveTouches = new List<object>();
+        private static int simulatedTouchPressCount;
+        private static int simulatedTouchReleaseCount;
+        private static int simulatedTouchMaxSimultaneous;
+        private static string simulatedTouchLast = "none";
 
         static InputSystemHandler()
         {
@@ -403,19 +416,40 @@ namespace UnityCliBridge.Handlers
             // Prefer any existing keyboard device (e.g., provided by tests)
             var existingKeyboard = InputSystem.devices
                 .OfType<Keyboard>()
-                .FirstOrDefault(k => k.added && !string.Equals(k.name, "VirtualKeyboard", StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(k => k.added && !IsManagedVirtualKeyboard(k));
             if (existingKeyboard != null)
             {
+                existingKeyboard.MakeCurrent();
                 return existingKeyboard;
             }
 
             if (virtualKeyboard == null || !virtualKeyboard.added)
             {
-                virtualKeyboard = InputSystem.AddDevice<Keyboard>("VirtualKeyboard");
-                BridgeLogger.Log("InputSystemHandler", " Created virtual keyboard device");
+                virtualKeyboard = InputSystem.devices
+                    .OfType<Keyboard>()
+                    .FirstOrDefault(k => k.added && IsManagedVirtualKeyboard(k));
+
+                if (virtualKeyboard == null)
+                {
+                    virtualKeyboard = InputSystem.AddDevice<Keyboard>(VirtualKeyboardName);
+                    BridgeLogger.Log("InputSystemHandler", "Created virtual keyboard device");
+                }
             }
 
+            virtualKeyboard.MakeCurrent();
             return virtualKeyboard;
+        }
+
+        private static bool IsManagedVirtualKeyboard(Keyboard keyboard)
+        {
+            if (keyboard == null || string.IsNullOrEmpty(keyboard.name))
+            {
+                return false;
+            }
+
+            return
+                string.Equals(keyboard.name, VirtualKeyboardName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(keyboard.name, "VirtualKeyboard", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -427,6 +461,41 @@ namespace UnityCliBridge.Handlers
             var keysArray = new Key[pressedKeys.Count];
             pressedKeys.CopyTo(keysArray);
             return new KeyboardState(keysArray);
+        }
+
+        private static void ApplyStateChange<TState>(InputControl control, TState state)
+            where TState : struct
+        {
+            InputState.Change(control, state, GetSimulationUpdateType());
+        }
+
+        private static void ApplyStateEvent(InputDevice device, InputEventPtr eventPtr)
+        {
+            InputState.Change(device, eventPtr, GetSimulationUpdateType());
+        }
+
+        private static InputUpdateType GetSimulationUpdateType()
+        {
+            return Application.isPlaying ? InputUpdateType.Dynamic : default;
+        }
+
+        private static void FlushQueuedEvents()
+        {
+            if (Application.isPlaying && InputSystemUpdateWithType != null)
+            {
+                InputSystemUpdateWithType.Invoke(null, new object[] { InputUpdateType.Dynamic });
+                return;
+            }
+
+            InputSystem.Update();
+        }
+
+        private static void FlushQueuedEventsInEditMode()
+        {
+            if (!Application.isPlaying)
+            {
+                InputSystem.Update();
+            }
         }
 
         private static T GetOrCreateDevice<T>(string deviceName) where T : InputDevice
@@ -530,9 +599,7 @@ namespace UnityCliBridge.Handlers
                 // Create new keyboard state with all pressed keys
                 var keyboardState = CreateKeyboardState();
                 
-                // Queue the state event for the virtual keyboard
-                InputSystem.QueueStateEvent(keyboard, keyboardState);
-                InputSystem.Update();
+                ApplyStateChange(keyboard, keyboardState);
 
                 if (TryGetHoldSeconds(parameters, out double holdSeconds))
                 {
@@ -583,9 +650,7 @@ namespace UnityCliBridge.Handlers
                 // Create new keyboard state with remaining pressed keys
                 var keyboardState = CreateKeyboardState();
                 
-                // Queue the state event for the virtual keyboard
-                InputSystem.QueueStateEvent(keyboard, keyboardState);
-                InputSystem.Update();
+                ApplyStateChange(keyboard, keyboardState);
             }
             
             return new
@@ -614,7 +679,7 @@ namespace UnityCliBridge.Handlers
                 InputSystem.QueueTextEvent(keyboard, c);
             }
             
-            InputSystem.Update();
+            FlushQueuedEvents();
             
             return new
             {
@@ -648,10 +713,8 @@ namespace UnityCliBridge.Handlers
                 }
             }
             
-            // Queue state with all keys pressed
             var keyboardState = CreateKeyboardState();
-            InputSystem.QueueStateEvent(keyboard, keyboardState);
-            InputSystem.Update();
+            ApplyStateChange(keyboard, keyboardState);
 
             if (TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -678,8 +741,7 @@ namespace UnityCliBridge.Handlers
                 }
 
                 keyboardState = CreateKeyboardState();
-                InputSystem.QueueStateEvent(keyboard, keyboardState);
-                InputSystem.Update();
+                ApplyStateChange(keyboard, keyboardState);
             }
             
             return new
@@ -712,8 +774,7 @@ namespace UnityCliBridge.Handlers
             }
 
             simulatedMousePosition = mouseState.position;
-            InputState.Change(mouse, mouseState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, mouseState);
             
             return new
             {
@@ -740,14 +801,12 @@ namespace UnityCliBridge.Handlers
                 mouse.CopyState<MouseState>(out var pressState);
                 pressState = pressState.WithButton(mouseButton, true);
                 ApplyMouseButtonSnapshot(mouseButton, true);
-                InputState.Change(mouse, pressState);
-                InputSystem.Update();
+                ApplyStateChange(mouse, pressState);
 
                 mouse.CopyState<MouseState>(out var releaseState);
                 releaseState = releaseState.WithButton(mouseButton, false);
                 ApplyMouseButtonSnapshot(mouseButton, false);
-                InputState.Change(mouse, releaseState);
-                InputSystem.Update();
+                ApplyStateChange(mouse, releaseState);
             }
             
             return new
@@ -774,9 +833,7 @@ namespace UnityCliBridge.Handlers
             mouse.CopyState<MouseState>(out var mouseState);
             mouseState = mouseState.WithButton(mouseButton, value > 0f);
             ApplyMouseButtonSnapshot(mouseButton, value > 0f);
-            InputState.Change(mouse, mouseState);
-
-            InputSystem.Update();
+            ApplyStateChange(mouse, mouseState);
 
             if (!string.Equals(action, "release", StringComparison.OrdinalIgnoreCase) && TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -818,27 +875,23 @@ namespace UnityCliBridge.Handlers
             startState.position = new Vector2(startX, startY);
             startState.delta = Vector2.zero;
             simulatedMousePosition = startState.position;
-            InputState.Change(mouse, startState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, startState);
 
             mouse.CopyState<MouseState>(out var pressState);
             pressState = pressState.WithButton(mouseButton, true);
             ApplyMouseButtonSnapshot(mouseButton, true);
-            InputState.Change(mouse, pressState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, pressState);
 
             mouse.CopyState<MouseState>(out var dragState);
             dragState.delta = new Vector2(endX - startX, endY - startY);
             dragState.position = new Vector2(endX, endY);
             simulatedMousePosition = dragState.position;
-            InputState.Change(mouse, dragState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, dragState);
 
             mouse.CopyState<MouseState>(out var releaseState);
             releaseState = releaseState.WithButton(mouseButton, false);
             ApplyMouseButtonSnapshot(mouseButton, false);
-            InputState.Change(mouse, releaseState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, releaseState);
             
             return new
             {
@@ -859,8 +912,7 @@ namespace UnityCliBridge.Handlers
             mouse.CopyState<MouseState>(out var mouseState);
             mouseState.scroll = new Vector2(deltaX, deltaY);
             simulatedMouseScroll = mouseState.scroll;
-            InputState.Change(mouse, mouseState);
-            InputSystem.Update();
+            ApplyStateChange(mouse, mouseState);
             
             return new
             {
@@ -939,8 +991,7 @@ namespace UnityCliBridge.Handlers
                 return new { error = $"Invalid gamepad button: {buttonName}" };
             }
 
-            InputState.Change(gamepad, gamepadState);
-            InputSystem.Update();
+            ApplyStateChange(gamepad, gamepadState);
 
             if (!string.Equals(action, "release", StringComparison.OrdinalIgnoreCase) && TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -986,8 +1037,7 @@ namespace UnityCliBridge.Handlers
                 simulatedGamepadRightStick = new Vector2(x, y);
             }
 
-            InputState.Change(gamepad, state);
-            InputSystem.Update();
+            ApplyStateChange(gamepad, state);
 
             if (TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -1072,8 +1122,7 @@ namespace UnityCliBridge.Handlers
                 simulatedGamepadRightTrigger = value;
             }
 
-            InputState.Change(gamepad, gamepadState);
-            InputSystem.Update();
+            ApplyStateChange(gamepad, gamepadState);
 
             if (value > 0f && TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -1159,8 +1208,7 @@ namespace UnityCliBridge.Handlers
                     break;
             }
 
-            InputState.Change(gamepad, gamepadState);
-            InputSystem.Update();
+            ApplyStateChange(gamepad, gamepadState);
 
             if (!string.Equals(direction, "none", StringComparison.OrdinalIgnoreCase) && TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -1195,10 +1243,9 @@ namespace UnityCliBridge.Handlers
             {
                 touch.position.WriteValueIntoEvent(new Vector2(x, y), beginEvent);
                 touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Began, beginEvent);
-                InputSystem.QueueEvent(beginEvent);
+                ApplyStateEvent(touchscreen, beginEvent);
             }
             UpdateSimulatedTouch(touchId, new Vector2(x, y), UnityEngine.InputSystem.TouchPhase.Began);
-            InputSystem.Update();
 
             if (TryGetHoldSeconds(parameters, out double holdSeconds))
             {
@@ -1209,11 +1256,9 @@ namespace UnityCliBridge.Handlers
             {
                 touch.position.WriteValueIntoEvent(new Vector2(x, y), endEvent);
                 touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Ended, endEvent);
-                InputSystem.QueueEvent(endEvent);
+                ApplyStateEvent(touchscreen, endEvent);
             }
             UpdateSimulatedTouch(touchId, new Vector2(x, y), UnityEngine.InputSystem.TouchPhase.Ended);
-            
-            InputSystem.Update();
             
             return new
             {
@@ -1240,10 +1285,9 @@ namespace UnityCliBridge.Handlers
             {
                 touch.position.WriteValueIntoEvent(new Vector2(startX, startY), beginEvent);
                 touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Began, beginEvent);
-                InputSystem.QueueEvent(beginEvent);
+                ApplyStateEvent(touchscreen, beginEvent);
             }
             UpdateSimulatedTouch(touchId, new Vector2(startX, startY), UnityEngine.InputSystem.TouchPhase.Began);
-            InputSystem.Update();
 
             if (duration > 1)
             {
@@ -1254,10 +1298,9 @@ namespace UnityCliBridge.Handlers
             {
                 touch.position.WriteValueIntoEvent(new Vector2(endX, endY), moveEvent);
                 touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Moved, moveEvent);
-                InputSystem.QueueEvent(moveEvent);
+                ApplyStateEvent(touchscreen, moveEvent);
             }
             UpdateSimulatedTouch(touchId, new Vector2(endX, endY), UnityEngine.InputSystem.TouchPhase.Moved);
-            InputSystem.Update();
 
             if (duration > 1)
             {
@@ -1268,11 +1311,9 @@ namespace UnityCliBridge.Handlers
             {
                 touch.position.WriteValueIntoEvent(new Vector2(endX, endY), endEvent);
                 touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Ended, endEvent);
-                InputSystem.QueueEvent(endEvent);
+                ApplyStateEvent(touchscreen, endEvent);
             }
             UpdateSimulatedTouch(touchId, new Vector2(endX, endY), UnityEngine.InputSystem.TouchPhase.Ended);
-            
-            InputSystem.Update();
             
             return new
             {
@@ -1312,11 +1353,10 @@ namespace UnityCliBridge.Handlers
                 touch2.position.WriteValueIntoEvent(center + offset2Start, beginEvent);
                 touch2.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Began, beginEvent);
                 
-                InputSystem.QueueEvent(beginEvent);
+                ApplyStateEvent(touchscreen, beginEvent);
             }
             UpdateSimulatedTouch(0, center + offset1Start, UnityEngine.InputSystem.TouchPhase.Began);
             UpdateSimulatedTouch(1, center + offset2Start, UnityEngine.InputSystem.TouchPhase.Began);
-            InputSystem.Update();
             
             using (StateEvent.From(touchscreen, out var moveEvent))
             {
@@ -1326,11 +1366,10 @@ namespace UnityCliBridge.Handlers
                 touch2.position.WriteValueIntoEvent(center + offset2End, moveEvent);
                 touch2.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Moved, moveEvent);
                 
-                InputSystem.QueueEvent(moveEvent);
+                ApplyStateEvent(touchscreen, moveEvent);
             }
             UpdateSimulatedTouch(0, center + offset1End, UnityEngine.InputSystem.TouchPhase.Moved);
             UpdateSimulatedTouch(1, center + offset2End, UnityEngine.InputSystem.TouchPhase.Moved);
-            InputSystem.Update();
             
             using (StateEvent.From(touchscreen, out var endEvent))
             {
@@ -1340,12 +1379,10 @@ namespace UnityCliBridge.Handlers
                 touch2.position.WriteValueIntoEvent(center + offset2End, endEvent);
                 touch2.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Ended, endEvent);
                 
-                InputSystem.QueueEvent(endEvent);
+                ApplyStateEvent(touchscreen, endEvent);
             }
             UpdateSimulatedTouch(0, center + offset1End, UnityEngine.InputSystem.TouchPhase.Ended);
             UpdateSimulatedTouch(1, center + offset2End, UnityEngine.InputSystem.TouchPhase.Ended);
-            
-            InputSystem.Update();
             
             return new
             {
@@ -1404,7 +1441,7 @@ namespace UnityCliBridge.Handlers
                         }
                         
                         touch.phase.WriteValueIntoEvent(touchPhase, eventPtr);
-                        InputSystem.QueueEvent(eventPtr);
+                        ApplyStateEvent(touchscreen, eventPtr);
                         UpdateSimulatedTouch(i, new Vector2(x, y), touchPhase);
                     }
                     
@@ -1416,8 +1453,6 @@ namespace UnityCliBridge.Handlers
                     });
                 }
             }
-            
-            InputSystem.Update();
             
             return new
             {
@@ -1571,6 +1606,8 @@ namespace UnityCliBridge.Handlers
             scheduledReleases.Add(new ScheduledRelease
             {
                 ReleaseTime = EditorApplication.timeSinceStartup + delaySeconds,
+                MinimumFrame = Application.isPlaying ? Time.frameCount + 1 : 0,
+                ReleaseFrame = Application.isPlaying ? Time.frameCount + Mathf.Max(1, Mathf.CeilToInt((float)(delaySeconds * 60d))) : 0,
                 Callback = releaseAction
             });
         }
@@ -1605,7 +1642,14 @@ namespace UnityCliBridge.Handlers
             double now = EditorApplication.timeSinceStartup;
             for (int i = scheduledReleases.Count - 1; i >= 0; i--)
             {
-                if (now >= scheduledReleases[i].ReleaseTime)
+                if (Application.isPlaying && Time.frameCount < scheduledReleases[i].MinimumFrame)
+                {
+                    continue;
+                }
+
+                bool reachedTime = now >= scheduledReleases[i].ReleaseTime;
+                bool reachedFrame = Application.isPlaying && Time.frameCount >= scheduledReleases[i].ReleaseFrame;
+                if (reachedTime || reachedFrame)
                 {
                     try
                     {
@@ -1767,6 +1811,20 @@ namespace UnityCliBridge.Handlers
                 return token["id"]?.ToObject<int>() == touchId;
             });
 
+            if (phase == UnityEngine.InputSystem.TouchPhase.Began)
+            {
+                simulatedTouchPressCount++;
+            }
+            else if (phase == UnityEngine.InputSystem.TouchPhase.Ended || phase == UnityEngine.InputSystem.TouchPhase.Canceled)
+            {
+                simulatedTouchReleaseCount++;
+            }
+
+            if (phase != UnityEngine.InputSystem.TouchPhase.None)
+            {
+                simulatedTouchLast = string.Format("{0}:{1}@{2:0.0},{3:0.0}", touchId, phase, position.x, position.y);
+            }
+
             if (phase == UnityEngine.InputSystem.TouchPhase.None ||
                 phase == UnityEngine.InputSystem.TouchPhase.Ended ||
                 phase == UnityEngine.InputSystem.TouchPhase.Canceled)
@@ -1780,6 +1838,8 @@ namespace UnityCliBridge.Handlers
                 position = new { x = position.x, y = position.y },
                 phase = phase.ToString()
             });
+
+            simulatedTouchMaxSimultaneous = Mathf.Max(simulatedTouchMaxSimultaneous, simulatedActiveTouches.Count);
         }
 
         private static object GetKeyboardState()
@@ -1922,7 +1982,10 @@ namespace UnityCliBridge.Handlers
         private static object GetTouchscreenState()
         {
             var touchscreens = GetTrackedAndKnownDevices<Touchscreen>("touchscreen");
-            if (touchscreens.Count == 0 && simulatedActiveTouches.Count == 0)
+            if (touchscreens.Count == 0 &&
+                simulatedActiveTouches.Count == 0 &&
+                simulatedTouchPressCount == 0 &&
+                simulatedTouchReleaseCount == 0)
             {
                 return null;
             }
@@ -1975,7 +2038,11 @@ namespace UnityCliBridge.Handlers
             {
                 connected = true,
                 deviceCount = touchscreens.Count,
-                activeTouches = activeTouches
+                activeTouches = activeTouches,
+                pressCount = simulatedTouchPressCount,
+                releaseCount = simulatedTouchReleaseCount,
+                maxSimultaneous = simulatedTouchMaxSimultaneous,
+                lastTouch = simulatedTouchLast
             };
         }
 

@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEditor.Recorder;
 using UnityEditor.Recorder.Input;
 using UnityCliBridge.Core;
+using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
 
 namespace UnityCliBridge.Handlers
@@ -60,21 +61,20 @@ namespace UnityCliBridge.Handlers
                 s_IncludeUI = parameters["includeUI"]?.ToObject<bool>() ?? true;
                 s_MaxDurationSec = Math.Max(0, parameters["maxDurationSec"]?.ToObject<double>() ?? 0);
 
-                // 固定保存先: <unityProjectRoot>/.unity/captures
+                // 固定保存先: <unityProjectRoot>/.unity/capture
                 string format = parameters["format"]?.ToString() ?? "mp4";
                 if (!IsValidFormat(format))
                 {
                     return new { error = "Invalid format. Use 'mp4', 'webm' or 'png_sequence'", code = "E_INVALID_FORMAT" };
                 }
-                // 生成ファイルパスを固定で作成 (<unityProjectRoot>/.unity/captures)
+                // 生成ファイルパスを固定で作成 (<unityProjectRoot>/.unity/capture)
                 {
                     string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                    var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                    var captureDir = Path.Combine(projectRoot, ".unity", "captures");
+                    var projectRoot = CapturePathResolver.GetProjectRootFromAssetsPath(Application.dataPath);
+                    var captureDir = CapturePathResolver.GetCaptureDirectory(projectRoot);
                     if (!Directory.Exists(captureDir)) Directory.CreateDirectory(captureDir);
                     string ext = string.Equals(format, "webm", StringComparison.OrdinalIgnoreCase) ? ".webm" : ".mp4";
-                    s_OutputPath = Path.Combine(captureDir, $"video_{s_CaptureMode}_{timestamp}{ext}");
-                    s_OutputPath = s_OutputPath.Replace('\\', '/');
+                    s_OutputPath = CapturePathResolver.BuildCaptureFilePath(projectRoot, "video", s_CaptureMode, timestamp, ext);
                 }
 
                 // Guard: dimensions
@@ -100,21 +100,21 @@ namespace UnityCliBridge.Handlers
                 s_MovieRecorderSettings = ScriptableObject.CreateInstance<MovieRecorderSettings>();
 
                 s_MovieRecorderSettings.Enabled = true;
-                // 出力先（プロジェクト直下 .unity/captures/<file>）に設定
+                // 出力先（プロジェクト直下 .unity/capture/<file>）に設定
                 var fileNoExt = Path.GetFileNameWithoutExtension(s_OutputPath);
                 s_MovieRecorderSettings.FileNameGenerator.Root = OutputPath.Root.Project;
                 {
                     string captureDir = Path.GetDirectoryName(s_OutputPath);
-                    string leaf = "/.unity/captures";
+                    string leaf = "/.unity/capture";
                     try
                     {
                         if (!string.IsNullOrEmpty(captureDir))
                         {
                             leaf = Path.GetRelativePath(Path.GetFullPath(Path.Combine(Application.dataPath, "..")), captureDir);
-                            if (Path.IsPathRooted(leaf)) leaf = ".unity/captures";
+                            if (Path.IsPathRooted(leaf)) leaf = ".unity/capture";
                         }
                     }
-                    catch { leaf = ".unity/captures"; }
+                    catch { leaf = ".unity/capture"; }
                     leaf = leaf.Replace('\\', '/');
                     if (!leaf.StartsWith("/")) leaf = "/" + leaf;
                     s_MovieRecorderSettings.FileNameGenerator.Leaf = leaf;

@@ -6,6 +6,11 @@ Unity Editor bridge package for `unity-cli` automation workflows.
 
 This package exposes editor operations (for example listing and modifying components) through the Unity TCP command interface used by `unity-cli`.
 
+## Supported Unity Versions
+
+- Unity 6
+- Unity 2022.3 LTS
+
 ## Installation
 
 - Open Unity Package Manager and choose “Add package from Git URL…”.

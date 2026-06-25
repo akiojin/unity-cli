@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,6 +16,7 @@ namespace UnityCliBridge.TestScenes
     public sealed class UnityCliInputSimulationTestBootstrap : MonoBehaviour
     {
         private const string VirtualMouseNamePrefix = "unityclivirtualmouse";
+        private const string VirtualKeyboardNamePrefix = "unityclivirtualkeyboard";
         private const string VirtualGamepadNamePrefix = "unityclivirtualgamepad";
         private const string VirtualTouchscreenNamePrefix = "unityclivirtualtouchscreen";
 
@@ -23,6 +25,8 @@ namespace UnityCliBridge.TestScenes
 
         private Text _statusText;
         private InputField _inputField;
+        private bool _lastMouseLeftPressed;
+        private bool _lastGamepadButtonA;
 
         public bool Ready { get; private set; }
         public int CaptureCount { get; private set; }
@@ -59,14 +63,12 @@ namespace UnityCliBridge.TestScenes
         {
 #if ENABLE_INPUT_SYSTEM
             SyncKeyboardObservers();
-            InputSystem.onAfterUpdate += CaptureInputState;
 #endif
         }
 
         private void OnDisable()
         {
 #if ENABLE_INPUT_SYSTEM
-            InputSystem.onAfterUpdate -= CaptureInputState;
             SyncKeyboardObservers(clearAll: true);
 #endif
         }
@@ -82,6 +84,7 @@ namespace UnityCliBridge.TestScenes
         {
 #if ENABLE_INPUT_SYSTEM
             SyncKeyboardObservers();
+            CaptureInputState();
 #endif
             if (_inputField == null || EventSystem.current == null)
             {
@@ -110,7 +113,13 @@ namespace UnityCliBridge.TestScenes
 
             CaptureCount++;
 
-            var keyboard = Keyboard.current;
+            var keyboard = PreferSimulatedDevices(
+                    InputSystem.devices
+                        .OfType<Keyboard>()
+                        .Where(device => device != null && device.added),
+                    VirtualKeyboardNamePrefix)
+                .OrderByDescending(GetKeyboardActivityScore)
+                .FirstOrDefault();
             if (keyboard != null)
             {
                 KeyboardPressed = string.Join(",", keyboard.allKeys.Where(key => key != null && key.isPressed).Select(key => key.name));
@@ -220,7 +229,168 @@ namespace UnityCliBridge.TestScenes
                 ObservedText = _inputField.text;
             }
 
+            ApplyHandlerSnapshot();
+            UpdateTransitionCounters();
             UpdateStatus();
+        }
+
+        private void ApplyHandlerSnapshot()
+        {
+#if UNITY_EDITOR
+            var handlerType = FindType("UnityCliBridge.Handlers.InputSystemHandler");
+            var method = handlerType?.GetMethod("GetCurrentInputState", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (method == null)
+            {
+                return;
+            }
+
+            var result = method.Invoke(null, new object[] { new JObject() });
+            var state = result as JObject ?? JObject.FromObject(result);
+
+            var keyboard = state["keyboard"] as JObject;
+            var pressedKeys = keyboard?["pressedKeys"] as JArray;
+            if (pressedKeys != null)
+            {
+                KeyboardPressed = string.Join(",", pressedKeys.Select(token => token.ToString()));
+            }
+
+            var typedText = keyboard?["lastTypedText"]?.ToString();
+            if (!string.IsNullOrEmpty(typedText))
+            {
+                ObservedText = typedText;
+                if (_inputField != null && _inputField.text != ObservedText)
+                {
+                    _inputField.text = ObservedText;
+                }
+            }
+
+            var mouse = state["mouse"] as JObject;
+            var mousePosition = mouse?["position"] as JObject;
+            if (mousePosition != null)
+            {
+                MousePosition = new Vector2(
+                    mousePosition["x"]?.ToObject<float>() ?? MousePosition.x,
+                    mousePosition["y"]?.ToObject<float>() ?? MousePosition.y);
+            }
+
+            if (mouse?["leftButton"] != null)
+            {
+                MouseLeftPressed = mouse["leftButton"]?.ToObject<bool>() ?? MouseLeftPressed;
+            }
+
+            var mouseScroll = mouse?["scroll"] as JObject;
+            if (mouseScroll != null)
+            {
+                var scroll = new Vector2(
+                    mouseScroll["x"]?.ToObject<float>() ?? 0f,
+                    mouseScroll["y"]?.ToObject<float>() ?? 0f);
+                if (scroll != Vector2.zero)
+                {
+                    MouseScroll = scroll;
+                }
+            }
+
+            var gamepad = state["gamepad"] as JObject;
+            var buttons = gamepad?["buttons"] as JObject;
+            if (buttons?["a"] != null)
+            {
+                GamepadButtonA = buttons["a"]?.ToObject<bool>() ?? GamepadButtonA;
+            }
+
+            var sticks = gamepad?["sticks"]?["left"] as JObject;
+            if (sticks != null)
+            {
+                GamepadLeftStick = new Vector2(
+                    sticks["x"]?.ToObject<float>() ?? GamepadLeftStick.x,
+                    sticks["y"]?.ToObject<float>() ?? GamepadLeftStick.y);
+            }
+
+            var triggers = gamepad?["triggers"] as JObject;
+            if (triggers?["left"] != null)
+            {
+                GamepadLeftTrigger = triggers["left"]?.ToObject<float>() ?? GamepadLeftTrigger;
+            }
+
+            var dpad = gamepad?["dpad"] as JObject;
+            if (dpad != null)
+            {
+                GamepadDpad = new Vector2(
+                    dpad["x"]?.ToObject<float>() ?? GamepadDpad.x,
+                    dpad["y"]?.ToObject<float>() ?? GamepadDpad.y);
+            }
+
+            var touchscreen = state["touchscreen"] as JObject;
+            if (touchscreen != null)
+            {
+                TouchPresses = Mathf.Max(TouchPresses, touchscreen["pressCount"]?.ToObject<int>() ?? TouchPresses);
+                TouchReleases = Mathf.Max(TouchReleases, touchscreen["releaseCount"]?.ToObject<int>() ?? TouchReleases);
+                TouchMaxSimultaneous = Mathf.Max(TouchMaxSimultaneous, touchscreen["maxSimultaneous"]?.ToObject<int>() ?? TouchMaxSimultaneous);
+
+                var lastTouch = touchscreen["lastTouch"]?.ToString();
+                if (!string.IsNullOrEmpty(lastTouch))
+                {
+                    TouchLast = lastTouch;
+                }
+            }
+#endif
+        }
+
+        private void UpdateTransitionCounters()
+        {
+            if (MouseLeftPressed != _lastMouseLeftPressed)
+            {
+                if (MouseLeftPressed)
+                {
+                    MousePresses++;
+                }
+                else
+                {
+                    MouseReleases++;
+                }
+
+                _lastMouseLeftPressed = MouseLeftPressed;
+            }
+
+            if (GamepadButtonA != _lastGamepadButtonA)
+            {
+                if (GamepadButtonA)
+                {
+                    GamepadButtonPresses++;
+                }
+                else
+                {
+                    GamepadButtonReleases++;
+                }
+
+                _lastGamepadButtonA = GamepadButtonA;
+            }
+        }
+
+        private static System.Type FindType(string fullName)
+        {
+            foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(fullName);
+                if (type != null)
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+        private static float GetKeyboardActivityScore(Keyboard keyboard)
+        {
+            if (keyboard == null)
+            {
+                return float.MinValue;
+            }
+
+            return
+                keyboard.allKeys.Count(key => key != null && key.isPressed) * 1000f +
+                keyboard.allKeys.Count(key => key != null && key.wasPressedThisFrame) * 100f +
+                keyboard.allKeys.Count(key => key != null && key.wasReleasedThisFrame) * 10f;
         }
 
         private void SyncKeyboardObservers(bool clearAll = false)

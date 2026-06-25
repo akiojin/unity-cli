@@ -1,8 +1,8 @@
 {
   "name": "com.akiojin.unity-cli-bridge",
   "displayName": "Unity CLI Bridge",
-  "version": "0.11.4",
-  "unity": "6000.0",
+  "version": "0.12.0",
+  "unity": "2022.3",
   "description": "Unity Editor bridge package for unity-cli automation (screenshots, video capture, scene analysis, input automation).",
   "keywords": [
     "cli",

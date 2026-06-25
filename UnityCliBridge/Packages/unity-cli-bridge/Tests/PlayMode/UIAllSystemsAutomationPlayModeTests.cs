@@ -145,11 +145,14 @@ namespace UnityCliBridge.Tests.PlayMode
 
         private static IEnumerator WaitForAllSystemsReady(int timeoutFrames)
         {
+            string lastStatus = string.Empty;
             for (int i = 0; i < timeoutFrames; i++)
             {
                 bool uguiReady = FindSceneObject("Canvas/UGUI_Panel/UGUI_StatusText") != null;
-                bool uitkReady = IsOk(InvokeUIHandler("GetUIElementState", new JObject { ["elementPath"] = "uitk:/UITK/UIDocument#UITK_Status" }));
+                var uitkState = InvokeUIHandler("GetUIElementState", new JObject { ["elementPath"] = "uitk:/UITK/UIDocument#UITK_Status" });
+                bool uitkReady = IsOk(uitkState);
                 bool imguiReady = HasImguiControl("IMGUI/Button");
+                lastStatus = $"uGUI={uguiReady}, UITK={uitkReady} ({uitkState}), IMGUI={imguiReady}";
 
                 if (uguiReady && uitkReady && imguiReady)
                 {
@@ -159,7 +162,7 @@ namespace UnityCliBridge.Tests.PlayMode
                 yield return null;
             }
 
-            Assert.Fail("Timed out waiting for UI systems to be ready.");
+            Assert.Fail("Timed out waiting for UI systems to be ready. Last status: " + lastStatus);
         }
 
         private static GameObject FindSceneObject(string relativePath)

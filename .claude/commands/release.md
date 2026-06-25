@@ -160,7 +160,7 @@ git push origin HEAD:develop
 ### 8. Closing Issue の収集
 
 `develop` 向けPRに書かれた `Closes #...` は自動クローズされないため、release PR（`develop -> main`）本文に再掲します。
-ただし、`gwt-spec` ラベル付き Issue やタイトルが `gwt-spec:` で始まる SPEC Issue は **クローズ対象に含めません**。
+gwt-spec Issue も release PR の Closing Issues に含めることで、main マージ時の GitHub 自動 close に任せます。
 
 まず、今回のリリース範囲を決定：
 
@@ -183,8 +183,10 @@ CLOSING_ISSUE_LINES="$(bash scripts/release/collect-closing-issues.sh --range "$
 - 各 develop 向け PR の `## Closing Issues` セクションを最優先で採用
 - `## Closing Issues` が無い古い PR のみ、PR 本文全体の closing keyword (`Closes #...`, `Fixes #...`, `Resolves #...`) にフォールバック
 - リリース範囲のコミット本文にある closing keyword も加味
-- `## Related Issues / Links` にある bare `#123` は **参照専用** として扱い、auto-close 候補に昇格させない
-- `gwt-spec` ラベル付き Issue と `gwt-spec:` タイトルの SPEC Issue は除外
+- `## Related Issues / Links` にある通常 Issue の bare `#123` は **参照専用** として扱い、auto-close 候補に昇格させない
+- gwt-spec Issue も release PR の Closing Issues に含める
+- Related Issues / Links にある gwt-spec も Closing Issues に昇格する
+- PR 本文または commit 本文で参照された `gwt-spec` ラベル付き Issue / `gwt-spec:` タイトル Issue は、closing keyword がなくても `Closes #...` に昇格する
 
 `CLOSING_ISSUE_LINES` が `None` でなければ、PR本文の `## Closing Issues` セクションにそのまま挿入：
 
@@ -236,11 +238,11 @@ PR bodyには以下を含めてください：
 - `## Summary` - このリリースの概要（変更内容を要約）
 - `## Changes` - 主な変更点をリスト形式で
 - `## Version` - バージョン番号
-- `## Closing Issues` - main マージ時にクローズしたい通常 Issue を `Closes #<番号>` の生テキストで列挙（`CLOSING_ISSUE_LINES` が `None` の場合は `None` と記載）
+- `## Closing Issues` - main マージ時にクローズしたい Issue を `Closes #<番号>` の生テキストで列挙（gwt-spec を含む。`CLOSING_ISSUE_LINES` が `None` の場合は `None` と記載）
 - `## Related Issues / Links` - SPEC Issue や参照専用 Issue を列挙（ここに書かれた bare `#<番号>` は auto-close しない）
 
 **重要**: `Closes #<番号>` はコードブロックに入れず、通常の本文として記載すること。
-**重要**: SPEC Issue は `## Closing Issues` に入れず、`## Related Issues / Links` にのみ記載すること。
+**重要**: auto-close したい gwt-spec Issue は `## Closing Issues` に入れること。`## Related Issues / Links` にだけ書いた Issue は参照専用であり、自動 close されません。
 
 ### 10. 完了メッセージ
 

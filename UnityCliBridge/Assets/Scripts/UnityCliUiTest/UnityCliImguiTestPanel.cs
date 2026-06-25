@@ -11,52 +11,62 @@ namespace UnityCliBridge.TestScenes
         private float sliderValue = 0.5f;
         private string textValue = string.Empty;
 
+        private void Update()
+        {
+            RegisterAutomationControls();
+        }
+
         private void OnGUI()
         {
             const int x = 20;
             const int w = 360;
-            const int h = 30;
-            const int gap = 8;
             int y = 20;
 
             GUI.Label(
                 new Rect(x, y, w, 90),
                 $"IMGUI clicks={clickCount}\nToggle={toggleValue}\nSlider={sliderValue:0.00}\nText='{textValue}'"
             );
-            y += 100;
 
-            var buttonRect = new Rect(x, y, w, h);
-            ImguiControlRegistry.RegisterControl(
-                controlId: "IMGUI/Button",
-                controlType: "Button",
-                rect: buttonRect,
-                isInteractable: true,
-                getValue: () => clickCount,
-                onClick: () => clickCount++
-            );
+            RegisterAutomationControls();
+
+            var buttonRect = GetControlRect(0);
             if (GUI.Button(buttonRect, "IMGUI Button"))
             {
                 clickCount++;
             }
-            y += h + gap;
 
-            var toggleRect = new Rect(x, y, w, h);
+            var toggleRect = GetControlRect(1);
+            toggleValue = GUI.Toggle(toggleRect, toggleValue, "IMGUI Toggle");
+
+            var sliderRect = GetControlRect(2);
+            sliderValue = GUI.HorizontalSlider(sliderRect, sliderValue, 0f, 1f);
+
+            var textRect = GetControlRect(3);
+            textValue = GUI.TextField(textRect, textValue);
+        }
+
+        private void RegisterAutomationControls()
+        {
+            ImguiControlRegistry.RegisterControl(
+                controlId: "IMGUI/Button",
+                controlType: "Button",
+                rect: GetControlRect(0),
+                isInteractable: true,
+                getValue: () => clickCount,
+                onClick: () => clickCount++
+            );
             ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/Toggle",
                 controlType: "Toggle",
-                rect: toggleRect,
+                rect: GetControlRect(1),
                 isInteractable: true,
                 getValue: () => toggleValue,
                 setValue: token => toggleValue = token != null && token.ToObject<bool>()
             );
-            toggleValue = GUI.Toggle(toggleRect, toggleValue, "IMGUI Toggle");
-            y += h + gap;
-
-            var sliderRect = new Rect(x, y, w, h);
             ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/Slider",
                 controlType: "Slider",
-                rect: sliderRect,
+                rect: GetControlRect(2),
                 isInteractable: true,
                 getValue: () => sliderValue,
                 setValue: token =>
@@ -67,19 +77,24 @@ namespace UnityCliBridge.TestScenes
                     }
                 }
             );
-            sliderValue = GUI.HorizontalSlider(sliderRect, sliderValue, 0f, 1f);
-            y += h + gap;
-
-            var textRect = new Rect(x, y, w, h);
             ImguiControlRegistry.RegisterControl(
                 controlId: "IMGUI/TextField",
                 controlType: "TextField",
-                rect: textRect,
+                rect: GetControlRect(3),
                 isInteractable: true,
                 getValue: () => textValue,
                 setValue: token => textValue = token?.ToString() ?? string.Empty
             );
-            textValue = GUI.TextField(textRect, textValue);
+        }
+
+        private static Rect GetControlRect(int row)
+        {
+            const int x = 20;
+            const int y = 120;
+            const int w = 360;
+            const int h = 30;
+            const int gap = 8;
+            return new Rect(x, y + row * (h + gap), w, h);
         }
     }
 }

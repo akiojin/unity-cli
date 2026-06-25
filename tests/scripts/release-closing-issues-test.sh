@@ -31,18 +31,24 @@ assert_not_contains() {
 
 [[ -f "${TARGET_SCRIPT}" ]] || fail "missing ${TARGET_SCRIPT}"
 
+help_output="$(bash "${TARGET_SCRIPT}" --help)"
+assert_contains "${help_output}" 'None` when no closable issues are found'
+assert_contains "${help_output}" "Promote referenced gwt-spec issues"
+assert_not_contains "${help_output}" "non-SPEC"
+
 template_contents="$(cat "${GH_PR_TEMPLATE}")"
 assert_contains "${template_contents}" "## Closing Issues"
 assert_contains "${template_contents}" "Write \"None\" if no issues to close."
-assert_contains "${template_contents}" "SPEC issues must stay in Related Issues / Links"
+assert_contains "${template_contents}" "Include gwt-spec issues here when they should close on release."
 
 skill_contents="$(cat "${GH_PR_SKILL}")"
 assert_contains "${skill_contents}" "| Closing Issues | **YES** |"
-assert_contains "${skill_contents}" "SPEC issues must not appear in Closing Issues"
+assert_contains "${skill_contents}" "gwt-spec issues may appear in Closing Issues for release PRs"
 
 release_contents="$(cat "${RELEASE_COMMAND}")"
 assert_contains "${release_contents}" "scripts/release/collect-closing-issues.sh"
-assert_contains "${release_contents}" "gwt-spec"
+assert_contains "${release_contents}" "gwt-spec Issue も release PR の Closing Issues に含める"
+assert_contains "${release_contents}" "Related Issues / Links にある gwt-spec も Closing Issues に昇格"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
@@ -131,6 +137,12 @@ if [[ "$1" == "issue" && "$2" == "view" ]]; then
     404)
       printf '{"labels":[],"title":"gwt-spec: release pipeline guard"}\n'
       ;;
+    777)
+      printf '{"labels":[{"name":"gwt-spec"}],"title":"gwt-spec: related-only spec"}\n'
+      ;;
+    888)
+      printf '{"labels":[],"title":"docs: related-only normal issue"}\n'
+      ;;
     *)
       echo "unexpected issue number: $3" >&2
       exit 1
@@ -151,10 +163,10 @@ output="$(
 )"
 
 assert_contains "${output}" "Closes #137"
+assert_contains "${output}" "Closes #201"
 assert_contains "${output}" "Closes #301"
-assert_not_contains "${output}" "Closes #201"
-assert_not_contains "${output}" "Closes #404"
-assert_not_contains "${output}" "Closes #777"
+assert_contains "${output}" "Closes #404"
+assert_contains "${output}" "Closes #777"
 assert_not_contains "${output}" "Closes #888"
 
 echo "PASS"

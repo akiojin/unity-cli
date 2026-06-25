@@ -75,6 +75,7 @@ pub fn maybe_execute_local_tool(tool_name: &str, params: &Value) -> Option<Resul
         "get_symbols" => Some(local_get_symbols(params)),
         "build_index" => Some(local_build_index(params)),
         "update_index" => Some(local_update_index(params)),
+        "get_index_status" => Some(local_get_index_status()),
         "find_symbol" => Some(local_find_symbol(params)),
         "find_refs" => Some(local_find_refs(params)),
         "rename_symbol" => Some(local_lsp_write("rename_symbol", params)),
@@ -338,6 +339,33 @@ fn local_build_index(params: &Value) -> Result<Value> {
         "indexPath": to_rel_project_path(&root, &index_path),
         "generatedAtEpochMs": index.generated_at_epoch_ms,
         "skipped": skipped
+    }))
+}
+
+fn local_get_index_status() -> Result<Value> {
+    let root = project_root()?;
+    let index_path = index_file_path(&root);
+    let rel_index_path = to_rel_project_path(&root, &index_path);
+    let Some(index) = load_index_if_exists(&root)? else {
+        return Ok(json!({
+            "success": true,
+            "ready": false,
+            "indexPath": rel_index_path,
+            "indexedFiles": 0,
+            "indexedSymbols": 0,
+            "message": "Code index is not built. Run build_index first."
+        }));
+    };
+
+    let indexed_symbols: usize = index.files.values().map(|file| file.symbols.len()).sum();
+    Ok(json!({
+        "success": true,
+        "ready": index_is_ready(&index),
+        "indexPath": rel_index_path,
+        "version": index.version,
+        "indexedFiles": index.files.len(),
+        "indexedSymbols": indexed_symbols,
+        "generatedAtEpochMs": index.generated_at_epoch_ms
     }))
 }
 
@@ -1615,6 +1643,19 @@ mod tests {
             .expect("tool should be handled")
             .expect("build_index should succeed");
         assert_eq!(build["indexedFiles"], 2);
+
+        let status = maybe_execute_local_tool("get_index_status", &json!({}))
+            .expect("tool should be handled")
+            .expect("get_index_status should succeed");
+        assert_eq!(status["success"], true);
+        assert_eq!(status["ready"], true);
+        assert_eq!(status["indexedFiles"], 2);
+        assert!(
+            status["indexedSymbols"]
+                .as_u64()
+                .expect("indexedSymbols should be number")
+                >= 2
+        );
 
         let found = maybe_execute_local_tool(
             "find_symbol",

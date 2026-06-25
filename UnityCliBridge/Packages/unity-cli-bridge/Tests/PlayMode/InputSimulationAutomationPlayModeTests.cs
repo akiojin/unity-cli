@@ -314,7 +314,7 @@ namespace UnityCliBridge.Tests.PlayMode
                 yield return null;
             }
 
-            Assert.Fail("Timed out waiting for condition.");
+            Assert.Fail("Timed out waiting for condition. Status:\n" + GetStatusText());
         }
 
         private static JObject InvokeInputHandler(string methodName, JObject parameters)

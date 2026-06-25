@@ -12,7 +12,7 @@ Run the publish script from the repository root:
 
 1. Verifies the working tree is clean
 2. Bumps the workspace version with `npm version <major|minor|patch>`
-3. Syncs the Unity package and LSP versions
+3. Syncs the Cargo crate, Unity package, and LSP versions
 4. Runs `cargo test`, `dotnet test lsp/Server.Tests.csproj` on .NET 10, and `cargo publish --dry-run`
 5. Commits the version sync, creates `vX.Y.Z`, and runs `cargo publish`
 6. Pushes the release commit and tag
@@ -35,14 +35,14 @@ Usage:
 
 Checks performed before publish:
 
-| Step | Description |
-| --- | --- |
-| 1 | Git working tree is clean (no uncommitted or untracked files) |
-| 2 | `node` is available for the version bump |
-| 3 | `cargo test` passes |
-| 4 | `dotnet test lsp/Server.Tests.csproj` passes |
-| 5 | `cargo publish --dry-run` succeeds |
-| 6 | `cargo publish` succeeds |
+| Step | Description                                                   |
+| ---- | ------------------------------------------------------------- |
+| 1    | Git working tree is clean (no uncommitted or untracked files) |
+| 2    | `node` is available for the version bump                      |
+| 3    | `cargo test` passes                                           |
+| 4    | `dotnet test lsp/Server.Tests.csproj` passes                  |
+| 5    | `cargo publish --dry-run` succeeds                            |
+| 6    | `cargo publish` succeeds                                      |
 
 The script then creates the annotated tag `vX.Y.Z` and pushes the commit and tag to the selected remote.
 
@@ -55,20 +55,20 @@ Triggered by:
 
 Jobs:
 
-| Job | Description |
-| --- | --- |
-| `create-tag` | Creates the release tag if it does not exist yet |
-| `build` | Matrix build for `unity-cli` release binaries |
-| `build-lsp` | Matrix build for the bundled C# LSP binaries |
+| Job                            | Description                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `create-tag`                   | Creates the release tag if it does not exist yet                                                              |
+| `build`                        | Matrix build for `unity-cli` release binaries                                                                 |
+| `build-lsp`                    | Matrix build for the bundled C# LSP binaries                                                                  |
 | `upload-release` manifest step | Generates `unity-cli-manifest.json` and `csharp-lsp-manifest.json` with RID-specific URLs and SHA-256 digests |
-| `upload-release` | Uploads all built artifacts to the GitHub Release |
+| `upload-release`               | Uploads all built artifacts to the GitHub Release                                                             |
 
 Release artifacts include:
 
 - `unity-cli-linux-x64`
 - `unity-cli-linux-arm64`
-- `unity-cli-macos-arm64`
-- `unity-cli-windows-x64.exe`
+- `unity-cli-osx-arm64`
+- `unity-cli-win-x64`
 - `unity-cli-manifest.json`
 - `csharp-lsp-linux-x64`
 - `csharp-lsp-linux-arm64`

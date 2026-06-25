@@ -145,6 +145,12 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 Feature specifications are managed in GitHub Issues labeled `gwt-spec`.
 Use the Issue body as the source of truth for `Spec`, `Plan`, `Tasks`, and `TDD`.
 
+## Contributing
+
+External contributions should target the `develop` branch. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR, especially for branch
+policy, required CI, and skill documentation changes.
+
 ## Configuration
 
 | Variable | Description | Default |

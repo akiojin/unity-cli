@@ -83,16 +83,8 @@ echo "[info] new version: $NEW_VER (tag: $TAG)"
 # Version sync across all packages
 # ──────────────────────────────────────────────
 
-# Unity パッケージの version を同期
-echo "[step] sync Unity UPM package version -> $NEW_VER"
-node -e '
-  const fs=require("fs");
-  const p="UnityCliBridge/Packages/unity-cli-bridge/package.json";
-  if (!fs.existsSync(p)) process.exit(0);
-  const json=JSON.parse(fs.readFileSync(p,"utf8"));
-  json.version=process.argv[1];
-  fs.writeFileSync(p, JSON.stringify(json,null,2)+"\n", "utf8");
-' "$NEW_VER"
+echo "[step] sync release versions -> $NEW_VER"
+node scripts/release/update-versions.mjs "$NEW_VER"
 
 # LSP 側の Directory.Build.props を同期
 sync_props() {
@@ -144,6 +136,7 @@ cargo publish --dry-run || { echo "[error] cargo publish --dry-run failed. Fix p
 
 # 変更ファイルをコミット（npmが自動コミットしない場合の保険）
 git add package.json \
+        Cargo.toml \
         UnityCliBridge/Packages/unity-cli-bridge/package.json \
         lsp/Directory.Build.props 2>/dev/null || true
 if ! git diff --cached --quiet; then

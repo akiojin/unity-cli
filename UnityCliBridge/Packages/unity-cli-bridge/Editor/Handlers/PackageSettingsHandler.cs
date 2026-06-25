@@ -91,7 +91,7 @@ namespace UnityCliBridge.Handlers
                 {
                     return new { error = "package, key, and value are required", code = "INVALID_ARGUMENT" };
                 }
-                if (!parameters["confirmChanges"]?.ToObject<bool>() ?? false)
+                if (!(parameters["confirmChanges"]?.ToObject<bool>() ?? false))
                 {
                     return new
                     {

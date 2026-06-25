@@ -56,13 +56,13 @@ Unity 側の UPM パッケージは引き続き同一リポジトリ内で管理
 - **名前空間の変更**: Legacy Bridge namespace → `UnityCliBridge`
 - **パッケージ名の変更**: `com.akiojin.unity-mcp-bridge` → `com.akiojin.unity-cli-bridge`
 - **通信方式**: 変更なし（TCP サーバとして動作する点は同一）
-- **コマンドハンドラ**: 既存の 108 ツール群はそのまま引き継ぎ
+- **コマンドハンドラ**: 既存のツール群は UnityCliBridge 側へ引き継ぎ
 
 ### LSP (C# 静的解析)
 
 - 旧リポジトリでは Node.js 側に組み込まれていた静的解析機能を、独立した C# LSP サーバとして再実装
 - `lsp/` ディレクトリに配置
-- .NET 9 を使用
+- .NET 10 を使用
 
 ### CI/CD
 
