@@ -41,6 +41,7 @@ Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts an
 2. Discover valid block names with `vfx_list_library` (optionally filtered) when you are unsure of an exact name.
 3. Apply the narrowest mutation with `vfx_apply`.
 4. Re-run `vfx_describe_graph` to confirm the change landed, then `get_compilation_state` to confirm the asset recompiled without errors.
+5. Keep the canvas human-readable: `add_context`/`add_operator` auto-place new nodes (flow top-to-bottom, operators in a column to the left), but the defaults can't know your intent — pass `position:[x,y]` to place a node where its logic belongs (operators left of what they feed, upstream above downstream), and fix any overlap with `move_node` before finishing. Describe reports every node's `position`, so you can audit the layout you leave behind.
 
 Invocation: every tool runs as `unity-cli raw <tool> --json '<json>'`. Add `--output json` for a structured (parseable) result, and `--port <N>` to target a specific bridge (default `6400`).
 
@@ -57,7 +58,8 @@ unity-cli raw vfx_apply --json '{"op":"reorder_block","assetPath":"Assets/Basic 
 unity-cli raw vfx_apply --json '{"op":"move_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0,"toContextType":"Init"}'
 unity-cli raw vfx_apply --json '{"op":"duplicate_block","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextType":"Update","blockIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
-unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add"}'
+unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add","position":[-600,180]}'
+unity-cli raw vfx_apply --json '{"op":"move_node","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"operator","operatorIndex":0},"position":[-600,0]}'
 unity-cli raw vfx_apply --json '{"op":"duplicate_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector3"}'
@@ -143,7 +145,14 @@ output into the block's activation port by adding `"activation":true` to the `to
 — describe surfaces it as `blocks[].activationSlot` with its `links`),
 `reorder_block` (move a block to `toIndex` within its context) and `move_block` (relocate a block to a
 compatible `toContextType` — validated via `VFXContext.Accept`, so an incompatible target returns a
-clear error rather than corrupting the graph), `duplicate_block` (clone a block by `contextType`+`blockIndex`
+clear error rather than corrupting the graph), `move_node` (canvas layout only: set a node's position —
+`target` is a link_slots-style address `{node: context|operator|parameter, …index}` plus `position:[x,y]`;
+blocks have no canvas position, they're ordered inside their context; a parameter moves all its canvas
+nodes, which exist only once the parameter is linked). `add_context`/`add_operator` also take an optional
+`position:[x,y]`; when omitted they auto-place (a linked context lands below its flow source, an unlinked
+one starts a new column right of the existing systems, and operators stagger down a column left of the
+contexts). Describe reports `contexts[].position`, `operators[].position`, and `parameters[].nodes[]`
+(`{id, position}` per canvas node), `duplicate_block` (clone a block by `contextType`+`blockIndex`
 — same `[VFXSetting]`s + slot values, fresh GUIDs, slots unlinked; optional `index` insert position and
 `toContextType` to copy into another compatible context, also `Accept`-validated) and its operator twin
 `duplicate_operator` (clone a graph operator by `operatorIndex`), `set_operator_setting` (symmetrical to

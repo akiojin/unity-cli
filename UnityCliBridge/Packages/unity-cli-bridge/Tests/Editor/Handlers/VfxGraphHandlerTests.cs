@@ -602,6 +602,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_MoveNode_WithoutTarget_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_node",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["position"] = new JArray { 100, 200 }
+            }), "target is required");
+        }
+
+        [Test]
+        public void Apply_MoveNode_WithoutPosition_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_node",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["target"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0 }
+            }), "position is required");
+        }
+
+        [Test]
         public void Settings_PreferencesScope_Set_UnknownPref_ReturnsDescriptiveError()
         {
             AssertError(VfxGraphHandler.Settings(new JObject
@@ -791,6 +813,69 @@ namespace UnityCliBridge.Tests
                 new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(1, after.Value<int>("operatorCount"));
             Assert.AreEqual("Add", ((JArray)after["operators"])[0].Value<string>("type"));
+        }
+
+        [Test]
+        public void ApplyAddOperator_WithExplicitPosition_RoundTripsThroughDescribe()
+        {
+            string copy = CopyFixture("addoppos");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator",
+                ["assetPath"] = copy,
+                ["operatorName"] = "Add",
+                ["position"] = new JArray { -450, 120 }
+            }));
+            var echoed = (JArray)result["position"];
+            Assert.AreEqual(-450f, echoed[0].Value<float>());
+            Assert.AreEqual(120f, echoed[1].Value<float>());
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var pos = (JArray)((JArray)after["operators"])[0]["position"];
+            Assert.AreEqual(-450f, pos[0].Value<float>());
+            Assert.AreEqual(120f, pos[1].Value<float>());
+        }
+
+        [Test]
+        public void ApplyAddOperator_WithoutPosition_AutoPlacesOperatorsApart()
+        {
+            string copy = CopyFixture("addopauto");
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply" });
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var ops = (JArray)after["operators"];
+            var p0 = (JArray)ops[0]["position"];
+            var p1 = (JArray)ops[1]["position"];
+            Assert.AreNotEqual(p0[1].Value<float>(), p1[1].Value<float>(),
+                "auto-placed operators must not stack at the same position");
+        }
+
+        [Test]
+        public void ApplyMoveNode_Context_SetsCanvasPositionReportedByDescribe()
+        {
+            string copy = CopyFixture("movenode");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_node",
+                ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "context", ["contextType"] = "Update" },
+                ["position"] = new JArray { 300, 900 }
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var pos = (JArray)FindContext(after, "Update")["position"];
+            Assert.AreEqual(300f, pos[0].Value<float>());
+            Assert.AreEqual(900f, pos[1].Value<float>());
         }
 
         [Test]

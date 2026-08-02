@@ -492,6 +492,7 @@ namespace UnityCliBridge.Handlers
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
+                    ["position"] = PositionJson(ModelPosition(ctx)),
                     ["settings"] = ModelSettings(ctx),
                     ["inputs"] = FlowRefs(ctx, "inputContexts", ctxList),
                     ["outputs"] = FlowRefs(ctx, "outputContexts", ctxList),
@@ -513,6 +514,7 @@ namespace UnityCliBridge.Handlers
                     ["index"] = i,
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
+                    ["position"] = PositionJson(ModelPosition(op)),
                     ["settings"] = ModelSettings(op),
                     ["inputSlots"] = SlotsJson(op, true),
                     ["outputSlots"] = SlotsJson(op, false)
@@ -537,6 +539,19 @@ namespace UnityCliBridge.Handlers
                 try { max = ToJToken(Prop(p, "max")); } catch { }
                 try { valueFilter = new JValue(Prop(p, "valueFilter")?.ToString()); } catch { }
                 try { order = new JValue(Convert.ToInt32(Prop(p, "order"))); } catch { }
+                // Canvas nodes: a parameter appears on the canvas once per VFXParameter.Node.
+                var canvasNodes = new JArray();
+                try
+                {
+                    if (Prop(p, "nodes") is IEnumerable nodeList)
+                        foreach (var n in nodeList)
+                            canvasNodes.Add(new JObject
+                            {
+                                ["id"] = Convert.ToInt32(Prop(n, "id")),
+                                ["position"] = PositionJson((Vector2)(FindField(n.GetType(), "position")?.GetValue(n) ?? Vector2.zero))
+                            });
+                }
+                catch { /* parameter without canvas nodes — leave empty */ }
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
@@ -547,6 +562,7 @@ namespace UnityCliBridge.Handlers
                     ["isOutput"] = isOutput,
                     ["category"] = category,
                     ["order"] = order,
+                    ["nodes"] = canvasNodes,
                     ["tooltip"] = tooltip,
                     ["value"] = value,
                     ["valueFilter"] = valueFilter,
@@ -839,6 +855,7 @@ namespace UnityCliBridge.Handlers
                 case "set_block_enabled": return SetBlockEnabled(parameters);
                 case "reorder_block": return ReorderBlock(parameters);
                 case "move_block": return MoveBlock(parameters);
+                case "move_node": return MoveNode(parameters);
                 case "duplicate_block": return DuplicateBlock(parameters);
                 case "duplicate_operator": return DuplicateOperator(parameters);
                 case "remove_operator": return RemoveOperator(parameters);
@@ -1675,6 +1692,58 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        // ---- Canvas layout helpers ---------------------------------------
+
+        /// <summary>Optional `[x, y]` canvas position parameter. Null when absent.</summary>
+        private static Vector2? PositionParam(JObject parameters)
+        {
+            if (!(parameters?["position"] is JArray arr) || arr.Count < 2) return null;
+            return new Vector2(arr[0].ToObject<float>(), arr[1].ToObject<float>());
+        }
+
+        private static Vector2 ModelPosition(object model)
+        {
+            try { return (Vector2)Prop(model, "position"); }
+            catch { return Vector2.zero; }
+        }
+
+        private static JArray PositionJson(Vector2 pos) => new JArray { pos.x, pos.y };
+
+        // Spacing constants for auto-placement. VFX Graph systems flow top-to-bottom
+        // (Spawn → Init → Update → Output) with operators feeding in from the left.
+        private const float ContextFlowStepY = 450f;
+        private const float SystemColumnStepX = 700f;
+        private const float OperatorColumnOffsetX = 600f;
+        private const float OperatorStackStepY = 180f;
+
+        /// <summary>
+        /// Default canvas position for a new context: below its flow source when linking (systems
+        /// read top-to-bottom), otherwise right of the rightmost existing context so a new system
+        /// starts its own column instead of stacking at the origin.
+        /// </summary>
+        private static Vector2 AutoContextPosition(object graph, object linkFromContext, object newContext)
+        {
+            if (linkFromContext != null)
+                return ModelPosition(linkFromContext) + new Vector2(0, ContextFlowStepY);
+            var others = Children(graph)
+                .Where(c => ContextType.IsInstanceOfType(c) && !ReferenceEquals(c, newContext)).ToList();
+            if (others.Count == 0) return Vector2.zero;
+            return new Vector2(others.Max(c => ModelPosition(c).x) + SystemColumnStepX, 0);
+        }
+
+        /// <summary>
+        /// Default canvas position for a new operator: a staggered column left of the leftmost
+        /// context (operators feed rightward into blocks/contexts), stepping down per operator.
+        /// </summary>
+        private static Vector2 AutoOperatorPosition(object graph, object newOp)
+        {
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            float baseX = (ctxs.Count > 0 ? ctxs.Min(c => ModelPosition(c).x) : 0f) - OperatorColumnOffsetX;
+            int stack = Children(graph)
+                .Count(c => OperatorType.IsInstanceOfType(c) && !ReferenceEquals(c, newOp));
+            return new Vector2(baseX, stack * OperatorStackStepY);
+        }
+
         private static object AddContext(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -1736,9 +1805,10 @@ namespace UnityCliBridge.Handlers
 
             // Optional flow link: an existing context (by contextType) flows INTO the new one.
             JObject linked = null;
+            object fromContext = null;
             if (!string.IsNullOrEmpty(linkFrom))
             {
-                var fromContext = FindContext(graph, linkFrom);
+                fromContext = FindContext(graph, linkFrom);
                 if (fromContext == null)
                     throw new Exception($"linkFrom context '{linkFrom}' not found in {assetPath}");
                 int fromIndex = parameters?["fromIndex"]?.ToObject<int>() ?? 0;
@@ -1752,6 +1822,11 @@ namespace UnityCliBridge.Handlers
                 };
             }
 
+            // Canvas position: explicit `position:[x,y]`, else auto-place so nodes never stack at
+            // the origin (below the flow source, or a fresh column for an unlinked context).
+            var pos = PositionParam(parameters) ?? AutoContextPosition(graph, fromContext, context);
+            SetProp(context, "position", pos);
+
             Persist(graph, assetPath);
 
             return new JObject
@@ -1761,7 +1836,8 @@ namespace UnityCliBridge.Handlers
                 ["addedContext"] = context.GetType().Name,
                 ["matchedDescriptor"] = matchedDescriptor,
                 ["settingsApplied"] = appliedSettings,
-                ["linked"] = linked
+                ["linked"] = linked,
+                ["position"] = PositionJson(pos)
             };
         }
 
@@ -1790,6 +1866,11 @@ namespace UnityCliBridge.Handlers
 
             Call(graph, ModelType, "AddChild", op, -1, true);
 
+            // Canvas position: explicit `position:[x,y]`, else a staggered column left of the
+            // contexts so operators stay readable instead of stacking at the origin.
+            var pos = PositionParam(parameters) ?? AutoOperatorPosition(graph, op);
+            SetProp(op, "position", pos);
+
             Persist(graph, assetPath);
 
             int operatorIndex = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList()
@@ -1801,7 +1882,8 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["addedOperator"] = op.GetType().Name,
                 ["matchedDescriptor"] = Prop(match, "name") as string,
-                ["operatorIndex"] = operatorIndex
+                ["operatorIndex"] = operatorIndex,
+                ["position"] = PositionJson(pos)
             };
         }
 
@@ -2670,6 +2752,59 @@ namespace UnityCliBridge.Handlers
                 ["toContextType"] = toContext,
                 ["toIndex"] = newIndex,
                 ["remainingInSource"] = Children(srcCtx).Count()
+            };
+        }
+
+        /// <summary>
+        /// Set a node's canvas position — layout only, no functional graph change. `target` uses the
+        /// same addressing as link_slots endpoints ({node: context|operator|parameter, …address});
+        /// `position` is `[x, y]`. Contexts and operators carry one VFXModel.position; a parameter's
+        /// canvas presence is its VFXParameter.Node list, so every node of the parameter is moved
+        /// (nodes after the first are staggered vertically to stay individually clickable).
+        /// </summary>
+        private static object MoveNode(JObject parameters)
+        {
+            var assetPath = parameters?["assetPath"]?.ToString();
+            var target = parameters?["target"] as JObject;
+            if (target == null)
+                return new { error = "target is required (an object {node: context|operator|parameter, …address})" };
+            var pos = PositionParam(parameters);
+            if (pos == null)
+                return new { error = "position is required ([x, y])" };
+
+            var graph = LoadGraph(assetPath);
+            var node = ResolveNode(graph, target, "target");
+            if (BlockType.IsInstanceOfType(node))
+                return new { error = "Blocks have no canvas position (they are ordered inside their context); use reorder_block or move_block." };
+
+            int movedParameterNodes = 0;
+            if (ParameterType.IsInstanceOfType(node))
+            {
+                var nodes = (Prop(node, "nodes") as IEnumerable)?.Cast<object>().ToList()
+                            ?? new List<object>();
+                if (nodes.Count == 0)
+                    return new { error = "Parameter has no canvas nodes yet (a node appears once the parameter is linked)." };
+                var posField = FindField(nodes[0].GetType(), "position");
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    posField.SetValue(nodes[i], pos.Value + new Vector2(0, i * OperatorStackStepY));
+                    movedParameterNodes++;
+                }
+            }
+            else
+            {
+                SetProp(node, "position", pos.Value);
+            }
+
+            Persist(graph, assetPath);
+
+            return new JObject
+            {
+                ["op"] = "move_node",
+                ["assetPath"] = assetPath,
+                ["node"] = node.GetType().Name,
+                ["position"] = PositionJson(pos.Value),
+                ["movedParameterNodes"] = ParameterType.IsInstanceOfType(node) ? (int?)movedParameterNodes : null
             };
         }
 
