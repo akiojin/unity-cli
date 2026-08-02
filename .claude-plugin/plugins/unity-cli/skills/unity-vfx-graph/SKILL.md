@@ -60,6 +60,7 @@ unity-cli raw vfx_apply --json '{"op":"duplicate_block","assetPath":"Assets/Basi
 unity-cli raw vfx_apply --json '{"op":"add_context","assetPath":"Assets/Basic Graphs/Minimal.vfx","contextName":"Output Particle|Point","linkFrom":"Update"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorName":"Add","position":[-600,180]}'
 unity-cli raw vfx_apply --json '{"op":"move_node","assetPath":"Assets/Basic Graphs/Minimal.vfx","target":{"node":"operator","operatorIndex":0},"position":[-600,0]}'
+unity-cli raw vfx_apply --json '{"op":"group_nodes","assetPath":"Assets/Basic Graphs/Minimal.vfx","title":"Spawn Math","nodes":[{"node":"operator","operatorIndex":0},{"node":"operator","operatorIndex":1}],"position":[-700,-50,500,300]}'
 unity-cli raw vfx_apply --json '{"op":"duplicate_operator","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0}'
 unity-cli raw vfx_apply --json '{"op":"set_operator_setting","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"setting":"m_HLSLCode","value":"float MyScale(in float k){return k*2.0f;}"}'
 unity-cli raw vfx_apply --json '{"op":"add_operator_input","assetPath":"Assets/Basic Graphs/Minimal.vfx","operatorIndex":0,"operandType":"Vector3"}'
@@ -148,7 +149,10 @@ compatible `toContextType` — validated via `VFXContext.Accept`, so an incompat
 clear error rather than corrupting the graph), `move_node` (canvas layout only: set a node's position —
 `target` is a link_slots-style address `{node: context|operator|parameter, …index}` plus `position:[x,y]`;
 blocks have no canvas position, they're ordered inside their context; a parameter moves all its canvas
-nodes, which exist only once the parameter is linked). `add_context`/`add_operator` also take an optional
+nodes, and for a linked parameter with no canvas node yet the position seeds the node the editor
+auto-creates), `group_nodes` (add nodes to a named group box, creating it when the `title` is new —
+`nodes` is an array of the same addresses, optional `position:[x,y,w,h]` sizes a new group; describe
+surfaces `groups[]` with `title`/`position`/resolved `contents`). `add_context`/`add_operator` also take an optional
 `position:[x,y]`; when omitted they auto-place (a linked context lands below its flow source, an unlinked
 one starts a new column right of the existing systems, and operators stagger down a column left of the
 contexts). Describe reports `contexts[].position`, `operators[].position`, and `parameters[].nodes[]`

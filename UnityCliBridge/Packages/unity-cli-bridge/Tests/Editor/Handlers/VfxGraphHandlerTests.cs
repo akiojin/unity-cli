@@ -624,6 +624,28 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void Apply_GroupNodes_WithoutTitle_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["nodes"] = new JArray { new JObject { ["node"] = "operator", ["operatorIndex"] = 0 } }
+            }), "title is required");
+        }
+
+        [Test]
+        public void Apply_GroupNodes_WithoutNodes_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes",
+                ["assetPath"] = "Assets/Some.vfx",
+                ["title"] = "My Group"
+            }), "nodes is required");
+        }
+
+        [Test]
         public void Settings_PreferencesScope_Set_UnknownPref_ReturnsDescriptiveError()
         {
             AssertError(VfxGraphHandler.Settings(new JObject
@@ -876,6 +898,43 @@ namespace UnityCliBridge.Tests
             var pos = (JArray)FindContext(after, "Update")["position"];
             Assert.AreEqual(300f, pos[0].Value<float>());
             Assert.AreEqual(900f, pos[1].Value<float>());
+        }
+
+        [Test]
+        public void ApplyGroupNodes_CreatesGroupWithResolvedContents()
+        {
+            string copy = CopyFixture("groupnodes");
+
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply" });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes",
+                ["assetPath"] = copy,
+                ["title"] = "Math",
+                ["nodes"] = new JArray
+                {
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 0 },
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 1 }
+                },
+                ["position"] = new JArray { -700, -50, 500, 300 }
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.IsTrue(result.Value<bool>("createdGroup"));
+            Assert.AreEqual(2, result.Value<int>("contentCount"));
+
+            // The fixture may ship with UI-authored groups of its own — assert on ours by title.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+            var group = ((JArray)after["groups"])
+                .FirstOrDefault(g => g.Value<string>("title") == "Math");
+            Assert.IsNotNull(group, $"expected a 'Math' group in: {after["groups"]}");
+            var members = (JArray)group["contents"];
+            Assert.AreEqual(2, members.Count);
+            Assert.AreEqual("operator", members[0].Value<string>("kind"));
         }
 
         [Test]
