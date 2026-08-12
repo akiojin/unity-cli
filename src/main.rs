@@ -3,6 +3,7 @@ mod cli;
 mod core;
 mod daemon;
 mod lsp;
+mod mcp;
 mod reference;
 mod skills;
 #[cfg(test)]

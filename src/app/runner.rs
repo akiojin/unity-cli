@@ -27,8 +27,9 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
     init_tracing(cli.verbose)?;
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
-    // which manage the binary themselves.
-    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. }) {
+    // which manage the binary themselves, and for `mcp` which runs a
+    // long-lived server that must not be replaced mid-session.
+    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. } | Command::Mcp) {
         crate::core::self_update::maybe_self_update()
     } else {
         None
@@ -239,6 +240,11 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
             let value = execute_batch(&cli, json.as_deref(), *stdin).await?;
             print_value(&value, cli.output)?;
         }
+        Command::Mcp => {
+            // The MCP server owns stdout (JSON-RPC frames). It runs until the
+            // client disconnects. Self-update is already skipped above.
+            crate::mcp::serve_forever(&cli).await?;
+        }
     }
 
     // Wait for background self-update to complete before process exit so the
@@ -435,10 +441,21 @@ async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     execute_tool(cli, &args.tool_name, params).await
 }
 
-async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value> {
+pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value> {
+    execute_tool_with_overrides(&runtime_overrides_from_cli(cli), tool_name, params).await
+}
+
+/// Tool execution entry point that does not require a parsed `Cli`. This is
+/// the shared core used by both the CLI path (`execute_tool`) and the MCP
+/// server, which builds overrides from its own configuration.
+pub(crate) async fn execute_tool_with_overrides(
+    overrides: &RuntimeOverrides,
+    tool_name: &str,
+    params: Value,
+) -> Result<Value> {
     validate_tool_params(tool_name, &params)?;
 
-    if should_skip_for_dry_run(cli, tool_name) {
+    if should_skip_for_dry_run(overrides.dry_run, tool_name) {
         return Ok(json!({
             "dryRun": true,
             "executed": false,
@@ -452,7 +469,7 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
         return local_result;
     }
 
-    let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    let config = RuntimeConfig::from_overrides(overrides)?;
     let (mut value, timing) = call_remote_tool_with_timing(&config, tool_name, params).await?;
     if tool_name == "get_command_stats" {
         augment_command_stats(&mut value);
@@ -573,7 +590,7 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 
     let mut results = Vec::with_capacity(commands.len());
     for item in commands {
-        if should_skip_for_dry_run(cli, &item.tool) {
+        if should_skip_for_dry_run(cli.dry_run, &item.tool) {
             results.push(json!({
                 "ok": true,
                 "skipped": true,
@@ -616,8 +633,8 @@ async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) 
     Ok(Value::Array(results))
 }
 
-fn should_skip_for_dry_run(cli: &Cli, tool_name: &str) -> bool {
-    if !cli.dry_run {
+fn should_skip_for_dry_run(dry_run: bool, tool_name: &str) -> bool {
+    if !dry_run {
         return false;
     }
     get_tool_spec(tool_name)
@@ -1020,6 +1037,8 @@ fn init_tracing(verbose: u8) -> Result<()> {
         .with_env_filter(env_filter)
         .with_target(false)
         .compact()
+        .with_writer(std::io::stderr)
+        .with_ansi(false)
         .try_init()
         .ok();
 
