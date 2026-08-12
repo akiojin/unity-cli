@@ -35,6 +35,10 @@ namespace UnityCliBridge.Helpers
         {
             if (string.IsNullOrEmpty(commandType)) return false;
             if (AllowedInPlay.Contains(commandType)) return true;
+            if (UnityCliBridge.CustomToolRegistry.HasTool(commandType))
+            {
+                return UnityCliBridge.CustomToolRegistry.IsAllowedInPlayMode(commandType);
+            }
 
             // Heuristic: Block script_* modification operations during Play
             if (commandType.StartsWith("script_", StringComparison.OrdinalIgnoreCase)) return false;

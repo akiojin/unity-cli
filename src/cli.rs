@@ -88,6 +88,10 @@ pub enum Command {
         #[arg(long)]
         stdin: bool,
     },
+    /// Run as a Model Context Protocol (MCP) stdio server, exposing all Unity
+    /// CLI tools to any MCP-compatible agent (Cursor, Cherry Studio, Claude
+    /// SDK, etc.).
+    Mcp,
 }
 
 #[derive(Debug, Subcommand)]

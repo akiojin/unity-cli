@@ -151,7 +151,10 @@ namespace UnityCliBridge.Core
                 ["set_package_setting"] = command => Success(command, PackageSettingsHandler.SetPackageSetting(command.Parameters)),
                 ["get_editor_info"] = HandleGetEditorInfo,
                 ["update_project_settings"] = command => Success(command, ProjectSettingsHandler.UpdateProjectSettings(command.Parameters)),
-                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot())
+                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot()),
+                ["list_custom_tools"] = command => Success(command, CustomToolRegistry.ListTools()),
+                ["get_custom_tool_schema"] = command => Success(command, CustomToolRegistry.GetToolSchema(command.Parameters)),
+                ["refresh_custom_tools"] = command => Success(command, CustomToolRegistry.Refresh())
             };
 
         internal static IReadOnlyCollection<string> RegisteredCommandTypes => Handlers.Keys.ToArray();
@@ -161,6 +164,14 @@ namespace UnityCliBridge.Core
             if (command?.Type != null && Handlers.TryGetValue(command.Type, out var handler))
             {
                 return handler(command);
+            }
+
+            if (command?.Type != null && CustomToolRegistry.TryExecute(command.Type, command.Parameters, out var customToolResult, out var customToolError))
+            {
+                var response = customToolError == null
+                    ? Response.SuccessResult(command.Id, customToolResult)
+                    : Response.ErrorResult(command.Id, customToolError, "CUSTOM_TOOL_ERROR", new { commandType = command.Type });
+                return Task.FromResult(response);
             }
 
             return Task.FromResult(Response.ErrorResult(

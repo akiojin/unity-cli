@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
+using UnityCliBridge;
 using UnityCliBridge.Models;
 using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
