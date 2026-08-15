@@ -9,6 +9,7 @@
 
 # Config/Doc files (LF to avoid diff noise)
 *.json text eol=lf
+*.jsonl text eol=lf
 *.md text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf

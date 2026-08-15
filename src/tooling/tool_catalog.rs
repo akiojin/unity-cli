@@ -132,6 +132,12 @@ pub const TOOL_NAMES: &[&str] = &[
     "reference_resolve_symbol_at",
     "reference_embed_build",
     "reference_embed_search",
+    "vfx_describe_graph",
+    "vfx_list_library",
+    "vfx_apply",
+    "vfx_runtime",
+    "vfx_settings",
+    "vfx_bake_sdf",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -206,6 +212,24 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "vfx_describe_graph" => {
+            "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, and exposed parameters, including slot and flow links"
+        }
+        "vfx_list_library" => {
+            "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
+        }
+        "vfx_apply" => {
+            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template)"
+        }
+        "vfx_runtime" => {
+            "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state)"
+        }
+        "vfx_settings" => {
+            "Read or write VFX environment settings — ops: get (read all), set (write one named setting). Scope: 'project' (default — ProjectSettings/VFXManager.asset; fixedTimeStep, maxDeltaTime, maxCapacity, ...) or 'preferences' (per-machine EditorPrefs via UnityEditor.VFX.VFXViewPreference; instancingEnabled, displayExperimentalOperator, multithreadUpdateEnabled, ...)"
+        }
+        "vfx_bake_sdf" => {
+            "Bake a Mesh asset into a Signed Distance Field Texture3D asset (programmatic SDF Bake Tool, via the public MeshToSDFBaker). Params: meshPath (source Mesh), outputPath (.asset to create), maxResolution (default 64), center/size ([x,y,z]; default = mesh bounds), signPassCount (default 1), threshold (default 0.5), sdfOffset (default 0), overwrite (default false). Requires compute shader support."
+        }
         _ => "Unity CLI tool operation",
     }
 }
@@ -298,6 +322,8 @@ fn is_read_only_tool(name: &str) -> bool {
             | "reference_diff"
             | "reference_resolve_symbol_at"
             | "reference_embed_search"
+            | "vfx_describe_graph"
+            | "vfx_list_library"
     )
 }
 
@@ -2362,6 +2388,127 @@ fn tool_params_schema(name: &str) -> Value {
             &["query"],
             false,
         ),
+        "vfx_describe_graph" => object_schema(
+            &[
+                ("assetPath", string_schema()),
+                ("includeErrors", boolean_schema()),
+            ],
+            &["assetPath"],
+            false,
+        ),
+        "vfx_list_library" => object_schema(
+            &[("filter", string_schema()), ("kind", string_schema())],
+            &[],
+            false,
+        ),
+        "vfx_apply" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("assetPath", string_schema()),
+                ("contextType", string_schema()),
+                ("contextIndex", integer_schema()),
+                ("blockName", string_schema()),
+                ("settings", any_object_schema()),
+                ("blockIndex", integer_schema()),
+                ("enabled", boolean_schema()),
+                ("toContextType", string_schema()),
+                ("toContextIndex", integer_schema()),
+                ("operatorIndex", integer_schema()),
+                ("parameterIndex", integer_schema()),
+                ("index", integer_schema()),
+                ("setting", string_schema()),
+                ("value", any_schema()),
+                ("contextName", string_schema()),
+                ("linkFrom", string_schema()),
+                ("fromIndex", integer_schema()),
+                ("toIndex", integer_schema()),
+                ("operatorName", string_schema()),
+                ("parameterName", string_schema()),
+                ("name", string_schema()),
+                ("space", string_schema()),
+                ("type", string_schema()),
+                ("exposed", boolean_schema()),
+                ("isOutput", boolean_schema()),
+                ("tooltip", string_schema()),
+                ("category", string_schema()),
+                ("min", any_schema()),
+                ("max", any_schema()),
+                ("from", any_object_schema()),
+                ("to", any_object_schema()),
+                ("target", any_object_schema()),
+                ("subPath", array_of(string_schema())),
+                ("mode", string_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("padding", array_of(number_schema())),
+                ("title", string_schema()),
+                ("contents", string_schema()),
+                ("position", array_of(number_schema())),
+                ("nodes", array_of(any_object_schema())),
+                ("colorTheme", integer_schema()),
+                ("textSize", string_schema()),
+                ("capacity", integer_schema()),
+                ("subgraphPath", string_schema()),
+                ("kind", string_schema()),
+                ("targetPath", string_schema()),
+                ("template", string_schema()),
+                ("attributeName", string_schema()),
+                ("attributeType", string_schema()),
+                ("description", string_schema()),
+                ("isReadOnly", boolean_schema()),
+                ("eventName", string_schema()),
+                ("operandType", string_schema()),
+                ("order", integer_schema()),
+                ("newCategory", string_schema()),
+                ("exposedName", string_schema()),
+                ("icon", string_schema()),
+                ("thumbnail", string_schema()),
+            ],
+            // assetPath required for every op except create_subgraph_asset (whose target is its own
+            // new subgraphPath). Per-op validation lives in the handler.
+            &["op"],
+            false,
+        ),
+        "vfx_runtime" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("gameObject", string_schema()),
+                ("assetPath", string_schema()),
+                ("name", string_schema()),
+                ("value", any_schema()),
+                ("eventName", string_schema()),
+                ("attributes", any_schema()),
+                ("deltaTime", number_schema()),
+                ("steps", integer_schema()),
+            ],
+            &["op", "gameObject"],
+            false,
+        ),
+        "vfx_settings" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("scope", string_schema()),
+                ("setting", string_schema()),
+                ("value", any_schema()),
+            ],
+            &["op"],
+            false,
+        ),
+        "vfx_bake_sdf" => object_schema(
+            &[
+                ("meshPath", string_schema()),
+                ("outputPath", string_schema()),
+                ("maxResolution", integer_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("signPassCount", integer_schema()),
+                ("threshold", number_schema()),
+                ("sdfOffset", number_schema()),
+                ("overwrite", boolean_schema()),
+            ],
+            &["meshPath", "outputPath"],
+            false,
+        ),
         _ => default_params_schema(),
     }
 }
@@ -2476,7 +2623,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 130);
+        assert_eq!(TOOL_NAMES.len(), 136);
     }
 
     #[test]
@@ -2554,6 +2701,45 @@ mod tests {
         assert_eq!(spec.executor, ToolExecutor::Remote);
         assert_eq!(spec.params_schema["type"], "object");
         assert_eq!(spec.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
+    fn vfx_describe_graph_is_read_only_and_requires_asset_path() {
+        let spec = get_tool_spec("vfx_describe_graph").expect("vfx_describe_graph must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["assetPath"]));
+    }
+
+    #[test]
+    fn vfx_apply_is_mutating_and_requires_op() {
+        let spec = get_tool_spec("vfx_apply").expect("vfx_apply must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        // assetPath is per-op (every op except create_subgraph_asset needs it; handler enforces).
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
+    }
+
+    #[test]
+    fn vfx_runtime_is_mutating_and_requires_op_and_game_object() {
+        let spec = get_tool_spec("vfx_runtime").expect("vfx_runtime must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op", "gameObject"]));
+    }
+
+    #[test]
+    fn vfx_settings_is_mutating_and_requires_op() {
+        let spec = get_tool_spec("vfx_settings").expect("vfx_settings must exist");
+        // The tool carries both a read-only `get` and a mutating `set` op; like vfx_runtime it is
+        // marked mutating at the tool level (per-op read-only behavior is documented, not flagged).
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
     }
 
     #[test]
