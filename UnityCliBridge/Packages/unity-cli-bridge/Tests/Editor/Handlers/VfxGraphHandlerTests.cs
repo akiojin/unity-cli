@@ -1175,6 +1175,74 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void DescribeGraph_SurfacesLinksLivingOnCompoundSubSlots()
+        {
+            string copy = CopyFixture("subslotdescribe");
+            // A Vector2 parameter whose x/y components drive two separate float inputs is the canonical
+            // "range" pattern. The link lives on the parameter output's `x`/`y` CHILD slots, not the
+            // top-level Vector2 output — the case describe used to hide (it only walked top-level slots).
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Volume (Sphere)"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Range", ["type"] = "Vector2"
+            });
+
+            // Link the parameter output's `x` sub-slot into the sphere slot's `radius` child sub-slot:
+            // BOTH endpoints are compound children, so neither top-level slot carries the link.
+            JObject link = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots",
+                ["assetPath"] = copy,
+                ["from"] = new JObject
+                {
+                    ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0,
+                    ["subPath"] = new JArray("x")
+                },
+                ["to"] = new JObject
+                {
+                    ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0,
+                    ["subPath"] = new JArray("radius")
+                }
+            }));
+            Assert.IsNull(link.Value<string>("error"), $"sub-slot link should not error; got: {link}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
+                new JObject { ["assetPath"] = copy }));
+
+            // Parameter side: top-level Vector2 output stays unlinked, but its `x` child now surfaces
+            // the link — the previously-hidden information — and the child resolves to the sphere op.
+            var paramOut = (JArray)((JArray)after["parameters"])[0]["outputSlots"];
+            Assert.IsFalse(paramOut[0].Value<bool>("hasLink"),
+                "the top-level Vector2 output should stay hasLink:false — the link is on its child");
+            var paramChildren = (JArray)paramOut[0]["children"];
+            Assert.IsNotNull(paramChildren, "the compound output slot should carry a children array");
+            var xChild = paramChildren.First(c => (string)c["name"] == "x");
+            Assert.IsTrue(xChild.Value<bool>("hasLink"), "the `x` sub-slot should report its link");
+            var xLink = ((JArray)xChild["links"])[0];
+            Assert.AreEqual("operator", xLink["node"].Value<string>("kind"));
+            // The remote endpoint (radius) is itself a sub-slot: it resolves to its top-level slot
+            // index plus a descriptor-named subPath, not an unaddressable -1.
+            Assert.AreEqual("radius", xLink.Value<string>("name"));
+            Assert.AreEqual(0, xLink.Value<int>("slot"), "sub-slot endpoint should resolve to its top-level slot index");
+            CollectionAssert.AreEqual(new[] { "radius" },
+                ((JArray)xLink["subPath"]).Select(t => (string)t).ToArray(),
+                "the endpoint subPath should name the descended child sub-slot");
+
+            // Operator side: the sphere's top-level slot stays unlinked, but its `radius` child surfaces
+            // the reverse edge back to the parameter — describe is now symmetric with link_slots.
+            var sphere = (JArray)((JArray)after["operators"])
+                .First(o => (string)o["type"] == "SphereVolume")["inputSlots"];
+            Assert.IsFalse(sphere[0].Value<bool>("hasLink"),
+                "the top-level sphere slot should stay hasLink:false — the link is on its `radius` child");
+            var radiusChild = ((JArray)sphere[0]["children"]).First(c => (string)c["name"] == "radius");
+            Assert.IsTrue(radiusChild.Value<bool>("hasLink"), "the `radius` sub-slot should report its link");
+            Assert.AreEqual("parameter", ((JArray)radiusChild["links"])[0]["node"].Value<string>("kind"));
+        }
+
+        [Test]
         public void ApplyAddParameter_CreatesExposedFloatReportedByDescribe()
         {
             string copy = CopyFixture("addparam");

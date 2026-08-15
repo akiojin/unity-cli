@@ -332,21 +332,47 @@ namespace UnityCliBridge.Handlers
                 return new JObject { ["kind"] = "unknown" };
             }
 
-            // (slotIndex, isInput) for a slot within its owner's top-level slot collection.
-            int SlotIndexIn(object slot)
+            // DFS from a top-level slot to `target`, recording each child step's descriptor name into
+            // `path`. Returns true (path filled) when found; an empty path means `target` IS `current`.
+            bool FindSlotPath(object current, object target, JArray path)
             {
+                if (ReferenceEquals(current, target)) return true;
+                IEnumerable children;
+                try { children = Prop(current, "children") as IEnumerable; }
+                catch { return false; }
+                if (children == null) return false;
+                foreach (var child in children)
+                {
+                    path.Add(SlotName(child));
+                    if (FindSlotPath(child, target, path)) return true;
+                    path.RemoveAt(path.Count - 1);
+                }
+                return false;
+            }
+
+            // Address a slot within its owner as (top-level index, descriptor-named child subPath).
+            // A top-level slot returns (idx, empty); a compound slot's child returns its ancestor's
+            // top-level index plus the child-name path — the read-side analogue of link_slots' subPath.
+            (int index, JArray subPath) LocateSlot(object slot)
+            {
+                var empty = new JArray();
                 try
                 {
                     var owner = Prop(slot, "owner");
-                    if (owner == null) return -1;
+                    if (owner == null) return (-1, empty);
                     bool isOutput = Prop(slot, "direction")?.ToString() == "kOutput";
                     var coll = Prop(owner, isOutput ? "outputSlots" : "inputSlots") as IEnumerable;
                     int idx = 0;
                     if (coll != null)
-                        foreach (var s in coll) { if (ReferenceEquals(s, slot)) return idx; idx++; }
+                        foreach (var top in coll)
+                        {
+                            var path = new JArray();
+                            if (FindSlotPath(top, slot, path)) return (idx, path);
+                            idx++;
+                        }
                 }
                 catch { }
-                return -1;
+                return (-1, empty);
             }
 
             JArray LinksJson(object slot)
@@ -361,14 +387,71 @@ namespace UnityCliBridge.Handlers
                     object owner = null;
                     try { owner = Prop(other, "owner"); }
                     catch { }
-                    arr.Add(new JObject
+                    var (idx, subPath) = LocateSlot(other);
+                    var link = new JObject
                     {
                         ["node"] = ResolveAddress(owner),
-                        ["slot"] = SlotIndexIn(other),
+                        ["slot"] = idx,
                         ["name"] = SlotName(other)
-                    });
+                    };
+                    // A sub-slot endpoint (the edge lands on a compound slot's child) carries the
+                    // descriptor-named path from its top-level slot, so the link round-trips through
+                    // link_slots'/unlink_slots' `subPath` instead of collapsing to an unaddressable -1.
+                    if (subPath.Count > 0) link["subPath"] = subPath;
+                    arr.Add(link);
                 }
                 return arr;
+            }
+
+            // Serialize one slot, recursively surfacing any compound child sub-slots that carry a link
+            // somewhere in their subtree. Pruned to linked descendants so simple/unlinked compound slots
+            // stay as lean as before — only sub-slot LINKS add nodes.
+            JObject SlotEntry(object slot, int index)
+            {
+                var links = LinksJson(slot);
+                JToken value = null;
+                try { value = ToJToken(Prop(slot, "value")); }
+                catch { /* some slot types may not have a readable value */ }
+                var entry = new JObject
+                {
+                    ["index"] = index,
+                    ["name"] = SlotName(slot),
+                    ["valueType"] = SlotValueTypeName(slot),
+                    ["hasLink"] = links.Count > 0,
+                    ["links"] = links,
+                    ["value"] = value
+                };
+                // Spaceable slots (Position/Vector/Direction-style) carry a coordinate space —
+                // surface it only when present so set_slot_space round-trips and non-spaceable
+                // slots stay uncluttered.
+                try
+                {
+                    if ((bool)Prop(slot, "spaceable"))
+                        entry["space"] = ToJToken(Prop(slot, "space"));
+                }
+                catch { }
+
+                // Compound slots (Vector2/Vector3/Sphere/Transform/…) expose child sub-slots that can be
+                // linked independently of the parent. Surface only children whose subtree carries a link so
+                // describe no longer hides sub-slot connections (e.g. a Vector2 range whose x/y feed a
+                // Random's min/max). The parent's own `hasLink` stays own-links only — a slot with only
+                // linked children still reports hasLink:false; its `children` array carries the truth.
+                var children = new JArray();
+                IEnumerable childColl = null;
+                try { childColl = Prop(slot, "children") as IEnumerable; }
+                catch { /* leaf slot without children */ }
+                if (childColl != null)
+                {
+                    int ci = 0;
+                    foreach (var child in childColl)
+                    {
+                        var childEntry = SlotEntry(child, ci++);
+                        if (childEntry.Value<bool>("hasLink") || childEntry["children"] != null)
+                            children.Add(childEntry);
+                    }
+                }
+                if (children.Count > 0) entry["children"] = children;
+                return entry;
             }
 
             JArray SlotsJson(object container, bool isInput)
@@ -380,31 +463,7 @@ namespace UnityCliBridge.Handlers
                 if (coll == null) return arr;
                 int idx = 0;
                 foreach (var slot in coll)
-                {
-                    var links = LinksJson(slot);
-                    JToken value = null;
-                    try { value = ToJToken(Prop(slot, "value")); }
-                    catch { /* some slot types may not have a readable value */ }
-                    var entry = new JObject
-                    {
-                        ["index"] = idx++,
-                        ["name"] = SlotName(slot),
-                        ["valueType"] = SlotValueTypeName(slot),
-                        ["hasLink"] = links.Count > 0,
-                        ["links"] = links,
-                        ["value"] = value
-                    };
-                    // Spaceable slots (Position/Vector/Direction-style) carry a coordinate space —
-                    // surface it only when present so set_slot_space round-trips and non-spaceable
-                    // slots stay uncluttered.
-                    try
-                    {
-                        if ((bool)Prop(slot, "spaceable"))
-                            entry["space"] = ToJToken(Prop(slot, "space"));
-                    }
-                    catch { }
-                    arr.Add(entry);
-                }
+                    arr.Add(SlotEntry(slot, idx++));
                 return arr;
             }
 

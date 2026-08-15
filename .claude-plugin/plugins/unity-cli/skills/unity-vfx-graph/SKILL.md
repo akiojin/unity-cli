@@ -373,7 +373,13 @@ automatic, no extra params; just write source/point at a file that uses them and
 (each slot's resolved `value` for unlinked slots — e.g. the bounds AABox center/size), each block's
 `settings`, per-context `inputs`/`outputs` flow links, an `operators` array, and a `parameters` array
 (each with `exposedName`/`exposed`/`value`/`category`) — every slot carries `links` (resolved node
-address + slot index), so confirm changes by re-describing. Use `vfx_list_library` with `kind` (`block`
+address + top-level slot index; a link that lands on a compound slot's child also carries a
+descriptor-named `subPath`, the read-side analogue of `link_slots`' `subPath`). Compound slots
+(`Vector2`/`Vector3`/`Sphere`/`Transform`/…) whose **children** are linked independently — e.g. a
+`Vector2` range whose `x`/`y` feed a Random's min/max — surface those child edges under a pruned
+`children` array on the slot (only linked-subtree children appear); the parent's own `hasLink` stays
+own-links only, so read `children[].links` for sub-slot connections. Confirm changes by re-describing.
+Use `vfx_list_library` with `kind` (`block`
 default, `operator`, `context`, `parameter`, `template`) to discover descriptor/template names.
 
 To verify an exposed parameter at runtime, put the `.vfx` on a scene `VisualEffect` and drive it via
