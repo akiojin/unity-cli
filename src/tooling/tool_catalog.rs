@@ -2447,6 +2447,8 @@ fn tool_params_schema(name: &str) -> Value {
                 ("nodes", array_of(any_object_schema())),
                 ("colorTheme", integer_schema()),
                 ("textSize", string_schema()),
+                ("avoidNodes", boolean_schema()),
+                ("note", any_object_schema()),
                 ("capacity", integer_schema()),
                 ("subgraphPath", string_schema()),
                 ("kind", string_schema()),

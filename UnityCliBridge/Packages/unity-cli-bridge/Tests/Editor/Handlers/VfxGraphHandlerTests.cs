@@ -4721,7 +4721,7 @@ namespace UnityCliBridge.Tests
             JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(0, before["layout"].Value<int>("overlapCount"), "add_operator must place each node in free space");
 
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
             Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"), $"auto_layout must leave no overlaps: {result["layout"]}");
 
@@ -4785,7 +4785,7 @@ namespace UnityCliBridge.Tests
                 Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
             }
 
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
             Assert.AreEqual(2, result.Value<int>("systems"));
             Assert.AreEqual(1, result.Value<int>("duplicatedOperators"), "an operator feeding two systems is cloned once");
@@ -4821,7 +4821,7 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
-        public void ApplyAutoLayout_DefaultScopeOnlyMovesSystemsTouchedThisSession()
+        public void ApplyAutoLayout_TouchedScopeOnlyMovesSystemsTouchedThisSession()
         {
             string copy = CopyFixture("autolayoutscope");
             JObject d0 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
@@ -4841,11 +4841,11 @@ namespace UnityCliBridge.Tests
             JObject touchedEmpty = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(0, ((JArray)touchedEmpty["touched"]["contexts"]).Count, "a layout pass clears the touched marks");
 
-            // Nothing touched → the default scope refuses rather than re-laying out everything.
-            JObject nothing = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            // Nothing touched → the system-level scope refuses rather than re-laying out everything.
+            JObject nothing = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             StringAssert.Contains("scope", nothing.Value<string>("error"));
 
-            // Touch only the second system (a block + an operator feeding it) and lay out by default.
+            // Touch only the second system (a block + an operator feeding it) and lay out its systems.
             float X(JToken n) => ((JArray)n["position"])[0].Value<float>();
             float Y(JToken n) => ((JArray)n["position"])[1].Value<float>();
             JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
@@ -4863,7 +4863,7 @@ namespace UnityCliBridge.Tests
             CollectionAssert.Contains(((JArray)touched["touched"]["contexts"]).Select(t => (int)t).ToList(), baseContexts + 1);
             CollectionAssert.Contains(((JArray)touched["touched"]["operators"]).Select(t => (int)t).ToList(), 0);
 
-            JObject scoped = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject scoped = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(scoped.Value<string>("error"), $"unexpected error: {scoped}");
             Assert.AreEqual("touched", scoped.Value<string>("scope"));
             Assert.AreEqual(1, scoped.Value<int>("systemsLaidOut"));
@@ -4883,6 +4883,169 @@ namespace UnityCliBridge.Tests
             // move_node test). Either way the untouched system did not move (asserted above).
             float untouchedRight = firstAfter.Max(t => t.Item1);
             Assert.Greater(X(secondInit), untouchedRight, "a new system is placed right of the untouched one");
+        }
+
+        [Test]
+        public void ApplyAutoLayout_DefaultNodesScopePlacesOnlyCreatedNodes()
+        {
+            string copy = CopyFixture("autolayoutnodes");
+            // Start from a tidy canvas so "nothing else moved" is a meaningful assertion.
+            JObject tidy = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "all" }));
+            Assert.IsNull(tidy.Value<string>("error"), $"unexpected error: {tidy}");
+
+            // Nothing created → the default scope refuses rather than guessing.
+            JObject nothing = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            StringAssert.Contains("scope", nothing.Value<string>("error"));
+
+            float X(JToken n) => ((JArray)n["position"])[0].Value<float>();
+            float Y(JToken n) => ((JArray)n["position"])[1].Value<float>();
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var ctxBefore = ((JArray)before["contexts"]).Select(c => (X(c), Y(c))).ToList();
+            var opBefore = ((JArray)before["operators"]).Select(o => (X(o), Y(o))).ToList();
+            int baseOps = opBefore.Count;
+
+            // One block in the existing Update context, a far-away operator feeding it, and a new
+            // parameter feeding it — the shape of "add a feature to a person's graph".
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply", ["position"] = new JArray { 5000, 5000 } });
+            JObject r = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = baseOps, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 1 }
+            }));
+            Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+            JObject p = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Strength", ["type"] = "Float" }));
+            int paramIndex = p.Value<int>("parameterIndex");
+            r = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = paramIndex, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 2 }
+            }));
+            Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual("nodes", result.Value<string>("scope"));
+            Assert.AreEqual(1, ((JArray)result["placedOperators"]).Count, $"only the created operator is placed: {result}");
+            Assert.AreEqual(1, result.Value<int>("parameterNodesCreated"), "the new parameter gets one canvas node beside its consumer");
+            Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"), $"placing must not create overlaps: {result["layout"]}");
+            Assert.IsTrue(result["compile"].Value<bool>("success"), $"graph must still compile: {result["compile"]}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var update = FindContext(after, "Update");
+            // The Update context grew by a block and now covers the Output below it, so the pass drags
+            // that lower part of the system down (vertically only) exactly as a person would; every
+            // other existing node stays put and nothing moves sideways.
+            var shifted = (JArray)result["shiftedDown"];
+            Assert.AreEqual(1, shifted.Count, $"the grown Update context pushes the Output down: {result}");
+            Assert.AreEqual(result.Value<int>("existingNodesMoved"), shifted.Sum(sd => sd.Value<int>("nodesMoved")));
+            var ctxAfter = ((JArray)after["contexts"]).Select(c => (X(c), Y(c))).ToList();
+            for (int i = 0; i < ctxBefore.Count; i++)
+            {
+                Assert.AreEqual(ctxBefore[i].Item1, ctxAfter[i].Item1, $"context {i} must not move sideways");
+                if (ctxBefore[i].Item2 <= Y(update)) Assert.AreEqual(ctxBefore[i].Item2, ctxAfter[i].Item2, $"context {i} at or above the grown one stays put");
+                else Assert.Greater(ctxAfter[i].Item2, ctxBefore[i].Item2, $"context {i} below the grown one moves down");
+            }
+            var opAfter = ((JArray)after["operators"]).Take(baseOps).Select(o => (X(o), Y(o))).ToList();
+            for (int i = 0; i < baseOps; i++)
+            {
+                Assert.AreEqual(opBefore[i].Item1, opAfter[i].Item1, $"operator {i} must not move sideways");
+                Assert.GreaterOrEqual(opAfter[i].Item2, opBefore[i].Item2, $"operator {i} only ever moves down");
+            }
+            var op = ((JArray)after["operators"])[baseOps];
+            Assert.Less(X(op), X(update), "the created operator sits left of the context it feeds");
+            Assert.Less(Math.Abs(Y(op) - Y(update)), 600f, "…and beside it, not at the far corner it was dropped in");
+            var param = ((JArray)after["parameters"])[paramIndex];
+            var node = ((JArray)param["nodes"])[0];
+            Assert.Less(X(node), X(update), "the parameter's canvas node sits left of the context it feeds");
+            Assert.Less(Math.Abs(Y(node) - Y(update)), 600f);
+        }
+
+        [Test]
+        public void ApplyGroupNodes_AcceptsStickyNoteMembersAndRefitsBox()
+        {
+            string copy = CopyFixture("groupnote");
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add", ["position"] = new JArray { -900, 100 } });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply", ["position"] = new JArray { -900, 400 } });
+            JObject note = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note", ["assetPath"] = copy, ["title"] = "Why",
+                ["contents"] = "explains the feature", ["position"] = new JArray { -1200, 100, 250, 150 }
+            }));
+            int noteIndex = note.Value<int>("stickyNoteIndex");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = "Feature",
+                ["nodes"] = new JArray
+                {
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 0 },
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 1 },
+                    new JObject { ["node"] = "stickyNote", ["index"] = noteIndex }
+                }
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual(3, result.Value<int>("contentCount"));
+            Assert.IsTrue(result.Value<bool>("refit"), "a group without an explicit position is fit around its members");
+            var rect = (JArray)result["position"];
+            Assert.LessOrEqual(rect[0].Value<float>(), -1200f, "the box spans the note on the left");
+            Assert.GreaterOrEqual(rect[0].Value<float>() + rect[2].Value<float>(), -900f + 100f, "…and the operators on the right");
+            Assert.GreaterOrEqual(rect[1].Value<float>() + rect[3].Value<float>(), 400f, "…down to the lower operator");
+        }
+
+        [Test]
+        public void ApplyGroupNodes_NoteParamCreatesExplanatoryNoteInsideGroup()
+        {
+            string copy = CopyFixture("groupnoteparam");
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add", ["position"] = new JArray { -900, 100 } });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply", ["position"] = new JArray { -900, 250 } });
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = "Feature",
+                ["nodes"] = new JArray
+                {
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 0 },
+                    new JObject { ["node"] = "operator", ["operatorIndex"] = 1 }
+                },
+                ["note"] = new JObject { ["title"] = "Feature", ["contents"] = "why these nodes exist", ["colorTheme"] = 2 }
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual(3, result.Value<int>("contentCount"), "two operators + the note");
+            Assert.IsNotNull(result["noteIndex"]);
+            var notePos = (JArray)result["notePosition"];
+            Assert.Less(notePos[0].Value<float>() + notePos[2].Value<float>(), -900f + 1f, "the note sits left of the members");
+            Assert.AreEqual(0, ((JArray)result["nonMembersInside"]).Count, $"the box holds only its members: {result}");
+            var rect = (JArray)result["position"];
+            Assert.LessOrEqual(rect[0].Value<float>(), notePos[0].Value<float>(), "the box spans the note");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var group = ((JArray)after["groups"]).First(g => g.Value<string>("title") == "Feature");
+            Assert.IsTrue(((JArray)group["contents"]).Any(c => c.Value<string>("kind") == "stickyNote"), $"the note is a group member: {group}");
+            Assert.AreEqual(0, after["layout"].Value<int>("overlapCount"));
+        }
+
+        [Test]
+        public void ApplyAddStickyNote_NeverLandsOnANode()
+        {
+            string copy = CopyFixture("noteavoid");
+            JObject d = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var ctx = ((JArray)d["contexts"])[0];
+            float cx = ((JArray)ctx["position"])[0].Value<float>(), cy = ((JArray)ctx["position"])[1].Value<float>();
+            JObject onTop = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note", ["assetPath"] = copy, ["title"] = "n", ["contents"] = "c",
+                ["position"] = new JArray { cx + 10, cy + 10, 200, 100 }
+            }));
+            Assert.IsTrue(onTop.Value<bool>("positionAdjusted"), $"a note asked to sit on a context is nudged off it: {onTop}");
+            JObject exact = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_sticky_note", ["assetPath"] = copy, ["title"] = "n2", ["contents"] = "c",
+                ["position"] = new JArray { cx + 10, cy + 10, 200, 100 }, ["avoidNodes"] = false
+            }));
+            Assert.IsFalse(exact.Value<bool>("positionAdjusted"));
+            Assert.AreEqual(cx + 10, ((JArray)exact["position"])[0].Value<float>());
         }
 
         [Test]
@@ -4920,7 +5083,7 @@ namespace UnityCliBridge.Tests
                 Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
             }
 
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
             Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"), $"{result["layout"]}");
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
@@ -4957,7 +5120,7 @@ namespace UnityCliBridge.Tests
             Assert.IsNull(grouped.Value<string>("error"), $"unexpected error: {grouped}");
             // Touch the system and lay out again: the parameter's nodes are rebuilt with fresh ids.
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
-            JObject second = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject second = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(second.Value<string>("error"), $"unexpected error: {second}");
 
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
@@ -5004,7 +5167,7 @@ namespace UnityCliBridge.Tests
                     ["nodes"] = new JArray { new JObject { ["node"] = "operator", ["operatorIndex"] = idx } }
                 });
 
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "touched" }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
             var nodes = (JArray)((JArray)after["parameters"])[0]["nodes"];
