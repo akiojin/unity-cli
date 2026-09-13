@@ -4,7 +4,7 @@ description: Manage Unity assets and import metadata with unity-cli. Use when th
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: assets
   triggers:
     - asset
@@ -18,6 +18,7 @@ metadata:
     - unity-prefab-workflow
     - unity-gameobject-edit
     - unity-editor-tools
+    - unity-vfx-graph
 ---
 
 # Asset Management

@@ -3,6 +3,7 @@
 #![cfg(test)]
 
 use std::fs;
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
@@ -525,6 +526,7 @@ fn r19_reference_link_to_reference_fires() {
     assert!(violations.iter().any(|v| v.rule == "R19"));
 }
 
+#[cfg(unix)]
 #[test]
 fn r20_and_r21_symlink_rules_cover_missing_and_valid_targets() {
     let tmp = TempDir::new().unwrap();
