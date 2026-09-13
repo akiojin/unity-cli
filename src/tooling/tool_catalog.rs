@@ -213,13 +213,13 @@ fn tool_description(name: &str) -> &'static str {
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
         "vfx_describe_graph" => {
-            "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, and exposed parameters, including slot and flow links"
+            "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile errors (`errors`, on by default), the last compile outcome (`compile`), and canvas layout diagnostics (`layout.overlapCount`)"
         }
         "vfx_list_library" => {
             "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
         }
         "vfx_apply" => {
-            "Apply an authoring mutation to a Visual Effect Graph asset (ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template)"
+            "Apply an authoring mutation to a Visual Effect Graph asset; every op response carries a `compile` summary of the recompile it triggered (ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, remove_group, auto_layout, compile, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, set_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template)"
         }
         "vfx_runtime" => {
             "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state)"
@@ -2461,6 +2461,11 @@ fn tool_params_schema(name: &str) -> Value {
                 ("order", integer_schema()),
                 ("newCategory", string_schema()),
                 ("exposedName", string_schema()),
+                ("valueFilter", string_schema()),
+                ("duplicateShared", boolean_schema()),
+                ("splitParameters", boolean_schema()),
+                ("scope", string_schema()),
+                ("contexts", array_of(integer_schema())),
                 ("icon", string_schema()),
                 ("thumbnail", string_schema()),
             ],

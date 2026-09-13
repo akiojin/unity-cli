@@ -3,8 +3,11 @@ using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityCliBridge.Handlers;
 #if UNITY_VFX_GRAPH
+using System.Collections;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
+using UnityEngine.TestTools;
 #endif
 
 namespace UnityCliBridge.Tests
@@ -167,7 +170,7 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "remove_context",
                 ["assetPath"] = "Assets/Some.vfx"
-            }), "contextType (or index) is required");
+            }), "contextType (or index");
         }
 
         [Test]
@@ -177,7 +180,7 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "delete_system",
                 ["assetPath"] = "Assets/Some.vfx"
-            }), "contextType (or index) is required");
+            }), "contextType (or index");
         }
 
         [Test]
@@ -188,7 +191,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "set_system_name",
                 ["assetPath"] = "Assets/Some.vfx",
                 ["name"] = "X"
-            }), "contextType (or index) is required");
+            }), "contextType (or index");
         }
 
         [Test]
@@ -388,7 +391,7 @@ namespace UnityCliBridge.Tests
                 ["assetPath"] = "Assets/Some.vfx",
                 ["setting"] = "loopDuration",
                 ["value"] = "Constant"
-            }), "contextType (or index) is required");
+            }), "contextType (or index");
         }
 
         [Test]
@@ -657,6 +660,28 @@ namespace UnityCliBridge.Tests
             }), "Unknown VFX preference");
         }
 
+        [Test]
+        public void Apply_RemoveGroup_WithoutTitleOrIndex_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "remove_group",
+                ["assetPath"] = "Assets/Nope.vfx"
+            }), "title (or index) is required");
+        }
+
+        [Test]
+        public void Apply_Compile_WithoutAssetPath_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject { ["op"] = "compile" }), "assetPath is required");
+        }
+
+        [Test]
+        public void Apply_AutoLayout_WithoutAssetPath_ReturnsRequiredError()
+        {
+            AssertError(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout" }), "assetPath is required");
+        }
+
 #if UNITY_VFX_GRAPH
         // ---- Behavioral tests (require VFX Graph) --------------------------
 
@@ -893,11 +918,26 @@ namespace UnityCliBridge.Tests
             }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
 
+            // An existing system's context only moves vertically: y applies, x is kept and reported.
+            StringAssert.Contains("vertically only", result.Value<string>("note"));
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
                 new JObject { ["assetPath"] = copy }));
             var pos = (JArray)FindContext(after, "Update")["position"];
-            Assert.AreEqual(300f, pos[0].Value<float>());
             Assert.AreEqual(900f, pos[1].Value<float>());
+            Assert.AreNotEqual(300f, pos[0].Value<float>(), "x of an existing context must not change");
+
+            // A context created this session can be placed freely.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Event" });
+            int newIndex = after.Value<int>("contextCount");
+            JObject moved = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "move_node", ["assetPath"] = copy,
+                ["target"] = new JObject { ["node"] = "context", ["contextIndex"] = newIndex },
+                ["position"] = new JArray { 300, 900 }
+            }));
+            Assert.IsNull(moved.Value<string>("note"));
+            JObject after2 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(300f, ((JArray)((JArray)after2["contexts"])[newIndex]["position"])[0].Value<float>());
         }
 
         [Test]
@@ -4499,6 +4539,457 @@ namespace UnityCliBridge.Tests
             // type filter the other tests rely on is discriminating, not blanket.
             Assert.IsTrue(errors.Any(e => (string)e["type"] == "Warning"),
                 "the benign NeedsRecording warning should still be reported as a Warning, not an Error");
+        }
+
+        [Test]
+        public void ApplySetOperatorSetting_CustomHlslOperatorWithFiveInputs_IsRefusedAndReverted()
+        {
+            // A VFX expression takes at most 4 parents; a Custom HLSL OPERATOR whose function has 5
+            // inputs makes the asset importer throw and the graph silently stop compiling. The op must
+            // refuse the write (clear error) and leave the previous source in place.
+            string copy = CopyFixture("hlsl5");
+            JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL" }));
+            Assert.IsNull(added.Value<string>("error"), $"unexpected error: {added}");
+
+            const string fourInputs = "float Four(in float a, in float b, in float c, in float d){ return a+b+c+d; }";
+            JObject ok = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy, ["operatorIndex"] = 0,
+                ["setting"] = "m_HLSLCode", ["value"] = fourInputs
+            }));
+            Assert.IsNull(ok.Value<string>("error"), $"4 inputs must be accepted: {ok}");
+            Assert.IsTrue(ok["compile"].Value<bool>("success"), $"4-input operator must compile: {ok["compile"]}");
+
+            JObject refused = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_operator_setting", ["assetPath"] = copy, ["operatorIndex"] = 0,
+                ["setting"] = "m_HLSLCode",
+                ["value"] = "float Five(in float a, in float b, in float c, in float d, in float e){ return a+b+c+d+e; }"
+            }));
+            StringAssert.Contains("at most 4 parents", refused.Value<string>("error"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var op = ((JArray)after["operators"])[0];
+            Assert.AreEqual(4, ((JArray)op["inputSlots"]).Count, "the 4-input source must survive the refused write");
+            StringAssert.Contains("Four", op["settings"].Value<string>("m_HLSLCode"));
+
+            // The same guard covers add_operator's inline settings (the node is not left behind).
+            JObject refusedAdd = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL",
+                ["settings"] = new JObject { ["m_HLSLCode"] = "float F(in float a, in float b, in float c, in float d, in float e){ return a; }" }
+            }));
+            StringAssert.Contains("at most 4 parents", refusedAdd.Value<string>("error"));
+            JObject after2 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(1, after2.Value<int>("operatorCount"), "a refused add_operator must not leave the node in the graph");
+        }
+
+        [Test]
+        public void Apply_ResponsesCarryCompileSummary_AndCompileOpReportsOk()
+        {
+            string copy = CopyFixture("compileok");
+            JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Turbulence"
+            }));
+            Assert.IsNotNull(added["compile"], "every persisted vfx_apply op must report the recompile it triggered");
+            Assert.IsTrue(added["compile"].Value<bool>("success"), $"clean graph must compile: {added["compile"]}");
+            Assert.IsNull(added["compile"].Value<string>("exception"));
+
+            JObject compiled = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "compile", ["assetPath"] = copy }));
+            Assert.IsNull(compiled.Value<string>("error"), $"unexpected error: {compiled}");
+            Assert.IsTrue(compiled.Value<bool>("ok"), $"compile op must report ok for a clean graph: {compiled}");
+            Assert.IsTrue(compiled["compile"].Value<bool>("success"));
+
+            // describe carries the last compile outcome + errors on by default.
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.IsNotNull(after["errors"], "errors must be included by default");
+            Assert.IsNotNull(after["compile"], "describe must surface the last compile summary");
+            Assert.IsTrue(after["compile"].Value<bool>("success"));
+        }
+
+        [Test]
+        public void ApplyCompile_SurfacesImporterExceptionThatOnlyReachedTheConsole()
+        {
+            // Reproduce the real failure mode behind the guard: write a 5-input Custom HLSL operator
+            // straight into the model (bypassing set_operator_setting's guard), link it so the compiler
+            // builds its expression, then prove `compile` + describe report the exception the package
+            // only Debug.LogError'd.
+            string copy = CopyFixture("compilefail");
+            VfxGraphHandler.Apply(new JObject
+            { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockName"] = "Custom HLSL"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_block_setting", ["assetPath"] = copy,
+                ["contextType"] = "Update", ["blockIndex"] = 0,
+                ["setting"] = "m_HLSLCode",
+                ["value"] = "void Scale(inout VFXAttributes attributes, in float k){ attributes.position *= k; }"
+            });
+
+            // Bypass the guard: set the operator source via the (internal) model API through reflection.
+            Type VfxType(string fullName) => AppDomain.CurrentDomain.GetAssemblies()
+                .Select(a => a.GetType(fullName, false)).First(t => t != null);
+            const BindingFlags Any = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+            var resource = VfxType("UnityEditor.VFX.VisualEffectResource")
+                .GetMethod("GetResourceAtPath", Any).Invoke(null, new object[] { copy });
+            var graph = VfxType("UnityEditor.VFX.VisualEffectResourceExtensions")
+                .GetMethod("GetOrCreateGraph", Any).Invoke(null, new[] { resource });
+            var children = (IEnumerable)graph.GetType().GetProperty("children", Any).GetValue(graph);
+            var opType = VfxType("UnityEditor.VFX.VFXOperator");
+            var op = children.Cast<object>().First(c => opType.IsInstanceOfType(c));
+            VfxType("UnityEditor.VFX.VFXModel")
+                .GetMethod("SetSettingValue", Any, null, new[] { typeof(string), typeof(object) }, null)
+                .Invoke(op, new object[] { "m_HLSLCode",
+                    "float Five(in float a, in float b, in float c, in float d, in float e){ return a+b+c+d+e; }" });
+
+            // The link makes the compiler build the operator's expression → the importer throws.
+            LogAssert.ignoreFailingMessages = true;
+            try
+            {
+                JObject linked = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                    ["to"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 0 }
+                }));
+                Assert.IsNull(linked.Value<string>("error"), $"unexpected error: {linked}");
+                Assert.IsFalse(linked["compile"].Value<bool>("success"),
+                    $"the link op's own response must flag the failed recompile: {linked["compile"]}");
+                StringAssert.Contains("4 parent", linked["compile"].Value<string>("exception"));
+
+                JObject compiled = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "compile", ["assetPath"] = copy }));
+                Assert.IsFalse(compiled.Value<bool>("ok"));
+                StringAssert.Contains("4 parent", compiled["compile"].Value<string>("exception"));
+
+                JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+                var errors = (JArray)after["errors"];
+                Assert.IsTrue(errors.Any(e => (string)e["error"] == "CompileException" && (string)e["type"] == "Error"),
+                    $"describe must carry the compile exception as an Error-tier entry: {errors}");
+                Assert.IsFalse(after["compile"].Value<bool>("success"));
+            }
+            finally { LogAssert.ignoreFailingMessages = false; }
+        }
+
+        [Test]
+        public void ApplyAutoLayout_RemovesOverlapsAndOrdersColumns()
+        {
+            string copy = CopyFixture("autolayout");
+            // Three operators deliberately stacked on one spot + a parameter feeding the spawner.
+            for (int i = 0; i < 3; i++)
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add",
+                    ["position"] = new JArray { 0, 0 }
+                });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy,
+                ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate"
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Rate", ["type"] = "Float"
+            });
+            // op0 → op1 → spawn rate block; the parameter → op0.
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 1, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 }
+            });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 }
+            });
+
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.Greater(before["layout"].Value<int>("overlapCount"), 0,
+                "stacked operators must be reported as overlapping by the layout oracle");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"), $"auto_layout must leave no overlaps: {result["layout"]}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, after["layout"].Value<int>("overlapCount"));
+
+            float Y(JToken ctx) => ((JArray)ctx["position"])[1].Value<float>();
+            float X(JToken n) => ((JArray)n["position"])[0].Value<float>();
+            Assert.Less(Y(FindContext(after, "Spawner")), Y(FindContext(after, "Init")), "flow reads top-to-bottom");
+            Assert.Less(Y(FindContext(after, "Init")), Y(FindContext(after, "Update")));
+            Assert.Less(Y(FindContext(after, "Update")), Y(FindContext(after, "Output")));
+
+            var ops = (JArray)after["operators"];
+            float minCtxX = ((JArray)after["contexts"]).Min(c => X(c));
+            Assert.Less(X(ops[1]), minCtxX, "operators sit left of the systems");
+            Assert.Less(X(ops[0]), X(ops[1]), "an operator feeding another operator sits one column further left");
+            // A headless-authored parameter has no canvas node yet; its model position seeds the one the
+            // editor creates, so that is the position auto_layout places.
+            var param = ((JArray)after["parameters"])[0];
+            Assert.Less(X(param), X(ops[0]), "the parameter feeding op0 sits left of op0");
+            // The unlinked operator is still placed (rank 1, bottom of its column), not lost.
+            Assert.Less(X(ops[2]), minCtxX);
+        }
+
+        [Test]
+        public void ApplyAutoLayout_DuplicatesSharedOperatorsAndSplitsParametersPerSystem()
+        {
+            string copy = CopyFixture("autolayoutshared");
+            // Second, disjoint system: Init → Update → Output, with a Spawner-less chain.
+            JObject describe0 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            int baseContexts = describe0.Value<int>("contextCount");
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = baseContexts }, ["to"] = new JObject { ["index"] = baseContexts + 1 }
+            });
+            // One Turbulence block per Update context, one Multiply operator + one parameter feeding BOTH.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextIndex"] = baseContexts + 1, ["blockName"] = "Turbulence" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Strength", ["type"] = "Float" });
+            foreach (var ctx in new[] { new JObject { ["contextType"] = "Update" }, new JObject { ["contextIndex"] = baseContexts + 1 } })
+            {
+                var toOp = new JObject { ["node"] = "block", ["blockIndex"] = 0, ["slot"] = 1 }; // Turbulence "intensity"
+                foreach (var kv in ctx) toOp[kv.Key] = kv.Value;
+                JObject r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 }, ["to"] = toOp
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+                var toParam = new JObject { ["node"] = "block", ["blockIndex"] = 0, ["slot"] = 2 }; // Turbulence "frequency"
+                foreach (var kv in ctx) toParam[kv.Key] = kv.Value;
+                r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 }, ["to"] = toParam
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+            }
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual(2, result.Value<int>("systems"));
+            Assert.AreEqual(1, result.Value<int>("duplicatedOperators"), "an operator feeding two systems is cloned once");
+            Assert.AreEqual(2, result.Value<int>("parameterNodesCreated"), "a parameter feeding two contexts gets a node per context");
+            Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"));
+            Assert.IsTrue(result["compile"].Value<bool>("success"), $"graph must still compile: {result["compile"]}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(2, after.Value<int>("operatorCount"));
+            Assert.AreEqual(1, result.Value<int>("newSystemsPlaced"), "only the system built this session is new");
+            // The fixture's system keeps its contexts' x; the new system lands right of everything.
+            for (int i = 0; i < baseContexts; i++)
+                Assert.AreEqual(((JArray)describe0["contexts"][i]["position"])[0].Value<float>(),
+                    ((JArray)after["contexts"][i]["position"])[0].Value<float>(), 0.5f, "existing contexts never move horizontally");
+            float existingRight = Enumerable.Range(0, baseContexts).Max(i => ((JArray)after["contexts"][i]["position"])[0].Value<float>());
+            Assert.Greater(((JArray)after["contexts"][baseContexts]["position"])[0].Value<float>(), existingRight, "a new system is placed in a fresh column to the right");
+            // Each Update context's Turbulence is now driven by its own operator copy, and each copy
+            // sits to the LEFT of the context it feeds — never across the other system.
+            float X(JToken n) => ((JArray)n["position"])[0].Value<float>();
+            var contexts = (JArray)after["contexts"];
+            var ops = (JArray)after["operators"];
+            foreach (var ctx in contexts.Where(c => (string)c["contextType"] == "Update"))
+            {
+                var link = ((JArray)ctx["blocks"][0]["inputSlots"][1]["links"])[0];
+                Assert.AreEqual("operator", link["node"].Value<string>("kind"));
+                var op = ops[link["node"].Value<int>("operatorIndex")];
+                Assert.Less(X(op), X(ctx), "each operator copy sits left of the context it feeds");
+            }
+            var param = ((JArray)after["parameters"])[0];
+            Assert.AreEqual(2, ((JArray)param["nodes"]).Count, "one canvas node per consuming context");
+            var cascade = ops.Select(o => X(o)).OrderBy(x => x).ToList();
+            Assert.Less(cascade[0], contexts.Min(c => X(c)));
+        }
+
+        [Test]
+        public void ApplyAutoLayout_DefaultScopeOnlyMovesSystemsTouchedThisSession()
+        {
+            string copy = CopyFixture("autolayoutscope");
+            JObject d0 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            int baseContexts = d0.Value<int>("contextCount");
+            // Second disjoint system.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_flow", ["assetPath"] = copy,
+                ["from"] = new JObject { ["index"] = baseContexts }, ["to"] = new JObject { ["index"] = baseContexts + 1 }
+            });
+            // Whole-graph pass: both systems tidy, touched marks cleared.
+            JObject all = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "all" }));
+            Assert.IsNull(all.Value<string>("error"), $"unexpected error: {all}");
+            Assert.AreEqual(2, all.Value<int>("systemsLaidOut"));
+            JObject touchedEmpty = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, ((JArray)touchedEmpty["touched"]["contexts"]).Count, "a layout pass clears the touched marks");
+
+            // Nothing touched → the default scope refuses rather than re-laying out everything.
+            JObject nothing = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            StringAssert.Contains("scope", nothing.Value<string>("error"));
+
+            // Touch only the second system (a block + an operator feeding it) and lay out by default.
+            float X(JToken n) => ((JArray)n["position"])[0].Value<float>();
+            float Y(JToken n) => ((JArray)n["position"])[1].Value<float>();
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var firstBefore = ((JArray)before["contexts"]).Take(baseContexts).Select(c => (X(c), Y(c))).ToList();
+
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextIndex"] = baseContexts + 1, ["blockName"] = "Turbulence" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply", ["position"] = new JArray { 5000, 5000 } });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "link_slots", ["assetPath"] = copy,
+                ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 },
+                ["to"] = new JObject { ["node"] = "block", ["contextIndex"] = baseContexts + 1, ["blockIndex"] = 0, ["slot"] = 1 }
+            });
+            JObject touched = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            CollectionAssert.Contains(((JArray)touched["touched"]["contexts"]).Select(t => (int)t).ToList(), baseContexts + 1);
+            CollectionAssert.Contains(((JArray)touched["touched"]["operators"]).Select(t => (int)t).ToList(), 0);
+
+            JObject scoped = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(scoped.Value<string>("error"), $"unexpected error: {scoped}");
+            Assert.AreEqual("touched", scoped.Value<string>("scope"));
+            Assert.AreEqual(1, scoped.Value<int>("systemsLaidOut"));
+            Assert.AreEqual(1, scoped.Value<int>("systemsLeftAlone"));
+            CollectionAssert.AreEquivalent(new[] { baseContexts, baseContexts + 1 },
+                ((JArray)scoped["laidOutContexts"]).Select(t => (int)t).ToList());
+            Assert.AreEqual(0, scoped["layout"].Value<int>("overlapCount"));
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var firstAfter = ((JArray)after["contexts"]).Take(baseContexts).Select(c => (X(c), Y(c))).ToList();
+            CollectionAssert.AreEqual(firstBefore, firstAfter, "the untouched system must not move");
+            var secondInit = ((JArray)after["contexts"])[baseContexts];
+            var op = ((JArray)after["operators"])[0];
+            Assert.Less(X(op), X(secondInit), "the touched system's feeder sits left of that system");
+            // The second system was created this session, so it is "new" and may take a fresh column
+            // right of the untouched system; an existing system would have kept its x (see the
+            // move_node test). Either way the untouched system did not move (asserted above).
+            float untouchedRight = firstAfter.Max(t => t.Item1);
+            Assert.Greater(X(secondInit), untouchedRight, "a new system is placed right of the untouched one");
+        }
+
+        [Test]
+        public void ApplySetParameter_UpdatesValueRangeTooltipAndExposure()
+        {
+            string copy = CopyFixture("setparam");
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Rate", ["type"] = "Float", ["value"] = 1.0
+            });
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_parameter", ["assetPath"] = copy, ["parameterIndex"] = 0,
+                ["value"] = 7.5, ["min"] = 0, ["max"] = 10, ["tooltip"] = "spawn rate", ["exposed"] = false,
+                ["category"] = "Tuning"
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            CollectionAssert.AreEquivalent(new[] { "exposed", "value", "min", "max", "tooltip", "category" },
+                ((JArray)result["changed"]).Select(t => (string)t).ToArray());
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var p = ((JArray)after["parameters"])[0];
+            Assert.AreEqual(7.5f, p.Value<float>("value"), 1e-4f);
+            Assert.AreEqual("Range", p.Value<string>("valueFilter"));
+            Assert.AreEqual(0f, p.Value<float>("min"), 1e-4f);
+            Assert.AreEqual(10f, p.Value<float>("max"), 1e-4f);
+            Assert.AreEqual("spawn rate", p.Value<string>("tooltip"));
+            Assert.IsFalse(p.Value<bool>("exposed"));
+            Assert.AreEqual("Tuning", p.Value<string>("category"));
+
+            JObject none = ToJObject(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "set_parameter", ["assetPath"] = copy, ["parameterIndex"] = 0 }));
+            StringAssert.Contains("requires at least one of", none.Value<string>("error"));
+        }
+
+        [Test]
+        public void ApplyContextOps_AcceptContextIndexAliasForIndex()
+        {
+            string copy = CopyFixture("ctxalias");
+            JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            int initIndex = FindContext(before, "Init").Value<int>("index");
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_context_setting", ["assetPath"] = copy,
+                ["contextIndex"] = initIndex, ["setting"] = "capacity", ["value"] = 512
+            }));
+            Assert.IsNull(result.Value<string>("error"), $"contextIndex must be accepted wherever index is: {result}");
+            Assert.AreEqual("Init", result.Value<string>("contextType"));
+
+            JObject named = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "set_system_name", ["assetPath"] = copy, ["contextIndex"] = initIndex, ["name"] = "Main"
+            }));
+            Assert.IsNull(named.Value<string>("error"), $"unexpected error: {named}");
+            Assert.AreEqual("Main", named.Value<string>("systemName"));
+        }
+
+        [Test]
+        public void ApplyAddBlock_InlineSettingsAreCoercedAndUnknownSettingFailsLoud()
+        {
+            string copy = CopyFixture("addblocksettings");
+            JObject ok = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update",
+                ["blockName"] = "Turbulence", ["settings"] = new JObject { ["NoiseType"] = "Perlin" }
+            }));
+            Assert.IsNull(ok.Value<string>("error"), $"unexpected error: {ok}");
+            Assert.AreEqual(0, ok.Value<int>("blockIndex"));
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual("Perlin", FindContext(after, "Update")["blocks"][0]["settings"].Value<string>("NoiseType"));
+
+            LogAssert.ignoreFailingMessages = true; // the unknown-setting exception is logged by design
+            JObject bad;
+            try
+            {
+                bad = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update",
+                    ["blockName"] = "Turbulence", ["settings"] = new JObject { ["NoSuchSetting"] = 1 }
+                }));
+            }
+            finally { LogAssert.ignoreFailingMessages = false; }
+            StringAssert.Contains("NoSuchSetting", bad.Value<string>("error"));
+            JObject after2 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(1, ((JArray)FindContext(after2, "Update")["blocks"]).Count,
+                "a block whose inline settings failed must not be left in the context");
+        }
+
+        [Test]
+        public void ApplyRemoveGroup_RemovesGroupByTitleAndKeepsMembers()
+        {
+            string copy = CopyFixture("removegroup");
+            int groupsBefore = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy })).Value<int>("groupCount");
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+            VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = "Math",
+                ["nodes"] = new JArray { new JObject { ["node"] = "operator", ["operatorIndex"] = 0 } }
+            });
+            JObject removed = ToJObject(VfxGraphHandler.Apply(new JObject
+            { ["op"] = "remove_group", ["assetPath"] = copy, ["title"] = "Math" }));
+            Assert.IsNull(removed.Value<string>("error"), $"unexpected error: {removed}");
+            Assert.AreEqual(groupsBefore, removed.Value<int>("remainingGroups"));
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(groupsBefore, after.Value<int>("groupCount"));
+            Assert.AreEqual(1, after.Value<int>("operatorCount"), "removing a group must not remove its members");
         }
 
         private static void AssertNoErrorTier(JObject describeResult)
