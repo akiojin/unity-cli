@@ -63,7 +63,11 @@ true) and `splitParameters` (default true). Sticky notes are never moved.
   context keeps x and reports `note`; a context created this session moves freely.
 - `scope:"all"` applies the pass to every system (each in place, per the rule above).
   `contexts:[<describe index>, …]` lays out the systems containing those contexts, anchored in place.
-- Response: `scope`, `systemsLaidOut`, `systemsLeftAlone`, `laidOutContexts[]`, `shiftedDown`.
+- Sticky notes are never obstacles (a note must not push a system away). A note that is a member
+  of a group box travels with that group (same displacement as the group's nodes,
+  `stickyNotesMovedWithGroups`); ungrouped notes are never moved. The response's
+  `stickyNotesOverNodes` counts notes left over a node — reposition those with `update_sticky_note`.
+- Response: `scope`, `systemsLaidOut`, `systemsLeftAlone`, `laidOutContexts[]`, `shiftedDown`, `stickyNotesOverNodes`.
 
 - **Systems.** Contexts are grouped by flow connectivity. Each connected group is one column laid out
   top-to-bottom by flow depth (Spawn → Init → Update → Output); parallel branches (one spawner feeding
@@ -79,8 +83,10 @@ true) and `splitParameters` (default true). Sticky notes are never moved.
   An operator feeding more than one system is duplicated per system (`duplicateShared`): the clone
   has the same settings and the same input links, and that system's output edges move to the clone.
   This is what a person does by hand and is functionally equivalent (the same expression, evaluated
-  once per copy). A parameter gets one canvas node per consuming context (`splitParameters`), each
-  node owning only that context's links — the blackboard entry stays single. The response reports
+  once per copy). A parameter gets one canvas node per system it feeds, per group box its consumers sit in
+  (a parameter node is never shared between groups — it joins the group of what it feeds), plus one
+  more for every band of consumers more than ~600 px apart vertically (`splitParameters`) — most parameters stay single,
+  only the ones that fan out across the canvas get duplicates; the blackboard entry stays single. The response reports
   `duplicatedOperators` and `parameterNodesCreated`. Pass `false` to either flag to keep the graph's
   node set untouched (positions only).
 - **Groups** are resized to bound their members (every canvas node of a member parameter). **Sticky

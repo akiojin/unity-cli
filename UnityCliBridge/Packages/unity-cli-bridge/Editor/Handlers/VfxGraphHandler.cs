@@ -3389,17 +3389,20 @@ namespace UnityCliBridge.Handlers
             public int GetHashCode(object o) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o);
         }
 
+        // Spacing calibrated against a hand-laid-out production graph (feeders ~220-280 px from what
+        // they feed, ~30 px between stacked nodes).
         private const float LayoutContextWidth = 440f;
-        private const float LayoutOperatorWidth = 300f;
-        private const float LayoutParameterWidth = 240f;
-        private const float LayoutContextHeaderHeight = 96f;
-        private const float LayoutBlockHeaderHeight = 52f;
-        private const float LayoutSlotRowHeight = 28f;
+        private const float LayoutOperatorWidth = 220f;
+        private const float LayoutParameterWidth = 200f;
+        private const float LayoutContextHeaderHeight = 90f;
+        private const float LayoutBlockHeaderHeight = 44f;
+        private const float LayoutSlotRowHeight = 24f;
         private const float LayoutContextGapX = 120f;
         private const float LayoutContextGapY = 110f;
         private const float LayoutSystemGapX = 260f;
-        private const float LayoutOperatorColumnGapX = 160f;
-        private const float LayoutOperatorGapY = 48f;
+        private const float LayoutOperatorColumnGapX = 60f;
+        private const float LayoutOperatorGapY = 30f;
+        private const float LayoutParamSplitDistance = 600f; // consumers further apart than this get their own parameter node
         private const float LayoutGroupPadding = 32f;
         private const float LayoutGroupHeaderHeight = 48f;
 
@@ -3617,6 +3620,109 @@ namespace UnityCliBridge.Handlers
             }
         }
 
+        /// <summary>model → index of the first group box listing it (operators and contexts; parameters by any node).</summary>
+        private static Dictionary<object, int> GroupOfModels(object graph)
+        {
+            var map = new Dictionary<object, int>(RefEq.Instance);
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return map;
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    if (!(FindField(GroupInfoType, "contents")?.GetValue(groups.GetValue(g)) is Array contents)) continue;
+                    foreach (var nid in contents)
+                    {
+                        if ((bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false)) continue;
+                        var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                        if (model != null && !map.ContainsKey(model)) map[model] = g;
+                    }
+                }
+            }
+            catch { }
+            return map;
+        }
+
+        /// <summary>Indices of the group boxes whose contents list the parameter canvas node (model, id).</summary>
+        private static List<int> GroupsOfParameterNode(object graph, object param, int nodeId)
+        {
+            var result = new List<int>();
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return result;
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    if (!(FindField(GroupInfoType, "contents")?.GetValue(groups.GetValue(g)) is Array contents)) continue;
+                    foreach (var nid in contents)
+                    {
+                        if ((bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false)) continue;
+                        if (ReferenceEquals(FindField(NodeIDType, "model")?.GetValue(nid), param)
+                            && Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1) == nodeId)
+                        { result.Add(g); break; }
+                    }
+                }
+            }
+            catch { }
+            return result;
+        }
+
+        /// <summary>Append a parameter canvas node (model, id) to a group box's contents.</summary>
+        private static void AddParameterNodeToGroup(object graph, int groupIndex, object param, int nodeId)
+        {
+            var ui = Prop(graph, "UIInfos");
+            var groupsField = FindField(ui.GetType(), "groupInfos");
+            var groups = groupsField.GetValue(ui) as Array;
+            var group = groups.GetValue(groupIndex);
+            var contentsField = FindField(GroupInfoType, "contents");
+            var contents = contentsField.GetValue(group) as Array ?? Array.CreateInstance(NodeIDType, 0);
+            var merged = Array.CreateInstance(NodeIDType, contents.Length + 1);
+            Array.Copy(contents, merged, contents.Length);
+            merged.SetValue(Activator.CreateInstance(NodeIDType, param, nodeId), contents.Length);
+            contentsField.SetValue(group, merged);
+            groups.SetValue(group, groupIndex);
+            EditorUtility.SetDirty(ui as UnityEngine.Object);
+        }
+
+        /// <summary>Drop group-content entries that point at parameter canvas nodes that no longer exist.</summary>
+        private static int PruneStaleParameterNodeIds(object graph)
+        {
+            int removed = 0;
+            try
+            {
+                var ui = Prop(graph, "UIInfos");
+                if (!(FindField(ui?.GetType(), "groupInfos")?.GetValue(ui) is Array groups)) return 0;
+                var contentsField = FindField(GroupInfoType, "contents");
+                for (int g = 0; g < groups.Length; g++)
+                {
+                    var group = groups.GetValue(g);
+                    if (!(contentsField?.GetValue(group) is Array contents)) continue;
+                    var keep = new List<object>();
+                    foreach (var nid in contents)
+                    {
+                        bool sticky = (bool)(FindField(NodeIDType, "isStickyNote")?.GetValue(nid) ?? false);
+                        var model = FindField(NodeIDType, "model")?.GetValue(nid);
+                        if (!sticky && ParameterType.IsInstanceOfType(model))
+                        {
+                            int id = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1);
+                            bool exists = false;
+                            try { exists = Call(model, ParameterType, "GetNode", id) != null; } catch { }
+                            if (!exists) { removed++; continue; }
+                        }
+                        keep.Add(nid);
+                    }
+                    if (keep.Count == contents.Length) continue;
+                    var arr = Array.CreateInstance(NodeIDType, keep.Count);
+                    for (int i = 0; i < keep.Count; i++) arr.SetValue(keep[i], i);
+                    contentsField.SetValue(group, arr);
+                    groups.SetValue(group, g);
+                }
+                if (removed > 0) EditorUtility.SetDirty(ui as UnityEngine.Object);
+            }
+            catch { }
+            return removed;
+        }
+
         /// <summary>The consumers wired to ONE parameter canvas node (VFXParameter.Node.linkedSlots).</summary>
         private static List<(object owner, object block)> ParameterNodeConsumers(object node)
         {
@@ -3743,6 +3849,15 @@ namespace UnityCliBridge.Handlers
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
             int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            // Where every node was before this pass, by model (first rect per model): group boxes that
+            // contain sticky notes move their notes by the same displacement as their other members.
+            var beforeRectOfModel = new Dictionary<object, Rect>(RefEq.Instance);
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                object model = kind == "context" ? ctxs[idx] : kind == "operator" ? ops[idx] : ps[idx];
+                if (!beforeRectOfModel.ContainsKey(model)) beforeRectOfModel[model] = rect;
+            }
 
             // ---- 1. Systems: flow components + depth ------------------------------------------
             List<object> FlowNeighbors(object ctx, string prop)
@@ -3881,7 +3996,48 @@ namespace UnityCliBridge.Handlers
                         }
                     }
 
-            // ---- 5. Parameters: one canvas node per consuming context, for SELECTED systems -------
+            // ---- 5a. Preliminary context rows per selected system (local y, contexts stacked by depth) --
+            // Only used to decide how far apart a parameter's consumers are; the placement pass below
+            // recomputes the same stacking.
+            var rowOfContext = new Dictionary<object, float>(RefEq.Instance); // context → local top y
+            foreach (var k in componentOrder)
+            {
+                if (!selected.Contains(k)) continue;
+                var members = ctxs.Where(c => component[c] == k).ToList();
+                int maxDepth = members.Max(c => depth[c]);
+                float y = 0f;
+                for (int d = 0; d <= maxDepth; d++)
+                {
+                    var layer = members.Where(c => depth[c] == d).ToList();
+                    float layerHeight = 0f;
+                    foreach (var c in layer) { rowOfContext[c] = y; layerHeight = Math.Max(layerHeight, EstimateSize(c).y); }
+                    y += layerHeight + LayoutContextGapY;
+                }
+            }
+            float RowOf(object owner, object block)
+            {
+                if (owner != null && rowOfContext.TryGetValue(owner, out var top))
+                    return block != null ? top + BlockRowOffset(owner, block) : top + EstimateSize(owner).y * 0.5f;
+                return float.NaN;
+            }
+            // Row an operator ultimately feeds: follow its first consumer down to a context.
+            float DownstreamRow(object model)
+            {
+                var cur = model;
+                for (int guard = 0; guard < 64 && cur != null; guard++)
+                {
+                    var cs = ConsumerSlotsOwners(cur);
+                    if (cs.Count == 0) return float.NaN;
+                    var (owner, block) = cs[0];
+                    if (ContextType.IsInstanceOfType(owner)) return RowOf(owner, block);
+                    cur = owner;
+                }
+                return float.NaN;
+            }
+
+            var groupOfModels = GroupOfModels(graph);
+
+            // ---- 5. Parameters: one node per system, per consumer group, plus one per band of far-apart consumers --
             int parameterNodesCreated = 0;
             var paramItems = new List<LayoutItem>();
             var nlsListType = typeof(List<>).MakeGenericType(NodeLinkedSlotType);
@@ -3920,6 +4076,22 @@ namespace UnityCliBridge.Handlers
                 var nodesField = FindField(p.GetType(), "m_Nodes");
                 var nodeList = (System.Collections.IList)nodesField.GetValue(p) ?? (System.Collections.IList)Activator.CreateInstance(nodesField.FieldType);
                 nodesField.SetValue(p, nodeList);
+                // Which existing node each edge lived on, and that node's group boxes — a new node
+                // inherits the membership of the node its links came from, so group boxes keep
+                // following their parameters after the split.
+                var oldNodeOfInSlot = new Dictionary<object, int>(RefEq.Instance);
+                var groupsOfOldNode = new Dictionary<int, List<int>>();
+                foreach (var n in existing)
+                {
+                    int oldId = Convert.ToInt32(Prop(n, "id"));
+                    groupsOfOldNode[oldId] = GroupsOfParameterNode(graph, p, oldId);
+                    if (FindField(n.GetType(), "linkedSlots")?.GetValue(n) is System.Collections.IList ls)
+                        foreach (var entry in ls)
+                        {
+                            var inSlot = FindField(NodeLinkedSlotType, "inputSlot").GetValue(entry);
+                            if (inSlot != null) oldNodeOfInSlot[inSlot] = oldId;
+                        }
+                }
                 foreach (var n in existing)
                 {
                     var links = FindField(n.GetType(), "linkedSlots")?.GetValue(n) as System.Collections.IList;
@@ -3934,9 +4106,38 @@ namespace UnityCliBridge.Handlers
                     FindField(n.GetType(), "linkedSlots").SetValue(n, keep);
                     if (keep.Count == 0) nodeList.Remove(n); // fully re-homed below
                 }
-                var selectedEdges = edges.Where(Selected).ToList();
-                var groups = selectedEdges.GroupBy(e => ConsumerOf(e.inSlot).owner, RefEq.Instance).ToList();
-                foreach (var g in groups)
+                // One node per system; a further node whenever consumers sit more than
+                // LayoutParamSplitDistance apart vertically. A hand-made graph keeps most parameters
+                // single and only duplicates the ones that fan out across the canvas.
+                // Split key: the system, then the GROUP BOX the consumer sits in (a parameter node is
+                // never shared between groups — it belongs to the group of what it feeds), then row bands.
+                var bands = new List<(int component, int group, List<(object outSlot, object inSlot)> edges)>();
+                int ConsumerGroup((object outSlot, object inSlot) e)
+                {
+                    var (owner, block) = ConsumerOf(e.inSlot);
+                    // Only an OPERATOR consumer's group counts: a group box around a system's contexts is
+                    // a system label, not a home for the parameters feeding its blocks.
+                    return OperatorType.IsInstanceOfType(owner) && groupOfModels.TryGetValue(owner, out var gi) ? gi : -1;
+                }
+                foreach (var bySystem in edges.Where(Selected).GroupBy(EdgeComponent))
+                foreach (var byGroup in bySystem.GroupBy(ConsumerGroup))
+                {
+                    var rows = byGroup.Select(e =>
+                    {
+                        var (owner, block) = ConsumerOf(e.inSlot);
+                        float row = ContextType.IsInstanceOfType(owner) ? RowOf(owner, block) : DownstreamRow(owner);
+                        return (e, row: float.IsNaN(row) ? float.MaxValue : row);
+                    }).OrderBy(t => t.row).ToList();
+                    float bandStart = float.NaN;
+                    List<(object outSlot, object inSlot)> band = null;
+                    foreach (var (e, row) in rows)
+                    {
+                        if (band == null || (row != float.MaxValue && row - bandStart > LayoutParamSplitDistance))
+                        { band = new List<(object outSlot, object inSlot)>(); bands.Add((bySystem.Key, byGroup.Key, band)); bandStart = row; }
+                        band.Add(e);
+                    }
+                }
+                foreach (var (bandComponent, bandGroup, g) in bands)
                 {
                     int id = (int)Call(p, ParameterType, "AddNode", ModelPosition(p));
                     var node = Call(p, ParameterType, "GetNode", id);
@@ -3953,11 +4154,25 @@ namespace UnityCliBridge.Handlers
                     FindField(node.GetType(), "linkedSlots").SetValue(node, links);
                     FindField(node.GetType(), "expandedSlots").SetValue(node, Activator.CreateInstance(slotListType));
                     parameterNodesCreated++;
+                    // Inherit group membership from the old node most of these links came from.
+                    var origins = g.Select(e => oldNodeOfInSlot.TryGetValue(e.inSlot, out var oid) ? oid : int.MinValue)
+                        .Where(o => o != int.MinValue).GroupBy(o => o).OrderByDescending(gr => gr.Count()).Select(gr => gr.Key).ToList();
+                    // A freshly loaded asset may not have per-node link records yet (the editor fills
+                    // them on validation) — then every existing node's groups are inherited.
+                    List<int> inherited = null;
+                    if (bandGroup >= 0)
+                        inherited = new List<int> { bandGroup }; // the group of what it feeds
+                    else if (origins.Count > 0 && groupsOfOldNode.TryGetValue(origins[0], out var fromOrigin) && fromOrigin.Count > 0)
+                        inherited = fromOrigin;
+                    else if (origins.Count == 0 || groupsOfOldNode.Count == 1)
+                        inherited = groupsOfOldNode.Values.SelectMany(x => x).Distinct().ToList();
+                    if (inherited != null)
+                        foreach (var gi in inherited) AddParameterNodeToGroup(graph, gi, p, id);
                     paramItems.Add(new LayoutItem
                     {
                         model = p, node = node, consumers = consumers, size = EstimateSize(p),
-                        component = ComponentOfConsumer(g.Key),
-                        rank = 1 + (OperatorType.IsInstanceOfType(g.Key) && rankOf.TryGetValue(g.Key, out var cr) ? cr : 0)
+                        component = bandComponent,
+                        rank = 1 + consumers.Select(c => OperatorType.IsInstanceOfType(c.owner) && rankOf.TryGetValue(c.owner, out var cr) ? cr : 0).DefaultIfEmpty(0).Max()
                     });
                 }
             }
@@ -3998,9 +4213,12 @@ namespace UnityCliBridge.Handlers
                 else moving = laidOutModels.Contains(kind == "context" ? ctxs[idx] : ops[idx]);
                 if (!moving) occupied.Add(rect);
             }
+            // Sticky notes are annotations, not obstacles: a note must never push a whole system away.
+            // They stay where they are; any note left over a node is reported (`stickyNotesOverNodes`).
+            var noteRects = new List<Rect>();
             foreach (var note in StickyNotesJson(graph))
                 if (note["position"] is JObject np)
-                    occupied.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
+                    noteRects.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
 
             // ---- 7. Place each selected system: [feeders][contexts], anchored where it is now -------
             var placed = new Dictionary<object, Rect>(RefEq.Instance);
@@ -4123,22 +4341,27 @@ namespace UnityCliBridge.Handlers
                     SetProp(it.model, "position", pos);
             }
 
+            int staleGroupEntries = PruneStaleParameterNodeIds(graph);
+
             // ---- 8. Refit group boxes that contain a re-placed member ------------------------------
-            int groupsRefit = 0;
+            int groupsRefit = 0, stickyNotesMoved = 0;
             try
             {
                 var ui = Prop(graph, "UIInfos");
                 var groupsField = ui == null ? null : FindField(ui.GetType(), "groupInfos");
                 if (groupsField?.GetValue(ui) is Array groupArr)
                 {
-                    var notes = StickyNotesJson(graph);
                     var contentsField = FindField(GroupInfoType, "contents");
                     var posField = FindField(GroupInfoType, "position");
                     var current = CanvasNodes(graph).ToList();
+                    var (noteUi, noteField, noteArr) = GetStickyNotes(graph);
+                    var notePosField = noteArr != null && noteArr.Length > 0 ? FindField(StickyNoteInfoType, "position") : null;
                     for (int g = 0; g < groupArr.Length; g++)
                     {
                         var group = groupArr.GetValue(g);
                         var rects = new List<Rect>();
+                        var oldRects = new List<Rect>();
+                        var memberNoteIds = new List<int>();
                         bool touchesLaidOut = false;
                         if (contentsField?.GetValue(group) is Array contents)
                             foreach (var nid in contents)
@@ -4147,13 +4370,13 @@ namespace UnityCliBridge.Handlers
                                 if (sticky)
                                 {
                                     int id = Convert.ToInt32(FindField(NodeIDType, "id")?.GetValue(nid) ?? -1);
-                                    if (id >= 0 && id < notes.Count && notes[id]["position"] is JObject np)
-                                        rects.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
+                                    if (id >= 0 && noteArr != null && id < noteArr.Length) memberNoteIds.Add(id);
                                     continue;
                                 }
                                 var model = FindField(NodeIDType, "model")?.GetValue(nid);
                                 if (model == null) continue;
                                 if (laidOutModels.Contains(model)) touchesLaidOut = true;
+                                if (beforeRectOfModel.TryGetValue(model, out var before)) oldRects.Add(before);
                                 int ci = ctxs.FindIndex(x => ReferenceEquals(x, model)), oi = ops.FindIndex(x => ReferenceEquals(x, model)), pi = ps.FindIndex(x => ReferenceEquals(x, model));
                                 foreach (var (address, rect) in current)
                                 {
@@ -4162,6 +4385,22 @@ namespace UnityCliBridge.Handlers
                                 }
                             }
                         if (rects.Count == 0 || !touchesLaidOut) continue;
+                        // Member sticky notes travel with the group: same displacement as its nodes' top-left.
+                        if (memberNoteIds.Count > 0 && oldRects.Count > 0 && notePosField != null)
+                        {
+                            var delta = new Vector2(rects.Min(rc => rc.xMin) - oldRects.Min(rc => rc.xMin),
+                                                    rects.Min(rc => rc.yMin) - oldRects.Min(rc => rc.yMin));
+                            foreach (var id in memberNoteIds)
+                            {
+                                var note = noteArr.GetValue(id);
+                                var nr = (Rect)notePosField.GetValue(note);
+                                nr.x += delta.x; nr.y += delta.y;
+                                notePosField.SetValue(note, nr);
+                                noteArr.SetValue(note, id);
+                                rects.Add(nr);
+                                stickyNotesMoved++;
+                            }
+                        }
                         float xMin = rects.Min(rc => rc.xMin) - LayoutGroupPadding;
                         float yMin = rects.Min(rc => rc.yMin) - LayoutGroupPadding - LayoutGroupHeaderHeight;
                         float xMax = rects.Max(rc => rc.xMax) + LayoutGroupPadding;
@@ -4181,6 +4420,10 @@ namespace UnityCliBridge.Handlers
                 foreach (var m in laidOutModels) touchedSet.Remove(IdOf(m));
 
             var layout = LayoutJson(graph);
+            int stickyNotesOverNodes = 0;
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np && occupied.Any(o => o.Overlaps(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]))))
+                    stickyNotesOverNodes++;
             return new JObject
             {
                 ["op"] = "auto_layout",
@@ -4191,6 +4434,9 @@ namespace UnityCliBridge.Handlers
                 ["systemsLeftAlone"] = componentCount - systemsLaidOut,
                 ["laidOutContexts"] = new JArray(ctxs.Select((c, i) => (c, i)).Where(t => placed.ContainsKey(t.c)).Select(t => (JToken)t.i)),
                 ["shiftedDown"] = shiftedDown,
+                ["stickyNotesOverNodes"] = stickyNotesOverNodes,
+                ["stickyNotesMovedWithGroups"] = stickyNotesMoved,
+                ["staleGroupEntriesPruned"] = staleGroupEntries,
                 ["newSystemsPlaced"] = newSystems,
                 ["contexts"] = ctxs.Count,
                 ["operators"] = ops.Count,

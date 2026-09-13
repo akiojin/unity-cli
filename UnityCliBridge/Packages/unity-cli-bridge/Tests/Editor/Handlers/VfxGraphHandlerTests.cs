@@ -4886,6 +4886,143 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ApplyAutoLayout_SplitsParametersOnlyAcrossFarApartRows()
+        {
+            string copy = CopyFixture("autolayoutbands");
+            // "Near": feeds the Init and Update contexts (adjacent rows) → one node.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Near", ["type"] = "Float" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Init", ["blockName"] = "|Set|_Lifetime" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
+            foreach (var to in new[] {
+                new JObject { ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["slot"] = 0 },
+                new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 1 } })
+            {
+                JObject r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 }, ["to"] = to
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+            }
+            // "Far": feeds the Spawner (top row) and the Output (bottom row) → a node per band.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Far", ["type"] = "Float" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = "|Set|_Size" });
+            foreach (var to in new[] {
+                new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
+                new JObject { ["node"] = "block", ["contextType"] = "Output", ["blockIndex"] = 0, ["slot"] = 0 } })
+            {
+                JObject r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 1, ["slot"] = 0 }, ["to"] = to
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+            }
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            Assert.AreEqual(0, result["layout"].Value<int>("overlapCount"), $"{result["layout"]}");
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var ps = (JArray)after["parameters"];
+            Assert.AreEqual(1, ((JArray)ps[0]["nodes"]).Count, "consumers on adjacent rows share one parameter node");
+            Assert.AreEqual(2, ((JArray)ps[1]["nodes"]).Count, "consumers on far-apart rows get their own parameter node");
+        }
+
+        [Test]
+        public void ApplyAutoLayout_SplitParameterNodesInheritGroupMembership()
+        {
+            string copy = CopyFixture("autolayoutgroupparam");
+            // A grouped parameter feeding far-apart rows (Spawner + Output) is split into two nodes;
+            // both must remain members of the group and no stale id may linger.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Far", ["type"] = "Float" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = "|Set|_Size" });
+            foreach (var to in new[] {
+                new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
+                new JObject { ["node"] = "block", ["contextType"] = "Output", ["blockIndex"] = 0, ["slot"] = 0 } })
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 }, ["to"] = to
+                });
+            // First pass gives the parameter canvas nodes; group the parameter (by its first node id).
+            JObject first = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy, ["scope"] = "all" }));
+            Assert.IsNull(first.Value<string>("error"), $"unexpected error: {first}");
+            JObject grouped = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = "Rates",
+                ["nodes"] = new JArray { new JObject { ["node"] = "parameter", ["parameterIndex"] = 0 } }
+            }));
+            Assert.IsNull(grouped.Value<string>("error"), $"unexpected error: {grouped}");
+            // Touch the system and lay out again: the parameter's nodes are rebuilt with fresh ids.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
+            JObject second = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(second.Value<string>("error"), $"unexpected error: {second}");
+
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var nodes = (JArray)((JArray)after["parameters"])[0]["nodes"];
+            Assert.AreEqual(2, nodes.Count);
+            var group = ((JArray)after["groups"]).First(g => (string)g["title"] == "Rates");
+            var memberIds = ((JArray)group["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]).ToList();
+            // The band whose links came from the grouped node stays in the group (the other band's
+            // links came from an ungrouped node, so it does not join); no stale id may remain.
+            Assert.GreaterOrEqual(memberIds.Count, 1, "the split node must inherit its origin's group");
+            Assert.IsTrue(memberIds.All(id => nodes.Any(n => (int)n["id"] == id)), $"stale node ids remain in the group: {string.Join(",", memberIds)}");
+        }
+
+        [Test]
+        public void ApplyAutoLayout_ParameterNodesAreNeverSharedBetweenGroups()
+        {
+            string copy = CopyFixture("autolayoutgroupsplit");
+            // Two operators in two different groups, both driven by ONE parameter, both feeding Update.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Shared", ["type"] = "Float" });
+            for (int i = 0; i < 2; i++)
+            {
+                JObject r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "parameter", ["parameterIndex"] = 0, ["slot"] = 0 },
+                    ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = i, ["slot"] = 0 }
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+                r = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "link_slots", ["assetPath"] = copy,
+                    ["from"] = new JObject { ["node"] = "operator", ["operatorIndex"] = i, ["slot"] = 0 },
+                    ["to"] = new JObject { ["node"] = "block", ["contextType"] = "Update", ["blockIndex"] = 0, ["slot"] = 1 + i }
+                }));
+                Assert.IsNull(r.Value<string>("error"), $"unexpected error: {r}");
+            }
+            foreach (var (title, idx) in new[] { ("Alpha", 0), ("Beta", 1) })
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = title,
+                    ["nodes"] = new JArray { new JObject { ["node"] = "operator", ["operatorIndex"] = idx } }
+                });
+
+            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
+            Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
+            JObject after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var nodes = (JArray)((JArray)after["parameters"])[0]["nodes"];
+            Assert.AreEqual(2, nodes.Count, "consumers in different groups get their own parameter node");
+            var groups = (JArray)after["groups"];
+            foreach (var title in new[] { "Alpha", "Beta" })
+            {
+                var grp = groups.First(g => (string)g["title"] == title);
+                var paramMembers = ((JArray)grp["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]).ToList();
+                Assert.AreEqual(1, paramMembers.Count, $"group {title} must own exactly one node of the parameter");
+                CollectionAssert.Contains(nodes.Select(n => (int)n["id"]).ToList(), paramMembers[0]);
+            }
+            var alphaIds = ((JArray)groups.First(g => (string)g["title"] == "Alpha")["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]);
+            var betaIds = ((JArray)groups.First(g => (string)g["title"] == "Beta")["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]);
+            CollectionAssert.AreNotEquivalent(alphaIds.ToList(), betaIds.ToList(), "no parameter node is shared between the two groups");
+        }
+
+        [Test]
         public void ApplySetParameter_UpdatesValueRangeTooltipAndExposure()
         {
             string copy = CopyFixture("setparam");
