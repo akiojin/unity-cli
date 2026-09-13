@@ -106,6 +106,12 @@ the canvas, and prefer a second cheap operator over an edge that spans systems.
 
 ## Manual placement
 
+New nodes never land on existing ones: `add_context`, `add_operator`, `duplicate_operator` and
+`insert_template` check the spot they are about to use (auto-placed or your explicit `position`)
+against every canvas node and sticky note and move to the nearest open space below it (then
+neighbouring columns) when it is taken — the response says `positionAdjusted: true` and reports the
+final `position`. An inserted template lands as a block in a fresh column right of the canvas.
+
 - `add_context` / `add_operator` accept `position:[x,y]`.
 - `move_node` — `target` = `{node: context|operator|parameter, …index}` + `position:[x,y]`. Blocks have
   no canvas position (they are ordered inside their context; use `reorder_block`/`move_block`). A

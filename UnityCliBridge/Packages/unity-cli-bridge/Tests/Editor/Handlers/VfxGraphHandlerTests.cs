@@ -4717,9 +4717,9 @@ namespace UnityCliBridge.Tests
                 ["to"] = new JObject { ["node"] = "operator", ["operatorIndex"] = 0, ["slot"] = 0 }
             });
 
+            // Add ops never stack nodes: the three operators asked for the same spot were nudged apart.
             JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
-            Assert.Greater(before["layout"].Value<int>("overlapCount"), 0,
-                "stacked operators must be reported as overlapping by the layout oracle");
+            Assert.AreEqual(0, before["layout"].Value<int>("overlapCount"), "add_operator must place each node in free space");
 
             JObject result = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "auto_layout", ["assetPath"] = copy }));
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
@@ -5020,6 +5020,45 @@ namespace UnityCliBridge.Tests
             var alphaIds = ((JArray)groups.First(g => (string)g["title"] == "Alpha")["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]);
             var betaIds = ((JArray)groups.First(g => (string)g["title"] == "Beta")["contents"]).Where(m => (string)m["kind"] == "parameter").Select(m => (int)m["id"]);
             CollectionAssert.AreNotEquivalent(alphaIds.ToList(), betaIds.ToList(), "no parameter node is shared between the two groups");
+        }
+
+        [Test]
+        public void ApplyAddOps_NeverPlaceANewNodeOnTopOfAnExistingOne()
+        {
+            string copy = CopyFixture("freespot");
+            JObject d0 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            var updatePos = (JArray)FindContext(d0, "Update")["position"];
+
+            // Explicit position exactly on the Update context → nudged into free space, reported.
+            JObject opOnCtx = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add",
+                ["position"] = new JArray { updatePos[0], updatePos[1] }
+            }));
+            Assert.IsNull(opOnCtx.Value<string>("error"), $"unexpected error: {opOnCtx}");
+            Assert.IsTrue(opOnCtx.Value<bool>("positionAdjusted"), "a position on top of an existing node must be adjusted");
+            JObject d1 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, d1["layout"].Value<int>("overlapCount"), $"{d1["layout"]}");
+
+            // Same explicit position again → lands somewhere else, still no overlap.
+            JObject second = ToJObject(VfxGraphHandler.Apply(new JObject
+            {
+                ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply",
+                ["position"] = new JArray { updatePos[0], updatePos[1] }
+            }));
+            Assert.IsTrue(second.Value<bool>("positionAdjusted"));
+            // Auto-placed operator and context, a duplicate, and an inserted template: still no overlap.
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Sine" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Event" });
+            JObject dup = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "duplicate_operator", ["assetPath"] = copy, ["operatorIndex"] = 0 }));
+            Assert.IsNull(dup.Value<string>("error"), $"unexpected error: {dup}");
+            JObject d2 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, d2["layout"].Value<int>("overlapCount"), $"{d2["layout"]}");
+
+            JObject ins = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = "01_Minimal_System" }));
+            Assert.IsNull(ins.Value<string>("error"), $"unexpected error: {ins}");
+            JObject d3 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
+            Assert.AreEqual(0, d3["layout"].Value<int>("overlapCount"), $"inserted template must not land on existing nodes: {d3["layout"]}");
         }
 
         [Test]

@@ -2217,6 +2217,7 @@ namespace UnityCliBridge.Handlers
             // Canvas position: explicit `position:[x,y]`, else auto-place so nodes never stack at
             // the origin (below the flow source, or a fresh column for an unlinked context).
             var pos = PositionParam(parameters) ?? AutoContextPosition(graph, fromContext, context);
+            pos = FindFreeSpot(graph, pos, EstimateSize(context), context, out bool posAdjusted);
             SetProp(context, "position", pos);
 
             Persist(graph, assetPath);
@@ -2229,7 +2230,8 @@ namespace UnityCliBridge.Handlers
                 ["matchedDescriptor"] = matchedDescriptor,
                 ["settingsApplied"] = appliedSettings,
                 ["linked"] = linked,
-                ["position"] = PositionJson(pos)
+                ["position"] = PositionJson(pos),
+                ["positionAdjusted"] = posAdjusted
             };
         }
 
@@ -2278,6 +2280,7 @@ namespace UnityCliBridge.Handlers
             // Canvas position: explicit `position:[x,y]`, else a staggered column left of the
             // contexts so operators stay readable instead of stacking at the origin.
             var pos = PositionParam(parameters) ?? AutoOperatorPosition(graph, op);
+            pos = FindFreeSpot(graph, pos, EstimateSize(op), op, out bool posAdjusted);
             SetProp(op, "position", pos);
 
             Persist(graph, assetPath);
@@ -2293,7 +2296,8 @@ namespace UnityCliBridge.Handlers
                 ["matchedDescriptor"] = Prop(match, "name") as string,
                 ["operatorIndex"] = operatorIndex,
                 ["settingsApplied"] = appliedSettings,
-                ["position"] = PositionJson(pos)
+                ["position"] = PositionJson(pos),
+                ["positionAdjusted"] = posAdjusted
             };
         }
 
@@ -2572,6 +2576,22 @@ namespace UnityCliBridge.Handlers
                 throw new Exception(
                     "Link rejected: output slot type is incompatible with the input slot (or directions are wrong). " +
                     "'from' must reference an output slot, 'to' an input slot.");
+
+            // A parameter linked for the first time has no canvas node yet; the editor creates one at
+            // the model position when the graph is opened. Seed that position in free space just left
+            // of the consumer instead of leaving it at the origin on top of whatever sits there.
+            if (ParameterType.IsInstanceOfType(fromNode))
+            {
+                int nodeCount = 0;
+                try { nodeCount = (Prop(fromNode, "nodes") as IEnumerable)?.Cast<object>().Count() ?? 0; } catch { }
+                if (nodeCount == 0)
+                {
+                    object consumer = BlockType.IsInstanceOfType(toNode) ? Call(toNode, ModelType, "GetParent") : toNode;
+                    var anchor = ModelPosition(consumer) - new Vector2(LayoutParameterWidth + LayoutOperatorColumnGapX, 0);
+                    if (BlockType.IsInstanceOfType(toNode)) anchor.y += BlockRowOffset(consumer, toNode);
+                    SetProp(fromNode, "position", FindFreeSpot(graph, anchor, EstimateSize(fromNode), fromNode, out _));
+                }
+            }
 
             Persist(graph, assetPath);
 
@@ -2872,6 +2892,15 @@ namespace UnityCliBridge.Handlers
             var serType = Activator.CreateInstance(SerializableTypeType, new object[] { paramType });
             Call(inline, ModelType, "SetSettingValue", "m_Type", serType);
             Call(graph, ModelType, "AddChild", inline, -1, true);
+            // Take the parameter's canvas spot (its first node, else its model position).
+            var paramPos = ModelPosition(node);
+            try
+            {
+                if (Prop(node, "nodes") is IEnumerable pnodes)
+                    foreach (var pn in pnodes) { paramPos = (Vector2)(FindField(pn.GetType(), "position")?.GetValue(pn) ?? paramPos); break; }
+            }
+            catch { }
+            SetProp(inline, "position", paramPos);
 
             // Carry the value over to the inline operator's input slot, then move the output links.
             try { SetProp(GetSlot(inline, true, 0, "inline"), "value", Prop(node, "value")); } catch { }
@@ -3441,6 +3470,52 @@ namespace UnityCliBridge.Handlers
                 y += EstimateBlockHeight(b);
             }
             return y;
+        }
+
+        /// <summary>
+        /// A new node must never land on an existing one. Starting from `desired`, walk downward (and,
+        /// failing that, further left/right) until a spot the node's estimated rect fits in without
+        /// overlapping any canvas node or sticky note — `ignore` is the node being placed itself.
+        /// Contexts only move vertically, so the search is column-first.
+        /// </summary>
+        private static Vector2 FindFreeSpot(object graph, Vector2 desired, Vector2 size, object ignore, out bool adjusted)
+        {
+            adjusted = false;
+            var occupied = new List<Rect>();
+            var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
+            var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
+            var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
+            foreach (var (address, rect) in CanvasNodes(graph))
+            {
+                string kind = (string)address["kind"]; int idx = (int)address["index"];
+                object model = kind == "context" ? ctxs[idx] : kind == "operator" ? ops[idx] : ps[idx];
+                if (ReferenceEquals(model, ignore)) continue;
+                occupied.Add(rect);
+            }
+            foreach (var note in StickyNotesJson(graph))
+                if (note["position"] is JObject np)
+                    occupied.Add(new Rect((float)np["x"], (float)np["y"], (float)np["width"], (float)np["height"]));
+            bool Free(Vector2 p)
+            {
+                var r = new Rect(p.x + 2, p.y + 2, size.x - 4, size.y - 4);
+                return !occupied.Any(o => o.Overlaps(r));
+            }
+            if (Free(desired)) return desired;
+            adjusted = true;
+            const float step = 40f;
+            for (int col = 0; col < 8; col++)
+            {
+                // Same column first; then columns further left, then right.
+                float dx = col == 0 ? 0f : (col % 2 == 1 ? -1f : 1f) * ((col + 1) / 2) * (size.x + LayoutOperatorColumnGapX);
+                for (int i = 0; i < 400; i++)
+                {
+                    var p = new Vector2(desired.x + dx, desired.y + i * step);
+                    if (Free(p)) return p;
+                }
+            }
+            // Pathological canvas: put it below everything.
+            float bottom = occupied.Count > 0 ? occupied.Max(o => o.yMax) : desired.y;
+            return new Vector2(desired.x, bottom + LayoutOperatorGapY);
         }
 
         /// <summary>Every canvas node (contexts, operators, one entry per parameter canvas node) with its estimated rect.</summary>
@@ -4604,6 +4679,10 @@ namespace UnityCliBridge.Handlers
 
             var clone = DuplicateModelViaSerializer(op, OperatorType);
             Call(graph, ModelType, "AddChild", clone, -1, true);
+            // The serializer copies the source position; find open space just below it instead.
+            var srcSize = EstimateSize(op);
+            var clonePos = FindFreeSpot(graph, ModelPosition(op) + new Vector2(0, srcSize.y + LayoutOperatorGapY), EstimateSize(clone), clone, out _);
+            SetProp(clone, "position", clonePos);
             Persist(graph, assetPath);
 
             return new JObject
@@ -4612,6 +4691,7 @@ namespace UnityCliBridge.Handlers
                 ["assetPath"] = assetPath,
                 ["sourceOperatorIndex"] = operatorIndex,
                 ["duplicatedOperator"] = clone.GetType().Name,
+                ["position"] = PositionJson(clonePos),
                 ["operatorCount"] = Children(graph).Count(c => OperatorType.IsInstanceOfType(c))
             };
         }
@@ -5355,14 +5435,43 @@ namespace UnityCliBridge.Handlers
             }
             var duplicated = (Array)Call(null, MemorySerializerType, "DuplicateObjects", (object)deps.ToArray());
 
+            // Where the existing canvas ends (before the clones are added).
+            var existingRects = CanvasNodes(graph).Select(t => t.rect).ToList();
+            float rightEdge = existingRects.Count > 0 ? existingRects.Max(r => r.xMax) : 0f;
+            float topEdge = existingRects.Count > 0 ? existingRects.Min(r => r.yMin) : 0f;
+
             int added = 0;
             var addedTypes = new JArray();
+            var addedNodes = new List<object>();
             foreach (var clone in duplicated.Cast<object>())
             {
                 if (!IsNode(clone)) continue;
                 Call(graph, ModelType, "AddChild", clone, -1, true);
                 added++;
                 addedTypes.Add(clone.GetType().Name);
+                addedNodes.Add(clone);
+            }
+            // Shift the whole inserted block into a fresh column right of the existing canvas, keeping
+            // the template's internal arrangement.
+            if (addedNodes.Count > 0 && existingRects.Count > 0)
+            {
+                float minX = addedNodes.Min(n => ModelPosition(n).x), minY = addedNodes.Min(n => ModelPosition(n).y);
+                var shift = new Vector2(rightEdge + LayoutSystemGapX - minX, topEdge - minY);
+                foreach (var n in addedNodes)
+                {
+                    SetProp(n, "position", ModelPosition(n) + shift);
+                    if (!ParameterType.IsInstanceOfType(n)) continue;
+                    try
+                    {
+                        if (Prop(n, "nodes") is IEnumerable pnodes)
+                            foreach (var pn in pnodes)
+                            {
+                                var f = FindField(pn.GetType(), "position");
+                                if (f != null) f.SetValue(pn, (Vector2)f.GetValue(pn) + shift);
+                            }
+                    }
+                    catch { }
+                }
             }
             Persist(graph, assetPath);
 
