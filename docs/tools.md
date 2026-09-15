@@ -32,6 +32,15 @@ Global options:
 
 Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 runtime/local tool APIs plus 11 Reference Cache tools.
 
+### Unity object identifiers
+
+Object response fields named `id` or `instanceId` contain an opaque identifier
+for the current Unity session. On Unity 6.4 and newer, these fields are strings
+containing the complete `EntityId.ToULong` value as decimal text; on older Unity versions they remain integer
+instance IDs. Consumers must accept both JSON types and must not narrow strings
+to integers or use hashes as identifiers. IDs are not persistent across Editor
+sessions. Use the returned hierarchy or asset path to target subsequent commands.
+
 ## Runtime Tool APIs (119 tools)
 
 ### Scenes

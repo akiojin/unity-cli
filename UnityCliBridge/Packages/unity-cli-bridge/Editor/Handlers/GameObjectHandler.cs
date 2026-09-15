@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityCliBridge.Logging;
+using UnityCliBridge.Helpers;
 using Newtonsoft.Json.Linq;
 
 namespace UnityCliBridge.Handlers
@@ -102,7 +103,7 @@ namespace UnityCliBridge.Handlers
                 // Return info about created object
                 return new
                 {
-                    id = newObject.GetInstanceID(),
+                    id = ObjectIdentifier.ToResponseValue(newObject),
                     name = newObject.name,
                     path = GetGameObjectPath(newObject),
                     position = new { x = position.x, y = position.y, z = position.z },
@@ -378,7 +379,7 @@ namespace UnityCliBridge.Handlers
                 // Return updated info
                 return new
                 {
-                    id = obj.GetInstanceID(),
+                    id = ObjectIdentifier.ToResponseValue(obj),
                     name = obj.name,
                     path = GetGameObjectPath(obj),
                     position = new { x = obj.transform.position.x, y = obj.transform.position.y, z = obj.transform.position.z },
@@ -465,7 +466,7 @@ namespace UnityCliBridge.Handlers
                 // Convert results to data
                 var resultData = results.Select(obj => new
                 {
-                    id = obj.GetInstanceID(),
+                    id = ObjectIdentifier.ToResponseValue(obj),
                     name = obj.name,
                     path = GetGameObjectPath(obj),
                     tag = obj.tag,

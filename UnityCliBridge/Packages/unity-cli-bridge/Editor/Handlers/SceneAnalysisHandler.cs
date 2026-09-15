@@ -390,7 +390,7 @@ namespace UnityCliBridge.Handlers
                     return new { 
                         type = "GameObject", 
                         name = go.name, 
-                        instanceId = go.GetInstanceID(),
+                        instanceId = UnityCliBridge.Helpers.ObjectIdentifier.ToResponseValue(go),
                         path = GetGameObjectPath(go)
                     };
                     

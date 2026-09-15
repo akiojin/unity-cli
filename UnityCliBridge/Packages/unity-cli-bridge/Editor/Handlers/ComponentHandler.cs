@@ -2027,7 +2027,7 @@ namespace UnityCliBridge.Handlers
                 name = obj.name,
                 type = obj.GetType().Name,
                 assetPath = AssetDatabase.GetAssetPath(obj),
-                instanceId = obj.GetInstanceID()
+                instanceId = UnityCliBridge.Helpers.ObjectIdentifier.ToResponseValue(obj)
             };
         }
 
