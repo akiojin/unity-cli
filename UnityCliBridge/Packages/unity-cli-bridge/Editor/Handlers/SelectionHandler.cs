@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
 using UnityCliBridge.Logging;
+using UnityCliBridge.Helpers;
 
 namespace UnityCliBridge.Handlers
 {
@@ -269,7 +270,7 @@ namespace UnityCliBridge.Handlers
             {
                 { "path", GetGameObjectPath(go) },
                 { "name", go.name },
-                { "instanceId", go.GetInstanceID() },
+                { "instanceId", ObjectIdentifier.ToResponseValue(go) },
                 { "tag", go.tag },
                 { "layer", go.layer },
                 { "isActive", go.activeSelf },

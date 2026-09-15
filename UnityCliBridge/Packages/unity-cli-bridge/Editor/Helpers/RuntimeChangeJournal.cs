@@ -2,6 +2,11 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_6000_4_OR_NEWER
+using NativeObjectId = UnityEngine.EntityId;
+#else
+using NativeObjectId = System.Int32;
+#endif
 
 namespace UnityCliBridge.Helpers
 {
@@ -18,7 +23,7 @@ namespace UnityCliBridge.Helpers
             public WeakReference<GameObject> weak;
         }
 
-        private static readonly Dictionary<int, Snapshot> _snapshots = new Dictionary<int, Snapshot>();
+        private static readonly Dictionary<NativeObjectId, Snapshot> _snapshots = new Dictionary<NativeObjectId, Snapshot>();
 
         static RuntimeChangeJournal()
         {
@@ -36,7 +41,7 @@ namespace UnityCliBridge.Helpers
         public static void Record(GameObject go)
         {
             if (go == null) return;
-            var id = go.GetInstanceID();
+            var id = ObjectIdentifier.GetId(go);
             if (_snapshots.ContainsKey(id)) return;
             var t = go.transform;
             _snapshots[id] = new Snapshot
@@ -73,4 +78,3 @@ namespace UnityCliBridge.Helpers
         }
     }
 }
-

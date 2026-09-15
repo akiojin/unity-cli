@@ -73,6 +73,49 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void ObjectIdentifiers_AgreeAcrossCreateFindModifyAndSelection()
+        {
+            var created = ToJObject(GameObjectHandler.CreateGameObject(new JObject
+            {
+                ["name"] = "IdentifierChild",
+                ["parentPath"] = PathOf(_root)
+            }));
+            Assert.IsNull(created["error"]);
+            var identifier = created["id"];
+            Assert.IsNotNull(identifier);
+#if UNITY_6000_4_OR_NEWER
+            Assert.AreEqual(JTokenType.String, identifier.Type);
+#else
+            Assert.AreEqual(JTokenType.Integer, identifier.Type);
+#endif
+
+            var found = ToJObject(GameObjectHandler.FindGameObjects(new JObject
+            {
+                ["name"] = "IdentifierChild",
+                ["exactMatch"] = true
+            }));
+            Assert.IsNull(found["error"]);
+            Assert.AreEqual(1, found.Value<int>("count"));
+            Assert.IsTrue(JToken.DeepEquals(identifier, found["objects"]?[0]?["id"]));
+
+            var modified = ToJObject(GameObjectHandler.ModifyGameObject(new JObject
+            {
+                ["path"] = created.Value<string>("path"),
+                ["name"] = "RenamedIdentifierChild"
+            }));
+            Assert.IsNull(modified["error"]);
+            Assert.IsTrue(JToken.DeepEquals(identifier, modified["id"]));
+
+            var selection = ToJObject(SelectionHandler.HandleCommand("get", new JObject
+            {
+                ["includeDetails"] = true
+            }));
+            Assert.IsNull(selection["error"]);
+            Assert.AreEqual(1, selection.Value<int>("count"));
+            Assert.IsTrue(JToken.DeepEquals(identifier, selection["selection"]?[0]?["instanceId"]));
+        }
+
+        [Test]
         public void ModifyGameObject_ShouldUpdateTransformAndAppearInHierarchyAndDetails()
         {
             var child = new GameObject("EditableChild");
