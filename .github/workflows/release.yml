@@ -21,7 +21,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.check-tag.outputs.created }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -90,7 +90,7 @@ jobs:
     if: needs.create-tag.outputs.created == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
@@ -128,7 +128,7 @@ jobs:
             artifact: unity-cli-win-x64
             binary: unity-cli.exe
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
@@ -189,7 +189,7 @@ jobs:
             os: windows-latest
             artifact: csharp-lsp-win-x64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.create-tag.outputs.tag }}
 
