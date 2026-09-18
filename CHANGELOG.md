@@ -1,3 +1,9 @@
+## [0.12.0] - 2026-06-23
+
+### 🚀 Features
+
+- Complete gwt spec implementation
+
 ## [0.11.5] - 2026-06-20
 
 ### 🚜 Refactor

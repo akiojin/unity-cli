@@ -1,6 +1,6 @@
 {
   "name": "unity-cli-workspace",
-  "version": "0.11.5",
+  "version": "0.12.0",
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "description": "Development environment for unity-cli",
