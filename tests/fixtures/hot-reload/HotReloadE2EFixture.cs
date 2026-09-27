@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -11,7 +12,40 @@ using UnityEngine.SceneManagement;
 
 public static class HotReloadE2EFixture
 {
+    const string ObservationPath = "Library/HotReloadE2E/partial-observation.json";
+    static double observationDeadline, nextObservation;
+    static HotReloadProbe observedProbe;
     static readonly string[] PreferenceNames = { "EnableAutoReloadForChangedFiles", "EnableOnDemandReload" };
+
+    [MenuItem("Tools/Unity CLI/Hot Reload/Start E2E Status Observation")]
+    public static void StartStatusObservation()
+    {
+        StopStatusObservation();
+        Directory.CreateDirectory("Library/HotReloadE2E");
+        if (File.Exists(ObservationPath)) File.Delete(ObservationPath);
+        observedProbe = Object.FindFirstObjectByType<HotReloadProbe>();
+        observationDeadline = EditorApplication.timeSinceStartup + 45;
+        nextObservation = 0;
+        EditorApplication.update += ObserveStatus;
+    }
+
+    [MenuItem("Tools/Unity CLI/Hot Reload/Stop E2E Status Observation")]
+    public static void StopStatusObservation() => EditorApplication.update -= ObserveStatus;
+
+    static void ObserveStatus()
+    {
+        if (!EditorApplication.isPlaying || observedProbe == null || EditorApplication.timeSinceStartup >= observationDeadline)
+        {
+            StopStatusObservation();
+            return;
+        }
+        if (EditorApplication.timeSinceStartup < nextObservation) return;
+        nextObservation = EditorApplication.timeSinceStartup + 0.1;
+        // Read directly on the Editor thread: TCP requests serialize behind the pending apply.
+        var status = JObject.FromObject(UnityCliBridge.Handlers.HotReloadHandler.Status());
+        File.WriteAllText(ObservationPath, JsonConvert.SerializeObject(new { value = observedProbe.value, status }));
+        if (observedProbe.value == 21 && status.Value<string>("state") == "applying") StopStatusObservation();
+    }
 
     static object Preference(string name) => System.Type.GetType("FastScriptReload.Editor.FastScriptReloadPreference, FastScriptReload.Editor", true)
         .GetField(name, BindingFlags.Public | BindingFlags.Static).GetValue(null);

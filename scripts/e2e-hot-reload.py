@@ -137,6 +137,21 @@ def run():
     time.sleep(2)
     before = snapshot()
     check(before["playing"] and before["value"] == 6, "baseline calculation runs in real Play Mode")
+    menu("Start E2E Status Observation")
+    observation_path = args.project / "Library/HotReloadE2E/partial-observation.json"
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        time.sleep(0.1)
+        try:
+            observation = json.loads(observation_path.read_text())
+            break
+        except (OSError, ValueError):
+            continue
+    else:
+        raise AssertionError("Editor update observation did not produce a status snapshot")
+    menu("Stop E2E Status Observation")
+    check(observation["value"] == 6 and observation["status"]["supported"] == status["supported"],
+          "Editor update observer records runtime and backend status without a queued request")
     source_path = args.project / "Assets/HotReloadProbe.cs"
     source = source_path.read_text()
     if args.expect != "supported":
@@ -185,6 +200,8 @@ def run():
     same_state(before, 15)
     check(source_path.read_text() == source, "successful preview leaves disk source unchanged")
     # One method runs naturally, the other does not: must never claim whole-version success.
+    menu("Start E2E Status Observation")
+    observation_path = args.project / "Library/HotReloadE2E/partial-observation.json"
     with ThreadPoolExecutor(max_workers=1) as executor:
         pending = executor.submit(call, "hot_reload", {
             "action": "apply",
@@ -194,14 +211,19 @@ def run():
         deadline = time.monotonic() + 25
         while time.monotonic() < deadline and not pending.done():
             time.sleep(0.5)
-            if snapshot()["value"] == 21:
-                during = call("hot_reload_status", {})
+            try:
+                observation = json.loads(observation_path.read_text())
+            except (OSError, ValueError):
+                continue
+            if observation["value"] == 21:
+                during = observation["status"]
                 check(during["state"] == "applying" and during["appliedRevision"] is None,
                       "partially executing preview clears whole-version claim while verification is pending")
                 break
         else:
             raise AssertionError("Partial preview did not execute naturally before its verification deadline")
         pending.result()
+    menu("Stop E2E Status Observation")
     failed = call("hot_reload_status", {})
     check(failed["appliedRevision"] is None and failed["recoveryRequired"],
           "unverified partial transaction clears whole-version claim and requires recovery")
