@@ -66,6 +66,9 @@ pub fn discover_root(cwd: &Path) -> Option<(PathBuf, PathBuf)> {
         if candidate.is_dir() {
             return Some((candidate, current.to_path_buf()));
         }
-        current = current.parent()?;
+        match current.parent() {
+            Some(parent) => current = parent,
+            None => return None,
+        }
     }
 }
