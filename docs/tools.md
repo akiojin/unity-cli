@@ -30,9 +30,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (119 tools)
+## Runtime Tool APIs (121 tools)
 
 ### Scenes
 
@@ -75,6 +75,8 @@ Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 
 | ---------------------------- | ---------------------------------------------------------------------------------- |
 | `create_animator_controller` | Create an AnimatorController asset with parameters, states, and transitions        |
 | `create_animation_clip`      | Create an AnimationClip asset from sprite frames with frame rate and loop settings |
+| `get_animation_curves`       | Read numeric bindings, keys and tangents; identify object-reference bindings       |
+| `edit_animation_curve`       | Set, upsert or remove numeric keys for one validated binding                       |
 | `get_animator_runtime_info`  | Get Animator runtime info                                                          |
 | `get_animator_state`         | Get current Animator state                                                         |
 
@@ -227,6 +229,42 @@ Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 
 | `get_command_stats` | Get bridge command statistics and, via the CLI, merged local transport timing stats |
 | `ping`              | Check Unity Editor connectivity                                                     |
 | `list_packages`     | List installed packages                                                             |
+
+## Numeric animation curves
+
+`get_animation_curves` takes `clipPath` and an optional exact `binding` filter
+(`path`, `component`, `property`). It returns numeric curves with keys and tangent
+modes, and a separate `objectReferenceBindings` list. Infinite Constant tangents
+are represented as JSON `null`; their mode remains `Constant`.
+
+`edit_animation_curve` requires a real GameObject instance ID in `animationRoot`
+and a binding relative to that root. Component names are fully qualified;
+properties use Unity's serialized names. Transform `localPosition`,
+`localRotation` and `localScale` aliases map to their `m_` names.
+
+```bash
+unity-cli raw edit_animation_curve --json '{"clipPath":"Assets/Animations/Move.anim","animationRoot":12345,"binding":{"path":"","component":"UnityEngine.Transform","property":"localPosition.x"},"operation":"set","createIfMissing":true,"keys":[{"time":0,"value":0},{"time":1,"value":2}]}'
+unity-cli raw get_animation_curves --json '{"clipPath":"Assets/Animations/Move.anim"}'
+```
+
+Replace `12345` with the inspected scene object's instance ID. `set` replaces only
+the selected curve. `upsert_keys` changes/adds exact key times on an existing
+curve. `remove_keys` takes a nonempty `times` array; `remove_curve` deletes the
+binding. Only `set` with `createIfMissing:true` creates a missing clip.
+
+New keys default to Linear. Each key may specify `leftTangentMode` and
+`rightTangentMode` as Linear, Constant, Auto, ClampedAuto or Free; omitted settings
+on existing keys are retained. Free tangents use finite `inTangent`/`outTangent`
+values (zero for a new key when omitted). Time must be finite, nonnegative and
+unique after conversion to Unity's float precision; values and supplied tangents
+must be finite. Missing removal times are errors. Editing requires a writable
+standalone `.anim` under `Assets/`, outside Play Mode. Imported model clips,
+object-reference, boolean/enum and discrete bindings are rejected. Unspecified
+bindings, events and clip settings are preserved.
+
+Run `scripts/test-animation-curves.sh` for Editor regression tests and
+`cargo build --release` followed by `scripts/e2e-animation-curves-batch-host.sh`
+for the CLI-to-Editor test (default dedicated port `6473`).
 
 ## Local Runtime Tools (No Unity Connection Required)
 
