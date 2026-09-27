@@ -4,8 +4,6 @@
     "references": [
         "UnityCliBridge.Runtime",
         "Unity.InputSystem",
-        "Unity.Recorder",
-        "Unity.Recorder.Editor",
         "Unity.Addressables",
         "Unity.Addressables.Editor"
     ],
