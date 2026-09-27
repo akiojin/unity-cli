@@ -38,6 +38,55 @@ namespace UnityCliBridge.Handlers
         private static string lastResultPath;
         private static JObject lastResultSummary;
         private static DateTime? lastResultTimestampUtc;
+        private static JObject persistedCompletedResult;
+        private const string EditorSessionKey = "UnityCliBridge.TestExecution.EditorSessionId";
+
+        private static string EditorSessionId
+        {
+            get
+            {
+                var id = SessionState.GetString(EditorSessionKey, "");
+                if (string.IsNullOrEmpty(id))
+                {
+                    id = Guid.NewGuid().ToString();
+                    SessionState.SetString(EditorSessionKey, id);
+                }
+                return id;
+            }
+        }
+
+        // UTF callbacks are not serialized across either entering or leaving Play Mode.
+        [InitializeOnLoadMethod]
+        private static void RestoreRunAfterReload()
+        {
+            if (currentCollector != null || isTestRunning || persistedCompletedResult != null) return;
+            var state = LoadRunState();
+            if (state == null || state.editorSessionId != EditorSessionId) return;
+            if (state.status != "completed" && (state.status != "running" ||
+                !state.lastUpdate.HasValue || (DateTime.UtcNow - state.lastUpdate.Value).TotalSeconds > 120)) return;
+
+            currentRunId = state.runId;
+            currentTestMode = state.testMode;
+            runStartedAtUtc = state.runStartedAt;
+            runLastUpdateUtc = state.lastUpdate;
+            lastResultPath = state.lastResultPath;
+            lastResultSummary = state.lastResultSummary;
+            lastResultTimestampUtc = state.lastResultTimestampUtc;
+            playModeOptionsPatched = state.playModeOptionsPatched;
+            prevEnterPlayModeOptionsEnabled = state.prevEnterPlayModeOptionsEnabled;
+            prevEnterPlayModeOptions = state.prevEnterPlayModeOptions;
+            if (state.status == "completed")
+            {
+                persistedCompletedResult = state.completedResult;
+                return;
+            }
+
+            currentCollector = new TestResultCollector(state.exportPath, state.includeDetails, state.testMode);
+            testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
+            testRunnerApi.RegisterCallbacks(currentCollector);
+            isTestRunning = true;
+            runLastUpdateUtc = DateTime.UtcNow;
+        }
 
         /// <summary>
         /// Test result structure
@@ -123,7 +172,7 @@ namespace UnityCliBridge.Handlers
                 }
 
                 // Cancel previous execution if running (no manual execution expected)
-                if (isTestRunning && currentCollector != null && testRunnerApi != null)
+                if (currentCollector != null && testRunnerApi != null)
                 {
                     testRunnerApi.UnregisterCallbacks(currentCollector);
                     isTestRunning = false;
@@ -170,12 +219,16 @@ namespace UnityCliBridge.Handlers
                     ApplyEnterPlayModeOptionsPatch();
                 }
 
-                currentCollector = new TestResultCollector(resolvedExportPath, includeDetails, testMode);
-                var collector = currentCollector;
                 currentTestMode = testMode;
                 currentRunId = Guid.NewGuid().ToString();
                 runStartedAtUtc = DateTime.UtcNow;
                 runLastUpdateUtc = runStartedAtUtc;
+                persistedCompletedResult = null;
+                lastResultPath = null;
+                lastResultSummary = null;
+                lastResultTimestampUtc = null;
+                currentCollector = new TestResultCollector(resolvedExportPath, includeDetails, testMode);
+                var collector = currentCollector;
                 SaveRunState("running");
                 testRunnerApi.RegisterCallbacks(collector);
 
@@ -195,6 +248,11 @@ namespace UnityCliBridge.Handlers
             {
                 BridgeLogger.LogError("TestExecutionHandler", $"Error running tests: {e.Message}\\n{e.StackTrace}");
                 isTestRunning = false;
+                if (currentCollector != null && testRunnerApi != null)
+                    testRunnerApi.UnregisterCallbacks(currentCollector);
+                currentCollector = null;
+                RestoreEnterPlayModeOptions();
+                SaveRunState("error", "RUNNER_ERROR");
                 return new { error = $"Failed to run tests: {e.Message}" };
             }
         }
@@ -226,7 +284,10 @@ namespace UnityCliBridge.Handlers
                     if (isPlayModeStuck || isEditModeStuck || isGeneralStuck)
                     {
                         isTestRunning = false;
+                        if (currentCollector != null && testRunnerApi != null)
+                            testRunnerApi.UnregisterCallbacks(currentCollector);
                         currentCollector = null;
+                        RestoreEnterPlayModeOptions();
                         SaveRunState("error", "RUNNER_TIMEOUT");
                         return new
                         {
@@ -259,6 +320,13 @@ namespace UnityCliBridge.Handlers
 
                 if (currentCollector == null)
                 {
+                    if (persistedCompletedResult != null)
+                    {
+                        var restored = (JObject)persistedCompletedResult.DeepClone();
+                        if (includeExportedResults)
+                            restored["latestResult"] = JObject.FromObject(BuildLatestResult(includeFileContent));
+                        return restored;
+                    }
                     var persisted = LoadRunState();
                     if (persisted != null && persisted.status == "running")
                     {
@@ -303,42 +371,13 @@ namespace UnityCliBridge.Handlers
                 }
 
                 // Test execution completed - return results
-                var collector = currentCollector;
-
-                var completed = new Dictionary<string, object>
-                {
-                    ["status"] = "completed",
-                    ["success"] = collector.FailedTests.Count == 0,
-                    ["totalTests"] = collector.TotalTests,
-                    ["passedTests"] = collector.PassedTests.Count,
-                    ["failedTests"] = collector.FailedTests.Count,
-                    ["skippedTests"] = collector.SkippedTests.Count,
-                    ["inconclusiveTests"] = collector.InconclusiveTests.Count,
-                    ["runId"] = currentRunId,
-                    ["testMode"] = currentTestMode,
-                    ["failures"] = collector.FailedTests.Select(t => new
-                    {
-                        testName = t.fullName,
-                        message = t.message,
-                        stackTrace = t.stackTrace
-                    }).ToList(),
-                    ["tests"] = collector.AllResults.Select(t => new
-                    {
-                        name = t.name,
-                        fullName = t.fullName,
-                        status = t.status,
-                        duration = t.duration,
-                        message = t.message,
-                        output = t.output
-                    }).ToList()
-                };
+                var completed = BuildCompletedResult(currentCollector);
 
                 if (includeExportedResults)
                 {
                     completed["latestResult"] = BuildLatestResult(includeFileContent);
                 }
 
-                ClearRunState();
                 return completed;
             }
             catch (Exception e)
@@ -346,6 +385,37 @@ namespace UnityCliBridge.Handlers
                 BridgeLogger.LogError("TestExecutionHandler", $"Error getting test status: {e.Message}");
                 return new { status = "error", error = $"Failed to get test status: {e.Message}" };
             }
+        }
+
+        private static Dictionary<string, object> BuildCompletedResult(TestResultCollector collector)
+        {
+            return new Dictionary<string, object>
+            {
+                ["status"] = "completed",
+                ["success"] = !collector.HasFailures,
+                ["totalTests"] = collector.TotalTests,
+                ["passedTests"] = collector.PassedTests.Count,
+                ["failedTests"] = collector.FailedTests.Count,
+                ["skippedTests"] = collector.SkippedTests.Count,
+                ["inconclusiveTests"] = collector.InconclusiveTests.Count,
+                ["runId"] = currentRunId,
+                ["testMode"] = currentTestMode,
+                ["failures"] = collector.FailedTests.Concat(collector.SuiteFailures).Select(t => new
+                {
+                    testName = t.fullName,
+                    message = t.message,
+                    stackTrace = t.stackTrace
+                }).ToList(),
+                ["tests"] = collector.AllResults.Select(t => new
+                {
+                    name = t.name,
+                    fullName = t.fullName,
+                    status = t.status,
+                    duration = t.duration,
+                    message = t.message,
+                    output = t.output
+                }).ToList()
+            };
         }
 
         /// <summary>
@@ -530,12 +600,22 @@ namespace UnityCliBridge.Handlers
 
         private class PersistedRunState
         {
+            public string editorSessionId;
             public string runId;
             public string testMode;
             public string status;
             public DateTime? runStartedAt;
             public DateTime? lastUpdate;
             public string code;
+            public string exportPath;
+            public bool includeDetails;
+            public JObject completedResult;
+            public string lastResultPath;
+            public JObject lastResultSummary;
+            public DateTime? lastResultTimestampUtc;
+            public bool playModeOptionsPatched;
+            public bool prevEnterPlayModeOptionsEnabled;
+            public EnterPlayModeOptions prevEnterPlayModeOptions;
         }
 
         private static void SaveRunState(string status, string code = null)
@@ -545,12 +625,23 @@ namespace UnityCliBridge.Handlers
                 var path = RunStatePath;
                 var state = new PersistedRunState
                 {
+                    editorSessionId = EditorSessionId,
                     runId = currentRunId,
                     testMode = currentTestMode,
                     status = status,
                     runStartedAt = runStartedAtUtc,
                     lastUpdate = DateTime.UtcNow,
-                    code = code
+                    code = code,
+                    exportPath = currentCollector?.ExportPath,
+                    includeDetails = currentCollector?.IncludeDetailsInFile ?? false,
+                    completedResult = status == "completed" && currentCollector != null
+                        ? JObject.FromObject(BuildCompletedResult(currentCollector)) : null,
+                    lastResultPath = lastResultPath,
+                    lastResultSummary = lastResultSummary,
+                    lastResultTimestampUtc = lastResultTimestampUtc,
+                    playModeOptionsPatched = playModeOptionsPatched,
+                    prevEnterPlayModeOptionsEnabled = prevEnterPlayModeOptionsEnabled,
+                    prevEnterPlayModeOptions = prevEnterPlayModeOptions
                 };
                 var json = JsonConvert.SerializeObject(state, Formatting.Indented);
                 var dir = Path.GetDirectoryName(path);
@@ -628,7 +719,11 @@ namespace UnityCliBridge.Handlers
                 this.exportPath = exportPath;
                 this.includeDetailsInFile = includeDetailsInFile;
                 this.testMode = testMode;
+                runStartedAtUtc = TestExecutionHandler.runStartedAtUtc ?? DateTime.UtcNow;
             }
+
+            public string ExportPath => exportPath;
+            public bool IncludeDetailsInFile => includeDetailsInFile;
 
             public int TotalTests { get; private set; }
             public List<TestResultData> PassedTests { get; } = new List<TestResultData>();
@@ -636,6 +731,9 @@ namespace UnityCliBridge.Handlers
             public List<TestResultData> SkippedTests { get; } = new List<TestResultData>();
             public List<TestResultData> InconclusiveTests { get; } = new List<TestResultData>();
             public List<TestResultData> AllResults { get; } = new List<TestResultData>();
+            public List<TestResultData> SuiteFailures { get; } = new List<TestResultData>();
+            private bool runFailed;
+            public bool HasFailures => runFailed || FailedTests.Count > 0 || SuiteFailures.Count > 0;
 
             public void RunStarted(ITestAdaptor testsToRun)
             {
@@ -647,11 +745,48 @@ namespace UnityCliBridge.Handlers
 
             public void RunFinished(ITestResultAdaptor result)
             {
+                if (currentCollector != this) return;
+                // Rebuild from UTF's final tree: leaf notifications and RunStarted may
+                // have happened in a previous domain, whose collector no longer exists.
+                if (result != null)
+                {
+                    AllResults.Clear();
+                    PassedTests.Clear();
+                    FailedTests.Clear();
+                    SkippedTests.Clear();
+                    InconclusiveTests.Clear();
+                    SuiteFailures.Clear();
+                    runFailed = result.TestStatus == TestStatus.Failed;
+                    CollectFinalResults(result);
+                    TotalTests = AllResults.Count;
+                }
                 isTestRunning = false;
                 runLastUpdateUtc = DateTime.UtcNow;
                 BridgeLogger.Log("TestExecutionHandler", $"Test run finished. Passed: {PassedTests.Count}, Failed: {FailedTests.Count}");
                 ExportResults(result);
                 RestoreEnterPlayModeOptions();
+                SaveRunState("completed");
+                if (testRunnerApi != null) testRunnerApi.UnregisterCallbacks(this);
+            }
+
+            private void CollectFinalResults(ITestResultAdaptor result)
+            {
+                if (!result.Test.IsSuite)
+                    TestFinished(result);
+                else if (result.TestStatus == TestStatus.Failed && !string.IsNullOrEmpty(result.Message))
+                    SuiteFailures.Add(new TestResultData
+                    {
+                        name = result.Test.Name,
+                        fullName = result.Test.FullName,
+                        status = result.TestStatus.ToString(),
+                        message = result.Message,
+                        stackTrace = result.StackTrace
+                    });
+                if (result.HasChildren)
+                {
+                    foreach (var child in result.Children)
+                        CollectFinalResults(child);
+                }
             }
 
             public void TestStarted(ITestAdaptor test)
@@ -727,10 +862,10 @@ namespace UnityCliBridge.Handlers
                         ["failed"] = FailedTests.Count,
                         ["skipped"] = SkippedTests.Count,
                         ["inconclusive"] = InconclusiveTests.Count,
-                        ["status"] = FailedTests.Count == 0 ? "passed" : "failed"
+                        ["status"] = HasFailures ? "failed" : "passed"
                     };
 
-                    var failures = FailedTests.Select(t => new JObject
+                    var failures = FailedTests.Concat(SuiteFailures).Select(t => new JObject
                     {
                         ["name"] = t.name,
                         ["fullName"] = t.fullName,
