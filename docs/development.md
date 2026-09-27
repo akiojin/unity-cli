@@ -202,6 +202,9 @@ scripts/e2e-input-tools.sh
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
+# PlayMode result collection with Domain Reload enabled and disabled
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
+
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
 
@@ -653,6 +656,9 @@ scripts/e2e-input-tools.sh
 
 # headless batch host 入力 E2E
 scripts/e2e-input-batch-host.sh
+
+# Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
