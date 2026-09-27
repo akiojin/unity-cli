@@ -36,7 +36,6 @@ namespace UnityCliBridge.Handlers
         {
             public double ReleaseTime;
             public int MinimumFrame;
-            public int ReleaseFrame;
             public Action Callback;
         }
 
@@ -83,6 +82,7 @@ namespace UnityCliBridge.Handlers
             InputSystem.onDeviceChange += OnDeviceChange;
             EditorApplication.update -= ProcessScheduledReleases;
             EditorApplication.update += ProcessScheduledReleases;
+            InputSystem.onAfterUpdate += ProcessScheduledReleases;
         }
 
         /// <summary>
@@ -1607,7 +1607,6 @@ namespace UnityCliBridge.Handlers
             {
                 ReleaseTime = EditorApplication.timeSinceStartup + delaySeconds,
                 MinimumFrame = Application.isPlaying ? Time.frameCount + 1 : 0,
-                ReleaseFrame = Application.isPlaying ? Time.frameCount + Mathf.Max(1, Mathf.CeilToInt((float)(delaySeconds * 60d))) : 0,
                 Callback = releaseAction
             });
         }
@@ -1639,6 +1638,13 @@ namespace UnityCliBridge.Handlers
                 return;
             }
 
+            // In Play Mode, release against the game input buffer. An Editor
+            // update can otherwise consume the timer while leaving the game held.
+            if (Application.isPlaying && InputState.currentUpdateType == InputUpdateType.Editor)
+            {
+                return;
+            }
+
             double now = EditorApplication.timeSinceStartup;
             for (int i = scheduledReleases.Count - 1; i >= 0; i--)
             {
@@ -1647,9 +1653,9 @@ namespace UnityCliBridge.Handlers
                     continue;
                 }
 
-                bool reachedTime = now >= scheduledReleases[i].ReleaseTime;
-                bool reachedFrame = Application.isPlaying && Time.frameCount >= scheduledReleases[i].ReleaseFrame;
-                if (reachedTime || reachedFrame)
+                // Frame counts cannot bound a duration: fast player loops would
+                // release the input before holdSeconds has actually elapsed.
+                if (now >= scheduledReleases[i].ReleaseTime)
                 {
                     try
                     {
