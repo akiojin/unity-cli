@@ -1788,6 +1788,45 @@ mod tests {
     }
 
     #[test]
+    fn baking_surface_requires_path_before_contacting_editor() {
+        assert!(validate_tool_params(
+            "start_scene_bake",
+            &json!({
+                "target": "navmesh-surface", "scenePath": "Assets/Level.unity"
+            })
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn baking_valid_targets_and_polling_are_accepted() {
+        for target in ["lighting", "navmesh-legacy", "occlusion"] {
+            validate_tool_params(
+                "start_scene_bake",
+                &json!({
+                    "target": target, "scenePath": "Assets/Level.unity"
+                }),
+            )
+            .unwrap();
+        }
+        validate_tool_params("start_scene_bake", &json!({
+            "target": "navmesh-surface", "scenePath": "Assets/Level.unity", "surfacePath": "/Navigation"
+        })).unwrap();
+        validate_tool_params("get_scene_bake_status", &json!({"jobId": "abc"})).unwrap();
+    }
+
+    #[test]
+    fn baking_invalid_target_missing_scene_and_missing_job_are_rejected() {
+        for params in [
+            json!({"target": "lighting"}),
+            json!({"target": "unknown", "scenePath": "Assets/Level.unity"}),
+        ] {
+            assert!(validate_tool_params("start_scene_bake", &params).is_err());
+        }
+        assert!(validate_tool_params("get_scene_bake_status", &json!({})).is_err());
+    }
+
+    #[test]
     fn validate_tool_params_rejects_execute_menu_item_without_menu_path() {
         let err = validate_tool_params(
             "execute_menu_item",

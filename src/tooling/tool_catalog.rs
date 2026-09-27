@@ -83,6 +83,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "profiler_stop",
     "create_scene",
     "get_scene_info",
+    "start_scene_bake",
+    "get_scene_bake_status",
     "list_scenes",
     "load_scene",
     "save_scene",
@@ -191,6 +193,12 @@ fn tool_description(name: &str) -> &'static str {
     match name {
         "ping" => "Check Unity Editor connectivity",
         "create_scene" => "Create a new scene",
+        "start_scene_bake" => {
+            "Start a scene bake job for Lighting, legacy NavMesh, NavMeshSurface, or Occlusion"
+        }
+        "get_scene_bake_status" => {
+            "Poll a bake job for progress, failure, and verified saved artifacts"
+        }
         "get_timeline" => {
             "Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings"
         }
@@ -281,6 +289,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "profiler_get_metrics"
             | "profiler_status"
             | "get_scene_info"
+            | "get_scene_bake_status"
             | "list_scenes"
             | "analyze_screenshot"
             | "list_packages"
@@ -312,6 +321,41 @@ fn is_read_only_tool(name: &str) -> bool {
 
 fn tool_params_schema(name: &str) -> Value {
     match name {
+        "start_scene_bake" => {
+            let mut schema = object_schema(
+                &[
+                    (
+                        "target",
+                        enum_string_schema(&[
+                            "lighting",
+                            "navmesh-legacy",
+                            "navmesh-surface",
+                            "occlusion",
+                        ]),
+                    ),
+                    (
+                        "scenePath",
+                        json!({"type": "string", "minLength": 1, "description": "Saved, clean, active scene under Assets; only one scene may be loaded"}),
+                    ),
+                    (
+                        "surfacePath",
+                        json!({"type": "string", "minLength": 1, "description": "GameObject hierarchy path containing NavMeshSurface; required for navmesh-surface"}),
+                    ),
+                ],
+                &["target", "scenePath"],
+                false,
+            );
+            schema["oneOf"] = json!([
+                {"type": "object", "properties": {"target": {"enum": ["navmesh-surface"]}}, "required": ["surfacePath"]},
+                {"type": "object", "properties": {"target": {"enum": ["lighting", "navmesh-legacy", "occlusion"]}}}
+            ]);
+            schema
+        }
+        "get_scene_bake_status" => object_schema(
+            &[("jobId", json!({"type": "string", "minLength": 1}))],
+            &["jobId"],
+            false,
+        ),
         "get_timeline" => with_any_of(
             object_schema(
                 &[
@@ -2602,7 +2646,32 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 132);
+        assert_eq!(TOOL_NAMES.len(), 134);
+    }
+
+    #[test]
+    fn baking_tools_have_explicit_target_and_polling_contracts() {
+        let start = get_tool_spec("start_scene_bake").expect("bake start is registered");
+        let status = get_tool_spec("get_scene_bake_status").expect("bake status is registered");
+        assert!(start.mutating);
+        assert!(!status.mutating);
+        assert_eq!(start.executor, ToolExecutor::Remote);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(
+            start.params_schema["required"],
+            json!(["target", "scenePath"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["target"]["enum"],
+            json!(["lighting", "navmesh-legacy", "navmesh-surface", "occlusion"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["surfacePath"]["type"],
+            "string"
+        );
+        assert_eq!(status.params_schema["required"], json!(["jobId"]));
+        assert_eq!(start.params_schema["additionalProperties"], false);
+        assert_eq!(status.params_schema["additionalProperties"], false);
     }
 
     #[test]
