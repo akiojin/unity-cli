@@ -1018,12 +1018,13 @@ namespace UnityCliBridge.Handlers
         private static object SimulateGamepadStick(Gamepad gamepad, JObject parameters)
         {
             string stick = parameters["stick"]?.ToString() ?? "left";
-            float x = parameters["x"]?.ToObject<float>() ?? 0;
-            float y = parameters["y"]?.ToObject<float>() ?? 0;
-            
-            Vector2 desired = new Vector2(Mathf.Clamp(x, -1f, 1f), Mathf.Clamp(y, -1f, 1f));
-            Vector2 afterStick = ApplyAxisDeadzoneInverse(desired);
-            Vector2 raw = ApplyStickDeadzoneInverse(afterStick);
+            float x = Mathf.Clamp(parameters["x"]?.ToObject<float>() ?? 0, -1f, 1f);
+            float y = Mathf.Clamp(parameters["y"]?.ToObject<float>() ?? 0, -1f, 1f);
+
+            // Inputs target the processed individual axes, not the radially processed vector.
+            // Axis and stick processors read the same raw state independently; do not invert both.
+            Vector2 desired = new Vector2(x, y);
+            Vector2 raw = ApplyAxisDeadzoneInverse(desired);
 
             gamepad.CopyState<GamepadState>(out var state);
             if (stick == "left")
@@ -1065,12 +1066,8 @@ namespace UnityCliBridge.Handlers
 
         private static Vector2 ApplyAxisDeadzoneInverse(Vector2 desired)
         {
-            const float axisMin = 0.125f;
-
-            if (desired == Vector2.zero)
-            {
-                return Vector2.zero;
-            }
+            float axisMin = InputSystem.settings.defaultDeadzoneMin;
+            float axisMax = InputSystem.settings.defaultDeadzoneMax;
 
             float InverseComponent(float v)
             {
@@ -1080,27 +1077,11 @@ namespace UnityCliBridge.Handlers
                 {
                     return 0f;
                 }
-                var raw = magnitude * (1f - axisMin) + axisMin;
+                var raw = magnitude * (axisMax - axisMin) + axisMin;
                 return sign * Mathf.Clamp(raw, 0f, 1f);
             }
 
             return new Vector2(InverseComponent(desired.x), InverseComponent(desired.y));
-        }
-
-        private static Vector2 ApplyStickDeadzoneInverse(Vector2 desired)
-        {
-            const float stickMin = 0.125f;
-            const float stickMax = 0.925f;
-
-            var magnitude = desired.magnitude;
-            if (magnitude <= Mathf.Epsilon)
-            {
-                return Vector2.zero;
-            }
-
-            var rawMagnitude = magnitude * (stickMax - stickMin) + stickMin;
-            rawMagnitude = Mathf.Clamp(rawMagnitude, 0f, 1f);
-            return desired.normalized * rawMagnitude;
         }
 
         private static object SimulateGamepadTrigger(Gamepad gamepad, JObject parameters)

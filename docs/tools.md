@@ -214,6 +214,21 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `create_input_sequence`       | Create an input sequence           |
 | `get_current_input_state`     | Get current input device state     |
 
+For `input_gamepad` with `action: "stick"`, `x` and `y` are **processed
+individual axis values**, clamped independently to `[-1, 1]`. On the standard
+Gamepad layout, `leftStick.x.ReadValue()` / `leftStick.y.ReadValue()` (or the
+right-stick equivalents) match those values, including single-axis input.
+The bridge compensates once for the axis deadzone using the current Input
+System `defaultDeadzoneMin` / `defaultDeadzoneMax` settings. The response and
+simulated-state snapshot also use the clamped values.
+
+`stick.ReadUnprocessedValue()` returns the compensated device values, not the
+requested values. `stick.ReadValue()` applies Unity's radial stick deadzone,
+so its Vector2 components can differ from the individual axis readings on
+diagonals. For example, `(1, 1)` gives individual axes `(1, 1)` while the
+Vector2 is approximately `(0.7071, 0.7071)`. Custom control/action processors
+can further change readings and are not inverted by this command.
+
 ### UI
 
 | Tool                   | Description                  |

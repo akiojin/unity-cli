@@ -1,7 +1,9 @@
 {
     "name": "UnityCliBridge.PlayModeTests",
     "rootNamespace": "UnityCliBridge.Tests.PlayMode",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -16,6 +18,12 @@
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "UNITY_INPUT_SYSTEM_PACKAGE"
+        }
+    ],
     "noEngineReferences": false
 }
