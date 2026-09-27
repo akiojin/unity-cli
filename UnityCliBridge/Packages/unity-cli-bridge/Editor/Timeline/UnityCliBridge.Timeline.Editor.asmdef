@@ -1,0 +1,14 @@
+{
+    "name": "UnityCliBridge.Timeline.Editor",
+    "rootNamespace": "UnityCliBridge.Timeline",
+    "references": ["Unity.Timeline"],
+    "includePlatforms": ["Editor"],
+    "overrideReferences": true,
+    "precompiledReferences": ["Newtonsoft.Json.dll"],
+    "autoReferenced": true,
+    "defineConstraints": ["UNITY_TIMELINE_PACKAGE"],
+    "versionDefines": [
+        { "name": "com.unity.timeline", "expression": "", "define": "UNITY_TIMELINE_PACKAGE" }
+    ],
+    "noEngineReferences": false
+}
