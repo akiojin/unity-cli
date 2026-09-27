@@ -257,7 +257,19 @@ wait_for_condition \
   "gamepad device reflected in current state" \
   "state=\"\$(invoke_tool get_current_input_state '{}')\" && jq -e '.gamepad != null and (.activeDevices | index(\"gamepad\") != null)' >/dev/null <<<\"\${state}\""
 
-run_tool "input_gamepad" '{"action":"stick","stick":"left","x":0.5,"y":0.75}'
+# Exercise the processed-axis contract through the CLI/listener boundary on both sticks.
+for stick in left right; do
+  for sample in '0.5 0' '0 -0.5' '0.5 0.75' '1 1' '0 0'; do
+    read -r x y <<<"${sample}"
+    payload="$(jq -nc --arg stick "${stick}" --argjson x "${x}" --argjson y "${y}" \
+      '{action:"stick",stick:$stick,x:$x,y:$y}')"
+    run_tool "input_gamepad" "${payload}"
+    run_tool "get_current_input_state" '{}'
+    assert_json "${LAST_OUTPUT}" \
+      "(.gamepad.sticks.${stick}.x | type) == \"number\" and (.gamepad.sticks.${stick}.y | type) == \"number\" and ((.gamepad.sticks.${stick}.x - ${x}) | fabs) < 0.0001 and ((.gamepad.sticks.${stick}.y - ${y}) | fabs) < 0.0001" \
+      "${stick} processed stick axes match (${x}, ${y})"
+  done
+done
 
 run_tool "input_gamepad" '{"action":"trigger","trigger":"left","value":0.8}'
 
