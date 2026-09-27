@@ -1208,6 +1208,29 @@ mod tests {
     }
 
     #[test]
+    fn hot_reload_requires_revision_and_explicit_action() {
+        for params in [
+            json!({}),
+            json!({"action":"apply", "source":"class C {}"}),
+            json!({"action":"begin"}),
+            json!({"action":"recover", "force":true}),
+            json!({"action":"apply", "source":"x", "expectedRevision":"a", "timeoutSeconds":"invalid"}),
+        ] {
+            assert!(
+                validate_tool_params("hot_reload", &params).is_err(),
+                "{params}"
+            );
+        }
+        for params in [
+            json!({"action":"begin", "path":"Assets/Player.cs"}),
+            json!({"action":"apply", "source":"class C {}", "expectedRevision":"a", "timeoutSeconds":10}),
+            json!({"action":"recover"}),
+        ] {
+            validate_tool_params("hot_reload", &params).expect("valid explicit hot reload action");
+        }
+    }
+
+    #[test]
     fn timeline_validation_requires_target_and_valid_action() {
         assert!(validate_tool_params("get_timeline", &json!({})).is_err());
         for params in [
