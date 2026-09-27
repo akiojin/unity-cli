@@ -1,6 +1,6 @@
 # Tool Catalog
 
-Snapshot date: `2026-06-16`
+Snapshot date: `2026-09-28`
 
 ## Command Groups (Typed Subcommands)
 
@@ -31,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 134 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 123 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (121 tools)
+## Runtime Tool APIs (123 tools)
 
 ### Scenes
 
@@ -78,6 +78,64 @@ Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 
 | `create_animation_clip`      | Create an AnimationClip asset from sprite frames with frame rate and loop settings |
 | `get_animator_runtime_info`  | Get Animator runtime info                                                          |
 | `get_animator_state`         | Get current Animator state                                                         |
+
+### Timeline
+
+| Tool | Description |
+| ---- | ----------- |
+| `get_timeline` | Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings (read-only) |
+| `manage_timeline` | Create and edit Timeline AnimationTracks, bind a director, or evaluate a time (mutating) |
+
+Discover these tools with `unity-cli tool list` and inspect parameters with
+`unity-cli tool schema get_timeline` or `unity-cli tool schema manage_timeline`.
+Both `unity-cli tool call` and `unity-cli raw` accept the tool names.
+
+`get_timeline` requires `assetPath` (a project asset path such as
+`Assets/Timelines/Intro.playable`) or `directorPath` (the full hierarchy path of a
+GameObject with a PlayableDirector, such as `/Root/Director`). Use full hierarchy
+paths for `directorPath` and `animatorPath`; ambiguous object names are rejected.
+Inspection includes unsupported tracks, while editing supports only top-level
+`AnimationTrack` objects. Group tracks, subtracks, override/infinite tracks,
+non-animation clips, and other track types are outside the editing scope.
+
+`manage_timeline` accepts these actions and required parameters:
+
+| Action | Required parameters (in addition to `action`) |
+| ------ | ------------------------------------------ |
+| `create_asset` | `assetPath` |
+| `assign_director` | `assetPath`, `directorPath` |
+| `create_track` | `assetPath`, `trackName` (`trackType` defaults to `AnimationTrack`) |
+| `delete_track` | `assetPath`, `trackId` |
+| `add_clip` | `assetPath`, `trackId`, `animationClipPath`, `start`, `duration` |
+| `update_clip` | `assetPath`, `trackId`, `clipIndex`, `expectedClip`; provide updated `animationClipPath`, `start`, or `duration` |
+| `remove_clip` | `assetPath`, `trackId`, `clipIndex`, `expectedClip` |
+| `set_binding` | `directorPath`, `trackId`, `animatorPath` |
+| `clear_binding` | `directorPath`, `trackId` |
+| `evaluate` | `directorPath`, `time` |
+
+Use the stable `trackId` (`GUID:localID`) returned by inspection, rather than a
+track name. `clipIndex` is zero-based and may change after edits. For update and
+remove operations, pass `expectedClip` with the inspected `animationClipPath`,
+`start`, and `duration`; a stale index or mismatching clip snapshot is rejected.
+Re-read `get_timeline` after each edit before targeting another clip.
+Times are seconds: `start` and `time` must be finite and nonnegative; `duration`
+must be finite and positive. Each time value, including those in `expectedClip`,
+must be at most 1,000,000 seconds; larger values fail with `INVALID_TIME`.
+The Unity bridge validates these constraints and
+action-specific editing restrictions before mutation.
+
+Asset changes save automatically. Editing a shared Timeline asset affects every
+director using it. Director assignment and bindings mark the scene dirty; call
+`save_scene` explicitly to persist scene changes. `evaluate` evaluates the
+director at the requested time without entering Play Mode. Mutating Timeline
+calls participate in `--dry-run` and are skipped without contacting Unity.
+
+```bash
+unity-cli tool call get_timeline --json '{"assetPath":"Assets/Timelines/Intro.playable"}'
+unity-cli tool call manage_timeline --json '{"action":"create_asset","assetPath":"Assets/Timelines/Intro.playable"}'
+unity-cli tool call manage_timeline --json '{"action":"assign_director","assetPath":"Assets/Timelines/Intro.playable","directorPath":"/Root/Director"}'
+unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":"/Root/Director","time":0.5}'
+```
 
 ### Prefabs
 
@@ -214,6 +272,13 @@ Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 
 | `update_project_settings` | Update project settings     |
 
 ### Screenshots & Video
+
+Video capture requires the optional `com.unity.recorder` package (4.0 or
+newer). Install it through Unity Package Manager when video capture is needed;
+the sample `UnityCliBridge` project already includes it. Without Recorder,
+video commands return `RECORDER_PACKAGE_MISSING`. Recorder itself installs
+Timeline as a dependency; the Bridge no longer requires either package for
+unrelated commands.
 
 | Tool                   | Description              |
 | ---------------------- | ------------------------ |

@@ -7,6 +7,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "addressables_manage",
     "get_animator_runtime_info",
     "get_animator_state",
+    "get_timeline",
+    "manage_timeline",
     "create_animator_controller",
     "create_animation_clip",
     "create_sprite_atlas",
@@ -193,6 +195,12 @@ fn tool_description(name: &str) -> &'static str {
         "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
         "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
         "create_scene" => "Create a new scene",
+        "get_timeline" => {
+            "Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings"
+        }
+        "manage_timeline" => {
+            "Create and edit Timeline AnimationTracks, bind a director, or evaluate a time"
+        }
         "list_packages" => "List installed packages",
         "create_animator_controller" => {
             "Create an AnimatorController asset with parameters, states, and transitions"
@@ -256,6 +264,7 @@ fn is_read_only_tool(name: &str) -> bool {
         "addressables_analyze"
             | "get_animator_runtime_info"
             | "get_animator_state"
+            | "get_timeline"
             | "find_by_component"
             | "get_component_values"
             | "get_gameobject_details"
@@ -323,6 +332,123 @@ fn tool_params_schema(name: &str) -> Value {
         "get_eval_status" => {
             object_schema(&[("requestId", string_schema())], &["requestId"], false)
         }
+        "get_timeline" => with_any_of(
+            object_schema(
+                &[
+                    ("assetPath", string_schema()),
+                    ("directorPath", string_schema()),
+                ],
+                &[],
+                false,
+            ),
+            vec![
+                object_schema(&[], &["assetPath"], true),
+                object_schema(&[], &["directorPath"], true),
+            ],
+        ),
+        "manage_timeline" => with_one_of(
+            object_schema(
+                &[
+                    (
+                        "action",
+                        enum_string_schema(&[
+                            "create_asset",
+                            "assign_director",
+                            "create_track",
+                            "delete_track",
+                            "add_clip",
+                            "update_clip",
+                            "remove_clip",
+                            "set_binding",
+                            "clear_binding",
+                            "evaluate",
+                        ]),
+                    ),
+                    ("assetPath", string_schema()),
+                    ("directorPath", string_schema()),
+                    ("animatorPath", string_schema()),
+                    (
+                        "trackId",
+                        json!({"type": "string", "description": "Stable GUID:localID returned by get_timeline"}),
+                    ),
+                    ("trackName", string_schema()),
+                    ("trackType", enum_string_schema(&["AnimationTrack"])),
+                    ("animationClipPath", string_schema()),
+                    ("clipIndex", json!({"type": "integer", "minimum": 0})),
+                    (
+                        "expectedClip",
+                        object_schema(
+                            &[
+                                ("animationClipPath", string_schema()),
+                                (
+                                    "start",
+                                    json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                                ),
+                                (
+                                    "duration",
+                                    json!({"type": "number", "exclusiveMinimum": 0, "maximum": 1000000}),
+                                ),
+                            ],
+                            &["animationClipPath", "start", "duration"],
+                            false,
+                        ),
+                    ),
+                    (
+                        "start",
+                        json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                    ),
+                    (
+                        "duration",
+                        json!({"type": "number", "exclusiveMinimum": 0, "maximum": 1000000}),
+                    ),
+                    (
+                        "time",
+                        json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                    ),
+                ],
+                &["action"],
+                false,
+            ),
+            [
+                ("create_asset", vec!["assetPath"]),
+                ("assign_director", vec!["assetPath", "directorPath"]),
+                ("create_track", vec!["assetPath", "trackName"]),
+                ("delete_track", vec!["assetPath", "trackId"]),
+                (
+                    "add_clip",
+                    vec![
+                        "assetPath",
+                        "trackId",
+                        "animationClipPath",
+                        "start",
+                        "duration",
+                    ],
+                ),
+                (
+                    "update_clip",
+                    vec!["assetPath", "trackId", "clipIndex", "expectedClip"],
+                ),
+                (
+                    "remove_clip",
+                    vec!["assetPath", "trackId", "clipIndex", "expectedClip"],
+                ),
+                (
+                    "set_binding",
+                    vec!["directorPath", "trackId", "animatorPath"],
+                ),
+                ("clear_binding", vec!["directorPath", "trackId"]),
+                ("evaluate", vec!["directorPath", "time"]),
+            ]
+            .into_iter()
+            .map(|(action, required)| {
+                object_schema(
+                    &[("action", enum_string_schema(&[action]))],
+                    &required,
+                    true,
+                )
+            })
+            .collect(),
+        ),
         "ping" => object_schema(&[("message", string_schema())], &[], false),
         "create_scene" => object_schema(
             &[
@@ -2496,7 +2622,59 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 132);
+        assert_eq!(TOOL_NAMES.len(), 134);
+    }
+
+    #[test]
+    fn timeline_tools_are_discoverable_with_correct_mutation_flags() {
+        let specs = list_tool_specs();
+        for (name, mutating) in [("get_timeline", false), ("manage_timeline", true)] {
+            let spec = specs
+                .iter()
+                .find(|spec| spec.name == name)
+                .expect("Timeline tool is registered");
+            assert_eq!(spec.mutating, mutating);
+            assert_eq!(spec.executor, ToolExecutor::Remote);
+            assert_eq!(spec.params_schema["additionalProperties"], false);
+        }
+    }
+
+    #[test]
+    fn timeline_schema_exposes_actions_and_stale_clip_guard() {
+        let spec = get_tool_spec("manage_timeline").expect("manage_timeline exists");
+        let props = &spec.params_schema["properties"];
+        assert_eq!(
+            props["action"]["enum"],
+            json!([
+                "create_asset",
+                "assign_director",
+                "create_track",
+                "delete_track",
+                "add_clip",
+                "update_clip",
+                "remove_clip",
+                "set_binding",
+                "clear_binding",
+                "evaluate"
+            ])
+        );
+        assert_eq!(props["trackType"]["enum"], json!(["AnimationTrack"]));
+        assert_eq!(
+            props["expectedClip"]["required"],
+            json!(["animationClipPath", "start", "duration"])
+        );
+        assert_eq!(props["start"]["minimum"], 0);
+        assert_eq!(props["duration"]["exclusiveMinimum"], 0);
+        assert_eq!(props["time"]["minimum"], 0);
+        for field in ["start", "duration", "time"] {
+            assert_eq!(props[field]["maximum"], 1_000_000);
+        }
+        for field in ["start", "duration"] {
+            assert_eq!(
+                props["expectedClip"]["properties"][field]["maximum"],
+                1_000_000
+            );
+        }
     }
 
     #[test]

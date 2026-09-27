@@ -64,6 +64,8 @@ namespace UnityCliBridge.Core
                 ["find_by_component"] = command => Success(command, SceneAnalysisHandler.FindByComponent(command.Parameters)),
                 ["get_object_references"] = command => Success(command, SceneAnalysisHandler.GetObjectReferences(command.Parameters)),
                 ["get_animator_state"] = command => Success(command, AnimatorStateHandler.GetAnimatorState(command.Parameters)),
+                ["get_timeline"] = command => Success(command, TimelineHandler.GetTimeline(command.Parameters)),
+                ["manage_timeline"] = command => Success(command, TimelineHandler.ManageTimeline(command.Parameters)),
                 ["get_animator_runtime_info"] = command => Success(command, AnimatorStateHandler.GetAnimatorRuntimeInfo(command.Parameters)),
                 ["get_input_actions_state"] = command => Success(command, InputActionsHandler.GetInputActionsState(command.Parameters)),
                 ["analyze_input_actions_asset"] = command => Success(command, InputActionsHandler.AnalyzeInputActionsAsset(command.Parameters)),

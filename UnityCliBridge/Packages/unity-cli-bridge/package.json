@@ -20,7 +20,6 @@
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.inputsystem": "1.14.2",
-    "com.unity.recorder": "4.0.0",
     "com.unity.addressables": "1.22.3"
   },
   "repository": {

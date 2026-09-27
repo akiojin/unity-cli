@@ -1,0 +1,14 @@
+{
+    "name": "UnityCliBridge.Recorder.Editor",
+    "rootNamespace": "UnityCliBridge.Recorder",
+    "references": ["UnityCliBridge.Editor", "Unity.Recorder", "Unity.Recorder.Editor"],
+    "includePlatforms": ["Editor"],
+    "overrideReferences": true,
+    "precompiledReferences": ["Newtonsoft.Json.dll"],
+    "autoReferenced": true,
+    "defineConstraints": ["UNITY_RECORDER_PACKAGE"],
+    "versionDefines": [
+        { "name": "com.unity.recorder", "expression": "", "define": "UNITY_RECORDER_PACKAGE" }
+    ],
+    "noEngineReferences": false
+}

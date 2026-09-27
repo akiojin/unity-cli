@@ -1417,6 +1417,38 @@ mod tests {
     }
 
     #[test]
+    fn timeline_validation_requires_target_and_valid_action() {
+        assert!(validate_tool_params("get_timeline", &json!({})).is_err());
+        for params in [
+            json!({"assetPath": "Assets/Sequence.playable"}),
+            json!({"directorPath": "/Root/Director"}),
+        ] {
+            validate_tool_params("get_timeline", &params).expect("valid Timeline target");
+        }
+        assert!(validate_tool_params("manage_timeline", &json!({"action": "play"})).is_err());
+        assert!(validate_tool_params(
+            "manage_timeline",
+            &json!({"action": "update_clip", "expectedClip": {"start": 0}})
+        )
+        .is_err());
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn timeline_manage_is_skipped_in_dry_run() {
+        let value = execute_tool(
+            &cli_for_dry_run(Command::Tool {
+                command: ToolCommand::List,
+            }),
+            "manage_timeline",
+            json!({"action": "create_asset", "assetPath": "Assets/Sequence.playable"}),
+        )
+        .await
+        .expect("Timeline mutation should support dry-run");
+        assert_eq!(value["dryRun"], true);
+        assert_eq!(value["executed"], false);
+    }
+
+    #[test]
     fn augment_command_stats_inserts_cli_snapshot() {
         crate::core::command_stats::reset_for_tests();
         crate::core::command_stats::record_cli_tool_call(
