@@ -11,25 +11,22 @@ Operational guide for the `unity-cli reference` cache commands.
     Runtime/
     Editor/
     Modules/
-    .unity-cli-meta.json   # { version, branch, commit_sha, fetched_at, source_url }
+    .unity-cli-meta.json   # Stored provenance; field names use snake_case
 ```
 
 Override the base path with `UNITY_CLI_CACHE_ROOT` (defaults to `~/.unity/cache`). Each Unity version lives in its own directory and is independent of `~/.unity/tools/` (which stores managed binaries).
 
-## Branch Mapping
+## Public Ref Resolution
 
-The CLI maps the active Unity version (read from `ProjectSettings/ProjectVersion.txt`) to a UnityCsReference branch using a static table:
+The requested Unity version comes from `--version`, or from `ProjectSettings/ProjectVersion.txt` when omitted. An explicit version works outside a Unity project. Git discovers published heads and tags with `ls-remote`; the CLI selects in this order:
 
-| Unity major.minor | Branch       |
-|-------------------|--------------|
-| `2020.3`          | `2020.3/staging` |
-| `2021.3`          | `2021.3/staging` |
-| `2022.3`          | `2022.3/staging` |
-| `2023.1`          | `2023.1/staging` |
-| `2023.2`          | `2023.2/staging` |
-| `6000.0`          | `6000.0/staging` |
+1. The explicit `--branch` ref, if supplied (a short name or full `refs/heads/...` / `refs/tags/...` name).
+2. A published tag or head named exactly for the requested version.
+3. A published head for the same major.minor, named `<major.minor>` or `<major.minor>/staging`.
 
-Unmapped versions require `--branch <name>` so the CLI can fetch without guessing.
+Multiple candidates at the selected priority produce an ambiguity error listing candidates, even if they share a SHA. Choose one using its full ref name. If nothing matches, the error lists available branches; inspect those before passing an explicit ref. There is no unconditional staging fallback.
+
+Only the tag `refs/tags/<requested-version>` sets `exactMatch: true`. Branches, including version-named heads, report `false` because their content can change. A same-minor branch does not guarantee a patch-version match.
 
 ## Commands
 
@@ -39,14 +36,19 @@ Unmapped versions require `--branch <name>` so the CLI can fetch without guessin
 # Auto-detect Unity version from the current project
 unity-cli reference fetch --accept-license
 
-# Explicit version + branch
-unity-cli reference fetch --version 2023.2.20f1 --branch 2023.2/staging --accept-license
+# Explicit version, without a Unity project
+unity-cli reference fetch --version 6000.4.12f1 --accept-license
+
+# Explicit published branch; use a full ref to disambiguate short names
+unity-cli reference fetch --version 6000.4.12f1 --branch refs/heads/6000.4 --force --accept-license
 
 # Refetch an existing snapshot
-unity-cli reference fetch --version 2023.2.20f1 --force --accept-license
+unity-cli reference fetch --version 6000.4.12f1 --force --accept-license
 ```
 
-Fetch uses `git clone --depth 1 --single-branch --branch <branch>` so the on-disk footprint stays close to the source tree size. The `GITHUB_TOKEN` / `GH_TOKEN` environment variable is injected as `http.extraHeader=Authorization: token ...` to relieve rate limits when set.
+Fetch uses the selected commit SHA with a shallow Git fetch and detached checkout, then verifies `HEAD` against that SHA. The snapshot stays fixed even if the remote branch moves after discovery. `GITHUB_TOKEN` / `GH_TOKEN`, when set, supplies authentication. If Git is absent, the official repository uses paginated GitHub API discovery and a ZIP archive addressed by the selected SHA. A Git transport failure is reported directly; it never silently selects another ref.
+
+An existing version directory is skipped unless `--force` is set. The response returns its stored provenance, even when a different branch was requested; it does not relabel the cached source. Missing legacy metadata fields are returned as `null`. Use `--force` to fetch the newly requested ref. A replacement is prepared before switching directories, so a failed resolution or download preserves the previous cache.
 
 ### Status
 
@@ -54,7 +56,9 @@ Fetch uses `git clone --depth 1 --single-branch --branch <branch>` so the on-dis
 unity-cli reference status --output json
 ```
 
-Returns `{ ok: true, versions: [ { version, branch, fetchedAt, sizeBytes, path } ... ] }`. Use this to confirm a fetch completed and to monitor disk usage.
+Returns `{ ok: true, versions: [ ... ] }`. Each entry includes `version`, `branch`, `sourceRef`, `commitSha`, `exactMatch`, `selectionReason`, `sourceUrl`, `fetchedAt`, `sizeBytes`, and `path`. Fetch returns the same provenance fields. `branch` is the selected ref name without the `refs/heads/` or `refs/tags/` prefix; `sourceRef` retains the full name.
+
+The on-disk `.unity-cli-meta.json` uses `source_ref`, `commit_sha`, `exact_match`, `selection_reason`, `source_url`, and `fetched_at` alongside `version` and `branch`. Read `exactMatch` and `selectionReason` before treating the source as an exact editor-version match; use `commitSha` to identify the actual snapshot.
 
 ### Clean
 
@@ -72,4 +76,5 @@ unity-cli reference clean --keep 1
 
 - `git binary not found`: install `git` or point `PATH` at a working installation.
 - `Unity Companion License`: pass `--accept-license` or export `UNITY_CLI_ACCEPT_LICENSE=1`.
-- `Unity version ... not in the static branch map`: pass `--branch <name>` explicitly; consider opening an issue to extend the static table.
+- `ambiguous published refs`: choose one listed full ref with `--branch refs/heads/...` or `--branch refs/tags/...`.
+- `no published ref matches`: inspect the listed branches and explicitly select a suitable ref. Its `exactMatch` may be `false`.
