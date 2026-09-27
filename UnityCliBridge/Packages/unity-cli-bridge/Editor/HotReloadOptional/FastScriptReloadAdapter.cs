@@ -222,6 +222,7 @@ namespace UnityCliBridge.HotReload
                     throw new InvalidOperationException("FSR candidate methods could not be mapped exactly to every original method.");
                 patchAttempted = true;
                 SessionState.SetBool(DirtyKey, true);
+                current.AppliedRevision = null;
                 AssemblyChangesLoader.Instance.DynamicallyUpdateMethodsForCreatedAssembly(result.CompiledAssembly, new AssemblyChangesLoaderEditorOptionsNeededInBuild(false, false));
                 foreach (var name in originals.Keys)
                 {

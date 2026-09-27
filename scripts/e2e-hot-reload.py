@@ -1,5 +1,6 @@
 """Real Editor hot reload acceptance checks, run in an isolated fixture project."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 from pathlib import Path
@@ -112,15 +113,15 @@ def failed_compilation_cannot_certify_baseline():
     while time.monotonic() < deadline:
         time.sleep(1)
         try:
-            ledger = json.loads((args.project / "Library/UnityCliHotReloadProvenance.json").read_text())
             state = call("get_editor_state", {})["state"]
-            if "Assembly-CSharp" in ledger and not state["isCompiling"] and not state["isUpdating"]:
+            if not state["isCompiling"] and not state["isUpdating"]:
                 break
         except (AssertionError, OSError, ValueError):
             continue
     else:
         raise AssertionError("Restored baseline compilation did not finish")
-    # Rebuild and prove the legitimate restored baseline is accepted by the ledger.
+    # Restoring identical source can reuse compiler outputs without per-assembly
+    # completion evidence. Only explicit clean recovery must recreate the proof.
     recover_and_verify()
 
 
@@ -184,8 +185,23 @@ def run():
     same_state(before, 15)
     check(source_path.read_text() == source, "successful preview leaves disk source unchanged")
     # One method runs naturally, the other does not: must never claim whole-version success.
-    call("hot_reload", {"action": "apply", "source": changed.replace("input * 5", "input * 7").replace("input + 1", "input + 4"),
-                        "expectedRevision": applied["appliedRevision"], "timeoutSeconds": 30}, "HOT_RELOAD_VERIFICATION_FAILED")
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        pending = executor.submit(call, "hot_reload", {
+            "action": "apply",
+            "source": changed.replace("input * 5", "input * 7").replace("input + 1", "input + 4"),
+            "expectedRevision": applied["appliedRevision"], "timeoutSeconds": 30,
+        }, "HOT_RELOAD_VERIFICATION_FAILED")
+        deadline = time.monotonic() + 25
+        while time.monotonic() < deadline and not pending.done():
+            time.sleep(0.5)
+            if snapshot()["value"] == 21:
+                during = call("hot_reload_status", {})
+                check(during["state"] == "applying" and during["appliedRevision"] is None,
+                      "partially executing preview clears whole-version claim while verification is pending")
+                break
+        else:
+            raise AssertionError("Partial preview did not execute naturally before its verification deadline")
+        pending.result()
     failed = call("hot_reload_status", {})
     check(failed["appliedRevision"] is None and failed["recoveryRequired"],
           "unverified partial transaction clears whole-version claim and requires recovery")
