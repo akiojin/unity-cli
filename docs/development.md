@@ -199,6 +199,13 @@ scripts/e2e-test.sh
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
+# Timeline editing, persistence and Animator evaluation (real Editor)
+cargo build --bin unity-cli
+scripts/e2e-timeline-batch-host.sh --port 6474
+
+# Isolated project without com.unity.timeline: compile/start and error contract
+scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
+
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
@@ -219,6 +226,18 @@ scripts/perf-media-benchmark.sh
 ```
 
 ### Scene Layout Policy
+
+Timeline E2E uses `Assets/Scenes/Generated/E2E/Timeline/` for its fixture
+scene and assets. The suite checks clip timing, binding, asset unload/reimport
+and scene reload, numeric Animator evaluation, edits/removal, and rejected
+operations. The batch helper preserves Editor and test logs in the printed
+`/tmp/unity-cli-timeline-e2e.*` directory. The package-absent variant copies
+the Bridge into a temporary project; it never removes the working project's
+Timeline dependency. Recorder is also excluded from the isolated project because
+it depends on Timeline; the runner asserts neither package is in the resolved
+package lock. Set `UNITY_PATH` or `UNITY_CLI` to override binaries.
+Against an existing listener, run `scripts/e2e-timeline.sh --port <port>`;
+save unrelated dirty scenes first because the fixture opens its own scene.
 
 - Stable tracked scenes stay in `UnityCliBridge/Assets/Scenes/` (`SampleScene` only).
 - Local E2E-generated scenes go under `UnityCliBridge/Assets/Scenes/Generated/E2E/` and must not be committed.
