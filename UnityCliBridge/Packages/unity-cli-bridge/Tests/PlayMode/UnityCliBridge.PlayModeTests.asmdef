@@ -1,7 +1,9 @@
 {
     "name": "UnityCliBridge.PlayModeTests",
     "rootNamespace": "UnityCliBridge.Tests.PlayMode",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
