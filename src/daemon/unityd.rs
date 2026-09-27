@@ -17,7 +17,7 @@ use crate::core::command_stats::RemoteCommandTiming;
 use crate::core::contracts::BatchItem;
 use crate::daemon::runtime::DaemonRuntimePaths;
 use crate::lsp_manager;
-use crate::transport::UnityClient;
+use crate::transport::{UnityClient, UnityCommandError};
 
 const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 600;
 
@@ -66,6 +66,8 @@ pub enum DaemonCallError {
     Transport(#[from] anyhow::Error),
     #[error("unityd request failed: {0}")]
     RequestFailed(String),
+    #[error(transparent)]
+    UnityCommand(#[from] UnityCommandError),
 }
 
 impl DaemonCallError {
@@ -336,6 +338,11 @@ pub async fn try_call_tool_with_timing(
             timing: response.timing,
             daemon_roundtrip_ms: started_at.elapsed().as_secs_f64() * 1000.0,
         });
+    }
+
+    // Failed Unity calls carry their original error envelope in result.
+    if let Some(response) = response.result {
+        return Err(UnityCommandError::new(response).into());
     }
 
     Err(DaemonCallError::RequestFailed(
@@ -616,7 +623,9 @@ async fn handle_request(
                     Ok((
                         DaemonResponse {
                             ok: false,
-                            result: None,
+                            result: error
+                                .downcast_ref::<UnityCommandError>()
+                                .map(|failure| failure.response.clone()),
                             error: Some(error.to_string()),
                             timing: None,
                         },
