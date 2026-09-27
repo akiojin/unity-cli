@@ -245,6 +245,9 @@ scripts/e2e-bake-batch-host.sh --port 6477
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
 # See docs/hot-reload.md for installed-backend and supported x64 runs.
 
+# PlayMode result collection with Domain Reload enabled and disabled
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
+
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
 
@@ -804,6 +807,9 @@ scripts/e2e-input-batch-host.sh
 cargo build
 python3 scripts/e2e-unityd.py --port 6453
 # 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
+
+# Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
