@@ -1379,6 +1379,100 @@ mod tests {
     }
 
     #[test]
+    fn animation_curve_queries_validate_complete_binding_filters() {
+        for params in [
+            json!({"clipPath": "Assets/Test.anim"}),
+            json!({"clipPath": "Assets/Test.anim", "binding": {
+                "path": "", "component": "UnityEngine.Transform", "property": "m_LocalPosition.x"
+            }}),
+        ] {
+            validate_tool_params("get_animation_curves", &params).unwrap();
+        }
+        for params in [
+            json!({}),
+            json!({"clipPath": 1}),
+            json!({"clipPath": "Assets/Test.anim", "unknown": true}),
+            json!({"clipPath": "Assets/Test.anim", "binding": {"path": ""}}),
+            json!({"clipPath": "Assets/Test.anim", "binding": {
+                "path": "", "component": "UnityEngine.Transform", "property": "m_LocalPosition.x", "unknown": true
+            }}),
+        ] {
+            assert!(
+                validate_tool_params("get_animation_curves", &params).is_err(),
+                "{params}"
+            );
+        }
+    }
+
+    fn animation_curve_edit_params() -> serde_json::Value {
+        json!({
+            "clipPath": "Assets/Test.anim", "animationRoot": 42,
+            "binding": {"path": "", "component": "UnityEngine.Transform", "property": "m_LocalPosition.x"},
+            "operation": "set", "createIfMissing": true,
+            "keys": [{"time": 0.0, "value": 1.0}]
+        })
+    }
+
+    #[test]
+    fn animation_curve_edits_accept_operations_and_tangent_modes() {
+        for operation in ["set", "upsert_keys", "remove_keys", "remove_curve"] {
+            let mut params = animation_curve_edit_params();
+            params["operation"] = json!(operation);
+            params["times"] = json!([0.0, 1.0]);
+            validate_tool_params("edit_animation_curve", &params).unwrap();
+        }
+        for mode in ["Linear", "Constant", "Auto", "ClampedAuto", "Free"] {
+            let mut params = animation_curve_edit_params();
+            params["keys"][0]["leftTangentMode"] = json!(mode);
+            params["keys"][0]["rightTangentMode"] = json!(mode);
+            params["keys"][0]["inTangent"] = json!(0.5);
+            params["keys"][0]["outTangent"] = json!(-0.5);
+            validate_tool_params("edit_animation_curve", &params).unwrap();
+        }
+    }
+
+    #[test]
+    fn animation_curve_edits_reject_missing_identifiers_and_invalid_nested_fields() {
+        for required in ["clipPath", "animationRoot", "binding", "operation"] {
+            let mut params = animation_curve_edit_params();
+            params.as_object_mut().unwrap().remove(required);
+            assert!(
+                validate_tool_params("edit_animation_curve", &params).is_err(),
+                "{required}"
+            );
+        }
+        for (field, invalid) in [
+            ("animationRoot", json!("Root")),
+            ("animationRoot", json!(1.5)),
+            ("operation", json!("delete")),
+            ("createIfMissing", json!("yes")),
+            ("times", json!(["zero"])),
+            (
+                "binding",
+                json!({"path": "", "component": "UnityEngine.Transform"}),
+            ),
+            ("keys", json!([{"time": 0.0}])),
+            ("keys", json!([{"time": "zero", "value": 1.0}])),
+            ("keys", json!([{"time": 0.0, "value": 1.0, "weight": 0.5}])),
+            (
+                "keys",
+                json!([{"time": 0.0, "value": 1.0, "leftTangentMode": "Smooth"}]),
+            ),
+            (
+                "keys",
+                json!([{"time": 0.0, "value": 1.0, "outTangent": "flat"}]),
+            ),
+        ] {
+            let mut params = animation_curve_edit_params();
+            params[field] = invalid;
+            assert!(
+                validate_tool_params("edit_animation_curve", &params).is_err(),
+                "{params}"
+            );
+        }
+    }
+
+    #[test]
     fn validate_tool_params_accepts_create_sprite_atlas_payload() {
         validate_tool_params(
             "create_sprite_atlas",
