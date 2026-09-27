@@ -308,7 +308,7 @@ namespace UnityCliBridge.Handlers
                 var completed = new Dictionary<string, object>
                 {
                     ["status"] = "completed",
-                    ["success"] = collector.FailedTests.Count == 0,
+                    ["success"] = !collector.Failures.Any(),
                     ["totalTests"] = collector.TotalTests,
                     ["passedTests"] = collector.PassedTests.Count,
                     ["failedTests"] = collector.FailedTests.Count,
@@ -316,7 +316,7 @@ namespace UnityCliBridge.Handlers
                     ["inconclusiveTests"] = collector.InconclusiveTests.Count,
                     ["runId"] = currentRunId,
                     ["testMode"] = currentTestMode,
-                    ["failures"] = collector.FailedTests.Select(t => new
+                    ["failures"] = collector.Failures.Select(t => new
                     {
                         testName = t.fullName,
                         message = t.message,
@@ -636,6 +636,8 @@ namespace UnityCliBridge.Handlers
             public List<TestResultData> SkippedTests { get; } = new List<TestResultData>();
             public List<TestResultData> InconclusiveTests { get; } = new List<TestResultData>();
             public List<TestResultData> AllResults { get; } = new List<TestResultData>();
+            private readonly List<TestResultData> suiteFailures = new List<TestResultData>();
+            public IEnumerable<TestResultData> Failures => FailedTests.Concat(suiteFailures);
 
             public void RunStarted(ITestAdaptor testsToRun)
             {
@@ -664,6 +666,13 @@ namespace UnityCliBridge.Handlers
                 BridgeLogger.Log("TestExecutionHandler", $"Test finished: {result.Test.FullName} [{result.TestStatus}]");
                 runLastUpdateUtc = DateTime.UtcNow;
 
+                // TestFinished also receives fixture, assembly and root suites.
+                // Keep every result collection consistent with the leaf-only total.
+                if (result.Test.IsSuite && result.TestStatus != TestStatus.Failed)
+                {
+                    return;
+                }
+
                 var testResult = new TestResultData
                 {
                     name = result.Test.Name,
@@ -674,6 +683,14 @@ namespace UnityCliBridge.Handlers
                     stackTrace = result.StackTrace,
                     output = result.Output
                 };
+
+                if (result.Test.IsSuite)
+                {
+                    // A fixture can fail in OneTimeTearDown after every leaf passed.
+                    // Preserve its diagnostic and run outcome without counting a test.
+                    suiteFailures.Add(testResult);
+                    return;
+                }
 
                 AllResults.Add(testResult);
 
@@ -727,10 +744,10 @@ namespace UnityCliBridge.Handlers
                         ["failed"] = FailedTests.Count,
                         ["skipped"] = SkippedTests.Count,
                         ["inconclusive"] = InconclusiveTests.Count,
-                        ["status"] = FailedTests.Count == 0 ? "passed" : "failed"
+                        ["status"] = Failures.Any() ? "failed" : "passed"
                     };
 
-                    var failures = FailedTests.Select(t => new JObject
+                    var failures = Failures.Select(t => new JObject
                     {
                         ["name"] = t.name,
                         ["fullName"] = t.fullName,
