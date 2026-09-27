@@ -23,6 +23,8 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
+                ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
                 {
                     message = "pong",
@@ -160,6 +162,8 @@ namespace UnityCliBridge.Core
 
         internal static Task<string> Handle(Command command)
         {
+            if (command != null && PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                return Task.FromResult(buildResponse);
             if (command?.Type != null && Handlers.TryGetValue(command.Type, out var handler))
             {
                 return handler(command);

@@ -196,6 +196,10 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# Player build: relevant EditMode tests, real build/report, polling, failures,
+# restart recovery, and headless launch (isolated project copy on macOS)
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
@@ -666,6 +670,9 @@ cargo build --release
 
 # スモークE2E
 scripts/e2e-test.sh
+
+# Player build: 隔離コピーで EditMode・実ビルド・状態取得・失敗・再起動・画面なし起動
+python3 scripts/e2e-player-build.py --launch --editmode
 
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
