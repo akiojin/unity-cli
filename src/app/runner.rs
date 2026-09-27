@@ -6,9 +6,9 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
-    Cli, CliCommand, Command, InstancesCommand, LspCommand, LspdCommand, OutputFormat, RawArgs,
-    ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity, SkillsCommand, SystemCommand,
-    ToolCommand, UnitydCommand,
+    Cli, CliCommand, Command, EditorCommand, EvalMode, InstancesCommand, LspCommand, LspdCommand,
+    OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity,
+    SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
 };
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
@@ -37,6 +37,32 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
     crate::core::self_update::warn_cargo_conflict();
 
     match &cli.command {
+        Command::Editor { command } => {
+            let (tool, params) = match command {
+                EditorCommand::Eval {
+                    code,
+                    mode,
+                    request_id,
+                } => {
+                    let mut params = json!({
+                        "code": code,
+                        "mode": match mode {
+                            EvalMode::Expression => "expression",
+                            EvalMode::Statements => "statements",
+                        }
+                    });
+                    if let Some(id) = request_id {
+                        params["requestId"] = json!(id);
+                    }
+                    ("eval_csharp", params)
+                }
+                EditorCommand::EvalStatus { request_id } => {
+                    ("get_eval_status", json!({"requestId": request_id}))
+                }
+            };
+            let value = execute_tool(&cli, tool, params).await?;
+            print_value(&value, cli.output)?;
+        }
         Command::Raw(args) => {
             let value = execute_raw(&cli, args).await?;
             print_value(&value, cli.output)?;
@@ -435,7 +461,7 @@ async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     execute_tool(cli, &args.tool_name, params).await
 }
 
-async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value> {
+async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
     validate_tool_params(tool_name, &params)?;
 
     if should_skip_for_dry_run(cli, tool_name) {
@@ -453,7 +479,31 @@ async fn execute_tool(cli: &Cli, tool_name: &str, params: Value) -> Result<Value
     }
 
     let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
-    let (mut value, timing) = call_remote_tool_with_timing(&config, tool_name, params).await?;
+    let eval_id = if tool_name == "eval_csharp" {
+        if params.get("requestId").is_none() {
+            static NEXT_EVAL_ID: std::sync::atomic::AtomicU64 =
+                std::sync::atomic::AtomicU64::new(0);
+            let timestamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let sequence = NEXT_EVAL_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            params["requestId"] = json!(format!(
+                "cli-{}-{timestamp:x}-{sequence:x}",
+                std::process::id()
+            ));
+        }
+        params["requestId"].as_str().map(str::to_owned)
+    } else {
+        None
+    };
+    let call = call_remote_tool_with_timing(&config, tool_name, params).await;
+    let (mut value, timing) = match eval_id {
+        Some(id) => call.with_context(|| format!(
+            "Evaluation may still be running (requestId={id}). Query `unity-cli editor eval-status {id}` on the same endpoint; do not automatically rerun"
+        ))?,
+        None => call?,
+    };
     if tool_name == "get_command_stats" {
         augment_command_stats(&mut value);
     }
@@ -468,6 +518,11 @@ async fn call_remote_tool_with_timing(
     tool_name: &str,
     params: Value,
 ) -> Result<(Value, Option<CliCommandTiming>)> {
+    // A daemon transport failure may occur after evaluation began. Avoid the
+    // daemon/fallback path entirely so explicit C# is never automatically resent.
+    if tool_name == "eval_csharp" {
+        return call_remote_tool_direct(config, tool_name, params).await;
+    }
     // Try daemon first (fast path).
     match unityd::try_call_tool_with_timing(tool_name, &params, config).await {
         Ok(call) => {
@@ -507,7 +562,14 @@ async fn call_remote_tool_with_timing(
         Err(error) => return Err(error.into()),
     }
 
-    // Direct TCP fallback
+    call_remote_tool_direct(config, tool_name, params).await
+}
+
+async fn call_remote_tool_direct(
+    config: &RuntimeConfig,
+    tool_name: &str,
+    params: Value,
+) -> Result<(Value, Option<CliCommandTiming>)> {
     let connect_started_at = std::time::Instant::now();
     let mut client = UnityClient::connect(config).await.with_context(|| {
         format!(
@@ -558,7 +620,7 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
             .with_context(|| format!("Batch command validation failed for tool `{}`", item.tool))?;
     }
 
-    if !cli.dry_run {
+    if !cli.dry_run && !commands.iter().any(|item| item.tool == "eval_csharp") {
         let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),
@@ -1028,6 +1090,153 @@ fn init_tracing(verbose: u8) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn eval_transport_error_keeps_generated_request_id() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let size = stream.read_i32().await.unwrap();
+            let mut bytes = vec![0; size as usize];
+            stream.read_exact(&mut bytes).await.unwrap();
+            let request: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            stream.shutdown().await.unwrap();
+            request
+        });
+        let cli = Cli::try_parse_from([
+            "unity-cli",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            &port.to_string(),
+            "editor",
+            "eval",
+            "1+2",
+        ])
+        .unwrap();
+        let error = execute_tool(&cli, "eval_csharp", json!({"code":"1+2"}))
+            .await
+            .unwrap_err();
+        let request = server.await.unwrap();
+        let id = request["params"]["requestId"]
+            .as_str()
+            .expect("CLI assigns a recoverable ID");
+        assert!(!id.is_empty());
+        let message = format!("{error:#}");
+        assert!(message.contains(id), "{message}");
+        assert!(message.contains("eval-status"), "{message}");
+    }
+    #[cfg(unix)]
+    #[test]
+    fn eval_bypasses_daemon_in_single_and_batch_calls() {
+        use std::io::{BufRead, Write};
+        use std::sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        };
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let temp = tempfile::tempdir().unwrap();
+        let _tools = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", temp.path().to_str().unwrap());
+        let socket = crate::daemon::runtime::DaemonRuntimePaths::new("unityd")
+            .unwrap()
+            .socket_file()
+            .unwrap();
+        let listener = std::os::unix::net::UnixListener::bind(socket).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let done = Arc::new(AtomicBool::new(false));
+        let stop = done.clone();
+        let daemon = std::thread::spawn(move || {
+            let mut calls = 0;
+            while !stop.load(Ordering::Relaxed) {
+                if let Ok((mut stream, _)) = listener.accept() {
+                    let mut request = String::new();
+                    std::io::BufReader::new(stream.try_clone().unwrap())
+                        .read_line(&mut request)
+                        .unwrap();
+                    stream
+                        .write_all(b"{\"ok\":true,\"result\":{\"daemon\":true}}\n")
+                        .unwrap();
+                    calls += 1;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(1));
+            }
+            calls
+        });
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let (single, batch) = runtime.block_on(async {
+            let (port, server) = spawn_mock_bridge(2).await;
+            let mut cli = cli_for(Command::System {
+                command: SystemCommand::Ping { message: None },
+            });
+            cli.host = Some("127.0.0.1".into());
+            cli.port = Some(port);
+            let single = execute_tool(&cli, "eval_csharp", json!({"code":"1+2"}))
+                .await
+                .unwrap();
+            let batch = super::execute_batch(
+                &cli,
+                Some(r#"[{"tool":"eval_csharp","params":{"code":"1+2"}}]"#),
+                false,
+            )
+            .await
+            .unwrap();
+            server.abort();
+            (single, batch)
+        });
+        done.store(true, Ordering::Relaxed);
+        let calls = daemon.join().unwrap();
+        assert_eq!(calls, 0, "eval must not enter the daemon retry path");
+        assert_eq!(single["pong"], true);
+        assert_eq!(batch[0]["result"]["pong"], true);
+    }
+    use crate::tool_catalog::get_tool_spec;
+    use clap::Parser;
+    #[test]
+    fn eval_cli_accepts_code_and_rejects_invalid_mode() {
+        assert!(
+            Cli::try_parse_from(["unity-cli", "editor", "eval", "1+2", "--request-id", "sum"])
+                .is_ok()
+        );
+        assert!(Cli::try_parse_from(["unity-cli", "editor", "eval-status", "sum"]).is_ok());
+        assert!(
+            Cli::try_parse_from(["unity-cli", "editor", "eval", "1+2", "--mode", "script"])
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn eval_schemas_require_code_and_status_id() {
+        let eval = get_tool_spec("eval_csharp").expect("eval registered");
+        assert!(eval.mutating);
+        assert!(!get_tool_spec("get_eval_status").unwrap().mutating);
+        validate_tool_params("eval_csharp", &json!({"code":"1+2"})).unwrap();
+        validate_tool_params(
+            "eval_csharp",
+            &json!({"code":"return 3;", "mode":"statements", "requestId":"sum"}),
+        )
+        .unwrap();
+        assert!(validate_tool_params("eval_csharp", &json!({})).is_err());
+        assert!(
+            validate_tool_params("eval_csharp", &json!({"code":"1", "mode":"script"})).is_err()
+        );
+        assert!(validate_tool_params("get_eval_status", &json!({})).is_err());
+        validate_tool_params("get_eval_status", &json!({"requestId":"sum"})).unwrap();
+    }
+
+    #[tokio::test]
+    async fn eval_dry_run_does_not_execute_arbitrary_code() {
+        let cli = Cli::try_parse_from(["unity-cli", "--dry-run", "editor", "eval", "1+2"]).unwrap();
+        let result = execute_tool(&cli, "eval_csharp", json!({"code":"1+2"}))
+            .await
+            .unwrap();
+        assert_eq!(result["reason"], "mutating_tool_blocked_by_dry_run");
+    }
     use super::{
         build_reference_call, execute_tool, init_tracing, load_params, parse_external_tool_command,
         parse_json_object, parse_ports, parse_ports_with_diagnostics, print_value, run_with_cli,

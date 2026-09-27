@@ -68,6 +68,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "create_input_sequence",
     "get_current_input_state",
     "execute_menu_item",
+    "eval_csharp",
+    "get_eval_status",
     "package_manager",
     "registry_config",
     "get_editor_info",
@@ -188,6 +190,8 @@ fn to_static_name(name: &str) -> &'static str {
 fn tool_description(name: &str) -> &'static str {
     match name {
         "ping" => "Check Unity Editor connectivity",
+        "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
+        "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
         "create_scene" => "Create a new scene",
         "list_packages" => "List installed packages",
         "create_animator_controller" => {
@@ -269,6 +273,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_current_input_state"
             | "get_editor_info"
             | "get_editor_state"
+            | "get_eval_status"
             | "profiler_get_metrics"
             | "profiler_status"
             | "get_scene_info"
@@ -303,6 +308,21 @@ fn is_read_only_tool(name: &str) -> bool {
 
 fn tool_params_schema(name: &str) -> Value {
     match name {
+        "eval_csharp" => object_schema(
+            &[
+                ("code", string_schema()),
+                (
+                    "mode",
+                    json!({"type":"string", "enum":["expression", "statements"]}),
+                ),
+                ("requestId", string_schema()),
+            ],
+            &["code"],
+            false,
+        ),
+        "get_eval_status" => {
+            object_schema(&[("requestId", string_schema())], &["requestId"], false)
+        }
         "ping" => object_schema(&[("message", string_schema())], &[], false),
         "create_scene" => object_schema(
             &[
@@ -2476,7 +2496,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 130);
+        assert_eq!(TOOL_NAMES.len(), 132);
     }
 
     #[test]

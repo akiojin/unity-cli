@@ -199,6 +199,12 @@ scripts/e2e-test.sh
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
+# C# eval E2E against an existing listener (see editor-eval.md)
+scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
+
+# C# eval with an isolated batch host (build the debug CLI first)
+scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
+
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 

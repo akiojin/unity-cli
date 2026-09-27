@@ -9,6 +9,7 @@ Snapshot date: `2026-06-16`
 | `raw`       | (direct tool invocation)  |
 | `tool`      | `list`, `schema`, `call`  |
 | `system`    | `ping`                    |
+| `editor`    | `eval`, `eval-status`     |
 | `scene`     | `create`                  |
 | `instances` | `list`, `set-active`      |
 | `cli`       | `install`, `doctor`       |
@@ -30,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (119 tools)
+## Runtime Tool APIs (121 tools)
 
 ### Scenes
 
@@ -199,6 +200,8 @@ Registered tool total: 130 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 119 
 | `manage_tools`            | Manage editor tools         |
 | `manage_windows`          | Manage editor windows       |
 | `execute_menu_item`       | Execute a menu item         |
+| `eval_csharp`             | Evaluate synchronous C#     |
+| `get_eval_status`         | Query evaluation result     |
 | `package_manager`         | Manage packages             |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |
