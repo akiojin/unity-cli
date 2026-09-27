@@ -67,10 +67,13 @@ fn resolve_version_and_branch(params: &Value) -> Result<(String, String)> {
         .and_then(Value::as_str)
         .map(Path::new)
         .unwrap_or_else(|| Path::new("."));
+    if let Some(branch) = explicit_branch {
+        return Ok((version::read_from_project(project_root)?, branch));
+    }
     let detected = version::detect_from_project(project_root)?;
     Ok((
         explicit_version.unwrap_or(detected.version),
-        explicit_branch.unwrap_or(detected.branch),
+        detected.branch,
     ))
 }
 
@@ -649,6 +652,53 @@ mod tests {
         .unwrap();
         assert_eq!(v, "2025.1.0f1");
         assert_eq!(b, "custom/branch");
+    }
+
+    #[test]
+    fn resolve_version_and_branch_accepts_unknown_project_version_with_explicit_branch() {
+        let tmp = tempfile::tempdir().unwrap();
+        let settings = tmp.path().join("ProjectSettings");
+        std::fs::create_dir_all(&settings).unwrap();
+        std::fs::write(
+            settings.join("ProjectVersion.txt"),
+            "m_EditorVersion: 6000.4.12f1\n",
+        )
+        .unwrap();
+        let params = json!({"projectRoot": tmp.path(), "branch": "6000.4"});
+        assert_eq!(
+            resolve_version_and_branch(&params).unwrap(),
+            ("6000.4.12f1".to_string(), "6000.4".to_string())
+        );
+        for branch in [Value::Null, json!("")] {
+            let err =
+                resolve_version_and_branch(&json!({"projectRoot": tmp.path(), "branch": branch}))
+                    .unwrap_err();
+            assert!(err.to_string().contains("Pass --branch"));
+        }
+    }
+
+    #[test]
+    fn explicit_branch_still_requires_project_version_unless_version_is_explicit() {
+        let tmp = tempfile::tempdir().unwrap();
+        let params = json!({"projectRoot": tmp.path(), "branch": "6000.4"});
+        assert!(
+            format!("{:#}", resolve_version_and_branch(&params).unwrap_err())
+                .contains("failed to read")
+        );
+        let settings = tmp.path().join("ProjectSettings");
+        std::fs::create_dir_all(&settings).unwrap();
+        std::fs::write(settings.join("ProjectVersion.txt"), "m_EditorVersion: \n").unwrap();
+        assert!(resolve_version_and_branch(&params)
+            .unwrap_err()
+            .to_string()
+            .contains("m_EditorVersion"));
+        assert_eq!(
+            resolve_version_and_branch(&json!({
+                "projectRoot": tmp.path(), "version": "6000.4.12f1", "branch": "6000.4"
+            }))
+            .unwrap(),
+            ("6000.4.12f1".to_string(), "6000.4".to_string())
+        );
     }
 
     #[test]
