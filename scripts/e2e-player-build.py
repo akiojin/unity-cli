@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import socket
@@ -29,6 +30,10 @@ def main():
     if args.editmode and not args.launch:
         parser.error("--editmode requires --launch")
     if args.launch:
+        import fcntl
+        (ROOT / ".unity").mkdir(exist_ok=True)
+        project_lock = (ROOT / ".unity/player-build-project.lock").open("w")
+        fcntl.flock(project_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         # Unity import/build callbacks can serialize settings and assets. Use a copy
         # so verification never writes those generated changes into the checkout.
         source_project = PROJECT
@@ -197,8 +202,12 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
         check("report has no errors", result["totalErrors"] == 0)
         check("artifacts exist", bool(result["artifacts"]) and all(Path(p).exists() for p in result["artifacts"]))
         check("output app and required data exist", output.is_dir() and (output / "Contents/Resources/Data").is_dir())
-        cli("get_build_status", {"buildId": build_id})
-        check("CLI agrees with successful report", True)
+        success_cli = cli("get_build_status", {"buildId": build_id})
+        report_fields = ("buildId", "state", "reportResult", "totalErrors", "totalWarnings",
+                         "errors", "warnings", "outputPath", "artifacts",
+                         "changedProjectSettings")
+        check("CLI agrees with successful report", all(success_cli[key] == result[key] for key in report_fields) and
+              math.isclose(success_cli["durationSeconds"], result["durationSeconds"], abs_tol=1e-6))
         after = settings()
         changed = sorted(p for p in before.keys() | after.keys() if before.get(p) != after.get(p))
         check("scene build settings unchanged", before.get("ProjectSettings/EditorBuildSettings.asset") == after.get("ProjectSettings/EditorBuildSettings.asset"))
@@ -218,7 +227,9 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
             check("real BuildReport failure stays failed", failed["details"]["state"] == "failed" and failed["details"]["reportResult"] == "Failed")
             check("BuildReport errors preserved", failed["details"]["totalErrors"] > 0 and bool(failed["details"]["errors"]))
             failed_cli = cli("get_build_status", {"buildId": failed_id}, success=False)
-            check("failed CLI preserves report and exits nonzero", failed_cli is not None and failed_cli["details"]["buildId"] == failed_id)
+            check("failed CLI preserves report and exits nonzero", failed_cli is not None and
+                  all(failed_cli["details"][key] == failed["details"][key] for key in report_fields) and
+                  math.isclose(failed_cli["details"]["durationSeconds"], failed["details"]["durationSeconds"], abs_tol=1e-6))
             failure_marker.unlink()
         executable = next((output / "Contents/MacOS").iterdir())
         player = subprocess.Popen([str(executable), "-batchmode", "-nographics", "-logFile", str(run / "player.log")],
