@@ -262,10 +262,23 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
             interrupted_cli = cli("get_build_status", {"buildId": interrupted_id}, success=False)
             check("interrupted CLI preserves details and exits nonzero", interrupted_cli["details"]["state"] == "interrupted")
             compile_error.write_text("#error Intentional Player build E2E compilation failure\n")
-            tcp("refresh_assets", {})
+            # The restarted Editor may still be in its initial refresh/compile and not
+            # answer within the socket timeout; retry transport failures until the deadline.
             deadline = time.monotonic() + 90
             while True:
-                compilation = tcp("build_player", dict(params, outputPath=str(run / "compile/Player.app")))
+                try:
+                    tcp("refresh_assets", {})
+                    break
+                except (OSError, EOFError):
+                    assert time.monotonic() < deadline, "refresh_assets timed out"
+                    time.sleep(2)
+            while True:
+                try:
+                    compilation = tcp("build_player", dict(params, outputPath=str(run / "compile/Player.app")))
+                except (OSError, EOFError):
+                    assert time.monotonic() < deadline, "Compilation failure not observed"
+                    time.sleep(2)
+                    continue
                 if compilation.get("code") == "BUILD_COMPILATION_ERROR":
                     break
                 assert "result" not in compilation, "Build accepted despite compilation error fixture"
