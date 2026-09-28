@@ -206,6 +206,9 @@ scripts/e2e-timeline-batch-host.sh --port 6474
 # Isolated project without com.unity.timeline: compile/start and error contract
 scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
 
+# Input Actions types (both creation routes; requires this checkout's listener)
+scripts/e2e-input-actions.sh
+
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
@@ -669,6 +672,9 @@ scripts/e2e-test.sh
 
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
+
+# Input Actions の型指定（両作成経路、この checkout の listener が必要）
+scripts/e2e-input-actions.sh
 
 # headless batch host 入力 E2E
 scripts/e2e-input-batch-host.sh
