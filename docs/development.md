@@ -223,6 +223,9 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
 # Media / Profiler benchmark artifacts under UnityCliBridge/.unity/perf-media/
 scripts/perf-media-benchmark.sh
+
+# Recording formats: MP4, WebM and PNG sequence (graphics-enabled Editor in Play mode)
+scripts/e2e-video-formats.sh --port 6400
 ```
 
 ### Scene Layout Policy
@@ -244,6 +247,8 @@ save unrelated dirty scenes first because the fixture opens its own scene.
 - UI manual test scenes continue to use `UnityCliBridge/Assets/Scenes/Generated/UI/`.
 
 ### Media Perf Benchmark
+
+`scripts/e2e-video-formats.sh` checks actual file headers and session cleanup. It controls Play mode and restores its initial state; use a dedicated local Editor with a camera scene loaded. For a batch host, omit `-nographics` so Game View can render. Video start returns the planned output path; successful stop returns an existing nonempty file. For `png_sequence`, this is the first PNG in a unique session directory.
 
 - `scripts/lsp-perf-check.sh` is still the canonical benchmark for LSP/search/index performance. `scripts/perf-media-benchmark.sh` is a separate runtime benchmark for screenshot/video/profiler flows.
 - `scripts/perf-media-benchmark.sh` generates `Assets/Scenes/Generated/E2E/Performance/UnityCli_PerfBenchmark.unity` via `Tools/Unity CLI/Performance/Generate Media Perf Scene`.
@@ -687,6 +692,9 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
 # media capture / profiler ベンチマーク
 scripts/perf-media-benchmark.sh
+
+# 録画形式: MP4 / WebM / PNG連番（描画可能なEditor）
+scripts/e2e-video-formats.sh --port 6400
 ```
 
 ### シーン配置ポリシー
@@ -696,6 +704,8 @@ scripts/perf-media-benchmark.sh
 - UI 手動検証シーン（UGUI/UITK/IMGUI）は `Tools/Unity CLI/UI Tests/*` で必要時に `UnityCliBridge/Assets/Scenes/Generated/UI/` へ生成する
 
 ### Media Perf Benchmark
+
+`scripts/e2e-video-formats.sh` は実ファイルのヘッダーとセッション終了を検証します。Play状態を切り替えて元に戻すため、カメラのあるシーンを開いた専用Editorで実行します。batch-host では Game View を描画できるよう `-nographics` を外してください。録画開始時は予定パス、停止成功時は存在する空でないファイルのパスを返します。`png_sequence` の停止結果はセッション固有ディレクトリ内の最初のPNGです。
 
 - `scripts/lsp-perf-check.sh` は引き続き LSP / search / index 性能の正規ベンチマークで、`scripts/perf-media-benchmark.sh` とは別物。
 - `scripts/perf-media-benchmark.sh` は `Tools/Unity CLI/Performance/Generate Media Perf Scene` 経由で `Assets/Scenes/Generated/E2E/Performance/UnityCli_PerfBenchmark.unity` を生成する。
