@@ -2148,8 +2148,23 @@ mod tests {
         assert!(format!("{batch_err:#}").contains("Failed to connect to Unity"));
     }
 
+    #[allow(clippy::await_holding_lock)]
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_handles_instances_and_daemon_commands_without_server() {
+        // `instances list` rewrites the registry; isolate it from other registry tests.
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry = tempdir().expect("tempdir should succeed");
+        let _registry_env = EnvVarGuard::set(
+            "UNITY_CLI_REGISTRY_PATH",
+            registry
+                .path()
+                .join("instances.json")
+                .to_str()
+                .expect("registry path should be valid UTF-8"),
+        );
+
         run_with_cli(cli_for(Command::Instances {
             command: InstancesCommand::List {
                 ports: Some("9".to_string()),
