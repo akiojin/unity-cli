@@ -32,7 +32,7 @@ Global options:
 
 Registered tool total: 134 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 123 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (121 tools)
+## Runtime Tool APIs (123 tools)
 
 ### Scenes
 
