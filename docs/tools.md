@@ -9,6 +9,7 @@ Snapshot date: `2026-09-28`
 | `raw`       | (direct tool invocation)  |
 | `tool`      | `list`, `schema`, `call`  |
 | `system`    | `ping`                    |
+| `editor`    | `eval`, `eval-status`     |
 | `scene`     | `create`                  |
 | `instances` | `list`, `set-active`      |
 | `cli`       | `install`, `doctor`       |
@@ -259,6 +260,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `manage_tools`            | Manage editor tools         |
 | `manage_windows`          | Manage editor windows       |
 | `execute_menu_item`       | Execute a menu item         |
+| `eval_csharp`             | Evaluate synchronous C#     |
+| `get_eval_status`         | Query evaluation result     |
 | `package_manager`         | Manage packages             |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |

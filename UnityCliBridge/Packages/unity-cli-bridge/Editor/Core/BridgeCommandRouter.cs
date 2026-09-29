@@ -129,6 +129,8 @@ namespace UnityCliBridge.Core
                 ["list_components"] = command => Success(command, ComponentHandler.ListComponents(command.Parameters)),
                 ["get_component_types"] = command => Success(command, ComponentHandler.GetComponentTypes(command.Parameters)),
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
+                ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
+                ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
