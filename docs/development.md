@@ -240,6 +240,10 @@ scripts/e2e-input-batch-host.sh
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
 
+# Input Actions source JSON persistence, reimport, and Editor restart (two owned batch hosts)
+cargo build --bin unity-cli
+python3 scripts/e2e-input-actions-persistence.py --port 6428
+
 # The batch-host helper uses the editor version in ProjectVersion.txt by default
 # and only needs UNITY_PATH when that editor is not installed locally.
 
@@ -693,6 +697,12 @@ git config core.hooksPath .husky
 ## ローカル Unity E2E
 
 Unity E2E は CI では実行しません。Unity Editor が起動しているローカル環境でのみ実行します。
+
+Input Actions のソース JSON 保存・再import・Editor 再起動の回帰検証は、
+`cargo build --bin unity-cli` の後に
+`python3 scripts/e2e-input-actions-persistence.py --port 6428` を実行します。
+専用 batch host を2回起動し、生成アセットを終了時に削除します。
+Unity ログ・CLI 応答・集計 `summary.json` は出力された一時ディレクトリに残ります。
 
 ### 準備
 
