@@ -22,6 +22,10 @@
   不正なとき（`PARSE_ERROR`）の応答が、`ErrorResult(message, code, null)` のオーバーロード解決で
   `ErrorResult(id, message, code, details)` に束縛されていた。そのため `id` にメッセージ、`error` にコード、
   `code` に null が入っていた。`(object)null` を渡して、`(message, code, details)` を使うようにした。
+- `TestExecutionHandlerCollectorTests`（PM 指示で範囲に追加）: 2022.3 に同梱の Test Framework 1.1.33 の
+  `TestAdaptor` は、ルート直下のテストを assembly 階層とみなして `platform` プロパティを読む。テストが組み立てる
+  NUnit ツリーにはこのプロパティが無く、`NullReferenceException` で 6 件失敗していた（`origin/develop` でも同じ）。
+  テスト側で、ルート直下のテストに `platform` が無ければ設定するようにした（テストのみの変更）。
 
 ## 検証
 
@@ -30,17 +34,17 @@
 
 ```bash
 "$UNITY" -batchmode -projectPath "$PROJECT" -runTests -testPlatform EditMode \
-  -testFilter "UnityCliBridge.Tests.Editor.Core.BridgeCommandRouterTests;UnityCliBridge.Tests.Integration.UnityCliBridgeIntegrationTests;UnityCliBridge.Tests.Editor.Handlers.HotReloadHandlerTests;UnityCliBridge.Tests.PlayerBuildHandlerTests;UnityCliBridge.Tests.UIInteractionHandlerTests;UnityCliBridge.Tests.AnimationCurveHandlerTests;UnityCliBridge.Tests.Helpers.TestMethodReturnTypeTests" \
+  -testFilter "UnityCliBridge.Tests.Editor.Core.BridgeCommandRouterTests;UnityCliBridge.Tests.Integration.UnityCliBridgeIntegrationTests;UnityCliBridge.Tests.Editor.Handlers.HotReloadHandlerTests;UnityCliBridge.Tests.PlayerBuildHandlerTests;UnityCliBridge.Tests.UIInteractionHandlerTests;UnityCliBridge.Tests.AnimationCurveHandlerTests;UnityCliBridge.Tests.Helpers.TestMethodReturnTypeTests;UnityCliBridge.Tests.TestExecutionHandlerCollectorTests" \
   -testResults results.xml -logFile editor.log
 ```
 
 | Editor | 修正前 | 最終ソース |
 | --- | --- | --- |
-| 2022.3.62f3 | 18/59 PASS（40 件失敗: `Method has non-void return value` とガードテスト、1 件 skip: Integration） | 59/59 PASS（skipped 0） |
-| 6000.4.11f1 | — | 59/59 PASS（skipped 0） |
+| 2022.3.62f3 | 18/59 PASS（40 件失敗: `Method has non-void return value` とガードテスト、1 件 skip: Integration）。Collector は `origin/develop` で 1/7 PASS（6 件失敗） | 66/66 PASS（skipped 0） |
+| 6000.4.11f1 | — | 66/66 PASS（skipped 0） |
 
-`UnityCliBridge.Tests` アセンブリ全体（`-assemblyNames UnityCliBridge.Tests`）の結果:
+`UnityCliBridge.Tests` アセンブリ全体（Collector 修正前のソース）（`-assemblyNames UnityCliBridge.Tests`）の結果:
 
 - 6000.4.11f1: 540 PASS、失敗 0。skip 2 件（package-absent プロジェクトでだけ動く既存のテスト）。
 - 2022.3.62f3: 497 PASS、44 件失敗、2 件 skip（上と同じ）。失敗の内訳は、`VfxGraphHandlerTests` の 38 件（#344 / PR #351 の範囲）と、
-  `TestExecutionHandlerCollectorTests` の 6 件（`origin/develop` でも同じ 6 件が失敗する既存の問題で、今回の変更とは関係ない）。
+  `TestExecutionHandlerCollectorTests` の 6 件（`origin/develop` でも失敗していた既存の問題。上の修正で解消し、66/66 の run に含めて確認した）。

@@ -200,6 +200,13 @@ namespace UnityCliBridge.Tests
 
         private object AdaptTest(ITest test)
         {
+            // Test Framework 1.1.x (Unity 2022.3) treats a root child as the assembly level and
+            // parses its "platform" property; the real runner sets it, these synthetic trees must too.
+            if (test.Parent != null && test.Parent.Parent == null && !test.Properties.ContainsKey("platform"))
+            {
+                test.Properties.Set("platform", "PlayMode");
+            }
+
             var childCount = test.HasChildren ? test.Tests.Count : 0;
             var children = Array.CreateInstance(runnerAssembly.GetType("UnityEditor.TestTools.TestRunner.Api.ITestAdaptor", true), childCount);
             for (var index = 0; index < childCount; index++)
