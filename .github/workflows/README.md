@@ -20,6 +20,7 @@
 - `main-pr-policy.yml`
   - branch policy for PRs into `main`
 - `auto-merge.yml`
-  - enables GitHub auto-merge for non-draft same-repository PRs into `develop`
+  - enables GitHub auto-merge for non-draft same-repository PRs authored by
+    `akiojin` or `dependabot[bot]` into `develop`
     and for the `develop` -> `main` release PR
   - merges happen only after the branch-protection required checks pass
