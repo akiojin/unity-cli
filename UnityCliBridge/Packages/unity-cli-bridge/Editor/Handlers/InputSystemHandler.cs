@@ -103,6 +103,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleKeyboardAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -150,6 +151,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleMouseAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -200,6 +202,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleGamepadAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -247,6 +250,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleTouchAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -466,24 +470,49 @@ namespace UnityCliBridge.Handlers
         private static void ApplyStateChange<TState>(InputControl control, TState state)
             where TState : struct
         {
+            EnsureSimulationUpdateContext();
             InputState.Change(control, state, GetSimulationUpdateType());
         }
 
         private static void ApplyStateEvent(InputDevice device, InputEventPtr eventPtr)
         {
+            EnsureSimulationUpdateContext();
             InputState.Change(device, eventPtr, GetSimulationUpdateType());
+        }
+
+        private static void EnsureSimulationUpdateContext()
+        {
+            // Passing Dynamic to Change selects the state buffer, but does not change
+            // currentUpdateType. InputAction ignores notifications in Editor context.
+            // Enter the game update before changing state so both press and release
+            // reach action monitors, including releases scheduled by EditorApplication.
+            if (Application.isPlaying && InputState.currentUpdateType == InputUpdateType.Editor)
+            {
+                FlushQueuedEvents();
+            }
         }
 
         private static InputUpdateType GetSimulationUpdateType()
         {
-            return Application.isPlaying ? InputUpdateType.Dynamic : default;
+            if (!Application.isPlaying)
+                return default;
+
+            switch (InputSystem.settings.updateMode)
+            {
+                case InputSettings.UpdateMode.ProcessEventsInFixedUpdate:
+                    return InputUpdateType.Fixed;
+                case InputSettings.UpdateMode.ProcessEventsManually:
+                    return InputUpdateType.Manual;
+                default:
+                    return InputUpdateType.Dynamic;
+            }
         }
 
         private static void FlushQueuedEvents()
         {
             if (Application.isPlaying && InputSystemUpdateWithType != null)
             {
-                InputSystemUpdateWithType.Invoke(null, new object[] { InputUpdateType.Dynamic });
+                InputSystemUpdateWithType.Invoke(null, new object[] { GetSimulationUpdateType() });
                 return;
             }
 
@@ -1653,6 +1682,8 @@ namespace UnityCliBridge.Handlers
                 {
                     try
                     {
+                        // Release callbacks also read device state before changing it.
+                        EnsureSimulationUpdateContext();
                         scheduledReleases[i].Callback?.Invoke();
                     }
                     catch (Exception e)
