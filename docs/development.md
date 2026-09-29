@@ -721,6 +721,20 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 scripts/perf-media-benchmark.sh
 ```
 
+### タップ・スワイプの検証
+
+入力の `tap` / `swipe` は開始受付後すぐ応答し、自然な Input System 更新で
+複数フレームにわたって実行します。`holdSeconds` / `duration` は実時間で計測し、
+swipe は途中の位置と終点をゲームの Update に公開してから解除します。
+同じ `touchId` は受付順に実行し、異なる ID は並行して実行します。
+CLI の `touchId` はゼロ始まりで、Input System の `touchId` はその値 + 1 です。
+`touches` 配列内の物理スロットは Unity が割り当てます。
+batch / sequence の応答もジェスチャー終了待ちではなく受付結果です。
+
+`TouchGesturePlayModeTests` は実 Touchscreen を MonoBehaviour.Update から観測し、
+30fps・120fps・無制限での保持と移動、既定 tap、同一/別 ID、デバイス削除を検証します。
+実 Editor の PlayMode テストランナーでこのクラスを指定して実行してください。
+
 ### シーン配置ポリシー
 
 - `UnityCliBridge/Assets/Scenes/` 直下は固定で追跡するシーン（`SampleScene` のみ）を配置する
