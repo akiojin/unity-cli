@@ -868,7 +868,10 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception ex)
             {
-                arr.Add(new JObject { ["error"] = $"error-collector failed: {ex.Message}" });
+                var failure = new JObject { ["error"] = $"error-collector failed: {ex.Message}" };
+                // VFX 14 has no VFXErrorReporter: report the stable unsupported code with the entry.
+                if (ex is VfxInputException input) failure["code"] = input.Code;
+                arr.Add(failure);
             }
             return arr;
         }
@@ -1665,6 +1668,13 @@ namespace UnityCliBridge.Handlers
             };
         }
 
+        // Custom HLSL blocks and operators were introduced in VFX Graph 17.0; the descriptor is absent before.
+        private static void ThrowIfCustomHlslUnavailable(string requestedName)
+        {
+            if (requestedName.IndexOf("Custom HLSL", StringComparison.OrdinalIgnoreCase) >= 0)
+                throw new VfxInputException("Custom HLSL requires VFX Graph 17.0 or newer.", "VFX_API_UNSUPPORTED");
+        }
+
         private static object AddBlock(JObject parameters)
         {
             var assetPath = parameters?["assetPath"]?.ToString();
@@ -1684,7 +1694,10 @@ namespace UnityCliBridge.Handlers
                         ?? descriptors.FirstOrDefault(d =>
                             ((Prop(d, "name") as string)?.IndexOf(blockName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
             if (match == null)
+            {
+                ThrowIfCustomHlslUnavailable(blockName);
                 throw new VfxInputException($"No block descriptor matching '{blockName}'. Try vfx_list_library to discover names.");
+            }
 
             var block = Call(match, match.GetType(), "CreateInstance");
             if (block == null)
@@ -2593,8 +2606,11 @@ namespace UnityCliBridge.Handlers
                         ?? descriptors.FirstOrDefault(d =>
                             ((Prop(d, "name") as string)?.IndexOf(operatorName, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
             if (match == null)
+            {
+                ThrowIfCustomHlslUnavailable(operatorName);
                 throw new VfxInputException(
                     $"No operator descriptor matching '{operatorName}'. Use vfx_list_library with kind 'operator' to discover names.");
+            }
 
             var op = Call(match, match.GetType(), "CreateInstance");
             if (op == null)
@@ -5401,6 +5417,10 @@ namespace UnityCliBridge.Handlers
                 return new { error = "title is required" };
             if (!(parameters?["nodes"] is JArray nodesTok) || nodesTok.Count == 0)
                 return new { error = "nodes is required (array of node addresses: {node: context|operator|parameter, …index})" };
+            // Reject an unsupported note colorTheme before the group is created, not after.
+            if (parameters?["note"]?["colorTheme"] is JToken theme && theme.Type != JTokenType.Null
+                && FindField(StickyNoteInfoType, "colorTheme") == null)
+                throw new VfxInputException("colorTheme requires VFX Graph 17.4 or newer.", "VFX_API_UNSUPPORTED");
 
             var graph = LoadGraph(assetPath);
             var ui = Prop(graph, "UIInfos");
