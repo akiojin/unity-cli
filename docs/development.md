@@ -309,6 +309,37 @@ package lock. Set `UNITY_PATH` or `UNITY_CLI` to override binaries.
 Against an existing listener, run `scripts/e2e-timeline.sh --port <port>`;
 save unrelated dirty scenes first because the fixture opens its own scene.
 
+### Editor version matrix
+
+Run the existing acceptance suites in isolated projects for every supported
+Editor. The source `UnityCliBridge` project is never opened by this runner.
+Build the CLI, publish the LSP into a dedicated directory, and select an Editor:
+
+```bash
+cargo build --bin unity-cli
+dotnet publish lsp/Server.csproj -c Release -r osx-arm64 --self-contained true \
+  -o /tmp/unity-cli-matrix-tools/csharp-lsp/osx-arm64
+scripts/e2e-matrix.sh \
+  --editor /Applications/Unity/Hub/Editor/6000.7.0b2/Unity.app/Contents/MacOS/Unity \
+  --lsp-root /tmp/unity-cli-matrix-tools
+```
+
+Omit `--editor` to run all eight versions listed in the
+[dated compatibility matrix](editor-compatibility.md); repeat it to select several.
+`--port` chooses an unused local listener port. `--output` names a new evidence
+directory. `--suites compile,input,timeline,vfx` performs a focused diagnostic run;
+its report explicitly records `full_matrix: false`. Acceptance uses the default
+complete suite set. A missing Editor, compiler error, failed suite or timeout
+fails the run. Inspect `matrix.json` and the linked per-suite logs before claiming PASS.
+
+Graphics stay enabled for VFX/SDF. Only processes launched by the runner are
+stopped. Project settings, generated assets and package imports remain in the
+retained temporary fixture. Editor reloads and scripts may reset the listener;
+readiness requires an idle compiler, zero compilation errors and the owned port.
+
+Unity 6000.7 Editor tests run on Mono. CoreCLR is a Player backend and is outside
+this Editor matrix; the compatibility page links the official runtime boundary.
+
 ### VFX Graph verification
 
 The Bridge uses reflection for the optional `com.unity.visualeffectgraph`
