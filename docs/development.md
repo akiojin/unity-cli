@@ -233,6 +233,10 @@ scripts/e2e-test-results.sh
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
+# Isolated optional hot reload backend / real Editor checks
+scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
+# See docs/hot-reload.md for installed-backend and supported x64 runs.
+
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
 
