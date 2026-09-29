@@ -1025,7 +1025,7 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "add_context",
                 ["assetPath"] = copy,
-                ["contextName"] = "Output Particle|Point",
+                ["contextName"] = LibName("Output Particle|Point", "Output Particle Point"),
                 ["linkFrom"] = "Update"
             }));
             Assert.AreEqual("VFXPointOutput", result.Value<string>("addedContext"));
@@ -1183,7 +1183,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "add_block",
                 ["assetPath"] = copy,
                 ["contextType"] = "Update",
-                ["blockName"] = "|Set|_Velocity"
+                ["blockName"] = LibName("|Set|_Velocity", "Set Velocity")
             });
             VfxGraphHandler.Apply(new JObject
             {
@@ -1243,7 +1243,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "add_block",
                 ["assetPath"] = copy,
                 ["contextType"] = "Update",
-                ["blockName"] = "|Set|_Velocity"
+                ["blockName"] = LibName("|Set|_Velocity", "Set Velocity")
             });
 
             // Copy the Update block into the Init context (Set Velocity is valid in both).
@@ -1552,7 +1552,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Init", ["blockName"] = "|Set|_Velocity"
+                ["contextType"] = "Init", ["blockName"] = LibName("|Set|_Velocity", "Set Velocity")
             });
             VfxGraphHandler.Apply(new JObject
             {
@@ -1694,7 +1694,7 @@ namespace UnityCliBridge.Tests
         {
             string copy = CopyFixture("sticky");
 
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            var request = new JObject
             {
                 ["op"] = "add_sticky_note",
                 ["assetPath"] = copy,
@@ -1703,7 +1703,8 @@ namespace UnityCliBridge.Tests
                 ["position"] = new JArray { 100f, 50f, 240f, 120f },
                 ["colorTheme"] = 2,
                 ["textSize"] = "Medium"
-            }));
+            };
+            JObject result = ApplyThemed(request, request);
             Assert.AreEqual(0, result.Value<int>("stickyNoteIndex"));
 
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
@@ -1712,7 +1713,7 @@ namespace UnityCliBridge.Tests
             var note = ((JArray)after["stickyNotes"])[0];
             Assert.AreEqual("TODO", note.Value<string>("title"));
             Assert.AreEqual("Wire up bursts", note.Value<string>("contents"));
-            Assert.AreEqual(2, note.Value<int>("colorTheme"));
+            if (VfxAtLeast(17, 4)) Assert.AreEqual(2, note.Value<int>("colorTheme"));
             Assert.AreEqual("Medium", note.Value<string>("textSize"));
             var pos = note["position"];
             Assert.AreEqual(100f, pos.Value<float>("x"), 0.001f);
@@ -1907,6 +1908,7 @@ namespace UnityCliBridge.Tests
         public void ApplyCustomHLSL_AddsBlockAndWritesInlineSource()
         {
             string copy = CopyFixture("customhlsl");
+            if (CustomHlslUnsupported(copy)) return;
             const string source =
                 "void MyHLSL(inout VFXAttributes attributes, in float scale)\n" +
                 "{\n  attributes.position *= scale;\n}";
@@ -2139,7 +2141,8 @@ namespace UnityCliBridge.Tests
             // [VFXSetting] (a flags enum: Spawner/Init/Update/Output + combos) controls which contexts
             // accept the subgraph block. Default is InitAndUpdateAndOutput.
             JObject baseline = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = subPath }));
-            var blkCtx = FindContext(baseline, "BlockSubgraph");
+            // VFX 14 reports the block-subgraph context's contextType as None; address it by class.
+            var blkCtx = ((JArray)baseline["contexts"]).FirstOrDefault(c => (string)c["type"] == "VFXBlockSubgraphContext");
             Assert.IsNotNull(blkCtx, "the block subgraph asset should hold a BlockSubgraph context");
             Assert.AreEqual("InitAndUpdateAndOutput", blkCtx["settings"].Value<string>("m_SuitableContexts"),
                 "fresh block subgraphs default to InitAndUpdateAndOutput");
@@ -2147,14 +2150,14 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "set_context_setting", ["assetPath"] = subPath,
-                ["contextType"] = "BlockSubgraph",
+                ["index"] = blkCtx.Value<int>("index"),
                 ["setting"] = "m_SuitableContexts", ["value"] = "UpdateAndOutput"
             });
 
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
                 new JObject { ["assetPath"] = subPath, ["includeErrors"] = true }));
             Assert.AreEqual("UpdateAndOutput",
-                FindContext(after, "BlockSubgraph")["settings"].Value<string>("m_SuitableContexts"),
+                ((JArray)after["contexts"])[blkCtx.Value<int>("index")]["settings"].Value<string>("m_SuitableContexts"),
                 "set_context_setting should restrict the block subgraph's suitable contexts");
             AssertNoErrorTier(after);
         }
@@ -2242,7 +2245,7 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "add_context",
                 ["assetPath"] = copy,
-                ["contextName"] = "Output Particle|Unlit|Quad"
+                ["contextName"] = LibName("Output Particle|Unlit|Quad", "Output Particle Quad")
             });
 
             // Wire the second system by index (Minimal has 4 contexts; new ones land at 4, 5, 6).
@@ -2299,6 +2302,20 @@ namespace UnityCliBridge.Tests
         public void ApplySetContextSetting_AssignsShaderGraphAssetToComposedOutput()
         {
             string copy = CopyFixture("shadergraph");
+            if (Predates(17))
+            {
+                // VFX 14 has no composed Shader Graph output: the existing output takes it directly.
+                JObject legacy = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "set_context_setting", ["assetPath"] = copy, ["contextType"] = "Output",
+                    ["setting"] = "shaderGraph", ["value"] = ShaderGraphFixture
+                }));
+                Assert.AreEqual("context", legacy.Value<string>("via"), legacy.ToString());
+                JToken legacyRef = FindContext(ToJObject(VfxGraphHandler.DescribeGraph(
+                    new JObject { ["assetPath"] = copy })), "Output")["settings"]["shaderGraph"];
+                Assert.AreEqual(ShaderGraphFixture, legacyRef.Value<string>("assetPath"));
+                return;
+            }
 
             // A Shader Graph output is the dedicated composed output (VFXComposedParticleOutput);
             // assigning a shaderGraph to the legacy Unlit output instead raises WrongOutputShaderGraph.
@@ -2341,10 +2358,12 @@ namespace UnityCliBridge.Tests
 
             // Flipbook layout is gated behind uvMode: switching to Flipbook surfaces a flipBookSize
             // input slot on the Output and enables the flipbook blend / motion-vector settings.
+            // VFX 14 selects frame blending and motion vectors through uvMode itself.
+            string uvMode = LibName("Flipbook", "FlipbookMotionBlend");
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "set_context_setting", ["assetPath"] = copy,
-                ["contextType"] = "Output", ["setting"] = "uvMode", ["value"] = "Flipbook"
+                ["contextType"] = "Output", ["setting"] = "uvMode", ["value"] = uvMode
             });
 
             // flipBookSize is a FlipBook struct slot (x/y grid). Set each component via subPath.
@@ -2356,24 +2375,30 @@ namespace UnityCliBridge.Tests
                     ["subPath"] = new JArray { axis }, ["value"] = val
                 });
 
-            VfxGraphHandler.Apply(new JObject
+            if (VfxAtLeast(17))
             {
-                ["op"] = "set_context_setting", ["assetPath"] = copy,
-                ["contextType"] = "Output", ["setting"] = "flipbookBlendFrames", ["value"] = true
-            });
-            VfxGraphHandler.Apply(new JObject
-            {
-                ["op"] = "set_context_setting", ["assetPath"] = copy,
-                ["contextType"] = "Output", ["setting"] = "flipbookMotionVectors", ["value"] = true
-            });
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "set_context_setting", ["assetPath"] = copy,
+                    ["contextType"] = "Output", ["setting"] = "flipbookBlendFrames", ["value"] = true
+                });
+                VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "set_context_setting", ["assetPath"] = copy,
+                    ["contextType"] = "Output", ["setting"] = "flipbookMotionVectors", ["value"] = true
+                });
+            }
 
             JObject after = ToJObject(VfxGraphHandler.DescribeGraph(
                 new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
             var output = FindContext(after, "Output");
 
-            Assert.AreEqual("Flipbook", output["settings"].Value<string>("uvMode"));
-            Assert.IsTrue(output["settings"].Value<bool>("flipbookBlendFrames"));
-            Assert.IsTrue(output["settings"].Value<bool>("flipbookMotionVectors"));
+            Assert.AreEqual(uvMode, output["settings"].Value<string>("uvMode"));
+            if (VfxAtLeast(17))
+            {
+                Assert.IsTrue(output["settings"].Value<bool>("flipbookBlendFrames"));
+                Assert.IsTrue(output["settings"].Value<bool>("flipbookMotionVectors"));
+            }
 
             // The flipBookSize slot is now present and holds the 8x2 grid we set.
             var sizeSlot = ((JArray)output["inputSlots"])
@@ -2410,11 +2435,12 @@ namespace UnityCliBridge.Tests
                 ["assetPath"] = copy,
                 ["contextName"] = "Update Particle"
             });
+            // VFX 17 has a dedicated composed strip output; VFX 14's quad output adopts strip data.
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_context",
                 ["assetPath"] = copy,
-                ["contextName"] = "Output ParticleStrip|Shader Graph|Quad"
+                ["contextName"] = LibName("Output ParticleStrip|Shader Graph|Quad", "Output Particle Quad")
             });
 
             // Wire the strip system by index (new contexts land at 4, 5, 6).
@@ -2446,8 +2472,21 @@ namespace UnityCliBridge.Tests
             // The strip Initialize seeds ParticleStrip data (vs the plain "Particle" original).
             Assert.AreEqual("ParticleStrip", initStrip["settings"].Value<string>("dataType"),
                 "Initialize Particle Strip should produce ParticleStrip data");
-            Assert.AreEqual("VFXComposedParticleStripOutput", outputStrip.Value<string>("type"),
-                "the strip output context should be the composed strip output");
+            Assert.AreEqual(LibName("VFXComposedParticleStripOutput", "VFXPlanarPrimitiveOutput"),
+                outputStrip.Value<string>("type"),
+                "the strip output context should be the package's strip-capable output");
+            if (VfxAtLeast(17) && Predates(17, 3))
+            {
+                // VFX 17.0 flags a composed strip output without a Shader Graph as an Error.
+                JObject sg = ToJObject(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "set_context_setting", ["assetPath"] = copy, ["index"] = 6,
+                    ["setting"] = "shaderGraph", ["value"] = ShaderGraphFixture
+                }));
+                Assert.IsNull(sg["error"], sg.ToString());
+                after = ToJObject(VfxGraphHandler.DescribeGraph(
+                    new JObject { ["assetPath"] = copy, ["includeErrors"] = true }));
+            }
 
             // All three strip contexts share one VFXData, distinct from the original system's.
             int stripData = initStrip.Value<int>("dataInstanceId");
@@ -2480,10 +2519,10 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
             VfxGraphHandler.Apply(new JObject
-            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Mesh" });
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("Output Particle|Unlit|Mesh", "Output Particle Mesh") });
             // A standalone static-mesh output: its own single-context system (no Init/Update).
             VfxGraphHandler.Apply(new JObject
-            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Single Mesh" });
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("Output Single Mesh", "Output Mesh") });
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -2580,7 +2619,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
             VfxGraphHandler.Apply(new JObject
-            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("Output Particle|Unlit|Quad", "Output Particle Quad") });
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_flow", ["assetPath"] = copy,
@@ -2651,7 +2690,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Update Particle" });
             VfxGraphHandler.Apply(new JObject
-            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("Output Particle|Unlit|Quad", "Output Particle Quad") });
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_flow", ["assetPath"] = copy,
@@ -2728,6 +2767,16 @@ namespace UnityCliBridge.Tests
         public void ApplyAddCustomAttribute_CreatesAndReferencesInSetBlock()
         {
             string copy = CopyFixture("customattr");
+            if (Predates(17))
+            {
+                // Blackboard custom attributes arrived in VFX 17.0.
+                AssertUnsupported(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                    ["attributeName"] = "Heat", ["attributeType"] = "Float"
+                }));
+                return;
+            }
 
             // Two custom attributes of different signatures.
             JObject heat = ToJObject(VfxGraphHandler.Apply(new JObject
@@ -2759,7 +2808,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Init", ["blockName"] = "|Set|_Color"
+                ["contextType"] = "Init", ["blockName"] = LibName("|Set|_Color", "Set Color")
             });
             VfxGraphHandler.Apply(new JObject
             {
@@ -2780,6 +2829,16 @@ namespace UnityCliBridge.Tests
         public void ApplyAddCustomAttribute_RejectsBuiltInAndDuplicateAndBadType()
         {
             string copy = CopyFixture("customattrbad");
+            if (Predates(17))
+            {
+                // Blackboard custom attributes arrived in VFX 17.0.
+                AssertUnsupported(VfxGraphHandler.Apply(new JObject
+                {
+                    ["op"] = "add_custom_attribute", ["assetPath"] = copy,
+                    ["attributeName"] = "Heat", ["attributeType"] = "Float"
+                }));
+                return;
+            }
 
             // A built-in attribute name can't be re-declared as custom.
             AssertError(VfxGraphHandler.Apply(new JObject
@@ -2818,7 +2877,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Init", ["blockName"] = "|Set|_Position"
+                ["contextType"] = "Init", ["blockName"] = LibName("|Set|_Position", "Set Position")
             });
             VfxGraphHandler.Apply(new JObject
             {
@@ -2837,7 +2896,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_operator", ["assetPath"] = copy,
-                ["operatorName"] = "Get|_Position"
+                ["operatorName"] = LibName("Get|_Position", "Get Attribute: position")
             });
             VfxGraphHandler.Apply(new JObject
             {
@@ -2862,6 +2921,7 @@ namespace UnityCliBridge.Tests
         public void ApplyCustomHLSL_BlockFunctionSelectorReshapesSlots()
         {
             string copy = CopyFixture("hlslfunc");
+            if (CustomHlslUnsupported(copy)) return;
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -2911,6 +2971,7 @@ namespace UnityCliBridge.Tests
         public void ApplyCustomHLSL_OperatorInlineSourceAndFunctionSelector()
         {
             string copy = CopyFixture("hlslop");
+            if (CustomHlslUnsupported(copy, asOperator: true)) return;
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -2957,6 +3018,7 @@ namespace UnityCliBridge.Tests
                 Assert.Ignore($"ShaderInclude fixture not present: {ShaderIncludeFixture}");
             }
             string copy = CopyFixture("hlslfile");
+            if (CustomHlslUnsupported(copy)) return;
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -2988,6 +3050,7 @@ namespace UnityCliBridge.Tests
         public void ApplyCustomHLSL_ResolvesBufferAndTextureTypes()
         {
             string copy = CopyFixture("hlsltex");
+            if (CustomHlslUnsupported(copy)) return;
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -3023,6 +3086,7 @@ namespace UnityCliBridge.Tests
                 Assert.Ignore($"HLSL include fixtures not present: {ShaderMainFixture}");
             }
             string copy = CopyFixture("hlslinclude");
+            if (CustomHlslUnsupported(copy)) return;
 
             VfxGraphHandler.Apply(new JObject
             {
@@ -3051,18 +3115,47 @@ namespace UnityCliBridge.Tests
         public void ApplyEvents_GpuEventChainTriggerToSecondSystem()
         {
             string copy = CopyFixture("gpuevent");
+            // GPU Events are experimental before VFX 17.3: the library lists them only when the
+            // experimental-operator preference is on.
+            bool experimental = Predates(17, 3);
+            bool restoreExperimental = experimental && !ToJObject(VfxGraphHandler.Settings(
+                new JObject { ["op"] = "get", ["scope"] = "preferences" }))["properties"].Value<bool>("displayExperimentalOperator");
+            if (experimental) SetExperimentalOperators(true);
+            try
+            {
+                ApplyGpuEventChain(copy);
+            }
+            finally
+            {
+                if (restoreExperimental) SetExperimentalOperators(false);
+            }
+        }
 
+        private static void SetExperimentalOperators(bool enabled)
+        {
+            var set = ToJObject(VfxGraphHandler.Settings(new JObject
+            {
+                ["op"] = "set", ["scope"] = "preferences",
+                ["setting"] = "displayExperimentalOperator", ["value"] = enabled
+            }));
+            Assert.AreEqual(enabled, set.Value<bool>("value"), set.ToString());
+        }
+
+        private static void ApplyGpuEventChain(string copy)
+        {
             // A Trigger Event block in Update emits a GPU event (output slot `evt`).
-            VfxGraphHandler.Apply(new JObject
+            JObject trigger = ToJObject(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Update", ["blockName"] = "Trigger Event|On Die"
-            });
+                ["contextType"] = "Update", ["blockName"] = LibName("Trigger Event|On Die", "Trigger Event On Die")
+            }));
+            Assert.IsNull(trigger["error"], trigger.ToString());
             // A GPU Event context (contextType "SpawnerGPU") receives it via its `evt` input slot.
-            VfxGraphHandler.Apply(new JObject
+            JObject gpuEvent = ToJObject(VfxGraphHandler.Apply(new JObject
             {
-                ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "GPU Event"
-            });
+                ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("GPU Event", "GPUEvent")
+            }));
+            Assert.IsNull(gpuEvent["error"], gpuEvent.ToString());
             JObject linked = ToJObject(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "link_slots", ["assetPath"] = copy,
@@ -3078,7 +3171,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Initialize Particle" });
             VfxGraphHandler.Apply(new JObject
-            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = "Output Particle|Unlit|Quad" });
+            { ["op"] = "add_context", ["assetPath"] = copy, ["contextName"] = LibName("Output Particle|Unlit|Quad", "Output Particle Quad") });
             // Contexts: 0 Spawner,1 Init,2 Update,3 Output,4 SpawnerGPU,5 Init2,6 Output2.
             VfxGraphHandler.Apply(new JObject
             {
@@ -3585,7 +3678,7 @@ namespace UnityCliBridge.Tests
             // Merge a populated template into the EXISTING graph (vs create_from_template, a new asset).
             JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
             {
-                ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = "03_Simple_Burst"
+                ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = BurstTemplate()
             }));
             Assert.AreEqual(4, result.Value<int>("addedNodes"),
                 "the burst template contributes a Spawner/Init/Update/Output system");
@@ -3628,6 +3721,12 @@ namespace UnityCliBridge.Tests
                 ["op"] = "designate_template", ["assetPath"] = copy,
                 ["name"] = "My Burst", ["category"] = "My Custom", ["description"] = "a test template"
             }));
+            if (FindVfxType("UnityEditor.Experimental.GraphView.GraphViewTemplateDescriptor") == null)
+            {
+                // Custom templates need the GraphView template descriptor (absent in VFX 14 and 17.0).
+                AssertUnsupported(result);
+                return;
+            }
             var t = result["template"];
             Assert.AreEqual("My Burst", (string)t["name"]);
             Assert.AreEqual("My Custom", (string)t["category"]);
@@ -3860,7 +3959,7 @@ namespace UnityCliBridge.Tests
                 ["op"] = "add_block",
                 ["assetPath"] = copy,
                 ["contextType"] = "Init",
-                ["blockName"] = "|Set|_Color"
+                ["blockName"] = LibName("|Set|_Color", "Set Color")
             }));
             Assert.AreEqual("SetAttribute", add.Value<string>("addedBlock"),
                 "all Set <Attribute> descriptors instantiate the single SetAttribute block class");
@@ -3881,7 +3980,7 @@ namespace UnityCliBridge.Tests
             {
                 ["op"] = "add_operator",
                 ["assetPath"] = copy,
-                ["operatorName"] = "Get|_Position"
+                ["operatorName"] = LibName("Get|_Position", "Get Attribute: position")
             }));
             Assert.AreEqual("VFXAttributeParameter", addOp.Value<string>("addedOperator"),
                 "Get|_<Attribute> operators all instantiate VFXAttributeParameter");
@@ -3976,6 +4075,17 @@ namespace UnityCliBridge.Tests
             // key constant + private field), so it exercises the EditorPrefs-direct read path.
             JObject before = ToJObject(VfxGraphHandler.Settings(
                 new JObject { ["op"] = "get", ["scope"] = "preferences" }));
+            if (VfxAtLeast(17, 6))
+            {
+                // VFX 17.6 removed the preference: get omits it and set is unsupported.
+                Assert.IsNull(before["properties"]["allowShaderExternalization"], before.ToString());
+                AssertUnsupported(VfxGraphHandler.Settings(new JObject
+                {
+                    ["op"] = "set", ["scope"] = "preferences",
+                    ["setting"] = "allowShaderExternalization", ["value"] = true
+                }));
+                return;
+            }
             Assert.IsNotNull(before["properties"]["allowShaderExternalization"],
                 "preferences get should now expose allowShaderExternalization");
             bool original = before["properties"].Value<bool>("allowShaderExternalization");
@@ -4271,7 +4381,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Update", ["blockName"] = "|Set|_Size|Over Life"
+                ["contextType"] = "Update", ["blockName"] = LibName("|Set|_Size|Over Life", "Set Size over Life")
             });
             JObject curve = ToJObject(VfxGraphHandler.Apply(new JObject
             {
@@ -4298,7 +4408,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Update", ["blockName"] = "|Set|_Color|Over Life"
+                ["contextType"] = "Update", ["blockName"] = LibName("|Set|_Color|Over Life", "Set Color over Life (Gradient)")
             });
             JObject grad = ToJObject(VfxGraphHandler.Apply(new JObject
             {
@@ -4334,7 +4444,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Init", ["blockName"] = "|Set|_Position"
+                ["contextType"] = "Init", ["blockName"] = LibName("|Set|_Position", "Set Position")
             });
 
             JObject before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
@@ -4463,6 +4573,7 @@ namespace UnityCliBridge.Tests
         public void ApplySetOperatorSetting_ChangesCustomHlslOperatorAndReshapesSlots()
         {
             string copy = CopyFixture("opsetting");
+            if (CustomHlslUnsupported(copy, asOperator: true)) return;
             JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_operator",
@@ -4708,16 +4819,15 @@ namespace UnityCliBridge.Tests
         public void ApplyStickyNote_UpdateEditsFieldsAndRemoveShrinksArray()
         {
             string copy = CopyFixture("stickyedit");
-            VfxGraphHandler.Apply(new JObject
+            foreach (var (title, contents, theme) in new[] { ("A", "first", 1), ("B", "second", 2) })
             {
-                ["op"] = "add_sticky_note", ["assetPath"] = copy,
-                ["title"] = "A", ["contents"] = "first", ["colorTheme"] = 1
-            });
-            VfxGraphHandler.Apply(new JObject
-            {
-                ["op"] = "add_sticky_note", ["assetPath"] = copy,
-                ["title"] = "B", ["contents"] = "second", ["colorTheme"] = 2
-            });
+                var note = new JObject
+                {
+                    ["op"] = "add_sticky_note", ["assetPath"] = copy,
+                    ["title"] = title, ["contents"] = contents, ["colorTheme"] = theme
+                };
+                Assert.IsNull(ApplyThemed(note, note)["error"]);
+            }
 
             // Update note 0: change title + contents only; B must stay intact.
             JObject upd = ToJObject(VfxGraphHandler.Apply(new JObject
@@ -4797,7 +4907,7 @@ namespace UnityCliBridge.Tests
             VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "add_block", ["assetPath"] = copy,
-                ["contextType"] = "Update", ["blockName"] = "|Set|_Velocity"
+                ["contextType"] = "Update", ["blockName"] = LibName("|Set|_Velocity", "Set Velocity")
             });
             JObject moved = ToJObject(VfxGraphHandler.Apply(new JObject
             {
@@ -4845,6 +4955,15 @@ namespace UnityCliBridge.Tests
             // a deliberately-broken graph must report an Error-tier entry, so every other test's
             // AssertNoErrorTier (and the "recompiles clean" claims) actually mean something.
             string copy = CopyFixture("errorctl");
+            if (CustomHlslUnsupported(copy))
+            {
+                // VFX 14 has neither Custom HLSL nor VFXErrorReporter: the oracle says so explicitly.
+                var legacy = (JArray)ToJObject(VfxGraphHandler.DescribeGraph(
+                    new JObject { ["assetPath"] = copy, ["includeErrors"] = true }))["errors"];
+                Assert.IsTrue(legacy.Any(e => (string)e["code"] == "VFX_API_UNSUPPORTED"),
+                    $"a package without the error reporter must report VFX_API_UNSUPPORTED: {legacy}");
+                return;
+            }
 
             // A Custom HLSL block whose source has no valid function is a hard Error
             // ("No valid HLSL function has been provided"), not a Warning.
@@ -4881,6 +5000,7 @@ namespace UnityCliBridge.Tests
             // inputs makes the asset importer throw and the graph silently stop compiling. The op must
             // refuse the write (clear error) and leave the previous source in place.
             string copy = CopyFixture("hlsl5");
+            if (CustomHlslUnsupported(copy, asOperator: true)) return;
             JObject added = ToJObject(VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL" }));
             Assert.IsNull(added.Value<string>("error"), $"unexpected error: {added}");
@@ -4951,6 +5071,7 @@ namespace UnityCliBridge.Tests
             // builds its expression, then prove `compile` + describe report the exception the package
             // only Debug.LogError'd.
             string copy = CopyFixture("compilefail");
+            if (CustomHlslUnsupported(copy, asOperator: true)) return;
             VfxGraphHandler.Apply(new JObject
             { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL" });
             VfxGraphHandler.Apply(new JObject
@@ -4970,10 +5091,8 @@ namespace UnityCliBridge.Tests
             Type VfxType(string fullName) => AppDomain.CurrentDomain.GetAssemblies()
                 .Select(a => a.GetType(fullName, false)).First(t => t != null);
             const BindingFlags Any = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-            var resource = VfxType("UnityEditor.VFX.VisualEffectResource")
-                .GetMethod("GetResourceAtPath", Any).Invoke(null, new object[] { copy });
-            var graph = VfxType("UnityEditor.VFX.VisualEffectResourceExtensions")
-                .GetMethod("GetOrCreateGraph", Any).Invoke(null, new[] { resource });
+            // VFX 17.7 replaced GetOrCreateGraph; reuse the handler's version-aware accessor.
+            var graph = LoadGraphModel(copy);
             var children = (IEnumerable)graph.GetType().GetProperty("children", Any).GetValue(graph);
             var opType = VfxType("UnityEditor.VFX.VFXOperator");
             var op = children.Cast<object>().First(c => opType.IsInstanceOfType(c));
@@ -5334,7 +5453,8 @@ namespace UnityCliBridge.Tests
             string copy = CopyFixture("groupnoteparam");
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Add", ["position"] = new JArray { -900, 100 } });
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Multiply", ["position"] = new JArray { -900, 250 } });
-            JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
+            var noteRequest = new JObject { ["title"] = "Feature", ["contents"] = "why these nodes exist", ["colorTheme"] = 2 };
+            JObject result = ApplyThemed(new JObject
             {
                 ["op"] = "group_nodes", ["assetPath"] = copy, ["title"] = "Feature",
                 ["nodes"] = new JArray
@@ -5342,8 +5462,8 @@ namespace UnityCliBridge.Tests
                     new JObject { ["node"] = "operator", ["operatorIndex"] = 0 },
                     new JObject { ["node"] = "operator", ["operatorIndex"] = 1 }
                 },
-                ["note"] = new JObject { ["title"] = "Feature", ["contents"] = "why these nodes exist", ["colorTheme"] = 2 }
-            }));
+                ["note"] = noteRequest
+            }, noteRequest);
             Assert.IsNull(result.Value<string>("error"), $"unexpected error: {result}");
             Assert.AreEqual(3, result.Value<int>("contentCount"), "two operators + the note");
             Assert.IsNotNull(result["noteIndex"]);
@@ -5387,7 +5507,7 @@ namespace UnityCliBridge.Tests
             string copy = CopyFixture("autolayoutbands");
             // "Near": feeds the Init and Update contexts (adjacent rows) → one node.
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Near", ["type"] = "Float" });
-            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Init", ["blockName"] = "|Set|_Lifetime" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Init", ["blockName"] = LibName("|Set|_Lifetime", "Set Lifetime") });
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Turbulence" });
             foreach (var to in new[] {
                 new JObject { ["node"] = "block", ["contextType"] = "Init", ["blockIndex"] = 0, ["slot"] = 0 },
@@ -5403,7 +5523,7 @@ namespace UnityCliBridge.Tests
             // "Far": feeds the Spawner (top row) and the Output (bottom row) → a node per band.
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Far", ["type"] = "Float" });
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate" });
-            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = "|Set|_Size" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = LibName("|Set|_Size", "Set Size") });
             foreach (var to in new[] {
                 new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
                 new JObject { ["node"] = "block", ["contextType"] = "Output", ["blockIndex"] = 0, ["slot"] = 0 } })
@@ -5433,7 +5553,7 @@ namespace UnityCliBridge.Tests
             // both must remain members of the group and no stale id may linger.
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_parameter", ["assetPath"] = copy, ["parameterName"] = "Far", ["type"] = "Float" });
             VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Spawner", ["blockName"] = "Constant Spawn Rate" });
-            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = "|Set|_Size" });
+            VfxGraphHandler.Apply(new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Output", ["blockName"] = LibName("|Set|_Size", "Set Size") });
             foreach (var to in new[] {
                 new JObject { ["node"] = "block", ["contextType"] = "Spawner", ["blockIndex"] = 0, ["slot"] = 0 },
                 new JObject { ["node"] = "block", ["contextType"] = "Output", ["blockIndex"] = 0, ["slot"] = 0 } })
@@ -5551,7 +5671,7 @@ namespace UnityCliBridge.Tests
             JObject d2 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(0, d2["layout"].Value<int>("overlapCount"), $"{d2["layout"]}");
 
-            JObject ins = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = "01_Minimal_System" }));
+            JObject ins = ToJObject(VfxGraphHandler.Apply(new JObject { ["op"] = "insert_template", ["assetPath"] = copy, ["template"] = MinimalTemplate() }));
             Assert.IsNull(ins.Value<string>("error"), $"unexpected error: {ins}");
             JObject d3 = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = copy }));
             Assert.AreEqual(0, d3["layout"].Value<int>("overlapCount"), $"inserted template must not land on existing nodes: {d3["layout"]}");
@@ -5663,6 +5783,112 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(groupsBefore, after.Value<int>("groupCount"));
             Assert.AreEqual(1, after.Value<int>("operatorCount"), "removing a group must not remove its members");
         }
+
+        // ---- VFX Graph package selection ------------------------------------
+        // The fixtures run against each Editor's own VFX Graph package (14 on 2022.3, 17.x on
+        // Unity 6). Library names, templates and some features differ by package, so tests select
+        // them here instead of hard-coding one package's values.
+
+        private static System.Version s_VfxVersion;
+
+        private static System.Version VfxVersion
+        {
+            get
+            {
+                if (s_VfxVersion != null) return s_VfxVersion;
+                var info = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(
+                    "Packages/com.unity.visualeffectgraph/package.json");
+                Assert.IsNotNull(info, "com.unity.visualeffectgraph is not resolved in this project");
+                string numeric = info.version.Split('-')[0];
+                s_VfxVersion = new System.Version(numeric);
+                return s_VfxVersion;
+            }
+        }
+
+        private static bool VfxAtLeast(int major, int minor = 0) =>
+            VfxVersion >= new System.Version(major, minor);
+
+        /// <summary>
+        /// VFX 17 lists attribute variants under one descriptor ("|Set|_Color"); VFX 14 lists
+        /// each variant by its own name ("Set Color").
+        /// </summary>
+        private static string LibName(string vfx17, string vfx14) => VfxAtLeast(17) ? vfx17 : vfx14;
+
+        /// <summary>Returns the first template name the installed package ships.</summary>
+        private static string PackageTemplate(params string[] candidates)
+        {
+            var listed = ToJObject(VfxGraphHandler.ListLibrary(new JObject { ["kind"] = "template" }));
+            var names = ((JArray)listed["items"]).Select(i => (string)i["name"]).ToList();
+            string match = candidates.FirstOrDefault(names.Contains);
+            Assert.IsNotNull(match,
+                $"VFX {VfxVersion} ships none of [{string.Join(", ", candidates)}]; templates: {string.Join(", ", names)}");
+            return match;
+        }
+
+        private static string MinimalTemplate() =>
+            PackageTemplate("01_Minimal_System", "Minimal_System", "SimpleParticleSystem");
+
+        private static string BurstTemplate() =>
+            PackageTemplate("03_Simple_Burst", "Simple_Burst", "SimpleParticleSystem");
+
+        /// <summary>
+        /// Asserts a feature missing from the installed package reports VFX_API_UNSUPPORTED.
+        /// </summary>
+        private static void AssertUnsupported(object result)
+        {
+            var json = ToJObject(result);
+            Assert.AreEqual("VFX_API_UNSUPPORTED", json.Value<string>("code"),
+                $"VFX {VfxVersion} should report the missing feature as unsupported: {json}");
+        }
+
+        /// <summary>
+        /// Returns true when the package predates <paramref name="major"/>.<paramref name="minor"/>;
+        /// the caller then verifies the unsupported response instead of the feature.
+        /// </summary>
+        private static bool Predates(int major, int minor = 0) => !VfxAtLeast(major, minor);
+
+        /// <summary>
+        /// Custom HLSL arrived in VFX 17.0. On older packages, verifies the unsupported response
+        /// and returns true so the caller skips the feature assertions.
+        /// </summary>
+        private static bool CustomHlslUnsupported(string copy, bool asOperator = false)
+        {
+            if (VfxAtLeast(17)) return false;
+            AssertUnsupported(VfxGraphHandler.Apply(asOperator
+                ? new JObject { ["op"] = "add_operator", ["assetPath"] = copy, ["operatorName"] = "Custom HLSL" }
+                : new JObject { ["op"] = "add_block", ["assetPath"] = copy, ["contextType"] = "Update", ["blockName"] = "Custom HLSL" }));
+            return true;
+        }
+
+        /// <summary>
+        /// Indexed sticky-note color themes arrived in VFX 17.4. On older packages, verifies that
+        /// the themed request is rejected without changing the graph, then applies it without
+        /// <c>colorTheme</c>. <paramref name="themed"/> is the object inside
+        /// <paramref name="request"/> that carries the theme.
+        /// </summary>
+        private static JObject ApplyThemed(JObject request, JObject themed)
+        {
+            if (Predates(17, 4))
+            {
+                string assetPath = (string)request["assetPath"];
+                var before = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = assetPath }));
+                AssertUnsupported(VfxGraphHandler.Apply((JObject)request.DeepClone()));
+                var after = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = assetPath }));
+                Assert.AreEqual(before.Value<int>("stickyNoteCount"), after.Value<int>("stickyNoteCount"),
+                    "a rejected colorTheme must not add a note");
+                Assert.AreEqual(before.Value<int>("groupCount"), after.Value<int>("groupCount"),
+                    "a rejected colorTheme must not add a group");
+                themed.Remove("colorTheme");
+            }
+            return ToJObject(VfxGraphHandler.Apply(request));
+        }
+
+        private static Type FindVfxType(string fullName) =>
+            AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName, false)).FirstOrDefault(t => t != null);
+
+        private static object LoadGraphModel(string assetPath) =>
+            typeof(VfxGraphHandler).GetMethod("LoadGraph", BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { assetPath });
 
         private static void AssertNoErrorTier(JObject describeResult)
         {
