@@ -45,40 +45,27 @@ fn resolve_version(params: &Value) -> Result<String> {
         .and_then(Value::as_str)
         .map(Path::new)
         .unwrap_or_else(|| Path::new("."));
-    Ok(version::detect_from_project(project_root)?.version)
-}
-
-fn resolve_version_and_branch(params: &Value) -> Result<(String, String)> {
-    let explicit_version = params
-        .get("version")
-        .and_then(Value::as_str)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string);
-    let explicit_branch = params
-        .get("branch")
-        .and_then(Value::as_str)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string);
-    if let (Some(v), Some(b)) = (explicit_version.clone(), explicit_branch.clone()) {
-        return Ok((v, b));
-    }
-    let project_root = params
-        .get("projectRoot")
-        .and_then(Value::as_str)
-        .map(Path::new)
-        .unwrap_or_else(|| Path::new("."));
-    if let Some(branch) = explicit_branch {
-        return Ok((version::read_from_project(project_root)?, branch));
-    }
-    let detected = version::detect_from_project(project_root)?;
-    Ok((
-        explicit_version.unwrap_or(detected.version),
-        detected.branch,
-    ))
+    version::read_from_project(project_root)
 }
 
 fn execute_fetch(params: &Value) -> Result<Value> {
-    let (version, branch) = resolve_version_and_branch(params)?;
+    execute_fetch_from(params, fetcher::UNITY_CS_REFERENCE_URL)
+}
+
+fn provenance(meta: Option<&cache::CacheMeta>) -> Value {
+    json!({
+        "branch": meta.map(|m| &m.branch),
+        "sourceRef": meta.and_then(|m| m.source_ref.as_ref()),
+        "commitSha": meta.and_then(|m| m.commit_sha.as_ref()),
+        "exactMatch": meta.and_then(|m| m.exact_match),
+        "selectionReason": meta.and_then(|m| m.selection_reason.as_ref()),
+        "sourceUrl": meta.map(|m| &m.source_url),
+        "fetchedAt": meta.map(|m| &m.fetched_at),
+    })
+}
+
+fn execute_fetch_from(params: &Value, source_url: &str) -> Result<Value> {
+    let version = resolve_version(params)?;
     let accept_license = params
         .get("acceptLicense")
         .and_then(Value::as_bool)
@@ -89,41 +76,79 @@ fn execute_fetch(params: &Value) -> Result<Value> {
         .unwrap_or(false);
     let dest = cache::version_dir(&version)?;
     if dest.exists() && !force {
-        return Ok(json!({
-            "ok": true,
-            "skipped": true,
-            "reason": "destination already exists; pass force=true to refetch",
-            "version": version,
-            "branch": branch,
-            "path": dest.display().to_string(),
-        }));
+        let meta = cache::read_meta(&version).ok();
+        let mut result = provenance(meta.as_ref());
+        result["ok"] = json!(true);
+        result["skipped"] = json!(true);
+        result["reason"] = json!("destination already exists; returning stored provenance, pass force=true to refetch a different ref");
+        result["version"] = json!(version);
+        result["path"] = json!(dest.display().to_string());
+        return Ok(result);
     }
-    if dest.exists() && force {
-        std::fs::remove_dir_all(&dest)
-            .with_context(|| format!("failed to remove {}", dest.display()))?;
-    }
-    fetcher::run_clone(
-        fetcher::UNITY_CS_REFERENCE_URL,
-        &branch,
-        &dest,
-        1,
-        accept_license,
-    )?;
+    fetcher::require_license_accepted(accept_license)?;
+    let refs = fetcher::list_public_refs(source_url)?;
+    let explicit = params
+        .get("branch")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty());
+    let selected = version::select_ref(&version, explicit, &refs)?;
+    let branch = selected
+        .source_ref
+        .strip_prefix("refs/heads/")
+        .or_else(|| selected.source_ref.strip_prefix("refs/tags/"))
+        .unwrap_or(&selected.source_ref)
+        .to_string();
     let meta = cache::CacheMeta {
         version: version.clone(),
-        branch: branch.clone(),
-        commit_sha: None,
+        branch,
+        commit_sha: Some(selected.commit_sha.clone()),
+        source_ref: Some(selected.source_ref.clone()),
+        exact_match: Some(selected.exact_match),
+        selection_reason: Some(selected.selection_reason.clone()),
         fetched_at: now_unix_seconds_string(),
-        source_url: fetcher::UNITY_CS_REFERENCE_URL.to_string(),
+        source_url: source_url.to_string(),
     };
-    cache::write_meta(&meta)?;
-    Ok(json!({
-        "ok": true,
-        "version": version,
-        "branch": branch,
-        "path": dest.display().to_string(),
-        "fetchedAt": meta.fetched_at,
-    }))
+    // Prepare the entire replacement before touching a previously usable cache.
+    let parent = cache::reference_root()?
+        .parent()
+        .context("cache root has no parent")?
+        .to_path_buf();
+    std::fs::create_dir_all(&parent)?;
+    let nonce = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+    let staging = parent.join(format!(".reference-fetch-{}-{nonce}", std::process::id()));
+    let backup = parent.join(format!(".reference-backup-{}-{nonce}", std::process::id()));
+    let result = (|| -> Result<()> {
+        fetcher::fetch_selected(source_url, &selected, &staging, accept_license)?;
+        std::fs::write(
+            staging.join(".unity-cli-meta.json"),
+            serde_json::to_vec_pretty(&meta)?,
+        )?;
+        std::fs::create_dir_all(dest.parent().context("cache destination has no parent")?)?;
+        let replacing = dest.exists();
+        if replacing {
+            std::fs::rename(&dest, &backup)?;
+        }
+        if let Err(error) = std::fs::rename(&staging, &dest) {
+            if replacing {
+                std::fs::rename(&backup, &dest)
+                    .context("failed to restore previous reference cache")?;
+            }
+            return Err(error.into());
+        }
+        if replacing {
+            std::fs::remove_dir_all(&backup)?;
+        }
+        Ok(())
+    })();
+    if staging.exists() {
+        let _ = std::fs::remove_dir_all(&staging);
+    }
+    result?;
+    let mut result = provenance(Some(&meta));
+    result["ok"] = json!(true);
+    result["version"] = json!(version);
+    result["path"] = json!(dest.display().to_string());
+    Ok(result)
 }
 
 fn execute_status(_params: &Value) -> Result<Value> {
@@ -133,13 +158,11 @@ fn execute_status(_params: &Value) -> Result<Value> {
         let dir = cache::version_dir(&v)?;
         let size_bytes = dir_size(&dir).unwrap_or(0);
         let meta = cache::read_meta(&v).ok();
-        entries.push(json!({
-            "version": v,
-            "branch": meta.as_ref().map(|m| m.branch.clone()).unwrap_or_default(),
-            "fetchedAt": meta.as_ref().map(|m| m.fetched_at.clone()).unwrap_or_default(),
-            "sizeBytes": size_bytes,
-            "path": dir.display().to_string(),
-        }));
+        let mut entry = provenance(meta.as_ref());
+        entry["version"] = json!(v);
+        entry["sizeBytes"] = json!(size_bytes);
+        entry["path"] = json!(dir.display().to_string());
+        entries.push(entry);
     }
     Ok(json!({
         "ok": true,
@@ -645,80 +668,6 @@ mod tests {
     }
 
     #[test]
-    fn resolve_version_and_branch_uses_explicit_overrides() {
-        let (v, b) = resolve_version_and_branch(
-            &json!({"version": "2025.1.0f1", "branch": "custom/branch"}),
-        )
-        .unwrap();
-        assert_eq!(v, "2025.1.0f1");
-        assert_eq!(b, "custom/branch");
-    }
-
-    #[test]
-    fn resolve_version_and_branch_accepts_unknown_project_version_with_explicit_branch() {
-        let tmp = tempfile::tempdir().unwrap();
-        let settings = tmp.path().join("ProjectSettings");
-        std::fs::create_dir_all(&settings).unwrap();
-        std::fs::write(
-            settings.join("ProjectVersion.txt"),
-            "m_EditorVersion: 6000.4.12f1\n",
-        )
-        .unwrap();
-        let params = json!({"projectRoot": tmp.path(), "branch": "6000.4"});
-        assert_eq!(
-            resolve_version_and_branch(&params).unwrap(),
-            ("6000.4.12f1".to_string(), "6000.4".to_string())
-        );
-        for branch in [Value::Null, json!("")] {
-            let err =
-                resolve_version_and_branch(&json!({"projectRoot": tmp.path(), "branch": branch}))
-                    .unwrap_err();
-            assert!(err.to_string().contains("Pass --branch"));
-        }
-    }
-
-    #[test]
-    fn explicit_branch_still_requires_project_version_unless_version_is_explicit() {
-        let tmp = tempfile::tempdir().unwrap();
-        let params = json!({"projectRoot": tmp.path(), "branch": "6000.4"});
-        assert!(
-            format!("{:#}", resolve_version_and_branch(&params).unwrap_err())
-                .contains("failed to read")
-        );
-        let settings = tmp.path().join("ProjectSettings");
-        std::fs::create_dir_all(&settings).unwrap();
-        std::fs::write(settings.join("ProjectVersion.txt"), "m_EditorVersion: \n").unwrap();
-        assert!(resolve_version_and_branch(&params)
-            .unwrap_err()
-            .to_string()
-            .contains("m_EditorVersion"));
-        assert_eq!(
-            resolve_version_and_branch(&json!({
-                "projectRoot": tmp.path(), "version": "6000.4.12f1", "branch": "6000.4"
-            }))
-            .unwrap(),
-            ("6000.4.12f1".to_string(), "6000.4".to_string())
-        );
-    }
-
-    #[test]
-    fn resolve_version_and_branch_detects_from_project_when_missing() {
-        let tmp = unique_temp_path("resolve-vb");
-        let settings = tmp.join("ProjectSettings");
-        std::fs::create_dir_all(&settings).unwrap();
-        std::fs::write(
-            settings.join("ProjectVersion.txt"),
-            "m_EditorVersion: 2023.2.20f1\n",
-        )
-        .unwrap();
-        let (v, b) =
-            resolve_version_and_branch(&json!({"projectRoot": tmp.to_str().unwrap()})).unwrap();
-        assert_eq!(v, "2023.2.20f1");
-        assert_eq!(b, "2023.2/staging");
-        let _ = std::fs::remove_dir_all(&tmp);
-    }
-
-    #[test]
     fn now_unix_seconds_string_is_decimal() {
         let s = now_unix_seconds_string();
         assert!(!s.is_empty());
@@ -874,6 +823,155 @@ mod tests {
     }
 
     #[test]
+    fn cached_fetch_and_status_report_stored_provenance() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let (root, version) = setup_cache_with_fixture("provenance");
+        let _env = EnvVarGuard::set("UNITY_CLI_CACHE_ROOT", root.to_str().unwrap());
+        let meta = json!({
+            "version": version, "branch": "6000.4", "commit_sha": "a".repeat(40),
+            "source_ref": "refs/heads/6000.4", "exact_match": false,
+            "selection_reason": "same minor branch; not an exact version match",
+            "fetched_at": "123", "source_url": fetcher::UNITY_CS_REFERENCE_URL
+        });
+        std::fs::write(
+            cache::version_dir(version)
+                .unwrap()
+                .join(".unity-cli-meta.json"),
+            meta.to_string(),
+        )
+        .unwrap();
+        let fetched = execute_fetch(&json!({"version":version,"branch":"different"})).unwrap();
+        assert_eq!(fetched["branch"], "6000.4");
+        assert_eq!(fetched["exactMatch"], false);
+        assert_eq!(fetched["commitSha"], "a".repeat(40));
+        assert_eq!(fetched["sourceRef"], "refs/heads/6000.4");
+        let status = execute_status(&json!({})).unwrap();
+        for field in [
+            "branch",
+            "exactMatch",
+            "commitSha",
+            "sourceRef",
+            "selectionReason",
+        ] {
+            assert_eq!(status["versions"][0][field], fetched[field]);
+        }
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn cached_unknown_version_can_be_used_without_branch_resolution() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join("ProjectSettings")).unwrap();
+        std::fs::write(
+            tmp.path().join("ProjectSettings/ProjectVersion.txt"),
+            "m_EditorVersion: 6000.4.12f1\n",
+        )
+        .unwrap();
+        assert_eq!(
+            resolve_version(&json!({"projectRoot":tmp.path()})).unwrap(),
+            "6000.4.12f1"
+        );
+    }
+
+    #[test]
+    fn fetch_resolves_project_and_explicit_refs_and_records_actual_commit() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let tmp = tempfile::tempdir().unwrap();
+        let _env = EnvVarGuard::set(
+            "UNITY_CLI_CACHE_ROOT",
+            tmp.path().join("cache").to_str().unwrap(),
+        );
+        let repo = tmp.path().join("source");
+        std::fs::create_dir_all(&repo).unwrap();
+        let git = |args: &[&str]| {
+            let result = std::process::Command::new("git")
+                .arg("-C")
+                .arg(&repo)
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            String::from_utf8(result.stdout).unwrap().trim().to_string()
+        };
+        git(&["init"]);
+        std::fs::write(repo.join("Fixture.cs"), "class Fixture {}\n").unwrap();
+        git(&["add", "."]);
+        git(&[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+            "commit",
+            "-m",
+            "fixture",
+        ]);
+        git(&["branch", "6000.4"]);
+        git(&["tag", "6000.4.12f1"]);
+        let sha = git(&["rev-parse", "HEAD"]);
+        let project = tmp.path().join("project");
+        std::fs::create_dir_all(project.join("ProjectSettings")).unwrap();
+        std::fs::write(
+            project.join("ProjectSettings/ProjectVersion.txt"),
+            "m_EditorVersion: 6000.4.12f1\n",
+        )
+        .unwrap();
+        let params = json!({"projectRoot":project,"acceptLicense":true});
+        let exact = execute_fetch_from(&params, repo.to_str().unwrap()).unwrap();
+        assert_eq!(exact["sourceRef"], "refs/tags/6000.4.12f1");
+        assert_eq!(exact["exactMatch"], true);
+        assert_eq!(exact["commitSha"], sha);
+        let mut explicit = params;
+        explicit["branch"] = json!("6000.4");
+        explicit["force"] = json!(true);
+        let fetched = execute_fetch_from(&explicit, repo.to_str().unwrap()).unwrap();
+        assert_eq!(fetched["sourceRef"], "refs/heads/6000.4");
+        assert_eq!(fetched["exactMatch"], false);
+        let meta = cache::read_meta("6000.4.12f1").unwrap();
+        assert_eq!(meta.commit_sha.as_deref(), Some(sha.as_str()));
+        assert_eq!(meta.exact_match, Some(false));
+        assert!(meta.selection_reason.unwrap().contains("explicit"));
+        // Explicit version works without any readable project settings.
+        let fetched = execute_fetch_from(
+            &json!({"version":"6000.4.99f1","projectRoot":"/missing","acceptLicense":true}),
+            repo.to_str().unwrap(),
+        )
+        .unwrap();
+        assert_eq!(fetched["sourceRef"], "refs/heads/6000.4");
+        assert_eq!(fetched["exactMatch"], false);
+        let error = execute_fetch_from(
+            &json!({"version":"9999.9.0f1","acceptLicense":true}),
+            repo.to_str().unwrap(),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("available branches"));
+        assert!(!cache::version_dir("9999.9.0f1").unwrap().exists());
+    }
+
+    #[test]
+    fn legacy_metadata_keeps_unknown_match_instead_of_claiming_exact() {
+        let meta: cache::CacheMeta = serde_json::from_value(json!({
+            "version":"2022.3.0f1","branch":"2022.3/staging",
+            "fetched_at":"123","source_url":"https://example.invalid"
+        }))
+        .unwrap();
+        let value = provenance(Some(&meta));
+        assert_eq!(value["branch"], "2022.3/staging");
+        assert!(value["commitSha"].is_null());
+        assert!(value["exactMatch"].is_null());
+        assert!(value["sourceRef"].is_null());
+    }
+
+    #[test]
     fn execute_view_rejects_parent_traversal_via_dispatcher() {
         let _guard = crate::test_env::env_lock()
             .lock()
@@ -994,7 +1092,7 @@ mod tests {
     }
 
     #[test]
-    fn execute_fetch_force_clears_existing_then_fails_clone() {
+    fn execute_fetch_force_preserves_existing_on_transport_failure() {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|p| p.into_inner());
@@ -1002,21 +1100,19 @@ mod tests {
         let _env = EnvVarGuard::set("UNITY_CLI_CACHE_ROOT", root.to_str().unwrap());
         let dest = root.join("UnityCsReference").join(version);
         assert!(dest.exists());
-        // Force should remove dest, then attempt clone with a bogus branch that fails.
-        let result = maybe_execute_reference_tool(
-            "reference_fetch",
+        let result = execute_fetch_from(
             &json!({
                 "version": version,
                 "branch": "definitely-not-a-real-branch-xyz",
                 "force": true,
                 "acceptLicense": true,
             }),
-        )
-        .unwrap();
-        assert!(result.is_err(), "clone should fail for bogus branch");
+            "unsupported-test-protocol://unavailable/repo",
+        );
+        assert!(format!("{:#}", result.unwrap_err()).contains("ls-remote"));
         assert!(
-            !dest.exists(),
-            "force should have removed dest before clone"
+            dest.exists(),
+            "force must preserve the previous cache on failure"
         );
         let _ = std::fs::remove_dir_all(&root);
     }
