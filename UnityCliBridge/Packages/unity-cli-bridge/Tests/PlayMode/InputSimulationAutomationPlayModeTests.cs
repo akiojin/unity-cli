@@ -7,6 +7,9 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace UnityCliBridge.Tests.PlayMode
 {
@@ -15,6 +18,15 @@ namespace UnityCliBridge.Tests.PlayMode
         private const int DefaultTimeoutFrames = 600;
 
         private readonly List<GameObject> _created = new List<GameObject>();
+#if ENABLE_INPUT_SYSTEM
+        private HashSet<int> _existingDeviceIds;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _existingDeviceIds = new HashSet<int>(InputSystem.devices.Select(device => device.deviceId));
+        }
+#endif
 
         [TearDown]
         public void TearDown()
@@ -25,6 +37,14 @@ namespace UnityCliBridge.Tests.PlayMode
             }
 
             _created.Clear();
+#if ENABLE_INPUT_SYSTEM
+            foreach (var device in InputSystem.devices.ToArray())
+            {
+                if (!_existingDeviceIds.Contains(device.deviceId) &&
+                    device.name.StartsWith("UnityCliVirtual", System.StringComparison.Ordinal))
+                    InputSystem.RemoveDevice(device);
+            }
+#endif
         }
 
         [UnityTest]

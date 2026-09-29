@@ -22,18 +22,22 @@ pub struct DetectedVersion {
 }
 
 pub fn detect_from_project(project_root: &Path) -> Result<DetectedVersion> {
+    let version = read_from_project(project_root)?;
+    let branch = resolve_branch(&version)?;
+    Ok(DetectedVersion { version, branch })
+}
+
+pub fn read_from_project(project_root: &Path) -> Result<String> {
     let path = project_root.join(PROJECT_VERSION_REL_PATH);
     let contents =
         fs::read_to_string(&path).with_context(|| format!("failed to read {}", path.display()))?;
-    let version = parse_editor_version(&contents).ok_or_else(|| {
+    parse_editor_version(&contents).ok_or_else(|| {
         anyhow!(
             "{} does not contain a '{}' line",
             path.display(),
             EDITOR_VERSION_KEY
         )
-    })?;
-    let branch = resolve_branch(&version)?;
-    Ok(DetectedVersion { version, branch })
+    })
 }
 
 fn parse_editor_version(contents: &str) -> Option<String> {
