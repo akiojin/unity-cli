@@ -31,19 +31,49 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 144 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 133 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 146 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 135 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (133 tools)
+## Runtime Tool APIs (135 tools)
 
 ### Scenes
 
-| Tool             | Description            |
-| ---------------- | ---------------------- |
-| `create_scene`   | Create a new scene     |
-| `get_scene_info` | Get scene metadata     |
-| `list_scenes`    | List all scenes        |
-| `load_scene`     | Load a scene           |
-| `save_scene`     | Save the current scene |
+| Tool | Description |
+| ---- | ----------- |
+| `create_scene` | Create a new scene |
+| `get_scene_info` | Get scene metadata |
+| `list_scenes` | List all scenes |
+| `load_scene` | Load a scene |
+| `save_scene` | Save the current scene |
+| `start_scene_bake` | Start Lighting, legacy NavMesh, NavMeshSurface, or Occlusion baking |
+| `get_scene_bake_status` | Poll bake progress, terminal failure, and verified saved artifacts |
+
+### Scene baking
+
+Use `start_scene_bake` with a `target` of `lighting`, `navmesh-legacy`,
+`navmesh-surface`, or `occlusion`, and the saved active `scenePath`. Save scene
+edits first and load only the target scene. Surface baking additionally requires
+`surfacePath`, the hierarchy path of a GameObject with a NavMeshSurface component
+from `com.unity.ai.navigation`.
+Use a single navigation backend in a scene: mixed legacy data and Surface data
+are rejected so that an older NavMesh cannot make a new bake appear usable.
+
+```bash
+unity-cli tool call start_scene_bake --json '{"target":"lighting","scenePath":"Assets/Scenes/Level.unity"}'
+unity-cli tool call start_scene_bake --json '{"target":"navmesh-surface","scenePath":"Assets/Scenes/Level.unity","surfacePath":"/Navigation"}'
+unity-cli tool call get_scene_bake_status --json '{"jobId":"<returned-job-id>"}'
+```
+
+Starting a job is not completion. Poll the returned `jobId` until `status` is
+`succeeded` or `failed`. A successful job reports saved `artifacts` and verification
+results; failure reports a reason/code, including missing output. Lighting verifies
+lightmaps and scene lighting data; NavMesh verifies generated data and navigation
+queries; Occlusion verifies saved data assigned to the scene. Each response identifies
+the selected backend and Unity version. Jobs are exclusive, and interruption by an
+assembly reload is a failure. Keep the target scene loaded while a job runs.
+
+This operation rebuilds the selected bake output. Use the target's normal Unity
+settings and eligible static geometry; missing packages, invalid settings, unsupported
+environments, and empty output must be addressed before retrying.
 
 ### GameObjects
 

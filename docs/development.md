@@ -237,6 +237,10 @@ scripts/e2e-test-results.sh
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
+# Real Lighting / legacy NavMesh / NavMeshSurface / Occlusion bake and reload
+cargo build --bin unity-cli
+scripts/e2e-bake-batch-host.sh --port 6477
+
 # Isolated optional hot reload backend / real Editor checks
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
 # See docs/hot-reload.md for installed-backend and supported x64 runs.
@@ -265,6 +269,15 @@ scripts/e2e-video-formats.sh --port 6400
 ```
 
 ### Scene Layout Policy
+
+Baking E2E creates fixtures under `Assets/Scenes/Generated/E2E/Baking/` and
+checks generated assets, saved scene references, and navigation queries after
+scene reload. Its batch host enables graphics for actual lightmap generation;
+do not add `-nographics`. Logs and pass/fail counts are kept in the printed
+`/tmp/unity-cli-bake-e2e.*` directory. Against a running Editor, use
+`scripts/e2e-bake.sh --port <port>`. Save unrelated scenes first. Use
+`--targets lighting,navmesh-legacy,navmesh-surface,occlusion` to select targets;
+acceptance verification requires the default full set.
 
 Timeline E2E uses `Assets/Scenes/Generated/E2E/Timeline/` for its fixture
 scene and assets. The suite checks clip timing, binding, asset unload/reimport

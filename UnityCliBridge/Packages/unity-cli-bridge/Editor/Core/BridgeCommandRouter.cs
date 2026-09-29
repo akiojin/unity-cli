@@ -60,6 +60,8 @@ namespace UnityCliBridge.Core
                 ["save_scene"] = command => Success(command, SceneHandler.SaveScene(command.Parameters)),
                 ["list_scenes"] = command => Success(command, SceneHandler.ListScenes(command.Parameters)),
                 ["get_scene_info"] = command => Success(command, SceneHandler.GetSceneInfo(command.Parameters)),
+                ["start_scene_bake"] = command => Success(command, BakeHandler.StartBake(command.Parameters)),
+                ["get_scene_bake_status"] = command => Success(command, BakeHandler.GetStatus(command.Parameters)),
                 ["get_gameobject_details"] = command => Success(command, SceneAnalysisHandler.GetGameObjectDetails(command.Parameters)),
                 ["analyze_scene_contents"] = command => Success(command, SceneAnalysisHandler.AnalyzeSceneContents(command.Parameters)),
                 ["get_component_values"] = command => Success(command, SceneAnalysisHandler.GetComponentValues(command.Parameters)),
