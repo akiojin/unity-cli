@@ -61,7 +61,7 @@ def clean_console():
     # positive warning evidence; preserve every unrecognized error entry.
     def proven_warning(entry):
         message=entry.get('message','')
-        return bool(re.match(r'^.+\(\d+,\d+\): warning CS\d+:',message)
+        return bool(re.match(r'^.+\(\d+,\d+\): warning (?:CS|UAC|UAL)\d+:',message)
                     or re.match(r'^[^\n]*\nUnityEngine.Debug:LogWarning \(object\)\n',message))
     def is_error(entry):
         message=entry.get('message','')
@@ -97,7 +97,9 @@ def run():
     global play_requested
     info=call('get_editor_info',{})
     print('Editor:',json.dumps(info),flush=True)
-    check(info['unity']['unityVersion']=='6000.4.11f1','Unity version is 6000.4.11f1')
+    version_file=pathlib.Path(args.project)/'ProjectSettings/ProjectVersion.txt'
+    expected_version=re.search(r'^m_EditorVersion: (.+)$',version_file.read_text(),re.MULTILINE).group(1)
+    check(info['unity']['unityVersion']==expected_version,f'Unity version is {expected_version}')
     compilation()
     # Inspect startup failures too; clearing the Console would hide import errors.
     clean_console()
@@ -130,7 +132,11 @@ def run():
                          'loadScene':True,'addToBuildSettings':False})
     def apply(op,**params):
         return call('vfx_apply',{'op':op,'assetPath':asset,**params})
-    created=apply('create_from_template',template='01_Minimal_System',targetPath=asset)
+    templates=call('vfx_list_library',{'kind':'template'})
+    names={item['name'] for item in templates['items']}
+    template=next((name for name in ('01_Minimal_System','Minimal_System','SimpleParticleSystem') if name in names),None)
+    check(template is not None,'installed VFX package exposes a particle-system template')
+    created=apply('create_from_template',template=template,targetPath=asset)
     check(created.get('assetType')=='VisualEffectAsset','template creates VisualEffectAsset')
     before=call('vfx_describe_graph',{'assetPath':asset})
     apply('add_context',contextName='Spawn')
@@ -171,10 +177,23 @@ def run():
     call('stop_game',{})
     wait_playing(False)
     play_requested=False
+    dependencies=json.loads((pathlib.Path(args.project)/'Packages/packages-lock.json').read_text())['dependencies']
+    legacy_sdf=dependencies['com.unity.visualeffectgraph']['version'].startswith('14.')
+    if legacy_sdf:
+        call('vfx_bake_sdf',{'meshPath':'Assets/VfxFixtures/Cube.obj','outputPath':sdf,'maxResolution':16},
+             'VFX_SDF_EDIT_MODE_UNSUPPORTED')
+        check(not (pathlib.Path(args.project)/sdf).exists(),'unsupported EditMode bake creates no asset')
+        play_requested=True
+        call('play_game',{})
+        wait_playing(True)
     baked=call('vfx_bake_sdf',{'meshPath':'Assets/VfxFixtures/Cube.obj',
         'outputPath':sdf,'maxResolution':16})
     check(bool(baked.get('guid')) and all(n>0 for n in baked['resolution']),
           'SDF bake returns asset GUID and nonzero resolution')
+    if legacy_sdf:
+        call('stop_game',{})
+        wait_playing(False)
+        play_requested=False
     metadata=call('manage_asset_database',{'action':'get_asset_info','assetPath':sdf})
     check('Texture3D' in json.dumps(metadata),'SDF asset is a Texture3D')
     check((pathlib.Path(args.project)/sdf).is_file(),'SDF asset exists on disk')

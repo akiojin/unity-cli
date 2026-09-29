@@ -55,7 +55,7 @@ namespace UnityCliBridge.Handlers
         private static Type T(string fullName)
         {
             EnsurePackageAvailable();
-            return FindType(fullName) ?? throw new Exception($"VFX type not found: {fullName}");
+            return FindType(fullName) ?? throw new VfxInputException($"VFX type not found: {fullName}", "VFX_API_UNSUPPORTED");
         }
 
         private static Type ResourceType => T("UnityEditor.VFX.VisualEffectResource");
@@ -99,7 +99,7 @@ namespace UnityCliBridge.Handlers
             var m = type.GetMethod(method, flags, null,
                 args.Select(a => a?.GetType() ?? typeof(object)).ToArray(), null)
                 ?? type.GetMethods(flags).FirstOrDefault(x => x.Name == method && x.GetParameters().Length == args.Length);
-            if (m == null) throw new Exception($"Method not found: {type.Name}.{method}({args.Length} args)");
+            if (m == null) throw new VfxInputException($"Method not found: {type.Name}.{method}({args.Length} args)", "VFX_API_UNSUPPORTED");
             return m.Invoke(target, args);
         }
 
@@ -110,7 +110,7 @@ namespace UnityCliBridge.Handlers
                 var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
                 if (p != null) return p.GetValue(target);
             }
-            throw new Exception($"Property not found: {target.GetType().Name}.{name}");
+            throw new VfxInputException($"Property not found: {target.GetType().Name}.{name}", "VFX_API_UNSUPPORTED");
         }
 
         private static void SetProp(object target, string name, object value)
@@ -120,7 +120,7 @@ namespace UnityCliBridge.Handlers
                 var p = t.GetProperty(name, AllInstance | BindingFlags.DeclaredOnly);
                 if (p != null && p.CanWrite) { p.SetValue(target, value); return; }
             }
-            throw new Exception($"Writable property not found: {target.GetType().Name}.{name}");
+            throw new VfxInputException($"Writable property not found: {target.GetType().Name}.{name}", "VFX_API_UNSUPPORTED");
         }
 
         private static IEnumerable<object> Children(object model)
@@ -145,8 +145,13 @@ namespace UnityCliBridge.Handlers
             var resource = Call(null, ResourceType, "GetResourceAtPath", assetPath);
             if (resource == null)
                 throw new VfxInputException($"No VisualEffectResource at path: {assetPath}", "ASSET_NOT_FOUND");
-            var graph = Call(null, ResourceExtType, "GetOrCreateGraph", resource);
-            return graph;
+            // VFX 17.7 split GetOrCreateGraph into separate read/create operations.
+            var legacy = ResourceExtType.GetMethods(AllStatic)
+                .FirstOrDefault(m => m.Name == "GetOrCreateGraph" && m.GetParameters().Length == 1);
+            if (legacy != null)
+                return legacy.Invoke(null, new[] { resource });
+            return Call(null, ResourceExtType, "GetGraph", resource)
+                ?? Call(null, ResourceExtType, "CreateGraph", resource);
         }
 
         private static string ModelName(object model)
@@ -1618,7 +1623,13 @@ namespace UnityCliBridge.Handlers
                 return deferred;
             }
             var resource = Prop(graph, "visualEffectResource");
-            Call(null, ResourceExtType, "WriteAssetWithSubAssets", resource);
+            var writeWithSubAssets = ResourceExtType.GetMethods(AllStatic).FirstOrDefault(m =>
+                m.Name == "WriteAssetWithSubAssets" && m.GetParameters().Length == 1);
+            if (writeWithSubAssets != null)
+                writeWithSubAssets.Invoke(null, new[] { resource });
+            else
+                // VFX 14 persists the graph through the resource's instance API.
+                Call(resource, ResourceType, "WriteAsset");
             lock (s_ImportLogs) s_ImportLogs.Clear();
             s_CapturingImportLogs = true;
             try { AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate); }
@@ -2140,6 +2151,16 @@ namespace UnityCliBridge.Handlers
             // GetSetting resolves composed/nested settings (returns the FieldInfo + its owning instance);
             // use that field for coercion and the model's SetSettingValue, which writes the nested
             // instance and runs the proper invalidation.
+            // VFX 17.6+ reimports re-create the [SerializeReference] shading in place while the
+            // non-serialized trait-description cache still points at the old instance, so the
+            // first write after a Persist would land on an orphan. Rebuild the cache first.
+            for (var t = ctx.GetType(); t != null; t = t.BaseType)
+            {
+                var markDirty = t.GetMethod("MarkCacheAsDirty", AllInstance | BindingFlags.DeclaredOnly);
+                if (markDirty == null) continue;
+                markDirty.Invoke(ctx, null);
+                break;
+            }
             var composedSetting = Call(ctx, ModelType, "GetSetting", settingName);
             var composedField = composedSetting?.GetType()
                 .GetField("field", BindingFlags.Public | BindingFlags.Instance)
@@ -2148,6 +2169,10 @@ namespace UnityCliBridge.Handlers
             {
                 object convertedComposed = CoerceSettingValue(composedField, valueToken, settingName);
                 Call(ctx, ModelType, "SetSettingValue", settingName, convertedComposed);
+                var applied = Call(ctx, ModelType, "GetSetting", settingName);
+                var appliedValue = applied?.GetType().GetProperty("value", BindingFlags.Public | BindingFlags.Instance)?.GetValue(applied);
+                if (!Equals(appliedValue, convertedComposed))
+                    throw new VfxInputException($"Setting '{settingName}' did not apply to {ctx.GetType().Name}.", "VFX_API_UNSUPPORTED");
                 Persist(graph, assetPath);
                 return SetContextSettingResult(assetPath, ctx, settingName, "context-composed", ToJToken(convertedComposed));
             }
@@ -2328,7 +2353,7 @@ namespace UnityCliBridge.Handlers
             // needs a manual Invoke (the Call helper can't surface a by-ref result).
             var method = GraphType.GetMethod("TryAddCustomAttribute", AllInstance);
             if (method == null)
-                throw new Exception("VFXGraph.TryAddCustomAttribute not found (package version mismatch).");
+                throw new VfxInputException("VFXGraph.TryAddCustomAttribute not found (package version mismatch).", "VFX_API_UNSUPPORTED");
             var args = new object[] { name, valueType, description, isReadOnly, null };
             bool ok = (bool)method.Invoke(graph, args);
             if (!ok)
@@ -3153,7 +3178,9 @@ namespace UnityCliBridge.Handlers
             if (inlineType == null) return new { error = "could not read the inline operator's value type" };
 
             var descriptors = (Call(null, LibraryType, "GetParameters") as IEnumerable).Cast<object>().ToList();
-            var desc = descriptors.FirstOrDefault(d => (Prop(d, "modelType") as Type) == inlineType);
+            // VFX 14 descriptors report modelType = VFXParameter; the value type is on model.type.
+            var desc = descriptors.FirstOrDefault(d => (Prop(d, "modelType") as Type) == inlineType)
+                ?? descriptors.FirstOrDefault(d => Prop(Prop(d, "model"), "type") as Type == inlineType);
             if (desc == null)
                 return new { error = $"no blackboard parameter type matches the inline operator's type '{inlineType.Name}'" };
 
@@ -5507,7 +5534,7 @@ namespace UnityCliBridge.Handlers
                     if (strangers == 0) break;
                 }
                 int ni = CreateStickyNote(graph, noteTok["title"]?.ToString() ?? title, noteTok["contents"]?.ToString() ?? string.Empty,
-                                          new Rect(np.x, np.y, nw, nh), noteTok["colorTheme"]?.ToObject<int>() ?? 1, noteTok["textSize"]?.ToString());
+                                          new Rect(np.x, np.y, nw, nh), noteTok["colorTheme"]?.ToObject<int>(), noteTok["textSize"]?.ToString());
                 var nid = Activator.CreateInstance(NodeIDType);
                 FindField(NodeIDType, "isStickyNote").SetValue(nid, true);
                 FindField(NodeIDType, "id").SetValue(nid, ni);
@@ -5855,7 +5882,7 @@ namespace UnityCliBridge.Handlers
                 throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
             var field = FindField(ui.GetType(), "categories");
             if (field == null)
-                throw new Exception("categories field not found on VFXUI.");
+                throw new VfxInputException("categories field not found on VFXUI.", "VFX_API_UNSUPPORTED");
             var list = field.GetValue(ui) as System.Collections.IList;
             if (list == null)
             {
@@ -6306,8 +6333,11 @@ namespace UnityCliBridge.Handlers
             if (!string.IsNullOrEmpty(parentDir) && !AssetDatabase.IsValidFolder(parentDir))
                 throw new VfxInputException($"Parent folder does not exist: {parentDir}");
 
-            // CreateTemplateAsset(pathName, templateFilePath) copies + imports.
-            Call(null, AssetEditorUtilityType, "CreateTemplateAsset", targetPath, templateFile);
+            // VFX 14 only has CreateTemplateAsset(pathName), which always chooses
+            // its default template. Copy the selected asset through the public API
+            // so the same operation works across VFX package versions.
+            if (!AssetDatabase.CopyAsset(templateFile, targetPath))
+                throw new VfxInputException($"Could not copy VFX template '{templateFile}' to '{targetPath}'.", "VFX_TEMPLATE_COPY_FAILED");
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
 
             var created = AssetDatabase.LoadMainAssetAtPath(targetPath);
@@ -6335,7 +6365,7 @@ namespace UnityCliBridge.Handlers
             var templateDir = AssetEditorUtilityType
                 .GetProperty("templatePath", AllStatic)?.GetValue(null) as string;
             if (string.IsNullOrEmpty(templateDir))
-                throw new Exception("Could not resolve the VFX package template directory.");
+                throw new VfxInputException("Could not resolve the VFX package template directory.", "VFX_API_UNSUPPORTED");
             var templateFile = (templateDir.TrimEnd('/', '\\') + "/" + template + ".vfx");
             if (!System.IO.File.Exists(templateFile) && AssetDatabase.LoadMainAssetAtPath(templateFile) == null)
                 throw new VfxInputException(
@@ -6450,9 +6480,9 @@ namespace UnityCliBridge.Handlers
                 return new { error = $"No .vfx asset at path: {assetPath}" };
 
             var descType = TemplateDescriptorType
-                ?? throw new Exception("GraphViewTemplateDescriptor type not found (UnityEditor.Experimental.GraphView).");
+                ?? throw new VfxInputException("GraphViewTemplateDescriptor type not found (UnityEditor.Experimental.GraphView).", "VFX_API_UNSUPPORTED");
             var helperType = TemplateHelperType
-                ?? throw new Exception("VFXTemplateHelperInternal type not found.");
+                ?? throw new VfxInputException("VFXTemplateHelperInternal type not found.", "VFX_API_UNSUPPORTED");
 
             object desc = Activator.CreateInstance(descType);
             FindField(descType, "name")?.SetValue(desc, name);
@@ -6476,7 +6506,7 @@ namespace UnityCliBridge.Handlers
             var setMethod = helperType.GetMethod("TrySetTemplateStatic",
                 BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
             if (setMethod == null)
-                throw new Exception("VFXTemplateHelperInternal.TrySetTemplateStatic not found.");
+                throw new VfxInputException("VFXTemplateHelperInternal.TrySetTemplateStatic not found.", "VFX_API_UNSUPPORTED");
             bool ok = (bool)setMethod.Invoke(null, new[] { assetPath, desc });
             if (!ok)
                 return new { error = $"Failed to set template metadata on {assetPath}." };
@@ -6578,7 +6608,7 @@ namespace UnityCliBridge.Handlers
             {
                 var modeProp = resource.GetType().GetProperty("instancingMode", AllInstance);
                 if (modeProp == null)
-                    throw new Exception("instancingMode property not found on VisualEffectResource (VFX package too old?).");
+                    throw new VfxInputException("instancingMode property not found on VisualEffectResource (VFX package too old?).", "VFX_API_UNSUPPORTED");
                 object modeValue;
                 try { modeValue = Enum.Parse(modeProp.PropertyType, modeStr, true); }
                 catch (Exception)
@@ -6611,7 +6641,7 @@ namespace UnityCliBridge.Handlers
                     var so = new SerializedObject(resource as UnityEngine.Object);
                     var prop = so.FindProperty("m_Infos.m_InstancingCapacity");
                     if (prop == null)
-                        throw new Exception("instancingCapacity is not exposed on VisualEffectResource and the serialized fallback (m_Infos.m_InstancingCapacity) was not found.");
+                        throw new VfxInputException("instancingCapacity is not exposed on VisualEffectResource and the serialized fallback (m_Infos.m_InstancingCapacity) was not found.", "VFX_API_UNSUPPORTED");
                     prop.intValue = cap;
                     so.ApplyModifiedPropertiesWithoutUndo();
                     appliedCapacity = new JValue(cap);
@@ -6663,7 +6693,7 @@ namespace UnityCliBridge.Handlers
             var so = new SerializedObject(resource as UnityEngine.Object);
             var prop = so.FindProperty("m_Infos.m_InitialEventName");
             if (prop == null)
-                throw new Exception("m_Infos.m_InitialEventName not found on VisualEffectResource (VFX package too old?).");
+                throw new VfxInputException("m_Infos.m_InitialEventName not found on VisualEffectResource (VFX package too old?).", "VFX_API_UNSUPPORTED");
             prop.stringValue = eventName;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -6679,15 +6709,15 @@ namespace UnityCliBridge.Handlers
 
         /// <summary>Append a sticky note to VFXGraph.UIInfos.stickyNoteInfos.</summary>
         /// <summary>Append a sticky note to the graph's VFXUI sidecar; returns its index. Does not persist.</summary>
-        private static int CreateStickyNote(object graph, string title, string contents, Rect rect, int colorTheme, string textSize)
+        private static int CreateStickyNote(object graph, string title, string contents, Rect rect, int? colorTheme, string textSize)
         {
             var (ui, notesField, _) = GetStickyNotes(graph);
             var noteType = StickyNoteInfoType;
             var newNote = Activator.CreateInstance(noteType);
+            SetColorTheme(newNote, colorTheme);
             FindField(noteType, "title").SetValue(newNote, title);
             FindField(noteType, "contents").SetValue(newNote, contents);
             FindField(noteType, "position").SetValue(newNote, rect);
-            FindField(noteType, "colorTheme").SetValue(newNote, colorTheme);
             if (!string.IsNullOrEmpty(textSize))
                 FindField(noteType, "textSize").SetValue(newNote, textSize);
             var oldArr = notesField.GetValue(ui) as Array;
@@ -6705,7 +6735,7 @@ namespace UnityCliBridge.Handlers
             var assetPath = parameters?["assetPath"]?.ToString();
             var title = parameters?["title"]?.ToString() ?? "Note";
             var contents = parameters?["contents"]?.ToString() ?? string.Empty;
-            int colorTheme = parameters?["colorTheme"]?.ToObject<int>() ?? 1;
+            int? colorTheme = parameters?["colorTheme"]?.ToObject<int>();
             var textSize = parameters?["textSize"]?.ToString();
             bool avoidNodes = parameters?["avoidNodes"]?.ToObject<bool>() ?? true;
 
@@ -6739,7 +6769,7 @@ namespace UnityCliBridge.Handlers
                 ["stickyNoteIndex"] = index,
                 ["title"] = title,
                 ["contents"] = contents,
-                ["colorTheme"] = colorTheme,
+                ["colorTheme"] = FindField(StickyNoteInfoType, "colorTheme") != null ? new JValue(colorTheme ?? 1) : JValue.CreateNull(),
                 ["textSize"] = textSize,
                 ["position"] = new JArray { x, y, w, h },
                 ["positionAdjusted"] = adjusted
@@ -6754,8 +6784,22 @@ namespace UnityCliBridge.Handlers
                 throw new Exception("Graph has no UIInfos sidecar (unexpected for a valid .vfx).");
             var notesField = FindField(ui.GetType(), "stickyNoteInfos");
             if (notesField == null)
-                throw new Exception("stickyNoteInfos field not found on VFXUI.");
+                throw new VfxInputException("stickyNoteInfos field not found on VFXUI.", "VFX_API_UNSUPPORTED");
             return (ui, notesField, notesField.GetValue(ui) as Array);
+        }
+
+        /// <summary>
+        /// Apply an indexed color theme. VFX Graph before 17.4 has only the string `theme`, so an
+        /// explicit colorTheme there is unsupported; an omitted one keeps the package default.
+        /// Call before mutating the note so a rejected request leaves the graph unchanged.
+        /// </summary>
+        private static void SetColorTheme(object note, int? colorTheme)
+        {
+            var field = FindField(StickyNoteInfoType, "colorTheme");
+            if (field != null)
+                field.SetValue(note, colorTheme ?? 1);
+            else if (colorTheme.HasValue)
+                throw new VfxInputException("colorTheme requires VFX Graph 17.4 or newer.", "VFX_API_UNSUPPORTED");
         }
 
         /// <summary>Edit an existing sticky note by index — only the supplied fields are changed.</summary>
@@ -6776,12 +6820,12 @@ namespace UnityCliBridge.Handlers
             var noteType = StickyNoteInfoType;
             var note = arr.GetValue(index);
             var changed = new JArray();
+            if (parameters["colorTheme"] != null)
+            { SetColorTheme(note, parameters["colorTheme"].ToObject<int>()); changed.Add("colorTheme"); }
             if (parameters["title"] != null)
             { FindField(noteType, "title").SetValue(note, parameters["title"].ToString()); changed.Add("title"); }
             if (parameters["contents"] != null)
             { FindField(noteType, "contents").SetValue(note, parameters["contents"].ToString()); changed.Add("contents"); }
-            if (parameters["colorTheme"] != null)
-            { FindField(noteType, "colorTheme").SetValue(note, parameters["colorTheme"].ToObject<int>()); changed.Add("colorTheme"); }
             if (parameters["textSize"] != null)
             { FindField(noteType, "textSize").SetValue(note, parameters["textSize"].ToString()); changed.Add("textSize"); }
             var posTok = parameters["position"] as JArray;
@@ -7220,6 +7264,9 @@ namespace UnityCliBridge.Handlers
             var bakerType = MeshToSdfBakerType;
             if (bakerType == null)
                 return new { error = "MeshToSDFBaker not found (the VFX Graph package's SDF Bake Tool is unavailable)." };
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(bakerType.Assembly);
+            if (!Application.isPlaying && package != null && package.version.StartsWith("14.", StringComparison.Ordinal))
+                return InputError("VFX Graph 14 SDF cleanup uses deferred Destroy and requires Play Mode. Enter Play Mode before baking.", "VFX_SDF_EDIT_MODE_UNSUPPORTED");
             if (!SystemInfo.supportsComputeShaders)
                 return new { error = "SDF baking requires compute shader support, which this device/editor lacks." };
 
@@ -7482,7 +7529,7 @@ namespace UnityCliBridge.Handlers
         private static string PrefKey(string keyConstName)
         {
             var f = VFXViewPreferenceType.GetField(keyConstName, BindingFlags.Public | BindingFlags.Static);
-            if (f == null) throw new Exception($"VFXViewPreference key constant not found: {keyConstName}");
+            if (f == null) throw new VfxInputException($"VFXViewPreference key constant not found: {keyConstName}", "VFX_API_UNSUPPORTED");
             return (string)f.GetValue(null);
         }
 
@@ -7537,6 +7584,10 @@ namespace UnityCliBridge.Handlers
                 };
 
             string key = PrefKey(entry.KeyConst);
+            var setDirty = VFXViewPreferenceType.GetMethod("SetDirty", AllStatic);
+            var loaded = VFXViewPreferenceType.GetField("m_Loaded", AllStatic);
+            if (setDirty == null && loaded == null)
+                throw new VfxInputException("Cannot invalidate this VFX package's preference cache.", "VFX_API_UNSUPPORTED");
             switch (entry.Type)
             {
                 case "bool":  EditorPrefs.SetBool(key, valueToken.ToObject<bool>()); break;
@@ -7561,7 +7612,8 @@ namespace UnityCliBridge.Handlers
 
             // VFXViewPreference caches values via its private LoadIfNeeded — invalidate so the next
             // property read returns the new value (the canonical round-trip surface).
-            try { Call(null, VFXViewPreferenceType, "SetDirty"); } catch { }
+            if (setDirty != null) setDirty.Invoke(null, null);
+            else loaded.SetValue(null, false); // VFX 14 predates SetDirty.
 
             return new JObject
             {

@@ -23,6 +23,19 @@ namespace UnityCliBridge.Tests
     {
         // ---- Contract tests (no VFX package required) ----------------------
 
+        [Test]
+        public void MissingReflectionMethod_ReturnsStableUnsupportedCode()
+        {
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+            var call = typeof(VfxGraphHandler).GetMethod("Call", flags);
+            var fail = typeof(VfxGraphHandler).GetMethod("Fail", flags);
+            var exception = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+                call.Invoke(null, new object[] { null, typeof(object), "__UnavailableVfxApi__", new object[0] }));
+            var result = ToJObject(fail.Invoke(null, new object[] { "test", exception.InnerException }));
+            Assert.AreEqual("VFX_API_UNSUPPORTED", result.Value<string>("code"));
+            LogAssert.NoUnexpectedReceived();
+        }
+
         private static void AssertError(object result, string expectedSubstring)
         {
             JObject obj = ToJObject(result);
@@ -844,6 +857,35 @@ namespace UnityCliBridge.Tests
         private const string CubeMeshFixture = "Assets/VfxFixtures/Cube.obj";
         private const string ShaderGraphFixture = "Assets/VfxFixtures/VfxUnlit.shadergraph";
         private const string TempFolder = "Assets/UnityCliBridgeTests/Vfx";
+
+#if !UNITY_6000_0_OR_NEWER
+        [Test]
+        public void LegacyPackage_MissingAuthoringApis_ReturnQuietUnsupportedErrors()
+        {
+            EnsureFolder("Assets/UnityCliBridgeTests");
+            EnsureFolder(TempFolder);
+            string path = TempFolder + "/Legacy.vfx";
+            var created = ToJObject(VfxGraphHandler.Apply(new JObject {
+                ["op"] = "create_from_template", ["template"] = "SimpleParticleSystem", ["targetPath"] = path }));
+            Assert.IsNull(created["error"], created.ToString());
+            foreach (var operation in new[] {
+                new JObject { ["op"] = "add_custom_attribute", ["attributeName"] = "Heat", ["attributeType"] = "Float" },
+                new JObject { ["op"] = "add_sticky_note", ["title"] = "Note", ["colorTheme"] = 2 } })
+            {
+                operation["assetPath"] = path;
+                var result = ToJObject(VfxGraphHandler.Apply(operation));
+                Assert.AreEqual("VFX_API_UNSUPPORTED", result.Value<string>("code"), result.ToString());
+            }
+
+            // Notes themselves predate indexed color themes: without colorTheme they still work.
+            var note = ToJObject(VfxGraphHandler.Apply(new JObject {
+                ["op"] = "add_sticky_note", ["assetPath"] = path, ["title"] = "Note" }));
+            Assert.IsNull(note["error"], note.ToString());
+            var described = ToJObject(VfxGraphHandler.DescribeGraph(new JObject { ["assetPath"] = path }));
+            Assert.AreEqual(1, described.Value<int>("stickyNoteCount"), described.ToString());
+            LogAssert.NoUnexpectedReceived();
+        }
+#endif
 
         [TearDown]
         public void TearDown()
@@ -3492,7 +3534,7 @@ namespace UnityCliBridge.Tests
             Assert.Greater(result.Value<int>("count"), 0,
                 "the VFX package ships built-in templates");
             var names = ((JArray)result["items"]).Select(i => (string)i["name"]).ToList();
-            Assert.IsTrue(names.Any(n => n.Contains("Minimal")),
+            Assert.IsTrue(names.Any(n => n.Contains("Minimal") || n == "SimpleParticleSystem"),
                 $"expected a Minimal-System template; got: {string.Join(", ", names)}");
         }
 
@@ -3502,12 +3544,16 @@ namespace UnityCliBridge.Tests
             EnsureFolder("Assets/UnityCliBridgeTests");
             EnsureFolder(TempFolder);
             string targetPath = $"{TempFolder}/FromTemplate.vfx";
+            var templates = ToJObject(VfxGraphHandler.ListLibrary(new JObject { ["kind"] = "template" }));
+            var names = ((JArray)templates["items"]).Select(item => (string)item["name"]).ToArray();
+            var template = names.Contains("01_Minimal_System") ? "01_Minimal_System"
+                : names.Contains("Minimal_System") ? "Minimal_System" : "SimpleParticleSystem";
 
             JObject result = ToJObject(VfxGraphHandler.Apply(new JObject
             {
                 ["op"] = "create_from_template",
                 ["targetPath"] = targetPath,
-                ["template"] = "01_Minimal_System"
+                ["template"] = template
             }));
             Assert.AreEqual("VisualEffectAsset", result.Value<string>("assetType"));
             Assert.IsTrue(System.IO.File.Exists(targetPath),
@@ -3623,6 +3669,12 @@ namespace UnityCliBridge.Tests
             {
                 ["meshPath"] = CubeMeshFixture, ["outputPath"] = outPath, ["maxResolution"] = 16
             }));
+#if !UNITY_6000_0_OR_NEWER
+            Assert.AreEqual("VFX_SDF_EDIT_MODE_UNSUPPORTED", result.Value<string>("code"));
+            Assert.IsFalse(System.IO.File.Exists(outPath));
+            LogAssert.NoUnexpectedReceived();
+            return; // The real PlayMode bake is covered by e2e-vfx.sh on VFX 14.
+#else
             Assert.IsTrue(result["error"] == null || result["error"].Type == JTokenType.Null,
                 $"bake returned an error: {result["error"]}");
             CollectionAssert.AreEqual(new[] { 16, 16, 16 },
@@ -3649,6 +3701,7 @@ namespace UnityCliBridge.Tests
             Assert.IsTrue(ov["error"] == null || ov["error"].Type == JTokenType.Null,
                 $"overwrite bake returned an error: {ov["error"]}");
             Assert.AreEqual(8, ((JArray)ov["resolution"])[0].Value<int>());
+#endif
         }
 
         [Test]

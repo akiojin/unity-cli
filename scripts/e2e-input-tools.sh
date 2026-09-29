@@ -10,7 +10,7 @@ UNITY_CLI=""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_ROOT="${REPO_ROOT}/UnityCliBridge"
+PROJECT_ROOT="${UNITY_PROJECT_ROOT:-${REPO_ROOT}/UnityCliBridge}"
 
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 LOG="/tmp/unity-cli-e2e-input-${RUN_ID}.log"

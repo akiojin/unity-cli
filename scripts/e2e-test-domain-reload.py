@@ -38,7 +38,7 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / ".unity/issue250-e2e.json")
     args = parser.parse_args()
     report = {"cases": [], "calls": []}
-    env = dict(os.environ, UNITY_PROJECT_ROOT=str(ROOT / "UnityCliBridge"))
+    env = dict(os.environ, UNITY_PROJECT_ROOT=os.getenv("UNITY_PROJECT_ROOT", str(ROOT / "UnityCliBridge")))
     host_process = None
     host_log = args.output.resolve().with_suffix(".host.log")
     shutdown_file = args.output.resolve().with_suffix(f".{os.getpid()}.stop")
@@ -177,6 +177,19 @@ def main():
                 verify_results(json.loads(latest["fileContent"]), exported=True)
                 case.update(status="pass", passed=2, failed=0, result=result)
                 print(f"PASS domainReloadEnabled={reload_enabled}: 2 passed, 0 failed", flush=True)
+                # RunFinished precedes the Test Framework's PlayMode teardown.
+                # Starting another run before exit can discover zero tests.
+                deadline = time.monotonic() + args.timeout
+                while time.monotonic() < deadline:
+                    try:
+                        state = call("get_editor_state", {})["state"]
+                        if not state["isPlaying"] and not state["isCompiling"] and not state["isUpdating"]:
+                            break
+                    except (ConnectionError, subprocess.TimeoutExpired, json.JSONDecodeError):
+                        pass
+                    time.sleep(1)
+                else:
+                    raise AssertionError("Test Framework did not finish PlayMode teardown")
             except Exception as error:
                 failed += 1
                 case.update(status="fail", error=str(error))

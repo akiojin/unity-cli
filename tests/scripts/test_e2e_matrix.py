@@ -1,0 +1,90 @@
+"""Host-free contract tests for the real Editor matrix runner."""
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import subprocess
+import sys
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = importlib.util.spec_from_file_location("matrix", ROOT / "scripts/e2e-matrix.py")
+matrix = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(matrix)
+
+
+class MatrixTests(unittest.TestCase):
+    def test_packages_follow_editor_catalog_and_preserve_bridge(self):
+        catalog = {"com.unity.visualeffectgraph": {"version": "14.0.12"},
+                   "com.unity.render-pipelines.universal": {"version": "14.0.12"},
+                   "com.unity.test-framework": {"version": "1.1.33"},
+                   "com.unity.timeline": {"version": "1.7.7"},
+                   "com.unity.ugui": {"version": "1.0.0"}}
+        result = matrix.package_manifest("2022.3.62f3", catalog, [])
+        self.assertEqual(result["dependencies"]["com.unity.visualeffectgraph"], "14.0.12")
+        self.assertEqual(result["dependencies"]["com.unity.ugui"], "1.0.0")
+        self.assertEqual(result["dependencies"]["com.akiojin.unity-cli-bridge"], "file:unity-cli-bridge")
+        self.assertIn("com.akiojin.unity-cli-bridge", result["testables"])
+
+    def test_missing_vfx_catalog_entry_is_not_silently_skipped(self):
+        with self.assertRaisesRegex(ValueError, "visualeffectgraph"):
+            matrix.package_manifest("6000.7.0b2", {}, [])
+
+    def test_readiness_rejects_error_missing_and_busy_states(self):
+        for value in [{}, {"error": "offline"}, {"isCompiling": True, "isUpdating": False},
+                      {"success": False, "isCompiling": False, "isUpdating": False},
+                      {"isCompiling": False, "isUpdating": False, "errorCount": 1}]:
+            self.assertFalse(matrix.ready(value), value)
+        self.assertTrue(matrix.ready({"isCompiling": False, "isUpdating": False}))
+
+    def test_failed_or_partial_suites_cannot_pass_report(self):
+        self.assertFalse(matrix.all_passed([]))
+        self.assertFalse(matrix.all_passed([{"status": "PASS"}, {"status": "SKIP"}]))
+        self.assertFalse(matrix.all_passed([{"status": "FAIL"}]))
+        self.assertTrue(matrix.all_passed([{"status": "PASS"}]))
+
+    def test_suite_timeout_terminates_the_owned_process(self):
+        with tempfile.TemporaryFile(mode="w+") as log:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                matrix.run_suite([sys.executable, "-c", "import time; time.sleep(30)"],
+                                 {}, log, 0.05)
+            self.assertEqual(matrix.run_suite([sys.executable, "-c", "raise SystemExit(3)"],
+                                             {}, log, 5), 3)
+
+    def test_fixture_is_isolated_and_ignores_package_hash_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "repo/UnityCliBridge"
+            for name in ("Assets", "ProjectSettings", "Packages/unity-cli-bridge"):
+                (source / name).mkdir(parents=True)
+            (source / "ProjectSettings/ProjectVersion.txt").write_text("original\n")
+            fixtures = root / "repo/tests/fixtures/hot-reload"
+            fixtures.mkdir(parents=True)
+            for name in ("HotReloadProbe.cs", "HotReloadE2EFixture.cs"):
+                (fixtures / name).write_text("// fixture\n")
+            editor = root / "2022.3.62f3/Unity.app/Contents/MacOS/Unity"
+            editor.parent.mkdir(parents=True)
+            pm = editor.parent.parent / "Resources/PackageManager"
+            (pm / "Editor").mkdir(parents=True)
+            catalog = {name: {"version": "1.0.0"} for name in (
+                "com.unity.visualeffectgraph", "com.unity.render-pipelines.universal",
+                "com.unity.ugui", "com.unity.test-framework", "com.unity.timeline")}
+            (pm / "Editor/manifest.json").write_text(json.dumps({"packages": catalog}))
+            (pm / "BuiltInPackages/com.unity.modules.ui").mkdir(parents=True)
+            (pm / "BuiltInPackages/com.unity.modules.ui.sha1").touch()
+            destination = root / "run"
+            destination.mkdir()
+            with patch.object(matrix, "ROOT", root / "repo"):
+                version, project, manifest = matrix.prepare(editor, destination)
+            self.assertEqual(version, "2022.3.62f3")
+            self.assertIn("com.unity.modules.ui", manifest["dependencies"])
+            self.assertNotIn("com.unity.modules.ui.sha1", manifest["dependencies"])
+            self.assertEqual((source / "ProjectSettings/ProjectVersion.txt").read_text(), "original\n")
+            self.assertIn(version, (project / "ProjectSettings/ProjectVersion.txt").read_text())
+            self.assertTrue((project / "Assets/HotReloadProbe.cs").is_file())
+            self.assertTrue((project / "Assets/Editor/HotReloadE2EFixture.cs").is_file())
+
+
+if __name__ == "__main__":
+    unittest.main()

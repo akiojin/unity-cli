@@ -159,7 +159,7 @@ if [[ ! -d "${PROJECT_ROOT}/Assets" || ! -d "${PROJECT_ROOT}/Packages" ]]; then
   exit 1
 fi
 
-if [[ -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/server" || -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/Server" ]]; then
+if [[ -z "${UNITY_CLI_TOOLS_ROOT:-}" ]] && [[ -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/server" || -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/Server" ]]; then
   UNITY_CLI_TOOLS_ROOT_OVERRIDE="${REPO_ROOT}/.cache/csharp-lsp"
 fi
 
@@ -555,6 +555,8 @@ if ! wait_for_compile_idle; then
   record_failure "get_compilation_state" "Editor did not recover after Play Mode"
 fi
 
+# Fresh batch hosts may not have a Scene View in their saved window layout.
+run_tool "execute_menu_item" '{"action":"execute","menuPath":"Window/General/Scene"}'
 run_tool "capture_screenshot" '{"captureMode":"scene"}'
 SCREENSHOT_PATH="$(jq -r '.path // empty' <<<"${LAST_OUTPUT}" 2>/dev/null || true)"
 if [[ -n "${SCREENSHOT_PATH}" ]]; then

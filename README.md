@@ -24,6 +24,14 @@ Some code tools (`read`, `search`, `find_symbol`, `find_refs`, etc.) run locally
 
 ## Getting Started
 
+### Editor compatibility
+
+The Bridge requires Unity 2022.3 or newer. The macOS matrix covers
+2022.3.62f3, 6000.0.84f1, 6000.3.25f1, 6000.4.11f1, 6000.5.3f1,
+6000.6.3f1, 6000.7.0a2 and 6000.7.0b2 (acceptance E2E: PASS on 2026-09-30). See the
+[verification dates and results](docs/editor-compatibility.md) before choosing a version.
+Unity 6000.7 Editor runs on Mono; CoreCLR Player builds are outside this matrix.
+
 ### Recommended: Claude Code Plugin
 
 Install the `unity-cli` plugin from Claude Code Marketplace:

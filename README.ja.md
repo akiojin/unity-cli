@@ -25,6 +25,14 @@ Claude Code
 
 ## はじめ方
 
+### Editor 互換性
+
+Bridge の最小バージョンは Unity 2022.3 です。macOS 検証対象は
+2022.3.62f3、6000.0.84f1、6000.3.25f1、6000.4.11f1、6000.5.3f1、
+6000.6.3f1、6000.7.0a2、6000.7.0b2 です（2026-09-30 受け入れ E2E: 全版 PASS）。
+[対応表の検証日・結果](docs/editor-compatibility.md)を確認してください。
+6000.7 の Editor は Mono で動作し、CoreCLR Player ビルドはこの検証の対象外です。
+
 ### 推奨: Claude Code プラグイン
 
 Claude Code Marketplace から `unity-cli` プラグインをインストールします:
