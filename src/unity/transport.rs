@@ -55,6 +55,10 @@ impl UnityCommandError {
 }
 
 impl UnityClient {
+    pub(crate) fn set_timeout(&mut self, timeout: std::time::Duration) {
+        self.timeout = timeout;
+    }
+
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
         let stream = timeout(
             config.timeout,

@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main, develop, "feature/**"]
+    branches: [main, develop, 'feature/**']
   pull_request:
-    branches: [develop, "feature/**"]
+    branches: [develop, 'feature/**']
   workflow_dispatch:
 
 permissions:
@@ -15,13 +15,13 @@ jobs:
     name: Rust Tests (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry and build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -40,12 +40,12 @@ jobs:
     name: LSP Tests (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: '10.0.x'
 
       - name: Run dotnet test
         run: dotnet test lsp/Server.Tests.csproj
@@ -57,7 +57,7 @@ jobs:
     name: Rust Coverage >= 90% (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -66,7 +66,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Cache cargo registry and build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -99,12 +99,12 @@ jobs:
     name: LSP Coverage >= 90% (required)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: '10.0.x'
 
       - name: Run LSP coverage gate
         run: |
@@ -135,18 +135,18 @@ jobs:
         && contains(github.event.head_commit.message, 'chore(release):')
       )
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup .NET SDK 10
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: '10.0.x'
 
       - name: Cache cargo registry and build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -156,9 +156,9 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install perf dependencies
         run: |
@@ -182,7 +182,7 @@ jobs:
       - name: Run LSP performance check
         env:
           UNITY_CLI_TOOLS_ROOT: ${{ github.workspace }}/.cache/csharp-lsp
-          UNITY_CLI_TEST_SKIP_MANAGED_UPDATE: "1"
+          UNITY_CLI_TEST_SKIP_MANAGED_UPDATE: '1'
         run: |
           mkdir -p artifacts
           ./scripts/lsp-perf-check.sh --unity-cli ./target/release/unity-cli --project-root ./UnityCliBridge --json | tee artifacts/lsp-perf-summary.json

@@ -65,3 +65,10 @@
 - Mistake: 過去 PR で `cargo llvm-cov ... -- --test-threads=1` を採用していたのに、`cargo test` 側 (CI workflow / pre-push hook) を並列のまま残し、env race を本質的に解消する手当てをしていなかった。`crate::test_env::env_lock()` で test code 内の env 操作は serialize できているが、Rust の `std::env::set_var` は process-global で thread-unsafe、library 内部の getenv 読み出しと衝突するため並列実行は本質的に安全でない。
 - Rule: `cargo test` / `cargo llvm-cov` の呼び出しは CI / hook / ローカル品質ゲート全てで `-- --test-threads=1` を必須にする。新規 test を追加する際も、env を mutate する場合は `crate::test_env::env_lock()` を取得した上で、それでも並列実行に頼らない前提を守る。env を触る test を追加する際は「並列でも壊れない設計か」を考慮し、可能なら env 依存自体を public API への引数注入で除去する方向を優先する。
 - Checkpoint: 1. CI workflow (`.github/workflows/test.yml`) の `cargo test` / `cargo llvm-cov` 行に `-- --test-threads=1` があるか確認 2. CLAUDE.md の品質ゲートも `-- --test-threads=1` 表記で揃っているか確認 3. 新規 test で `std::env::set_var` を使う場合は `env_lock` を取得し、PR description に「env を mutate するため並列実行禁止」と明記する
+
+## 2026-09-30 — #340 互換性マトリクスの証跡鮮度と NUnit の範囲
+
+- Context: 前セッションが docs に「8 Editor 全件 PASS」と記載していたが、PASS した実行の後に `VfxGraphHandler.cs` / `TestExecutionHandler.cs` / ランナーが変更されていた。さらに VfxGraphHandlerTests は VFX 17.4 以外で失敗していた。
+- Mistake: 証跡のタイムスタンプとソース変更の前後を照合せずに PASS と記載した。E2E の PASS を「vfx_* 全体が動く」根拠として扱い、広い EditMode テストを各バージョンで実行していなかった。受け入れ条件外の fixture 修正（テンプレート名）にも手を付けかけ、PM から #344 の範囲と裁定された。
+- Rule: 実機マトリクスの PASS は、最後の製品コード変更より後に開始した実行だけを証跡にする（`matrix.json` の `started_at` と対象ファイルの mtime を比較する）。NUnit の失敗は「実呼び出しで誤動作する製品コード」と「テスト fixture のバージョン依存」に分け、後者は別 Issue に委ねる。
+- Checkpoint: 1. docs に PASS を書く前に、証跡の開始時刻が最終ソース変更より後か確認する 2. 製品コードを直したら完全マトリクスを再実行する 3. 失敗テストは実 Editor に同じ呼び出しを送り、誤動作か安定エラーコードかを確認してから分類する

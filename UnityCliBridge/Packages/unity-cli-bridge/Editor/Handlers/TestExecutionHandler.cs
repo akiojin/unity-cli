@@ -161,6 +161,22 @@ namespace UnityCliBridge.Handlers
                     return new { error = "There are unsaved scene changes. Please save or discard your changes before running tests." };
                 }
 
+                if (Application.unityVersion == "6000.7.0a2" && testMode != "EditMode"
+                    && (disableDomainReload || (EditorSettings.enterPlayModeOptionsEnabled
+                        && (EditorSettings.enterPlayModeOptions & EnterPlayModeOptions.DisableDomainReload) != 0)))
+                {
+                    // This alpha's bundled UTF clears the cached list at SubsystemRegistration
+                    // but LoadAssemblies returns early for any non-null list. Invalidate it
+                    // before entering PlayMode, as the fixed UTF does, to avoid a zero-test run.
+                    var provider = Type.GetType("UnityEngine.TestTools.Utils.PlayerTestAssemblyProvider, UnityEngine.TestRunner");
+                    var cache = provider?.GetField("m_LoadedAssemblies",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                    if (cache == null)
+                        return new { error = "This Editor's Test Framework requires Domain Reload for PlayMode tests.",
+                            code = "TEST_RUNNER_DOMAIN_RELOAD_REQUIRED" };
+                    cache.SetValue(null, null);
+                }
+
                 // Save current scene to avoid "Save Scene" dialog after tests
                 var activeScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
                 if (activeScene.isDirty)

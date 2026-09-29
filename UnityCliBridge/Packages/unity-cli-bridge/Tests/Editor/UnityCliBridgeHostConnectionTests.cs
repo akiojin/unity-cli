@@ -1,6 +1,12 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Net;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using NUnit.Framework;
 using UnityCliBridge.Models;
 using BridgeHost = UnityCliBridge.Core.UnityCliBridge;
@@ -10,6 +16,83 @@ namespace UnityCliBridge.Tests.Editor
     [TestFixture]
     public class UnityCliBridgeHostConnectionTests
     {
+        private sealed class PausedContext : SynchronizationContext
+        {
+            private readonly ConcurrentQueue<Action> callbacks = new ConcurrentQueue<Action>();
+            public override void Post(SendOrPostCallback callback, object state)
+                => callbacks.Enqueue(() => callback(state));
+            public void Drain()
+            {
+                while (callbacks.TryDequeue(out var callback)) callback();
+            }
+        }
+
+        [Test]
+        public void CommandResponse_CompletesWithoutPumpingPausedUnityContext()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var context = new PausedContext();
+            var previous = SynchronizationContext.Current;
+            try
+            {
+                using var receiver = new TcpClient();
+                receiver.Connect((IPEndPoint)listener.LocalEndpoint);
+                using var sender = listener.AcceptTcpClient();
+                var stream = sender.GetStream();
+                var gates = (ConditionalWeakTable<NetworkStream, SemaphoreSlim>)typeof(BridgeHost)
+                    .GetField("SendGates", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+                var gate = gates.GetValue(stream, _ => new SemaphoreSlim(1, 1));
+                gate.Wait();
+                Task pending;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                    pending = (Task)typeof(BridgeHost).GetMethod("ProcessCommandInternal",
+                        BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] {
+                        new Command { Id = "paused-context", Type = "get_editor_state",
+                            Parameters = new Newtonsoft.Json.Linq.JObject() }, sender, DateTime.UtcNow });
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(previous);
+                    gate.Release();
+                }
+                Assert.IsTrue(pending.Wait(5000), "Sending must not need a Unity context update while paused");
+                var header = new BinaryReader(receiver.GetStream()).ReadBytes(4);
+                Assert.AreEqual(4, header.Length);
+                if (BitConverter.IsLittleEndian) Array.Reverse(header);
+                Assert.Greater(BitConverter.ToInt32(header, 0), 0);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previous);
+                context.Drain();
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void QuitEditor_DoesNotScheduleExitBeforeResponseIsSent()
+        {
+            var before = UnityEditor.EditorApplication.delayCall;
+            try
+            {
+                var response = global::UnityCliBridge.Core.BridgeCommandRouter.Handle(new Command
+                {
+                    Id = "quit-response-order", Type = "quit_editor",
+                    Parameters = new Newtonsoft.Json.Linq.JObject()
+                }).GetAwaiter().GetResult();
+                StringAssert.Contains("Unity Editor quitting", response);
+                Assert.AreEqual(before, UnityEditor.EditorApplication.delayCall,
+                    "Only the transport may schedule exit after flushing the response");
+            }
+            finally
+            {
+                UnityEditor.EditorApplication.delayCall = before;
+            }
+        }
+
         [SetUp]
         public void SetUp()
         {

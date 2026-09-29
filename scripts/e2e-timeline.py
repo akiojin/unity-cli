@@ -23,7 +23,7 @@ def call(tool, payload, error=None):
         [args.unity_cli, "raw", tool, "--json", json.dumps(payload),
          "--host", args.host, "--port", args.port, "--timeout-ms", "120000",
          "--output", "json"], text=True, capture_output=True,
-        env={**os.environ, "UNITY_PROJECT_ROOT": str(ROOT / "UnityCliBridge")},
+        env={**os.environ, "UNITY_PROJECT_ROOT": os.getenv("UNITY_PROJECT_ROOT", str(ROOT / "UnityCliBridge"))},
         timeout=150)
     if error:
         assert error in result.stdout + result.stderr, (tool, error, result.stdout, result.stderr)

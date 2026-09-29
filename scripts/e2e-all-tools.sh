@@ -15,7 +15,7 @@ UNITY_CLI_TOOLS_ROOT_OVERRIDE=""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_ROOT="${REPO_ROOT}/UnityCliBridge"
+PROJECT_ROOT="${UNITY_PROJECT_ROOT:-${REPO_ROOT}/UnityCliBridge}"
 
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 LOG="/tmp/unity-cli-e2e-all-tools-${RUN_ID}.log"
@@ -159,7 +159,7 @@ if [[ ! -d "${PROJECT_ROOT}/Assets" || ! -d "${PROJECT_ROOT}/Packages" ]]; then
   exit 1
 fi
 
-if [[ -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/server" || -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/Server" ]]; then
+if [[ -z "${UNITY_CLI_TOOLS_ROOT:-}" ]] && [[ -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/server" || -x "${REPO_ROOT}/.cache/csharp-lsp/csharp-lsp/osx-arm64/Server" ]]; then
   UNITY_CLI_TOOLS_ROOT_OVERRIDE="${REPO_ROOT}/.cache/csharp-lsp"
 fi
 
@@ -213,7 +213,8 @@ run_tool() {
 
   printf "  %-30s ... " "${tool}"
   output="$(invoke_tool "${tool}" "${payload}" 2>&1)" || rc=$?
-  if [[ ${rc} -ne 0 ]] && [[ "${output}" == *"early eof"* || "${output}" == *"connection reset"* || "${output}" == *"timed out"* || "${output}" == *"Connection refused"* || "${output}" == *"Failed to connect to Unity"* ]]; then
+  if [[ ${rc} -ne 0 && "${tool}" != "quit_editor" ]] && [[ "${output}" == *"early eof"* || "${output}" == *"connection reset"* || "${output}" == *"timed out"* || "${output}" == *"Connection refused"* || "${output}" == *"Failed to connect to Unity"* ]]; then
+    printf 'First attempt failed for %s (exit %s):\n%s\n' "${tool}" "${rc}" "${output}" >> "${LOG}"
     sleep 1
     rc=0
     output="$(invoke_tool "${tool}" "${payload}" 2>&1)" || rc=$?
@@ -247,8 +248,8 @@ run_tool() {
 
 query_is_playing() {
   local output
-  output="$(invoke_tool "get_editor_state" "{}" 2>/dev/null || true)"
-  jq -r '.state.isPlaying // false' <<<"${output}" 2>/dev/null || echo "false"
+  output="$(invoke_tool "get_editor_state" "{}" 2>/dev/null)" || return 1
+  jq -r 'select(.state.isPlaying | type == "boolean") | .state.isPlaying' <<<"${output}" 2>/dev/null
 }
 
 wait_for_play_state() {
@@ -269,9 +270,9 @@ wait_for_tests_done() {
   local max_tries=120
   local i output status
   for ((i = 1; i <= max_tries; i++)); do
-    output="$(invoke_tool "get_test_status" '{"includeTestResults":false}' 2>/dev/null || true)"
+    output="$(invoke_tool "get_test_status" '{"includeTestResults":false}' 2>/dev/null)" || { sleep 0.5; continue; }
     status="$(jq -r '.status // "unknown"' <<<"${output}" 2>/dev/null || echo "unknown")"
-    if [[ "${status}" != "running" ]]; then
+    if [[ "${status}" == "completed" ]]; then
       return 0
     fi
     sleep 0.5
@@ -283,8 +284,8 @@ wait_for_compile_idle() {
   local max_tries=120
   local i output compiling
   for ((i = 1; i <= max_tries; i++)); do
-    output="$(invoke_tool "get_compilation_state" '{"includeMessages":false}' 2>/dev/null || true)"
-    compiling="$(jq -r '.isCompiling // false' <<<"${output}" 2>/dev/null || echo "true")"
+    output="$(invoke_tool "get_compilation_state" '{"includeMessages":false}' 2>/dev/null)" || { sleep 0.5; continue; }
+    compiling="$(jq -r 'select((.isCompiling | type == "boolean") and .isUpdating == false) | .isCompiling' <<<"${output}" 2>/dev/null || echo "true")"
     if [[ "${compiling}" == "false" ]]; then
       return 0
     fi
@@ -371,13 +372,26 @@ json_get_project_setting="$(jq -nc '{path:"player.productName"}')"
 json_set_project_setting="$(jq -nc '{path:"player.productName",value:"UnityCliBridge",confirmChanges:true}')"
 json_get_package_setting="$(jq -nc '{package:"com.akiojin.unity-cli-bridge.e2e",key:"smoke/enabled",scope:"user"}')"
 json_set_package_setting="$(jq -nc '{package:"com.akiojin.unity-cli-bridge.e2e",key:"smoke/enabled",value:true,scope:"user",confirmChanges:true}')"
-KNOWN_SKIPPED_TOOLS=("rename_symbol" "remove_symbol")
+EXCLUSIONS="${SCRIPT_DIR}/e2e-all-tools-exclusions.json"
+if ! jq -e 'type == "object" and all(.[]; type == "string" and length > 0)' "${EXCLUSIONS}" >/dev/null; then
+  echo "ERROR: Missing or invalid tool exclusion reasons: ${EXCLUSIONS}" >&2
+  exit 1
+fi
+KNOWN_SKIPPED_TOOLS=()
+while IFS= read -r tool_name; do
+  KNOWN_SKIPPED_TOOLS+=("${tool_name}")
+done < <(jq -r 'keys[]' "${EXCLUSIONS}")
 
 echo "--- Running tools ---"
 
 run_tool "create_scene" "${json_create_scene}"
 run_tool "load_scene" "${json_load_scene_e2e}"
 run_tool "create_gameobject" '{"name":"E2ECube","primitiveType":"cube"}'
+run_tool "manage_timeline" "$(jq -nc --arg assetPath "${GEN_DIR}/Timeline_${RUN_ID}.playable" '{action:"create_asset",assetPath:$assetPath}')"
+run_tool "get_timeline" "$(jq -nc --arg assetPath "${GEN_DIR}/Timeline_${RUN_ID}.playable" '{assetPath:$assetPath}')"
+run_tool "eval_csharp" "$(jq -nc --arg requestId "all-tools-${RUN_ID}" '{code:"1 + 1",requestId:$requestId}')"
+run_tool "get_eval_status" "$(jq -nc --arg requestId "all-tools-${RUN_ID}" '{requestId:$requestId}')"
+run_tool "hot_reload_status" '{}'
 run_tool "add_component" '{"gameObjectPath":"/E2ECube","componentType":"Animator"}'
 run_tool "add_component" '{"gameObjectPath":"/E2ECube","componentType":"Rigidbody"}'
 run_tool "modify_component" '{"gameObjectPath":"/E2ECube","componentType":"Rigidbody","properties":{"mass":1.75}}'
@@ -461,6 +475,7 @@ run_tool "update_project_settings" '{"confirmChanges":true}'
 run_tool "get_compilation_state" '{"includeMessages":false}'
 run_tool "build_index" '{"scope":"assets"}'
 run_tool "update_index" "${json_update_index}"
+run_tool "get_index_status" '{}'
 run_tool "find_symbol" "${json_find_symbol}"
 run_tool "get_symbols" "${json_get_symbols}"
 run_tool "find_refs" "${json_find_refs}"
@@ -533,6 +548,15 @@ if ! wait_for_play_state "false"; then
   record_failure "stop_game" "Play mode did not become false within timeout"
 fi
 
+# Script creation can defer compilation until Play Mode ends. Refresh and
+# wait for a real response after the assembly reload before using the listener.
+run_tool "manage_asset_database" '{"action":"refresh"}'
+if ! wait_for_compile_idle; then
+  record_failure "get_compilation_state" "Editor did not recover after Play Mode"
+fi
+
+# Fresh batch hosts may not have a Scene View in their saved window layout.
+run_tool "execute_menu_item" '{"action":"execute","menuPath":"Window/General/Scene"}'
 run_tool "capture_screenshot" '{"captureMode":"scene"}'
 SCREENSHOT_PATH="$(jq -r '.path // empty' <<<"${LAST_OUTPUT}" 2>/dev/null || true)"
 if [[ -n "${SCREENSHOT_PATH}" ]]; then
@@ -564,7 +588,7 @@ if [[ ${#KNOWN_SKIPPED_TOOLS[@]} -gt 0 ]]; then
   echo ""
   echo "Known skipped tools:"
   for tool_name in "${KNOWN_SKIPPED_TOOLS[@]}"; do
-    echo "  - ${tool_name}"
+    echo "  - ${tool_name}: $(jq -r --arg name "${tool_name}" '.[$name]' "${EXCLUSIONS}")"
   done
 fi
 

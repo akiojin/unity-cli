@@ -101,6 +101,8 @@ namespace UnityCliBridge.Core
 #endif
                 ["create_animator_controller"] = command => Success(command, AssetManagementHandler.CreateAnimatorController(command.Parameters)),
                 ["create_animation_clip"] = command => Success(command, AssetManagementHandler.CreateAnimationClip(command.Parameters)),
+                ["get_animation_curves"] = command => Success(command, AnimationCurveHandler.GetAnimationCurves(command.Parameters)),
+                ["edit_animation_curve"] = command => Success(command, AnimationCurveHandler.EditAnimationCurve(command.Parameters)),
                 ["create_sprite_atlas"] = command => Success(command, AssetManagementHandler.CreateSpriteAtlas(command.Parameters)),
                 ["create_prefab"] = command => Success(command, AssetManagementHandler.CreatePrefab(command.Parameters)),
                 ["modify_prefab"] = command => Success(command, AssetManagementHandler.ModifyPrefab(command.Parameters)),
@@ -140,7 +142,7 @@ namespace UnityCliBridge.Core
                 ["quit_editor"] = command =>
                 {
                     var response = Response.SuccessResult(command.Id, new { message = "Unity Editor quitting" });
-                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                    // The transport schedules exit only after this response is sent.
                     return Task.FromResult(response);
                 },
                 ["manage_tags"] = command => Success(command, TagManagementHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),

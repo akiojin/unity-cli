@@ -5,6 +5,31 @@ using Xunit;
 
 public sealed class WorkspaceUtilitiesTests
 {
+    [Theory]
+    [InlineData("assets", "Assets/A.cs")]
+    [InlineData("embedded", "Packages/B.cs")]
+    [InlineData("library", "Library/PackageCache/C.cs")]
+    [InlineData("packages", "Library/PackageCache/C.cs,Packages/B.cs")]
+    [InlineData("all", "Assets/A.cs,Library/PackageCache/C.cs,Packages/B.cs")]
+    [InlineData("unknown", "Assets/A.cs,Library/PackageCache/C.cs,Packages/B.cs")]
+    public void EnumerateUnityCsFiles_SelectsRequestedRoots(string scope, string expected)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lsp-roots-" + Path.GetRandomFileName());
+        try
+        {
+            foreach (var file in new[] { "Assets/A.cs", "Packages/B.cs", "Library/PackageCache/C.cs" })
+            {
+                var path = Path.Combine(root, file);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, "class Probe {}");
+            }
+            var files = LspWorkspaceUtilities.EnumerateUnityCsFiles(root, scope)
+                .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')).OrderBy(path => path);
+            Assert.Equal(expected, string.Join(",", files));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     [Fact]
     public void EnumerateUnityCsFiles_ScansUnityFoldersAndSkipsBinObj()
     {

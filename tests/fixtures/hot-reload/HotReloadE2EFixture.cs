@@ -130,11 +130,16 @@ public static class HotReloadE2EFixture
     {
         var probe = Object.FindFirstObjectByType<HotReloadProbe>();
         var scene = SceneManager.GetActiveScene();
+#if UNITY_6000_5_OR_NEWER
+        var objectId = unchecked((int)EntityId.ToULong(probe.GetEntityId()));
+#else
+        var objectId = probe.GetInstanceID();
+#endif
         Directory.CreateDirectory("Library/HotReloadE2E");
         File.WriteAllText("Library/HotReloadE2E/snapshot.json", JsonConvert.SerializeObject(new
         {
             playing = EditorApplication.isPlaying, scene = scene.path, sceneHandle = scene.handle.GetHashCode(),
-            objectId = probe.GetInstanceID(), hp = probe.hp, score = probe.score,
+            objectId, hp = probe.hp, score = probe.score,
             position = new[] { probe.transform.position.x, probe.transform.position.y, probe.transform.position.z },
             transient = probe.transientState, staticState = HotReloadProbe.staticState, value = probe.value
         }));

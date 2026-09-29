@@ -3,7 +3,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-export UNITY_PROJECT_ROOT="${REPO_ROOT}/UnityCliBridge"
+export UNITY_PROJECT_ROOT="${UNITY_PROJECT_ROOT:-${REPO_ROOT}/UnityCliBridge}"
 export UNITY_CLI="${UNITY_CLI:-${REPO_ROOT}/target/release/unity-cli}"
 
 python3 - <<'PY'

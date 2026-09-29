@@ -112,12 +112,13 @@ fn parse_frontmatter(raw_yaml: &str) -> Result<Frontmatter> {
     let mapping = value
         .as_mapping()
         .ok_or_else(|| anyhow!("frontmatter is not a YAML mapping"))?;
+    // serde_yml 0.0.13 accepts empty keys that the previous parser rejected.
+    if mapping.keys().any(|key| key.is_empty()) {
+        return Err(anyhow!("frontmatter contains an empty YAML key"));
+    }
 
     for (key, val) in mapping {
-        let key_str = match key.as_str() {
-            Some(s) => s,
-            None => continue,
-        };
+        let key_str = key.as_str();
         match key_str {
             "name" => fm.name = val.as_str().map(|s| s.to_string()),
             "description" => fm.description = val.as_str().map(|s| s.to_string()),
@@ -137,10 +138,7 @@ fn parse_frontmatter(raw_yaml: &str) -> Result<Frontmatter> {
 fn parse_metadata(meta: &serde_yml::Mapping) -> Metadata {
     let mut out = Metadata::default();
     for (key, val) in meta {
-        let key_str = match key.as_str() {
-            Some(s) => s,
-            None => continue,
-        };
+        let key_str = key.as_str();
         match key_str {
             "author" => out.author = val.as_str().map(|s| s.to_string()),
             "version" => {

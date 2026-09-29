@@ -53,11 +53,11 @@ namespace UnityCliBridge.Editor.UpmSigning
                 Debug.Log($"[upm-pack] output: {outputDirAbs}");
                 Debug.Log($"[upm-pack] org: {orgId}");
 
-#if UNITY_6000_0_OR_NEWER
-                packRequest = Client.Pack(packageDirAbs, outputDirAbs, orgId);
-#else
-                packRequest = Client.Pack(packageDirAbs, outputDirAbs);
-#endif
+                // Signing is not available in every Unity 6 stream (including 6000.0).
+                var signedPack = typeof(Client).GetMethod("Pack", new[] { typeof(string), typeof(string), typeof(string) });
+                packRequest = signedPack != null
+                    ? (PackRequest)signedPack.Invoke(null, new object[] { packageDirAbs, outputDirAbs, orgId })
+                    : Client.Pack(packageDirAbs, outputDirAbs);
                 EditorApplication.update += PollPackRequest;
             }
             catch (Exception ex)
