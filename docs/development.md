@@ -213,6 +213,12 @@ scripts/e2e-reference-fetch.sh --port 6400
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
+# C# eval E2E against an existing listener (see editor-eval.md)
+scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
+
+# C# eval with an isolated batch host (build the debug CLI first)
+scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
+
 # Timeline editing, persistence and Animator evaluation (real Editor)
 cargo build --bin unity-cli
 scripts/e2e-timeline-batch-host.sh --port 6474
