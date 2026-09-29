@@ -217,6 +217,29 @@ namespace UnityCliBridge.Core
                 return;
             }
 
+            StartTcpListenerOnCurrentEndpoint();
+        }
+
+        /// <summary>
+        /// Starts a listener on an ephemeral loopback port even in a test-runner process, so
+        /// integration tests exercise the real transport. Returns the bound port. Call
+        /// <see cref="Restart"/> afterwards to return to the configured endpoint.
+        /// </summary>
+        internal static int StartOnEphemeralLoopbackPortForTesting()
+        {
+            currentHost = "127.0.0.1";
+            bindAddress = IPAddress.Loopback;
+            currentPort = 0;
+            StartTcpListenerOnCurrentEndpoint();
+            if (tcpListener == null)
+            {
+                throw new InvalidOperationException("TCP listener failed to start; see the Unity CLI Bridge log.");
+            }
+            return ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+        }
+
+        private static void StartTcpListenerOnCurrentEndpoint()
+        {
             try
             {
                 if (tcpListener != null)
@@ -416,7 +439,7 @@ namespace UnityCliBridge.Core
                                 }
                                 else
                                 {
-                                    var errorResponse = Response.ErrorResult("Invalid command format", "PARSE_ERROR", null);
+                                    var errorResponse = Response.ErrorResult("Invalid command format", "PARSE_ERROR", (object)null);
                                     if (!await TrySendFramedMessage(stream, errorResponse, cancellationToken))
                                     {
                                         break;
@@ -425,7 +448,7 @@ namespace UnityCliBridge.Core
                             }
                             catch (JsonException ex)
                             {
-                                var errorResponse = Response.ErrorResult($"JSON parsing error: {ex.Message}", "JSON_ERROR", null);
+                                var errorResponse = Response.ErrorResult($"JSON parsing error: {ex.Message}", "JSON_ERROR", (object)null);
                                 if (!await TrySendFramedMessage(stream, errorResponse, cancellationToken))
                                 {
                                     break;

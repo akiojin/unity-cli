@@ -1,8 +1,11 @@
+using System.Collections;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityCliBridge.Tests.Helpers;
+using UnityEngine.TestTools;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityCliBridge.Handlers;
@@ -102,8 +105,8 @@ namespace UnityCliBridge.Tests
             StringAssert.Contains("UIDocument GameObject not found", state["error"]?.ToString());
         }
 
-        [Test]
-        public async Task SetUIElementValue_WithUiToolkitPrefix_RoutesToUiToolkit()
+        [UnityTest]
+        public IEnumerator SetUIElementValue_WithUiToolkitPrefix_RoutesToUiToolkit() => TaskTestUtility.Await(async () =>
         {
             await Task.Yield();
             var result = ToJObject(UIInteractionHandler.SetUIElementValue(new JObject
@@ -115,10 +118,10 @@ namespace UnityCliBridge.Tests
 
             Assert.IsNotNull(result["error"]);
             StringAssert.Contains("UIDocument GameObject not found", result["error"]?.ToString());
-        }
+        });
 
-        [Test]
-        public async Task ClickUIElement_WithUiToolkitPrefix_RoutesToUiToolkit()
+        [UnityTest]
+        public IEnumerator ClickUIElement_WithUiToolkitPrefix_RoutesToUiToolkit() => TaskTestUtility.Await(async () =>
         {
             var result = ToJObject(await UIInteractionHandler.ClickUIElement(new JObject
             {
@@ -128,10 +131,10 @@ namespace UnityCliBridge.Tests
 
             Assert.IsNotNull(result["error"]);
             StringAssert.Contains("UIDocument GameObject not found", result["error"]?.ToString());
-        }
+        });
 
-        [Test]
-        public async Task ClickUIElement_WithImguiPath_InvokesOnClick()
+        [UnityTest]
+        public IEnumerator ClickUIElement_WithImguiPath_InvokesOnClick() => TaskTestUtility.Await(async () =>
         {
             var id = "IMGUI/Click_" + Guid.NewGuid().ToString("N");
             int clicks = 0;
@@ -150,7 +153,7 @@ namespace UnityCliBridge.Tests
             Assert.IsNull(result["error"]);
             Assert.IsTrue(result.Value<bool>("success"));
             Assert.AreEqual(1, clicks);
-        }
+        });
 
         [Test]
         public void SetUIElementValue_WithImguiPath_SetsValue()
