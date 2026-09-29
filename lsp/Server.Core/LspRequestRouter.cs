@@ -116,7 +116,9 @@ public sealed class LspRequestRouter
                 return Response(id, Array.Empty<object>());
             }
 
-            var result = await WorkspaceSymbols.WorkspaceSymbolAsync(query);
+            var scope = root.GetProperty("params").TryGetProperty("scope", out var scopeValue)
+                ? scopeValue.GetString() ?? "all" : "all";
+            var result = await WorkspaceSymbols.WorkspaceSymbolAsync(query, scope);
             return Response(id, result);
         }
 
@@ -128,7 +130,9 @@ public sealed class LspRequestRouter
         if (method == "unitycli/referencesByName")
         {
             var symName = root.GetProperty("params").GetProperty("name").GetString() ?? "";
-            var result = await WorkspaceSymbols.ReferencesByNameAsync(symName);
+            var scope = root.GetProperty("params").TryGetProperty("scope", out var scopeValue)
+                ? scopeValue.GetString() ?? "all" : "all";
+            var result = await WorkspaceSymbols.ReferencesByNameAsync(symName, scope);
             return Response(id, result);
         }
 

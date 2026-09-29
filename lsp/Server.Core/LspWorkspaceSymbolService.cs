@@ -33,7 +33,7 @@ public sealed class LspWorkspaceSymbolService
         }
     }
 
-    public async Task<object> WorkspaceSymbolAsync(string query)
+    public async Task<object> WorkspaceSymbolAsync(string query, string scope = "all")
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -41,7 +41,7 @@ public sealed class LspWorkspaceSymbolService
         }
 
         var results = new List<object>();
-        foreach (var file in LspWorkspaceUtilities.EnumerateUnityCsFiles(_rootDir))
+        foreach (var file in LspWorkspaceUtilities.EnumerateUnityCsFiles(_rootDir, scope))
         {
             try
             {
@@ -82,7 +82,7 @@ public sealed class LspWorkspaceSymbolService
         return results;
     }
 
-    public async Task<object> ReferencesByNameAsync(string name)
+    public async Task<object> ReferencesByNameAsync(string name, string scope = "all")
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -90,7 +90,7 @@ public sealed class LspWorkspaceSymbolService
         }
 
         var list = new List<object>();
-        foreach (var file in LspWorkspaceUtilities.EnumerateUnityCsFiles(_rootDir))
+        foreach (var file in LspWorkspaceUtilities.EnumerateUnityCsFiles(_rootDir, scope))
         {
             try
             {
