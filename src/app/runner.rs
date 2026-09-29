@@ -15,7 +15,7 @@ use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
-use crate::transport::UnityClient;
+use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
 
 pub async fn run() -> Result<()> {
@@ -24,6 +24,22 @@ pub async fn run() -> Result<()> {
 }
 
 pub async fn run_with_cli(cli: Cli) -> Result<()> {
+    let output = cli.output;
+    let result = run_command(cli).await;
+    if let Err(error) = &result {
+        if matches!(output, OutputFormat::Json) {
+            if let Some(failure) = error
+                .chain()
+                .find_map(|cause| cause.downcast_ref::<UnityCommandError>())
+            {
+                print_value(&failure.response, output)?;
+            }
+        }
+    }
+    result
+}
+
+async fn run_command(cli: Cli) -> Result<()> {
     init_tracing(cli.verbose)?;
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
@@ -572,6 +588,7 @@ async fn call_remote_tool_with_timing(
                 "unityd unavailable; falling back to direct TCP"
             );
         }
+        Err(unityd::DaemonCallError::UnityCommand(error)) => return Err(error.into()),
         Err(error) => return Err(error.into()),
     }
 
@@ -2051,6 +2068,45 @@ mod tests {
     }
 
     #[test]
+    fn baking_surface_requires_path_before_contacting_editor() {
+        assert!(validate_tool_params(
+            "start_scene_bake",
+            &json!({
+                "target": "navmesh-surface", "scenePath": "Assets/Level.unity"
+            })
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn baking_valid_targets_and_polling_are_accepted() {
+        for target in ["lighting", "navmesh-legacy", "occlusion"] {
+            validate_tool_params(
+                "start_scene_bake",
+                &json!({
+                    "target": target, "scenePath": "Assets/Level.unity"
+                }),
+            )
+            .unwrap();
+        }
+        validate_tool_params("start_scene_bake", &json!({
+            "target": "navmesh-surface", "scenePath": "Assets/Level.unity", "surfacePath": "/Navigation"
+        })).unwrap();
+        validate_tool_params("get_scene_bake_status", &json!({"jobId": "abc"})).unwrap();
+    }
+
+    #[test]
+    fn baking_invalid_target_missing_scene_and_missing_job_are_rejected() {
+        for params in [
+            json!({"target": "lighting"}),
+            json!({"target": "unknown", "scenePath": "Assets/Level.unity"}),
+        ] {
+            assert!(validate_tool_params("start_scene_bake", &params).is_err());
+        }
+        assert!(validate_tool_params("get_scene_bake_status", &json!({})).is_err());
+    }
+
+    #[test]
     fn validate_tool_params_rejects_execute_menu_item_without_menu_path() {
         let err = validate_tool_params(
             "execute_menu_item",
@@ -2394,8 +2450,23 @@ mod tests {
         assert!(format!("{batch_err:#}").contains("Failed to connect to Unity"));
     }
 
+    #[allow(clippy::await_holding_lock)]
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_handles_instances_and_daemon_commands_without_server() {
+        // `instances list` rewrites the registry; isolate it from other registry tests.
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let registry = tempdir().expect("tempdir should succeed");
+        let _registry_env = EnvVarGuard::set(
+            "UNITY_CLI_REGISTRY_PATH",
+            registry
+                .path()
+                .join("instances.json")
+                .to_str()
+                .expect("registry path should be valid UTF-8"),
+        );
+
         run_with_cli(cli_for(Command::Instances {
             command: InstancesCommand::List {
                 ports: Some("9".to_string()),

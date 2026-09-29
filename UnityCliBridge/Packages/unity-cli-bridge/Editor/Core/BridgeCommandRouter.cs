@@ -23,6 +23,8 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
+                ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
                 {
                     message = "pong",
@@ -58,6 +60,8 @@ namespace UnityCliBridge.Core
                 ["save_scene"] = command => Success(command, SceneHandler.SaveScene(command.Parameters)),
                 ["list_scenes"] = command => Success(command, SceneHandler.ListScenes(command.Parameters)),
                 ["get_scene_info"] = command => Success(command, SceneHandler.GetSceneInfo(command.Parameters)),
+                ["start_scene_bake"] = command => Success(command, BakeHandler.StartBake(command.Parameters)),
+                ["get_scene_bake_status"] = command => Success(command, BakeHandler.GetStatus(command.Parameters)),
                 ["get_gameobject_details"] = command => Success(command, SceneAnalysisHandler.GetGameObjectDetails(command.Parameters)),
                 ["analyze_scene_contents"] = command => Success(command, SceneAnalysisHandler.AnalyzeSceneContents(command.Parameters)),
                 ["get_component_values"] = command => Success(command, SceneAnalysisHandler.GetComponentValues(command.Parameters)),
@@ -170,6 +174,8 @@ namespace UnityCliBridge.Core
 
         internal static Task<string> Handle(Command command)
         {
+            if (command != null && PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                return Task.FromResult(buildResponse);
             if (command?.Type != null && Handlers.TryGetValue(command.Type, out var handler))
             {
                 return handler(command);

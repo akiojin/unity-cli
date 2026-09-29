@@ -214,6 +214,10 @@ scripts/e2e-reference-fetch.sh --port 6400
 # Covers the real project, a 6000.4.12f1 fixture, and explicit public ref 6000.4.
 scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
 
+# Player build: relevant EditMode tests, real build/report, polling, failures,
+# restart recovery, and headless launch (isolated project copy on macOS)
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
@@ -236,6 +240,10 @@ scripts/e2e-test-results.sh
 
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
+
+# Real Lighting / legacy NavMesh / NavMeshSurface / Occlusion bake and reload
+cargo build --bin unity-cli
+scripts/e2e-bake-batch-host.sh --port 6477
 
 # Isolated optional hot reload backend / real Editor checks
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
@@ -265,6 +273,15 @@ scripts/e2e-video-formats.sh --port 6400
 ```
 
 ### Scene Layout Policy
+
+Baking E2E creates fixtures under `Assets/Scenes/Generated/E2E/Baking/` and
+checks generated assets, saved scene references, and navigation queries after
+scene reload. Its batch host enables graphics for actual lightmap generation;
+do not add `-nographics`. Logs and pass/fail counts are kept in the printed
+`/tmp/unity-cli-bake-e2e.*` directory. Against a running Editor, use
+`scripts/e2e-bake.sh --port <port>`. Save unrelated scenes first. Use
+`--targets lighting,navmesh-legacy,navmesh-surface,occlusion` to select targets;
+acceptance verification requires the default full set.
 
 Timeline E2E uses `Assets/Scenes/Generated/E2E/Timeline/` for its fixture
 scene and assets. The suite checks clip timing, binding, asset unload/reimport
@@ -777,6 +794,9 @@ scripts/e2e-reference-fetch.sh --port 6400
 # 参照の自動解決・取得元情報の検証（起動済み Editor・ケース別の一時キャッシュ）
 # 実プロジェクト、6000.4.12f1 fixture、公開 ref 6000.4 の明示指定を検証する。
 scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
+# Player build: 隔離コピーで EditMode・実ビルド・状態取得・失敗・再起動・画面なし起動
+python3 scripts/e2e-player-build.py --launch --editmode
 
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
