@@ -17,7 +17,7 @@ use crate::core::command_stats::RemoteCommandTiming;
 use crate::core::contracts::BatchItem;
 use crate::daemon::runtime::DaemonRuntimePaths;
 use crate::lsp_manager;
-use crate::transport::UnityClient;
+use crate::transport::{UnityClient, UnityCommandError};
 
 const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 600;
 
@@ -58,6 +58,7 @@ pub struct DaemonToolCall {
     pub value: Value,
     pub timing: Option<RemoteCommandTiming>,
     pub daemon_roundtrip_ms: f64,
+    pub startup_ms: Option<f64>,
 }
 
 #[derive(Debug, Error)]
@@ -66,6 +67,8 @@ pub enum DaemonCallError {
     Transport(#[from] anyhow::Error),
     #[error("unityd request failed: {0}")]
     RequestFailed(String),
+    #[error(transparent)]
+    UnityCommand(#[from] UnityCommandError),
 }
 
 impl DaemonCallError {
@@ -101,7 +104,9 @@ impl ConnectionPool {
             let client = UnityClient::connect(&config).await?;
             self.connections.insert(key.clone(), client);
         }
-        Ok(self.connections.get_mut(&key).unwrap())
+        let client = self.connections.get_mut(&key).unwrap();
+        client.set_timeout(timeout);
+        Ok(client)
     }
 
     fn remove(&mut self, host: &str, port: u16) {
@@ -147,22 +152,117 @@ fn cleanup_stale_files() {
     }
 }
 
-fn cleanup_stale_files_on_start() {
-    if ping().is_ok() {
-        return;
-    }
+fn open_lock(name: &str) -> Result<fs::File> {
+    let path = tools_dir()?.join(name);
+    fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(&path)
+        .with_context(|| format!("Failed to open unityd lock: {}", path.display()))
+}
 
-    #[cfg(unix)]
-    if connect_client().is_ok() {
-        return;
+fn startup_lock(deadline: Instant) -> Result<fs::File> {
+    let lock = open_lock("startup.lock")?;
+    loop {
+        match lock.try_lock() {
+            Ok(()) => return Ok(lock),
+            Err(fs::TryLockError::WouldBlock) if Instant::now() < deadline => {
+                thread::sleep(Duration::from_millis(25));
+            }
+            Err(error) => return Err(anyhow!("Failed to acquire unityd startup lock: {error}")),
+        }
     }
+}
 
-    #[cfg(not(unix))]
-    if connect_client().is_ok() {
-        return;
+fn spawn_daemon(exe: &std::path::Path) -> Result<std::process::Child> {
+    let log = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(tools_dir()?.join("unityd.log"))
+        .context("Failed to open unityd startup log")?;
+    Command::new(exe)
+        .args(["unityd", "serve"])
+        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::from(log))
+        .spawn()
+        .context("Failed to spawn unityd background process")
+}
+
+#[cfg(not(test))]
+fn spawn_automatic_daemon() -> Result<std::process::Child> {
+    spawn_daemon(&std::env::current_exe().context("Failed to locate unity-cli executable")?)
+}
+
+#[cfg(test)]
+fn spawn_automatic_daemon() -> Result<std::process::Child> {
+    Err(anyhow!(
+        "automatic startup is disabled for the unit-test executable"
+    ))
+}
+
+#[cfg(unix)]
+type ClientStream = std::os::unix::net::UnixStream;
+#[cfg(not(unix))]
+type ClientStream = std::net::TcpStream;
+
+fn wait_for_connection(deadline: Instant, mut child: std::process::Child) -> Result<ClientStream> {
+    loop {
+        match connect_client() {
+            Ok(stream) => {
+                // Reap the child while a long-lived caller remains alive.
+                thread::spawn(move || {
+                    let _ = child.wait();
+                });
+                return Ok(stream);
+            }
+            Err(error) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(error.context("unityd failed to start within timeout"));
+            }
+            Err(_) => {
+                if let Some(status) = child
+                    .try_wait()
+                    .context("Failed to inspect unityd startup process")?
+                {
+                    return Err(anyhow!(
+                        "unityd exited during startup ({status}); see {}",
+                        tools_dir()?.join("unityd.log").display()
+                    ));
+                }
+                thread::sleep(Duration::from_millis(25));
+            }
+        }
     }
+}
 
-    cleanup_stale_files();
+fn connect_on_demand() -> Result<(ClientStream, Option<f64>)> {
+    if let Ok(stream) = connect_client() {
+        return Ok((stream, None));
+    }
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(5);
+    let result = (|| {
+        let _lock = startup_lock(deadline)?;
+        if let Ok(stream) = connect_client() {
+            return Ok(stream);
+        }
+        let child = spawn_automatic_daemon()?;
+        wait_for_connection(deadline, child)
+    })();
+    let startup_ms = started.elapsed().as_secs_f64() * 1000.0;
+    tracing::debug!(
+        startup_ms,
+        success = result.is_ok(),
+        "unityd automatic startup"
+    );
+    result
+        .map(|stream| (stream, Some(startup_ms)))
+        .context("unityd automatic startup failed")
 }
 
 fn daemon_command_path() -> Result<PathBuf> {
@@ -233,30 +333,15 @@ pub fn start_background() -> Result<Value> {
         }
     }
 
-    cleanup_stale_files_on_start();
-
-    let exe = daemon_command_path()?;
-    Command::new(&exe)
-        .arg("unityd")
-        .arg("serve")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .context("Failed to spawn unityd background process")?;
-
     let deadline = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < deadline {
-        if ping().is_ok() {
-            return Ok(json!({
-                "success": true,
-                "running": true
-            }));
-        }
-        thread::sleep(Duration::from_millis(100));
+    let _lock = startup_lock(deadline)?;
+    if connect_client().is_ok() {
+        return Ok(json!({ "success": true, "running": true, "alreadyRunning": true }));
     }
-
-    Err(anyhow!("unityd failed to start within timeout"))
+    let exe = daemon_command_path()?;
+    let child = spawn_daemon(&exe)?;
+    wait_for_connection(Instant::now() + Duration::from_secs(5), child)?;
+    Ok(json!({ "success": true, "running": true }))
 }
 
 pub fn stop() -> Result<Value> {
@@ -321,21 +406,31 @@ pub async fn try_call_tool_with_timing(
     params: &Value,
     config: &RuntimeConfig,
 ) -> std::result::Result<DaemonToolCall, DaemonCallError> {
+    let (stream, startup_ms) = connect_on_demand()?;
     let started_at = Instant::now();
-    let response = request(DaemonRequest::Tool {
-        tool_name: tool_name.to_string(),
-        params: params.clone(),
-        host: config.host.clone(),
-        port: config.port,
-        timeout_ms: config.timeout.as_millis() as u64,
-    })?;
+    let response = request_on_stream(
+        stream,
+        DaemonRequest::Tool {
+            tool_name: tool_name.to_string(),
+            params: params.clone(),
+            host: config.host.clone(),
+            port: config.port,
+            timeout_ms: config.timeout.as_millis() as u64,
+        },
+    )?;
 
     if response.ok {
         return Ok(DaemonToolCall {
             value: response.result.unwrap_or(Value::Null),
             timing: response.timing,
             daemon_roundtrip_ms: started_at.elapsed().as_secs_f64() * 1000.0,
+            startup_ms,
         });
+    }
+
+    // Failed Unity calls carry their original error envelope in result.
+    if let Some(response) = response.result {
+        return Err(UnityCommandError::new(response).into());
     }
 
     Err(DaemonCallError::RequestFailed(
@@ -349,13 +444,24 @@ pub async fn try_batch(
     commands: Vec<BatchItem>,
     config: &RuntimeConfig,
 ) -> std::result::Result<Value, DaemonCallError> {
-    let response = request(DaemonRequest::Batch {
-        commands,
-        host: config.host.clone(),
-        port: config.port,
-        timeout_ms: config.timeout.as_millis() as u64,
-    })?;
+    let (stream, startup_ms) = connect_on_demand()?;
+    let started_at = Instant::now();
+    let response = request_on_stream(
+        stream,
+        DaemonRequest::Batch {
+            commands,
+            host: config.host.clone(),
+            port: config.port,
+            timeout_ms: config.timeout.as_millis() as u64,
+        },
+    )?;
 
+    tracing::debug!(
+        route = "daemon",
+        ?startup_ms,
+        operation_ms = started_at.elapsed().as_secs_f64() * 1000.0,
+        "Unity remote batch"
+    );
     if response.ok {
         return Ok(response.result.unwrap_or(Value::Null));
     }
@@ -367,6 +473,7 @@ pub async fn try_batch(
     ))
 }
 
+#[cfg(test)]
 fn ping() -> Result<()> {
     let response = request(DaemonRequest::Ping)?;
     if response.ok {
@@ -382,7 +489,10 @@ fn ping() -> Result<()> {
 }
 
 fn request(req: DaemonRequest) -> Result<DaemonResponse> {
-    let mut stream = connect_client()?;
+    request_on_stream(connect_client()?, req)
+}
+
+fn request_on_stream(mut stream: ClientStream, req: DaemonRequest) -> Result<DaemonResponse> {
     let payload =
         serde_json::to_string(&req).context("Failed to serialize unityd request payload")?;
     stream
@@ -422,8 +532,11 @@ fn connect_client() -> Result<std::os::unix::net::UnixStream> {
 
 #[cfg(not(unix))]
 fn connect_client() -> Result<std::net::TcpStream> {
-    let stream = std::net::TcpStream::connect(("127.0.0.1", daemon_port()))
-        .context("Failed to connect to unityd TCP endpoint")?;
+    let stream = std::net::TcpStream::connect_timeout(
+        &std::net::SocketAddr::from(([127, 0, 0, 1], daemon_port())),
+        Duration::from_millis(100),
+    )
+    .context("Failed to connect to unityd TCP endpoint")?;
     stream
         .set_read_timeout(Some(Duration::from_secs(60)))
         .context("Failed to set unityd read timeout")?;
@@ -434,6 +547,16 @@ fn connect_client() -> Result<std::net::TcpStream> {
 }
 
 pub async fn serve_forever() -> Result<()> {
+    // Retain the same lock inode across restarts. Only its holder may remove
+    // stale socket/PID files, bind the endpoint, or clean up on shutdown.
+    let _lifetime_lock = open_lock("serve.lock")?;
+    _lifetime_lock
+        .try_lock()
+        .map_err(|error| anyhow!("unityd is already starting or running: {error}"))?;
+    // Older daemon versions do not hold the lifetime lock.
+    if connect_client().is_ok() {
+        return Err(anyhow!("unityd endpoint is already running"));
+    }
     let idle_timeout = Duration::from_secs(idle_timeout_secs());
     let mut pool = ConnectionPool::new();
 
@@ -616,7 +739,9 @@ async fn handle_request(
                     Ok((
                         DaemonResponse {
                             ok: false,
-                            result: None,
+                            result: error
+                                .downcast_ref::<UnityCommandError>()
+                                .map(|failure| failure.response.clone()),
                             error: Some(error.to_string()),
                             timing: None,
                         },
@@ -672,6 +797,43 @@ mod tests {
     use super::*;
     use std::io::{BufRead, BufReader, Write};
     use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn pooled_connection_uses_each_requests_timeout() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let length = stream.read_u32().await.unwrap();
+            let mut bytes = vec![0; length as usize];
+            stream.read_exact(&mut bytes).await.unwrap();
+            let request: Value = serde_json::from_slice(&bytes).unwrap();
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            let response = serde_json::to_vec(&json!({
+                "id": request["id"], "status":"success", "result":{"ok":true}
+            }))
+            .unwrap();
+            stream.write_u32(response.len() as u32).await.unwrap();
+            stream.write_all(&response).await.unwrap();
+        });
+        let mut pool = ConnectionPool::new();
+        pool.get_or_connect("127.0.0.1", port, Duration::from_millis(20))
+            .await
+            .unwrap();
+        let result = pool
+            .get_or_connect("127.0.0.1", port, Duration::from_secs(2))
+            .await
+            .unwrap()
+            .call_tool("package_manager", json!({"action":"list"}))
+            .await;
+        server.await.unwrap();
+        assert!(
+            result.is_ok(),
+            "warm request inherited the short startup timeout: {result:?}"
+        );
+        assert_eq!(pool.connections.len(), 1);
+    }
 
     fn env_lock() -> &'static std::sync::Mutex<()> {
         crate::test_env::env_lock()
@@ -1148,6 +1310,121 @@ mod tests {
 
         let _invalid = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "0");
         assert_eq!(idle_timeout_secs(), 600);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn serve_refuses_a_second_lifetime_lock_holder() {
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let home = tempdir().unwrap();
+        let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
+        let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "1");
+        let lock_path = tools_dir().unwrap().join("serve.lock");
+        let lock = fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&lock_path)
+            .unwrap();
+        lock.lock().unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        assert!(
+            runtime.block_on(serve_forever()).is_err(),
+            "second server must fail before binding"
+        );
+        assert!(!socket_path().unwrap().exists());
+        assert!(lock_path.exists());
+    }
+
+    #[test]
+    fn startup_lock_times_out_and_is_reusable_after_release() {
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let home = tempdir().unwrap();
+        let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
+        let first = startup_lock(Instant::now() + Duration::from_secs(1)).unwrap();
+        let started = Instant::now();
+        assert!(startup_lock(started + Duration::from_millis(40)).is_err());
+        assert!(started.elapsed() >= Duration::from_millis(40));
+        drop(first);
+        let second = startup_lock(Instant::now() + Duration::from_secs(1)).unwrap();
+        drop(second);
+        assert!(tools_dir().unwrap().join("startup.lock").exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn spawned_daemon_retains_failure_diagnostics() {
+        use std::os::unix::fs::PermissionsExt;
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let home = tempdir().unwrap();
+        let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
+        let executable = home.path().join("failing-daemon");
+        fs::write(&executable, "#!/bin/sh\necho startup-failed >&2\nexit 23\n").unwrap();
+        fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
+        let child = spawn_daemon(&executable).unwrap();
+        let started = Instant::now();
+        let error = wait_for_connection(started + Duration::from_secs(5), child).unwrap_err();
+        // Exit status (rather than the readiness-timeout error) proves early
+        // exit detection without imposing a wall-clock scheduling budget.
+        assert!(error.to_string().contains("23"));
+        assert!(error.to_string().contains("unityd.log"));
+        let log = tools_dir().unwrap().join("unityd.log");
+        let deadline = Instant::now() + Duration::from_millis(250);
+        while Instant::now() < deadline {
+            if fs::read_to_string(&log)
+                .unwrap_or_default()
+                .contains("startup-failed")
+            {
+                return;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        panic!("daemon stderr must be retained in its runtime log");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn serve_refuses_to_replace_a_live_socket() {
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let home = tempdir().unwrap();
+        let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
+        let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "1");
+        let path = socket_path().unwrap();
+        let listener = std::os::unix::net::UnixListener::bind(&path).unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        assert!(
+            runtime.block_on(serve_forever()).is_err(),
+            "a live daemon must not be replaced"
+        );
+        assert!(path.exists());
+        drop(listener);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn missing_daemon_attempts_automatic_start_without_spawning_test_binary() {
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let home = tempdir().unwrap();
+        let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let config = RuntimeConfig {
+            host: "127.0.0.1".into(),
+            port: 6400,
+            timeout: Duration::from_secs(1),
+        };
+        let error = runtime
+            .block_on(try_call_tool("ping", &json!({}), &config))
+            .unwrap_err();
+        assert!(format!("{error:#}").contains("automatic startup"));
     }
 
     #[cfg(unix)]

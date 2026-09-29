@@ -1,3 +1,201 @@
+## [0.14.1] - 2026-09-29
+
+### 🚀 Features
+
+- Add verified Play Mode hot reload previews
+- *(reference)* Resolve published Unity source refs and track provenance
+- Add verified scene baking jobs
+- *(build)* Add player builds and structured reports
+
+### 🐛 Bug Fixes
+
+- Clear preview revision while verifying native patches
+- *(build)* Reconcile tool catalog count with Timeline tools
+- *(build)* Integrate player builds with current develop
+- *(build)* Preserve player tools alongside vfx and hot reload
+- *(input)* Integrate elapsed-time holds with editor notifications
+- *(test)* Recover PlayMode results across domain reload
+- *(input)* Preserve action types on latest develop
+- *(bridge)* Use compatible object IDs in VFX handlers
+
+### 🧪 Testing
+
+- Observe pending hot reload inside the Editor
+- *(build)* Compare complete CLI build reports
+- *(build)* Retry E2E refresh while restarted Editor compiles
+- *(instances)* Isolate runner instances test registry
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record hot reload PR handoff
+- *(hot-reload)* Integrate previews with current develop
+- *(work)* Record hot reload integration verification
+- *(hot-reload)* Preserve VFX tools during develop integration
+- *(work)* Record issue 254 pull request handoff
+- *(reference)* Integrate published source resolution with develop
+- *(work)* Record scene baking PR
+- Integrate verified scene baking with develop
+- *(work)* Record player build replacement PR handoff
+- *(work)* Record player build replacement verification
+- *(work)* Finalize player build replacement handoff
+- Preserve baking alongside player builds and hot reload
+- Preserve reference checks alongside player and bake tools
+- *(work)* Record issue 318 integration
+- *(work)* Finalize issue 318 integration record
+
+## [0.14.0] - 2026-09-29
+
+### 🚀 Features
+
+- *(editor)* Evaluate C# snippets in memory with structured results
+- Automatically start unityd for remote operations
+- *(vfx)* Add first-class Visual Effect Graph authoring commands
+- *(vfx)* Add set_block_setting op and block settings in describe
+- *(vfx)* Add add_context op and flow links in describe
+- *(vfx)* Add add_operator and link_slots ops with operator/slot oracle
+- *(vfx)* Add add_parameter op and parameters in describe
+- *(vfx)* Add vfx_runtime tool for VisualEffect public-API control
+- *(vfx)* Add link_flow op and context settings for Events breadth (#6)
+- *(vfx)* Add set_bounds op + slot-value oracle
+- *(vfx)* Add add_sticky_note op + describe oracle
+- *(vfx)* Add set_instancing op + describe oracle
+- *(vfx)* Prove Custom HLSL via existing primitives + relax oracle
+- *(vfx)* Add Block subgraph multi-asset wiring
+- *(vfx)* Prove Systems breadth via add_context chain + dataInstanceId oracle
+- *(vfx)* Add Templates breadth — list + create_from_template
+- *(vfx)* Add vfx_settings tool for VFX project settings
+- *(vfx)* Extend vfx_settings with scope:preferences for VFX EditorPrefs
+- *(vfx)* Prove Attributes (#7) via existing primitives — Pass-1 complete
+- *(vfx)* Add set_slot_value op — write constants into input slots (#5)
+- *(vfx)* Add unlink_slots op — break slot connections (#5)
+- *(vfx)* Add set_operator_setting op + operator settings oracle (#4)
+- *(vfx)* Add remove_* family — delete blocks/operators/parameters/contexts (#1/#2/#4/#9)
+- *(vfx)* Add set_context_setting op — Spawn/Update/Output + Init data settings (#2)
+- *(vfx)* Complete Blackboard parameter type matrix + constant + min/max (#9)
+- *(vfx)* Add update_sticky_note + remove_sticky_note ops (#10)
+- *(vfx)* Add set_block_enabled + reorder_block + move_block ops (#1)
+- *(vfx)* Expose allowShaderExternalization preference (#13)
+- *(vfx)* Add delete_system op + simulation space setting (#3)
+- *(vfx)* Add add_custom_attribute op + attribute depth proofs (#7)
+- *(vfx)* Close Custom HLSL — external ShaderInclude + function selector (#15)
+- *(vfx)* Events depth — GPU events, payloads, Output Event, Initial Event Name (#6)
+- *(vfx)* Operator cascaded inputs + operand type (#4)
+- *(vfx)* Blackboard management — rename/category/reorder/duplicate params (#9)
+- *(vfx)* Unlink_flow op + per-mode value slot proof (#2)
+- *(vfx)* Per-instance initialEventName runtime override (vfx_runtime)
+- *(vfx)* Runtime set_texture (Object-typed exposed property) + get_state oracle
+- *(vfx)* Runtime set_mesh (Object-typed exposed Mesh property) + get_state oracle
+- *(vfx)* Send_event attributes payload propagation, PlayMode-verified (#6 runtime tail)
+- *(vfx)* Instancing multi-instance render + 3-gate reconciliation (#16 runtime tail)
+- *(vfx)* Set_slot_value supports Object-typed slots by asset path (#5 full type coverage)
+- *(vfx)* Link_slots/unlink_slots descend into descriptor-named child sub-slots (#5)
+- *(vfx)* Inline<->property node conversion (convert_to_property / convert_to_inline) (#5)
+- *(vfx)* Curve/gradient slot values + gradient describe oracle (#5 niche)
+- *(vfx)* Set_slot_space — spaceable slot coordinate space (World/Local/None) finishes #5
+- *(vfx)* Duplicate_block / duplicate_operator — clone blocks & operators (#1/#4)
+- *(vfx)* Set_system_name op + systemName describe oracle (#3)
+- *(vfx)* System (.vfx) subgraph create + reference (#8)
+- *(vfx)* Operator subgraph define-outputs via add_parameter isOutput (#8)
+- *(vfx)* Assign shaderGraph asset to composed Shader Graph output (#2)
+- *(vfx)* Reorder_sticky_note (#10)
+- *(vfx)* Insert_template — merge a template into an existing graph (#11)
+- *(vfx)* Vfx_settings surfaces + sets VFXManager Object-ref fields (#12)
+- *(vfx)* Link-driven block activation via activation:true endpoint (#1)
+- *(vfx)* Rename + reorder cascaded operator inputs (#4)
+- *(vfx)* Reorder_category for blackboard category order (#9)
+- *(vfx)* Designate_template marks a .vfx as a custom template (#11)
+- *(vfx)* Vfx_bake_sdf — bake a Mesh into an SDF Texture3D asset (#17)
+- *(vfx)* Address block ops by contextIndex to disambiguate same-typed contexts
+- *(vfx)* Vfx_runtime simulate op + runtime (live-component) eval tier
+- *(vfx)* Canvas node positioning — position on add ops, move_node, describe oracle
+- *(vfx)* Group_nodes op + describe groups oracle; move_node seeds parameter nodes
+- *(vfx)* Compile feedback, scoped auto_layout, HLSL guard, skill restructure
+- *(vfx)* Calibrate auto_layout spacing and parameter splitting; notes and groups survive layout
+- *(vfx)* New nodes always take free canvas space
+- *(vfx)* Node-level auto_layout default, framed placement, group notes
+- *(vfx)* Defer-compile batching and describe-graph filtering
+- *(vfx)* Integrate six VFX Graph tools with safe validation
+
+### 🐛 Bug Fixes
+
+- *(input)* Match requested processed gamepad stick axes
+- *(input)* Persist input action edits to source json
+- *(capture)* Honor video formats and validate recorded output
+- *(tests)* Exclude suites from test result counts
+- *(input)* Advance touch gestures across game frames
+- *(ci)* Satisfy clippy question_mark lint
+- *(reference)* Honor explicit branch for unknown Unity versions
+- *(input)* Deliver action notifications from editor updates
+- *(ci)* Satisfy current clippy question-mark lint
+- *(bridge)* Preserve object IDs across Unity versions
+- *(skills)* Gate unix-only symlink test for cross-platform builds
+- Clippy question_mark in skills discover_root; refresh vfx_apply op list
+- *(vfx)* Surface compound sub-slot links in describe oracle
+- *(vfx)* Validate arguments before loading the graph and fail quietly
+
+### 🚜 Refactor
+
+- *(vfx)* Return { error } from handlers to match bridge convention
+
+### 📚 Documentation
+
+- *(agents)* Align agent instructions with current workflows
+- *(input)* Record persistence verification evidence
+- *(vfx)* Correct instancingMode enum in skill (Auto/Custom/Disabled, not ForceOn)
+- *(skill)* Teach unity-vfx-graph the two new throughput flags
+
+### 🧪 Testing
+
+- *(input)* Verify processed stick axes through Unity batch host
+- *(lsp)* Wait for complete mock daemon requests
+- *(vfx)* Add VFX Graph to test project and behavioral handler tests
+- *(vfx)* Tighten Custom HLSL breadth proof + add Tier-2 error oracle
+- *(vfx)* Prove Operator subgraph reference end-to-end (#8)
+- *(vfx)* Add Tier-2 error-oracle negative control
+- *(vfx)* PlayMode runtime verification harness (live VisualEffect rig)
+- *(vfx)* Output Event CPU callback PlayMode-verified (#6 runtime tail)
+- *(vfx)* Particle-strip system compose-proof (#3)
+- *(vfx)* Mesh-output + static-mesh system compose-proof (#3)
+- *(vfx)* Cross-system spawning compose-proof (#3)
+- *(vfx)* Subgraph exposed-input surfaces as parent input slot (#8)
+- *(vfx)* Block subgraph Suitable Contexts via set_context_setting (#8)
+- *(vfx)* Output flipbook size + blend + motion vectors (#2)
+- *(vfx)* Custom HLSL buffer/texture types + multi-file include (#15)
+- *(vfx)* Agent-mode eval harness (outcome + routing layers)
+- *(vfx)* Expand agent eval to 15 tasks + fix flipbook uvMode doc bug
+- *(vfx)* Eval coverage for particle-strip + mesh-output systems (17 tasks)
+
+### ⚙️ Miscellaneous Tasks
+
+- *(auto-merge)* Limit develop auto-merge to akiojin and dependabot PRs
+- *(work)* Record issue 305 pull request
+- *(input)* Keep develop skill discovery and drop issue-246 work records
+- *(work)* Record issue 295 work events
+- *(work)* Record issue-293 work events
+- *(work)* Record issue 290 pull request
+- *(work)* Record issue 251 pull request
+- *(work)* Record issue 289 work events
+- Merge develop Timeline support with editor eval
+- *(work)* Record issue 253 pull request handoff
+- *(work)* Record issue 252 pull request handoff
+- *(vfx)* Lock VFX Graph 17.4.0 after 6000.4.11f1 resolution
+- *(vfx)* Exclude fork-only outcome-eval harness from PR branch
+- Merge latest develop workflow updates
+- *(work)* Record VFX integration delivery status
+- Merge v0.13.0 release updates
+- Merge latest develop integrations
+- *(work)* Record VFX integration pull request
+- *(work)* Record release 0.14.0 scope
+## [0.13.0] - 2026-09-29
+
+### 🚀 Features
+
+- Add Timeline animation track editing and evaluation
+
+### ⚙️ Miscellaneous Tasks
+
+- *(auto-merge)* Enable auto-merge for PRs into develop
+
 ## [0.12.0] - 2026-06-23
 
 ### 🚀 Features

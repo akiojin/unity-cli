@@ -21,7 +21,44 @@ pub struct ToolCallResult {
     pub timing: TransportTiming,
 }
 
+/// A Unity command failure, retaining the complete wire response for JSON output.
+#[derive(Debug, thiserror::Error)]
+#[error("{message}")]
+pub struct UnityCommandError {
+    pub response: Value,
+    message: String,
+}
+
+impl UnityCommandError {
+    pub(crate) fn new(response: Value) -> Self {
+        let error = response
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or_else(|| {
+                if response
+                    .get("status")
+                    .and_then(Value::as_str)
+                    .is_some_and(|status| status.eq_ignore_ascii_case("error"))
+                {
+                    "Unity command returned status=error"
+                } else {
+                    "Unity command failed"
+                }
+            });
+        let code = response
+            .get("code")
+            .and_then(Value::as_str)
+            .unwrap_or("UNKNOWN_ERROR");
+        let message = format!("{error} (code: {code})");
+        Self { response, message }
+    }
+}
+
 impl UnityClient {
+    pub(crate) fn set_timeout(&mut self, timeout: std::time::Duration) {
+        self.timeout = timeout;
+    }
+
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
         let stream = timeout(
             config.timeout,
@@ -167,32 +204,11 @@ fn normalize_response(response: Value) -> Result<Value> {
 
     let success = response.get("success").and_then(Value::as_bool);
 
-    let error_message = response
-        .get("error")
-        .and_then(Value::as_str)
-        .map(ToString::to_string)
-        .or_else(|| {
-            if matches!(status.as_deref(), Some("error")) {
-                Some("Unity command returned status=error".to_string())
-            } else {
-                None
-            }
-        });
-
-    if let Some(error) = error_message {
-        let code = response
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("UNKNOWN_ERROR");
-        bail!("{error} (code: {code})");
-    }
-
-    if matches!(success, Some(false)) {
-        let code = response
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("UNKNOWN_ERROR");
-        bail!("Unity command failed (code: {code})");
+    if response.get("error").and_then(Value::as_str).is_some()
+        || matches!(status.as_deref(), Some("error"))
+        || matches!(success, Some(false))
+    {
+        return Err(UnityCommandError::new(response).into());
     }
 
     if let Some(result) = response.get("result") {
@@ -215,13 +231,36 @@ fn parse_embedded_json(value: Value) -> Value {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_response, parse_embedded_json, parse_json, UnityClient};
+    use super::{
+        normalize_response, parse_embedded_json, parse_json, UnityClient, UnityCommandError,
+    };
     use crate::config::RuntimeConfig;
     use serde_json::{json, Value};
     use std::time::Duration;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpListener;
     use tokio::task::JoinHandle;
+
+    #[test]
+    fn normalize_failure_preserves_complete_error_envelope() {
+        for response in [
+            json!({"id": "7", "status": "error", "error": "Build failed", "code": "BUILD_FAILED",
+                "details": {"buildId": "build-123", "state": "failed", "reportResult": "Failed",
+                    "errors": ["Compiler error"], "totalErrors": 1, "artifacts": []}}),
+            json!({"success": false, "code": "BUILD_INTERRUPTED",
+                "details": {"buildId": "build-456", "state": "interrupted"}}),
+        ] {
+            let error =
+                normalize_response(response.clone()).expect_err("failure must remain an error");
+            let failure = error
+                .downcast_ref::<UnityCommandError>()
+                .expect("structured Unity error");
+            assert_eq!(failure.response, response);
+            assert!(error
+                .to_string()
+                .contains(response["code"].as_str().unwrap()));
+        }
+    }
 
     async fn spawn_mock_server<F>(handler: F) -> (u16, JoinHandle<()>)
     where

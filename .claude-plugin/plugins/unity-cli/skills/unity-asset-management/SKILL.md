@@ -4,7 +4,7 @@ description: Manage Unity assets and import metadata with unity-cli. Use when th
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: assets
   triggers:
     - asset
@@ -18,6 +18,7 @@ metadata:
     - unity-prefab-workflow
     - unity-gameobject-edit
     - unity-editor-tools
+    - unity-vfx-graph
 ---
 
 # Asset Management
@@ -28,7 +29,7 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 
 - The user wants to inspect, refresh, move, or otherwise manage project assets.
 - The user wants to create or update materials.
-- The user wants to author AnimationClip or SpriteAtlas assets.
+- The user wants to author AnimationClip or SpriteAtlas assets, or inspect and edit numeric animation curves.
 - The user needs import settings or dependency analysis before file changes.
 
 ## Do Not Use When
@@ -49,8 +50,12 @@ unity-cli raw manage_asset_database --json '{"action":"get_asset_info","assetPat
 unity-cli raw manage_asset_database --json '{"action":"refresh"}'
 unity-cli raw create_material --json '{"materialPath":"Assets/Materials/HeroMat.mat","shader":"Standard"}'
 unity-cli raw create_animation_clip --json '{"clipPath":"Assets/Animations/Hero.anim","spritePaths":["Assets/Sprites/Hero/idle_0.png"],"frameRate":12,"loopTime":true}'
+unity-cli raw get_animation_curves --json '{"clipPath":"Assets/Animations/Move.anim"}'
+unity-cli raw edit_animation_curve --json '{"clipPath":"Assets/Animations/Move.anim","animationRoot":12345,"binding":{"path":"","component":"UnityEngine.Transform","property":"localPosition.x"},"operation":"set","createIfMissing":true,"keys":[{"time":0,"value":0},{"time":1,"value":2}]}'
 unity-cli raw analyze_asset_dependencies --json '{"action":"get_dependencies","assetPath":"Assets/Prefabs/Player.prefab","recursive":true}'
 ```
+
+For numeric curves, replace `12345` with the actual animation root GameObject instance ID from scene inspection. `path` is relative to that root; `component` is fully qualified and `property` is the serialized binding name (Transform `localPosition.x` aliases `m_LocalPosition.x`). Only writable standalone `Assets/*.anim` clips are editable, outside Play Mode. Use `set` to replace one curve, `upsert_keys` to add/update exact times, `remove_keys` with `times`, or `remove_curve`. Other bindings remain intact. New keys default to Linear; omitted tangent settings on existing keys are retained. Use `leftTangentMode`/`rightTangentMode` and finite `inTangent`/`outTangent` for Free tangents. Inspect with `get_animation_curves` after editing; object-reference bindings are listed separately and cannot be numerically edited.
 
 ## Examples
 

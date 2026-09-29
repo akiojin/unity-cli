@@ -17,5 +17,10 @@
   - runs after `chore(release):` pushes to `main` or manual dispatch
   - creates the release tag, builds release binaries for Linux/macOS/Windows
   - publishes GitHub Release assets
-- `main-pr-policy.yml` / `auto-merge.yml`
-  - branch policy and PR automation
+- `main-pr-policy.yml`
+  - branch policy for PRs into `main`
+- `auto-merge.yml`
+  - enables GitHub auto-merge for non-draft same-repository PRs authored by
+    `akiojin` or `dependabot[bot]` into `develop`
+    and for the `develop` -> `main` release PR
+  - merges happen only after the branch-protection required checks pass

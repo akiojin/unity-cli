@@ -23,6 +23,8 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
+                ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
                 {
                     message = "pong",
@@ -58,12 +60,16 @@ namespace UnityCliBridge.Core
                 ["save_scene"] = command => Success(command, SceneHandler.SaveScene(command.Parameters)),
                 ["list_scenes"] = command => Success(command, SceneHandler.ListScenes(command.Parameters)),
                 ["get_scene_info"] = command => Success(command, SceneHandler.GetSceneInfo(command.Parameters)),
+                ["start_scene_bake"] = command => Success(command, BakeHandler.StartBake(command.Parameters)),
+                ["get_scene_bake_status"] = command => Success(command, BakeHandler.GetStatus(command.Parameters)),
                 ["get_gameobject_details"] = command => Success(command, SceneAnalysisHandler.GetGameObjectDetails(command.Parameters)),
                 ["analyze_scene_contents"] = command => Success(command, SceneAnalysisHandler.AnalyzeSceneContents(command.Parameters)),
                 ["get_component_values"] = command => Success(command, SceneAnalysisHandler.GetComponentValues(command.Parameters)),
                 ["find_by_component"] = command => Success(command, SceneAnalysisHandler.FindByComponent(command.Parameters)),
                 ["get_object_references"] = command => Success(command, SceneAnalysisHandler.GetObjectReferences(command.Parameters)),
                 ["get_animator_state"] = command => Success(command, AnimatorStateHandler.GetAnimatorState(command.Parameters)),
+                ["get_timeline"] = command => Success(command, TimelineHandler.GetTimeline(command.Parameters)),
+                ["manage_timeline"] = command => Success(command, TimelineHandler.ManageTimeline(command.Parameters)),
                 ["get_animator_runtime_info"] = command => Success(command, AnimatorStateHandler.GetAnimatorRuntimeInfo(command.Parameters)),
                 ["get_input_actions_state"] = command => Success(command, InputActionsHandler.GetInputActionsState(command.Parameters)),
                 ["analyze_input_actions_asset"] = command => Success(command, InputActionsHandler.AnalyzeInputActionsAsset(command.Parameters)),
@@ -95,6 +101,8 @@ namespace UnityCliBridge.Core
 #endif
                 ["create_animator_controller"] = command => Success(command, AssetManagementHandler.CreateAnimatorController(command.Parameters)),
                 ["create_animation_clip"] = command => Success(command, AssetManagementHandler.CreateAnimationClip(command.Parameters)),
+                ["get_animation_curves"] = command => Success(command, AnimationCurveHandler.GetAnimationCurves(command.Parameters)),
+                ["edit_animation_curve"] = command => Success(command, AnimationCurveHandler.EditAnimationCurve(command.Parameters)),
                 ["create_sprite_atlas"] = command => Success(command, AssetManagementHandler.CreateSpriteAtlas(command.Parameters)),
                 ["create_prefab"] = command => Success(command, AssetManagementHandler.CreatePrefab(command.Parameters)),
                 ["modify_prefab"] = command => Success(command, AssetManagementHandler.ModifyPrefab(command.Parameters)),
@@ -125,12 +133,16 @@ namespace UnityCliBridge.Core
                 ["list_components"] = command => Success(command, ComponentHandler.ListComponents(command.Parameters)),
                 ["get_component_types"] = command => Success(command, ComponentHandler.GetComponentTypes(command.Parameters)),
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
+                ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
+                ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
+                ["hot_reload_status"] = command => Success(command, HotReloadHandler.Status()),
+                ["hot_reload"] = HandleHotReload,
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
                 {
                     var response = Response.SuccessResult(command.Id, new { message = "Unity Editor quitting" });
-                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                    // The transport schedules exit only after this response is sent.
                     return Task.FromResult(response);
                 },
                 ["manage_tags"] = command => Success(command, TagManagementHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
@@ -151,13 +163,21 @@ namespace UnityCliBridge.Core
                 ["set_package_setting"] = command => Success(command, PackageSettingsHandler.SetPackageSetting(command.Parameters)),
                 ["get_editor_info"] = HandleGetEditorInfo,
                 ["update_project_settings"] = command => Success(command, ProjectSettingsHandler.UpdateProjectSettings(command.Parameters)),
-                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot())
+                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot()),
+                ["vfx_describe_graph"] = command => Success(command, VfxGraphHandler.DescribeGraph(command.Parameters)),
+                ["vfx_list_library"] = command => Success(command, VfxGraphHandler.ListLibrary(command.Parameters)),
+                ["vfx_apply"] = command => Success(command, VfxGraphHandler.Apply(command.Parameters)),
+                ["vfx_runtime"] = command => Success(command, VfxGraphHandler.Runtime(command.Parameters)),
+                ["vfx_settings"] = command => Success(command, VfxGraphHandler.Settings(command.Parameters)),
+                ["vfx_bake_sdf"] = command => Success(command, VfxGraphHandler.BakeSdf(command.Parameters))
             };
 
         internal static IReadOnlyCollection<string> RegisteredCommandTypes => Handlers.Keys.ToArray();
 
         internal static Task<string> Handle(Command command)
         {
+            if (command != null && PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                return Task.FromResult(buildResponse);
             if (command?.Type != null && Handlers.TryGetValue(command.Type, out var handler))
             {
                 return handler(command);
@@ -173,6 +193,16 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+        private static async Task<string> HandleHotReload(Command command)
+        {
+            var result = Newtonsoft.Json.Linq.JObject.FromObject(await HotReloadHandler.Handle(command.Parameters));
+            if (result.Value<bool?>("success") == false || result["error"] != null)
+                return Response.ErrorResult(command.Id,
+                    result.Value<string>("message") ?? result.Value<string>("error") ?? "Hot reload failed",
+                    result.Value<string>("code") ?? "HOT_RELOAD_FAILED", result);
+            return Response.SuccessResult(command.Id, result);
+        }
 
         private static Task<string> HandleGetEditorState(Command command)
         {

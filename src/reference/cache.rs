@@ -14,6 +14,12 @@ pub struct CacheMeta {
     pub branch: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub commit_sha: Option<String>,
+    #[serde(default)]
+    pub source_ref: Option<String>,
+    #[serde(default)]
+    pub exact_match: Option<bool>,
+    #[serde(default)]
+    pub selection_reason: Option<String>,
     pub fetched_at: String,
     pub source_url: String,
 }
@@ -23,8 +29,14 @@ pub fn reference_root() -> Result<PathBuf> {
 }
 
 pub fn version_dir(version: &str) -> Result<PathBuf> {
-    if version.trim().is_empty() {
-        return Err(anyhow!("version must be non-empty"));
+    if version.trim().is_empty()
+        || version == "."
+        || version == ".."
+        || version.contains(['/', '\\', ':', '\0'])
+    {
+        return Err(anyhow!(
+            "version must be a non-empty cache name, not a path"
+        ));
     }
     Ok(reference_root()?.join(version))
 }
@@ -157,6 +169,24 @@ mod tests {
     }
 
     #[test]
+    fn version_dir_rejects_paths_outside_single_cache_entry() {
+        for version in [
+            "/tmp/other",
+            "../other",
+            "a/b",
+            "a\\b",
+            ".",
+            "..",
+            "C:\\other",
+        ] {
+            assert!(
+                version_dir(version).is_err(),
+                "accepted unsafe version: {version}"
+            );
+        }
+    }
+
+    #[test]
     fn meta_roundtrip() {
         let _guard = crate::test_env::env_lock()
             .lock()
@@ -167,6 +197,9 @@ mod tests {
             version: "2023.2.20f1".to_string(),
             branch: "2023.2/staging".to_string(),
             commit_sha: Some("abcdef".to_string()),
+            source_ref: None,
+            exact_match: None,
+            selection_reason: None,
             fetched_at: "2026-05-11T11:00:00Z".to_string(),
             source_url: "https://github.com/Unity-Technologies/UnityCsReference.git".to_string(),
         };

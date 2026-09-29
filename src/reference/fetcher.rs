@@ -10,6 +10,154 @@ pub const UNITY_CS_REFERENCE_URL: &str =
 const LICENSE_ENV_VAR: &str = "UNITY_CLI_ACCEPT_LICENSE";
 const GITHUB_TOKEN_ENV_VARS: &[&str] = &["GITHUB_TOKEN", "GH_TOKEN"];
 
+pub fn list_public_refs(url: &str) -> Result<Vec<super::version::PublishedRef>> {
+    if let Err(error) = Command::new("git").arg("--version").output() {
+        if error.kind() != std::io::ErrorKind::NotFound {
+            return Err(error).context("failed to check git availability");
+        }
+        if url != UNITY_CS_REFERENCE_URL {
+            return Err(anyhow!(
+                "git is unavailable; API discovery supports only {UNITY_CS_REFERENCE_URL}"
+            ));
+        }
+        return list_api_refs("https://api.github.com/repos/Unity-Technologies/UnityCsReference");
+    }
+    let output = git_output(
+        authenticated_git().args(["ls-remote", "--heads", "--tags", "--", url]),
+        "ls-remote",
+    )?;
+    super::version::parse_ls_remote(&output)
+}
+
+fn list_api_refs(base_url: &str) -> Result<Vec<super::version::PublishedRef>> {
+    #[derive(serde::Deserialize)]
+    struct Commit {
+        sha: String,
+    }
+    #[derive(serde::Deserialize)]
+    struct ApiRef {
+        name: String,
+        commit: Commit,
+    }
+    let agent = ureq::Agent::new_with_defaults();
+    let mut refs = Vec::new();
+    for (endpoint, prefix) in [("branches", "refs/heads/"), ("tags", "refs/tags/")] {
+        for page in 1.. {
+            let url = format!("{base_url}/{endpoint}?per_page=100&page={page}");
+            let mut request = agent
+                .get(&url)
+                .header("User-Agent", "unity-cli")
+                .header("Accept", "application/vnd.github+json");
+            if let Some(token) = github_token() {
+                request = request.header("Authorization", format!("token {token}"));
+            }
+            let entries: Vec<ApiRef> = request
+                .call()
+                .with_context(|| format!("failed to GET public refs from {url}"))?
+                .body_mut()
+                .read_json()
+                .with_context(|| format!("invalid public refs response from {url}"))?;
+            let last_page = entries.len() < 100;
+            for entry in entries {
+                if entry.name.is_empty()
+                    || entry.commit.sha.len() != 40
+                    || !entry
+                        .commit
+                        .sha
+                        .bytes()
+                        .all(|byte| byte.is_ascii_hexdigit())
+                {
+                    return Err(anyhow!("invalid public ref returned from {url}"));
+                }
+                refs.push(super::version::PublishedRef {
+                    name: format!("{prefix}{}", entry.name),
+                    commit_sha: entry.commit.sha,
+                });
+            }
+            if last_page {
+                break;
+            }
+        }
+    }
+    Ok(refs)
+}
+
+pub fn fetch_selected(
+    url: &str,
+    selection: &super::version::RefSelection,
+    dest: &Path,
+    accept_license: bool,
+) -> Result<()> {
+    require_license_accepted(accept_license)?;
+    let sha = &selection.commit_sha;
+    if sha.len() != 40 || !sha.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(anyhow!(
+            "selected commit SHA must contain exactly 40 hexadecimal characters"
+        ));
+    }
+    if ensure_git_available().is_err() {
+        return download_zip(
+            &format!("https://github.com/Unity-Technologies/UnityCsReference/archive/{sha}.zip"),
+            dest,
+        );
+    }
+    git_output(Command::new("git").arg("init").arg("--").arg(dest), "init")?;
+    git_output(
+        authenticated_git()
+            .arg("-C")
+            .arg(dest)
+            .args(["fetch", "--depth", "1", "--", url, sha]),
+        "fetch",
+    )?;
+    git_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(dest)
+            .args(["checkout", "--detach", "FETCH_HEAD"]),
+        "checkout",
+    )?;
+    let actual = git_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(dest)
+            .args(["rev-parse", "HEAD"]),
+        "rev-parse",
+    )?;
+    if !actual.trim().eq_ignore_ascii_case(sha) {
+        return Err(anyhow!(
+            "fetched commit SHA {} does not match selected commit SHA {sha}",
+            actual.trim()
+        ));
+    }
+    Ok(())
+}
+
+fn authenticated_git() -> Command {
+    let mut command = Command::new("git");
+    command.env("GIT_TERMINAL_PROMPT", "0");
+    if let Some(token) = github_token() {
+        command
+            .arg("-c")
+            .arg(format!("http.extraHeader=Authorization: token {token}"));
+    }
+    command
+}
+
+fn git_output(command: &mut Command, operation: &str) -> Result<String> {
+    let output = command
+        .output()
+        .with_context(|| format!("failed to spawn git {operation}"))?;
+    if !output.status.success() {
+        return Err(anyhow!(
+            "git {operation} failed ({}): {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    String::from_utf8(output.stdout)
+        .with_context(|| format!("git {operation} returned invalid UTF-8"))
+}
+
 pub fn build_clone_args(url: &str, branch: &str, dest: &Path, depth: u32) -> Vec<String> {
     vec![
         "--depth".to_string(),
@@ -99,8 +247,12 @@ pub fn archive_url_for_branch(branch: &str) -> String {
 
 pub fn fetch_via_zip(branch: &str, dest: &Path) -> Result<()> {
     let url = archive_url_for_branch(branch);
+    download_zip(&url, dest)
+}
+
+fn download_zip(url: &str, dest: &Path) -> Result<()> {
     let agent = ureq::Agent::new_with_defaults();
-    let mut request = agent.get(&url);
+    let mut request = agent.get(url);
     if let Some(token) = github_token() {
         request = request.header("Authorization", format!("token {token}"));
     }
@@ -212,6 +364,176 @@ mod tests {
 
     fn env_lock() -> &'static Mutex<()> {
         crate::test_env::env_lock()
+    }
+
+    fn fixture_git(repo: &Path, args: &[&str]) -> String {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(repo)
+            .args([
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                "-c",
+                "commit.gpgsign=false",
+                "-c",
+                "tag.gpgsign=false",
+            ])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8(output.stdout).unwrap().trim().to_owned()
+    }
+
+    fn fixture_repo() -> (tempfile::TempDir, String) {
+        let repo = tempfile::tempdir().unwrap();
+        fixture_git(repo.path(), &["init", "-b", "6000.0"]);
+        fs::write(repo.path().join("Source.cs"), "original").unwrap();
+        fixture_git(repo.path(), &["add", "."]);
+        fixture_git(repo.path(), &["commit", "-m", "original"]);
+        let sha = fixture_git(repo.path(), &["rev-parse", "HEAD"]);
+        fixture_git(repo.path(), &["tag", "-a", "6000.0.1f1", "-m", "release"]);
+        (repo, sha)
+    }
+
+    fn api_fixture(
+        responses: Vec<(&'static str, u16, String)>,
+    ) -> (String, std::thread::JoinHandle<()>) {
+        use std::io::{BufRead, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let worker = std::thread::spawn(move || {
+            for (path, status, body) in responses {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut request = std::io::BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                request.read_line(&mut line).unwrap();
+                assert_eq!(line.trim(), format!("GET {path} HTTP/1.1"));
+                loop {
+                    line.clear();
+                    request.read_line(&mut line).unwrap();
+                    if line == "\r\n" {
+                        break;
+                    }
+                }
+                write!(stream, "HTTP/1.1 {status} Response\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
+            }
+        });
+        (url, worker)
+    }
+
+    #[test]
+    fn api_discovery_paginates_branches_and_includes_tags() {
+        let sha = "a".repeat(40);
+        let page: Vec<_> = (0..100)
+            .map(|n| serde_json::json!({"name":format!("6000.{n}"),"commit":{"sha":sha}}))
+            .collect();
+        let (url, server) = api_fixture(vec![
+            (
+                "/branches?per_page=100&page=1",
+                200,
+                serde_json::to_string(&page).unwrap(),
+            ),
+            (
+                "/branches?per_page=100&page=2",
+                200,
+                serde_json::json!([{"name":"2022.3/staging","commit":{"sha":sha}}]).to_string(),
+            ),
+            (
+                "/tags?per_page=100&page=1",
+                200,
+                serde_json::json!([{"name":"6000.4.12f1","commit":{"sha":sha}}]).to_string(),
+            ),
+        ]);
+        let refs = list_api_refs(&url).unwrap();
+        assert_eq!(refs.len(), 102);
+        assert!(refs
+            .iter()
+            .any(|r| r.name == "refs/heads/2022.3/staging" && r.commit_sha == sha));
+        assert!(refs
+            .iter()
+            .any(|r| r.name == "refs/tags/6000.4.12f1" && r.commit_sha == sha));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn api_discovery_surfaces_http_errors() {
+        let (url, server) = api_fixture(vec![("/branches?per_page=100&page=1", 403, "{}".into())]);
+        let error = list_api_refs(&url).unwrap_err();
+        assert!(format!("{error:#}").contains("403"));
+        server.join().unwrap();
+    }
+
+    #[test]
+    fn list_public_refs_discovers_branches_and_tags() {
+        let (repo, sha) = fixture_repo();
+        let refs = list_public_refs(repo.path().to_str().unwrap()).unwrap();
+        assert_eq!(
+            refs.len(),
+            2,
+            "annotated tag must be peeled, not duplicated"
+        );
+        assert!(refs
+            .iter()
+            .any(|reference| reference.name == "refs/heads/6000.0" && reference.commit_sha == sha));
+        assert!(refs.iter().any(
+            |reference| reference.name == "refs/tags/6000.0.1f1" && reference.commit_sha == sha
+        ));
+    }
+
+    #[test]
+    fn list_public_refs_preserves_transport_error() {
+        let error = list_public_refs("unsupported-test-protocol://unavailable/repo")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("git ls-remote"), "{error}");
+        assert!(error.contains("unsupported-test-protocol"), "{error}");
+    }
+
+    #[test]
+    fn fetch_selected_pins_commit_after_branch_advances() {
+        let (repo, sha) = fixture_repo();
+        fs::write(repo.path().join("Source.cs"), "newer").unwrap();
+        fixture_git(repo.path(), &["commit", "-am", "newer"]);
+        let selected = super::super::version::RefSelection {
+            source_ref: "refs/heads/6000.0".to_owned(),
+            commit_sha: sha.clone(),
+            exact_match: false,
+            selection_reason: "matching branch".to_owned(),
+        };
+        let root = tempfile::tempdir().unwrap();
+        let dest = root.path().join("checkout");
+        fetch_selected(repo.path().to_str().unwrap(), &selected, &dest, true).unwrap();
+        assert_eq!(fixture_git(&dest, &["rev-parse", "HEAD"]), sha);
+        assert_eq!(
+            fs::read_to_string(dest.join("Source.cs")).unwrap(),
+            "original"
+        );
+        assert_eq!(
+            fixture_git(&dest, &["rev-parse", "--abbrev-ref", "HEAD"]),
+            "HEAD"
+        );
+    }
+
+    #[test]
+    fn fetch_selected_rejects_invalid_commit_before_creating_destination() {
+        let root = tempfile::tempdir().unwrap();
+        let dest = root.path().join("checkout");
+        let selected = super::super::version::RefSelection {
+            source_ref: "refs/heads/6000.0".to_owned(),
+            commit_sha: "--upload-pack=unsafe".to_owned(),
+            exact_match: false,
+            selection_reason: "matching branch".to_owned(),
+        };
+        let error = fetch_selected("unused", &selected, &dest, true).unwrap_err();
+        assert!(error.to_string().contains("commit SHA"));
+        assert!(!dest.exists());
     }
 
     #[test]

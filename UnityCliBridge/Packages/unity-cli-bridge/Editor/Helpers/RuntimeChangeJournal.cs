@@ -36,7 +36,7 @@ namespace UnityCliBridge.Helpers
         public static void Record(GameObject go)
         {
             if (go == null) return;
-            var id = go.GetInstanceID();
+            var id = ObjectIdentity.GetInstanceId(go);
             if (_snapshots.ContainsKey(id)) return;
             var t = go.transform;
             _snapshots[id] = new Snapshot
@@ -73,4 +73,3 @@ namespace UnityCliBridge.Helpers
         }
     }
 }
-

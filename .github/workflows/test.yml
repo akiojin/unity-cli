@@ -50,6 +50,9 @@ jobs:
       - name: Run dotnet test
         run: dotnet test lsp/Server.Tests.csproj
 
+      - name: Test hot reload validation and execution observations
+        run: dotnet test tests/hot-reload/HotReload.Tests.csproj
+
   rust-coverage:
     name: Rust Coverage >= 90% (required)
     runs-on: ubuntu-latest

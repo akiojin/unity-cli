@@ -1,6 +1,6 @@
 ---
 name: unity-editor-tools
-description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to ping the editor, read console output, inspect or update a project setting, run a menu item, inspect windows or selection, manage packages, or capture profiler data. Do not use for scene authoring or asset edits; use `unity-scene-create`, `unity-asset-management`, or `unity-csharp-edit` for those workflows.
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to evaluate a short C# snippet, ping the editor, read console output, inspect or update a project setting, run a menu item, inspect windows or selection, manage packages, or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -30,6 +30,7 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 - The user wants to inspect or change a project setting.
 - The user wants to run a menu item, inspect windows, or manipulate the current selection.
 - The user wants package manager or registry operations from the editor side.
+- The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
 
 ## Do Not Use When
 
@@ -56,6 +57,29 @@ unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity
 ```
 
 ## Examples
+
+### Evaluate a short C# snippet
+
+```bash
+unity-cli editor eval '1+2' --request-id sum --output json
+unity-cli editor eval 'var go = new GameObject("Probe"); return go;' --mode statements --request-id create-probe --output json
+unity-cli editor eval-status create-probe --output json
+```
+
+Inspect `state`: only `completed` means execution and value conversion succeeded.
+`compile_error`, `runtime_error`, and `serialization_error` are distinct failures.
+Primitive JSON values preserve their types; Unity objects return reference descriptors.
+Evaluation supports Edit/Play Mode, implicit System/UnityEngine/UnityEditor namespaces,
+and loaded assembly references. Async/await and persistent REPL sessions are unsupported.
+Use dedicated tools when they cover the operation; eval does not require a persistent
+`.cs` file or MenuItem. File edits still belong to `unity-csharp-edit`.
+
+A timeout only stops waiting; it does not stop code or undo changes. Query the same
+request ID with `eval-status`; never automatically resend with a new ID. Identical
+input under a stored ID reuses the result. Domain Reload loses results, so `unknown`
+requires inspecting actual state before deciding whether to execute again. Long-running
+synchronous code also blocks status responses. After the domain's assembly/result limit,
+reload is required; eval never reloads automatically.
 
 - "Show me the latest Unity console errors."
 - "Update the company name in Project Settings."

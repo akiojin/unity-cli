@@ -7,7 +7,6 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.inputsystem": "1.14.2",
-        "com.unity.recorder": "4.0.0",
         "com.unity.addressables": "1.22.3"
       }
     },
@@ -250,6 +249,15 @@
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
+      }
+    },
+    "com.unity.visualeffectgraph": {
+      "version": "17.4.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.shadergraph": "17.4.0",
+        "com.unity.render-pipelines.core": "17.4.0"
       }
     },
     "com.unity.visualscripting": {

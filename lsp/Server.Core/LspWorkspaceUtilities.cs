@@ -5,7 +5,7 @@ namespace UnityCli.Lsp.Core;
 
 public static class LspWorkspaceUtilities
 {
-    public static IEnumerable<string> EnumerateUnityCsFiles(string rootDir)
+    public static IEnumerable<string> EnumerateUnityCsFiles(string rootDir, string scope = "all")
     {
         IEnumerable<string> Enumerate(string dir)
         {
@@ -26,17 +26,22 @@ public static class LspWorkspaceUtilities
             }
         }
 
-        foreach (var file in Enumerate(Path.Combine(rootDir, "Assets")))
+        scope = scope.ToLowerInvariant();
+        var all = scope is not ("assets" or "packages" or "embedded" or "library");
+        foreach (var file in (all || scope == "assets"
+            ? Enumerate(Path.Combine(rootDir, "Assets")) : Enumerable.Empty<string>()))
         {
             yield return file;
         }
 
-        foreach (var file in Enumerate(Path.Combine(rootDir, "Packages")))
+        foreach (var file in (all || scope is "packages" or "embedded"
+            ? Enumerate(Path.Combine(rootDir, "Packages")) : Enumerable.Empty<string>()))
         {
             yield return file;
         }
 
-        foreach (var file in Enumerate(Path.Combine(rootDir, "Library", "PackageCache")))
+        foreach (var file in (all || scope is "packages" or "library"
+            ? Enumerate(Path.Combine(rootDir, "Library", "PackageCache")) : Enumerable.Empty<string>()))
         {
             yield return file;
         }

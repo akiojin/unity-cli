@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEngine;
@@ -60,6 +61,7 @@ namespace UnityCliBridge.Core
         /// </summary>
         static UnityCliBridge()
         {
+            global::UnityCliBridge.Handlers.PlayerBuildHandler.Initialize();
             BridgeLogger.Log("Initializing...");
             EditorApplication.update += ProcessCommandQueue;
             EditorApplication.quitting += Shutdown;
@@ -400,6 +402,11 @@ namespace UnityCliBridge.Core
                                 var command = JsonConvert.DeserializeObject<Command>(json);
                                 if (command != null)
                                 {
+                                    if (global::UnityCliBridge.Handlers.PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                                    {
+                                        if (!await TrySendFramedMessage(stream, buildResponse, cancellationToken)) break;
+                                        continue;
+                                    }
                                     // Queue command for processing on main thread
                                     lock (queueLock)
                                     {
@@ -472,8 +479,12 @@ namespace UnityCliBridge.Core
                 return false;
             }
 
+            var sendGate = SendGates.GetValue(stream, _ => new SemaphoreSlim(1, 1));
+            var entered = false;
             try
             {
+                await sendGate.WaitAsync(cancellationToken);
+                entered = true;
                 var messageBytes = Encoding.UTF8.GetBytes(message);
                 var lengthBytes = BitConverter.GetBytes(messageBytes.Length);
                 if (BitConverter.IsLittleEndian) Array.Reverse(lengthBytes);
@@ -491,7 +502,14 @@ namespace UnityCliBridge.Core
                 try { BridgeLogger.LogError($"Send error: {ex}"); } catch { }
                 return false;
             }
+            finally
+            {
+                if (entered) sendGate.Release();
+            }
         }
+
+        private static readonly ConditionalWeakTable<NetworkStream, SemaphoreSlim> SendGates =
+            new ConditionalWeakTable<NetworkStream, SemaphoreSlim>();
         
         /// <summary>
         /// Processes queued commands on the Unity main thread.
@@ -572,10 +590,17 @@ namespace UnityCliBridge.Core
 
                 // Send response
                 var responseWriteStopwatch = Stopwatch.StartNew();
-                await TrySendFramedMessage(responseStream, response, CancellationToken.None);
+                var responseSent = await TrySendFramedMessage(responseStream, response, CancellationToken.None);
                 responseWriteStopwatch.Stop();
                 BridgeCommandStats.RecordStageDuration("response_send_ms", responseWriteStopwatch.Elapsed.TotalMilliseconds);
                 statsScope.Complete(!responseIsError, Encoding.UTF8.GetByteCount(response));
+                if (responseSent && !responseIsError &&
+                    string.Equals(command.Type, "quit_editor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // delayCall can run while an asynchronous write is suspended.
+                    // Register only after the complete success frame has been flushed.
+                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                }
             }
             catch (Exception ex)
             {

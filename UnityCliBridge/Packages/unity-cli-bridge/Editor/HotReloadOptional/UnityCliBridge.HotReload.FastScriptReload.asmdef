@@ -1,0 +1,12 @@
+{
+  "name": "UnityCliBridge.HotReload.Editor",
+  "rootNamespace": "UnityCliBridge.HotReload",
+  "references": ["UnityCliBridge.Editor", "FastScriptReload.Editor", "FastScriptReload.Runtime"],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll", "0Harmony.dll", "Microsoft.CodeAnalysis.FSR.dll", "Microsoft.CodeAnalysis.CSharp.FSR.dll", "System.Collections.Immutable.FSR.dll", "ImmersiveVRTools.Common.Runtime.dll", "ImmersiveVRTools.Common.Editor.dll"],
+  "autoReferenced": true,
+  "defineConstraints": ["UNITY_CLI_FAST_SCRIPT_RELOAD"],
+  "versionDefines": [{"name":"com.handzlikchris.fastscriptreload", "expression":"[1.8.0,1.8.1)", "define":"UNITY_CLI_FAST_SCRIPT_RELOAD"}],
+  "noEngineReferences": false
+}

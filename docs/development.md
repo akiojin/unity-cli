@@ -81,6 +81,16 @@ For Docker, WSL2, and multi-instance examples, see
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 `UNITY_CLI_UNITYD` has been removed; unityd is always auto-managed.
 
+Remote typed, raw and batch commands start unityd on demand when its IPC endpoint
+is unavailable, including after the idle timeout (600 seconds by default;
+`UNITY_CLI_UNITYD_IDLE_TIMEOUT` overrides it). Automatic startup uses the invoking
+CLI binary and serializes concurrent starts. `unityd stop` stops the current
+process; the next remote operation starts it again. `unityd status` does not
+start it. Host/port resolution is unchanged, and connections are pooled by both.
+If startup fails, stderr explains the failure and direct TCP fallback.
+Use `-v` to inspect `route`, `startup_ms` and `operation_ms` separately on stderr;
+JSON results stay on stdout. `unityd status` reports the PID and connection count.
+
 ## Tool Invocation & Discovery
 
 Use one of these paths:
@@ -196,14 +206,61 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# Reference fetch regression (live Editor; isolated cache; downloads UnityCsReference)
+# Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
+scripts/e2e-reference-fetch.sh --port 6400
+
+# Automatic ref resolution + provenance regression (live Editor; separate temporary caches)
+# Covers the real project, a 6000.4.12f1 fixture, and explicit public ref 6000.4.
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
+# Player build: relevant EditMode tests, real build/report, polling, failures,
+# restart recovery, and headless launch (isolated project copy on macOS)
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
+
+# C# eval E2E against an existing listener (see editor-eval.md)
+scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
+
+# C# eval with an isolated batch host (build the debug CLI first)
+scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
+
+# Timeline editing, persistence and Animator evaluation (real Editor)
+cargo build --bin unity-cli
+scripts/e2e-timeline-batch-host.sh --port 6474
+
+# Isolated project without com.unity.timeline: compile/start and error contract
+scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
+
+# Test-result counting regression (7 EditMode + 2 PlayMode tests)
+# Requires the project's default DisableDomainReload setting and a running listener.
+scripts/e2e-test-results.sh
+
+# Input Actions types (both creation routes; requires this checkout's listener)
+scripts/e2e-input-actions.sh
 
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
 
+# Real Lighting / legacy NavMesh / NavMeshSurface / Occlusion bake and reload
+cargo build --bin unity-cli
+scripts/e2e-bake-batch-host.sh --port 6477
+
+# Isolated optional hot reload backend / real Editor checks
+scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
+# See docs/hot-reload.md for installed-backend and supported x64 runs.
+
+# PlayMode result collection with Domain Reload enabled and disabled
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
+
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
+
+# Input Actions source JSON persistence, reimport, and Editor restart (two owned batch hosts)
+cargo build --bin unity-cli
+python3 scripts/e2e-input-actions-persistence.py --port 6428
 
 # The batch-host helper uses the editor version in ProjectVersion.txt by default
 # and only needs UNITY_PATH when that editor is not installed locally.
@@ -216,15 +273,93 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
 # Media / Profiler benchmark artifacts under UnityCliBridge/.unity/perf-media/
 scripts/perf-media-benchmark.sh
+
+# Recording formats: MP4, WebM and PNG sequence (graphics-enabled Editor in Play mode)
+scripts/e2e-video-formats.sh --port 6400
 ```
 
+The all-tools sweep checks the runtime catalog against its invocations and
+`scripts/e2e-all-tools-exclusions.json`. Each exclusion explains the required
+environment or separate suite; excluded tools are reported as skipped, not passed.
+`cargo test all_tools_e2e -- --test-threads=1` detects catalog drift and verifies
+that disconnected or reloading Editors are not treated as ready. For an isolated
+Editor project, set `UNITY_PROJECT_ROOT=/absolute/project/path` and pass its port.
+The sweep quits that Editor unless `--skip-quit` is specified.
+
 ### Scene Layout Policy
+
+Baking E2E creates fixtures under `Assets/Scenes/Generated/E2E/Baking/` and
+checks generated assets, saved scene references, and navigation queries after
+scene reload. Its batch host enables graphics for actual lightmap generation;
+do not add `-nographics`. Logs and pass/fail counts are kept in the printed
+`/tmp/unity-cli-bake-e2e.*` directory. Against a running Editor, use
+`scripts/e2e-bake.sh --port <port>`. Save unrelated scenes first. Use
+`--targets lighting,navmesh-legacy,navmesh-surface,occlusion` to select targets;
+acceptance verification requires the default full set.
+
+Timeline E2E uses `Assets/Scenes/Generated/E2E/Timeline/` for its fixture
+scene and assets. The suite checks clip timing, binding, asset unload/reimport
+and scene reload, numeric Animator evaluation, edits/removal, and rejected
+operations. The batch helper preserves Editor and test logs in the printed
+`/tmp/unity-cli-timeline-e2e.*` directory. The package-absent variant copies
+the Bridge into a temporary project; it never removes the working project's
+Timeline dependency. Recorder is also excluded from the isolated project because
+it depends on Timeline; the runner asserts neither package is in the resolved
+package lock. Set `UNITY_PATH` or `UNITY_CLI` to override binaries.
+Against an existing listener, run `scripts/e2e-timeline.sh --port <port>`;
+save unrelated dirty scenes first because the fixture opens its own scene.
+
+### VFX Graph verification
+
+The Bridge uses reflection for the optional `com.unity.visualeffectgraph`
+package; installing the Bridge does not install VFX Graph. The development
+project includes VFX Graph 17.4.0. Use Unity 6000.4.11f1 for this matrix.
+
+検証済み: Unity 6000.4.11f1 / VFX Graph 17.4.0 (macOS).
+
+```bash
+cargo build --bin unity-cli
+scripts/e2e-vfx-batch-host.sh --port 6476
+scripts/e2e-vfx-batch-host.sh --port 6477 --without-vfx
+```
+
+The normal run requires graphics/compute shader support for SDF baking; do not
+add `-nographics`. It creates a graph from a template, adds a context, block and
+parameter, verifies describe/compile, drives a VisualEffect in Play Mode with
+parameter writes and events (including `OnPlay`), and checks a baked Texture3D.
+Generated assets belong under `Assets/Scenes/Generated/E2E/Vfx/`.
+The package-absent run uses a temporary project and preserves the working
+project's manifest. It verifies compilation and `VFX_PACKAGE_MISSING` responses
+from all six VFX tools without Console errors.
+
+Run the focused NUnit suites on the same integrated source:
+
+```bash
+UNITY_PATH=/Applications/Unity/Hub/Editor/6000.4.11f1/Unity.app/Contents/MacOS/Unity
+"$UNITY_PATH" -batchmode -projectPath "$PWD/UnityCliBridge" -runTests \
+  -testPlatform EditMode -testFilter UnityCliBridge.Tests.VfxGraphHandlerTests \
+  -testResults /tmp/vfx-editmode.xml -logFile /tmp/vfx-editmode.log
+"$UNITY_PATH" -projectPath "$PWD/UnityCliBridge" -runTests \
+  -testPlatform PlayMode -testFilter VfxRuntimePlayModeTests \
+  -testResults /tmp/vfx-playmode.xml -logFile /tmp/vfx-playmode.log
+```
+
+The PlayMode suite needs a visible Editor/Game view to exercise GPU particle
+counts and output-event callbacks. Omit `-batchmode` for that suite: batch mode
+can advance the managed test loop without the rendered frames these assertions
+need. The command exits automatically when tests finish. EditMode tests and the
+CLI E2E host can run in batch mode with graphics enabled.
+
+Keep the XML results, Editor logs and E2E artifact paths in the integration PR.
+Windows verification is tracked separately in Issue #308.
 
 - Stable tracked scenes stay in `UnityCliBridge/Assets/Scenes/` (`SampleScene` only).
 - Local E2E-generated scenes go under `UnityCliBridge/Assets/Scenes/Generated/E2E/` and must not be committed.
 - UI manual test scenes continue to use `UnityCliBridge/Assets/Scenes/Generated/UI/`.
 
 ### Media Perf Benchmark
+
+`scripts/e2e-video-formats.sh` checks actual file headers and session cleanup. It controls Play mode and restores its initial state; use a dedicated local Editor with a camera scene loaded. For a batch host, omit `-nographics` so Game View can render. Video start returns the planned output path; successful stop returns an existing nonempty file. For `png_sequence`, this is the first PNG in a unique session directory.
 
 - `scripts/lsp-perf-check.sh` is still the canonical benchmark for LSP/search/index performance. `scripts/perf-media-benchmark.sh` is a separate runtime benchmark for screenshot/video/profiler flows.
 - `scripts/perf-media-benchmark.sh` generates `Assets/Scenes/Generated/E2E/Performance/UnityCli_PerfBenchmark.unity` via `Tools/Unity CLI/Performance/Generate Media Perf Scene`.
@@ -539,6 +674,15 @@ Docker、WSL2、複数インスタンスの設定例は
 旧 MCP プレフィックス環境変数は未サポートです。`UNITY_CLI_*` のみ使用してください。
 `UNITY_CLI_UNITYD` は廃止済みで、unityd は常時自動管理です。
 
+リモートの typed / raw / batch 操作は、IPC 接続先がない場合に unityd を自動起動します。
+idle 終了（既定 600 秒、`UNITY_CLI_UNITYD_IDLE_TIMEOUT` で変更可能）後も同様です。
+自動起動には実行中の CLI と同じバイナリを使い、同時起動を排他制御します。
+`unityd stop` 後の次のリモート操作では再起動し、`unityd status` 単独では起動しません。
+host/port の解決方法は維持し、接続を両方の組み合わせごとに再利用します。
+起動失敗の理由と直接 TCP 接続への fallback は stderr に表示します。
+`-v` で `route` / `startup_ms` / `operation_ms` を stderr に分けて記録し、
+stdout は JSON 結果用に維持します。PID と接続数は `unityd status` で確認できます。
+
 ## ツール呼び出しと探索
 
 呼び出し経路は2種類です。
@@ -633,6 +777,15 @@ git config core.hooksPath .husky
 
 Unity E2E は CI では実行しません。Unity Editor が起動しているローカル環境でのみ実行します。
 
+VFX Graph の通常・非導入 E2E と EditMode / PlayMode の実行手順は
+[VFX Graph verification](#vfx-graph-verification) を参照してください。
+
+Input Actions のソース JSON 保存・再import・Editor 再起動の回帰検証は、
+`cargo build --bin unity-cli` の後に
+`python3 scripts/e2e-input-actions-persistence.py --port 6428` を実行します。
+専用 batch host を2回起動し、生成アセットを終了時に削除します。
+Unity ログ・CLI 応答・集計 `summary.json` は出力された一時ディレクトリに残ります。
+
 ### 準備
 
 1. `UnityCliBridge` プロジェクトを Unity Editor で開く
@@ -648,11 +801,37 @@ cargo build --release
 # スモークE2E
 scripts/e2e-test.sh
 
+# 参照ソース取得の回帰検証（起動済み Editor・隔離キャッシュ・UnityCsReference を取得）
+# 先に cargo build、または UNITY_CLI_BIN で検証バイナリを指定する。
+scripts/e2e-reference-fetch.sh --port 6400
+
+# 参照の自動解決・取得元情報の検証（起動済み Editor・ケース別の一時キャッシュ）
+# 実プロジェクト、6000.4.12f1 fixture、公開 ref 6000.4 の明示指定を検証する。
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
+# Player build: 隔離コピーで EditMode・実ビルド・状態取得・失敗・再起動・画面なし起動
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
 
+# テスト件数の回帰検証（EditMode 7件 + PlayMode 2件）
+# プロジェクト既定の DisableDomainReload 設定と起動済み listener が必要です。
+scripts/e2e-test-results.sh
+
+# Input Actions の型指定（両作成経路、この checkout の listener が必要）
+scripts/e2e-input-actions.sh
+
 # headless batch host 入力 E2E
 scripts/e2e-input-batch-host.sh
+
+# unityd 自動起動・idle 復帰・同時操作 E2E（専用 batch host を起動・終了）
+cargo build
+python3 scripts/e2e-unityd.py --port 6453
+# 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
+
+# Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
@@ -668,7 +847,30 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 
 # media capture / profiler ベンチマーク
 scripts/perf-media-benchmark.sh
+
+# 録画形式: MP4 / WebM / PNG連番（描画可能なEditor）
+scripts/e2e-video-formats.sh --port 6400
 ```
+
+全ツール E2E の除外理由は `scripts/e2e-all-tools-exclusions.json` で管理し、
+除外ツールを PASS として数えません。`cargo test all_tools_e2e -- --test-threads=1`
+でカタログとの差分と、接続失敗を準備完了と扱わないことを検証します。
+隔離した Editor を使う場合は `UNITY_PROJECT_ROOT=/absolute/project/path` と
+ポートを指定してください。`--skip-quit` を指定しない場合、その Editor を終了します。
+
+### タップ・スワイプの検証
+
+入力の `tap` / `swipe` は開始受付後すぐ応答し、自然な Input System 更新で
+複数フレームにわたって実行します。`holdSeconds` / `duration` は実時間で計測し、
+swipe は途中の位置と終点をゲームの Update に公開してから解除します。
+同じ `touchId` は受付順に実行し、異なる ID は並行して実行します。
+CLI の `touchId` はゼロ始まりで、Input System の `touchId` はその値 + 1 です。
+`touches` 配列内の物理スロットは Unity が割り当てます。
+batch / sequence の応答もジェスチャー終了待ちではなく受付結果です。
+
+`TouchGesturePlayModeTests` は実 Touchscreen を MonoBehaviour.Update から観測し、
+30fps・120fps・無制限での保持と移動、既定 tap、同一/別 ID、デバイス削除を検証します。
+実 Editor の PlayMode テストランナーでこのクラスを指定して実行してください。
 
 ### シーン配置ポリシー
 
@@ -677,6 +879,8 @@ scripts/perf-media-benchmark.sh
 - UI 手動検証シーン（UGUI/UITK/IMGUI）は `Tools/Unity CLI/UI Tests/*` で必要時に `UnityCliBridge/Assets/Scenes/Generated/UI/` へ生成する
 
 ### Media Perf Benchmark
+
+`scripts/e2e-video-formats.sh` は実ファイルのヘッダーとセッション終了を検証します。Play状態を切り替えて元に戻すため、カメラのあるシーンを開いた専用Editorで実行します。batch-host では Game View を描画できるよう `-nographics` を外してください。録画開始時は予定パス、停止成功時は存在する空でないファイルのパスを返します。`png_sequence` の停止結果はセッション固有ディレクトリ内の最初のPNGです。
 
 - `scripts/lsp-perf-check.sh` は引き続き LSP / search / index 性能の正規ベンチマークで、`scripts/perf-media-benchmark.sh` とは別物。
 - `scripts/perf-media-benchmark.sh` は `Tools/Unity CLI/Performance/Generate Media Perf Scene` 経由で `Assets/Scenes/Generated/E2E/Performance/UnityCli_PerfBenchmark.unity` を生成する。

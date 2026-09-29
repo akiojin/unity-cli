@@ -343,6 +343,14 @@ fn handle_request(request: DaemonRequest) -> Result<(DaemonResponse, ConnectionA
 
 fn request(request: DaemonRequest) -> Result<DaemonResponse> {
     let mut stream = connect_client()?;
+    // A tool can initialize the LSP and issue multiple 60-second RPCs.
+    // Keep short control-request deadlines, but do not cut tool execution off
+    // at the connection's ten-second timeout (EAGAIN on macOS).
+    if matches!(request, DaemonRequest::Tool { .. }) {
+        stream
+            .set_read_timeout(Some(Duration::from_secs(180)))
+            .context("Failed to set lspd tool response timeout")?;
+    }
     let payload =
         serde_json::to_string(&request).context("Failed to serialize daemon request payload")?;
     write_all_with_retry(
@@ -622,10 +630,18 @@ mod tests {
             loop {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
+                        // On macOS accepted sockets inherit O_NONBLOCK. Wait for
+                        // the full request before replying or closing the stream.
+                        stream
+                            .set_nonblocking(false)
+                            .expect("blocking test connection");
+                        stream
+                            .set_read_timeout(Some(Duration::from_secs(2)))
+                            .expect("request read timeout");
                         let mut line = String::new();
-                        let _ =
-                            BufReader::new(stream.try_clone().expect("stream clone should work"))
-                                .read_line(&mut line);
+                        BufReader::new(stream.try_clone().expect("stream clone should work"))
+                            .read_line(&mut line)
+                            .expect("complete request should be readable");
                         stream
                             .write_all(response.as_bytes())
                             .expect("response write should succeed");
@@ -774,6 +790,38 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn tool_response_can_arrive_after_ten_second_transport_timeout() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_dir, _env) = prepare_tools_root();
+        let path = socket_path().unwrap();
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let listener = std::os::unix::net::UnixListener::bind(path).unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream);
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            thread::sleep(Duration::from_secs(11));
+            let _ = reader
+                .get_mut()
+                .write_all(b"{\"ok\":true,\"result\":{\"symbols\":[]}}\n");
+        });
+        let response = request(DaemonRequest::Tool {
+            tool_name: "find_symbol".into(),
+            params: json!({"name":"ButtonHandler"}),
+            project_root: "/unused".into(),
+        });
+        server.join().unwrap();
+        assert!(
+            response.is_ok(),
+            "valid slow LSP response was lost: {response:?}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn handle_stream_round_trip_ping_request() {
         let (mut client, mut server) =
             std::os::unix::net::UnixStream::pair().expect("socket pair should be created");
@@ -889,6 +937,34 @@ mod tests {
         let value = stop().expect("stop should gracefully succeed when daemon is unavailable");
         assert_eq!(value["stopped"], false);
         assert_eq!(value["running"], false);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn mock_server_waits_for_request_terminator() {
+        use std::io::Read;
+        let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        let server = spawn_unix_server_once("not-json");
+        let mut stream = std::os::unix::net::UnixStream::connect(socket_path().unwrap()).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_millis(50)))
+            .unwrap();
+        stream.write_all(b"{\"type\":\"ping\"}").unwrap();
+        let mut response = [0u8; 8];
+        let early = stream.read(&mut response);
+        stream.write_all(b"\n").unwrap();
+        server.join().unwrap();
+        assert!(
+            early.is_err(),
+            "server replied before the complete request: {early:?}"
+        );
+        assert!(matches!(
+            early.unwrap_err().kind(),
+            ErrorKind::WouldBlock | ErrorKind::TimedOut
+        ));
+        stream.read_exact(&mut response).unwrap();
+        assert_eq!(&response, b"not-json");
     }
 
     #[cfg(unix)]

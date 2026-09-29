@@ -7,8 +7,12 @@ pub const TOOL_NAMES: &[&str] = &[
     "addressables_manage",
     "get_animator_runtime_info",
     "get_animator_state",
+    "get_timeline",
+    "manage_timeline",
     "create_animator_controller",
     "create_animation_clip",
+    "get_animation_curves",
+    "edit_animation_curve",
     "create_sprite_atlas",
     "find_by_component",
     "get_component_values",
@@ -30,6 +34,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "update_index",
     "get_index_status",
     "get_compilation_state",
+    "hot_reload_status",
+    "hot_reload",
     "add_component",
     "set_component_field",
     "get_component_types",
@@ -68,6 +74,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "create_input_sequence",
     "get_current_input_state",
     "execute_menu_item",
+    "eval_csharp",
+    "get_eval_status",
     "package_manager",
     "registry_config",
     "get_editor_info",
@@ -81,6 +89,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "profiler_stop",
     "create_scene",
     "get_scene_info",
+    "start_scene_bake",
+    "get_scene_bake_status",
     "list_scenes",
     "load_scene",
     "save_scene",
@@ -113,6 +123,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "refresh_assets",
     "get_test_status",
     "run_tests",
+    "build_player",
+    "get_build_status",
     "click_ui_element",
     "find_ui_elements",
     "get_ui_element_state",
@@ -132,6 +144,12 @@ pub const TOOL_NAMES: &[&str] = &[
     "reference_resolve_symbol_at",
     "reference_embed_build",
     "reference_embed_search",
+    "vfx_describe_graph",
+    "vfx_list_library",
+    "vfx_apply",
+    "vfx_runtime",
+    "vfx_settings",
+    "vfx_bake_sdf",
 ];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
@@ -188,13 +206,33 @@ fn to_static_name(name: &str) -> &'static str {
 fn tool_description(name: &str) -> &'static str {
     match name {
         "ping" => "Check Unity Editor connectivity",
+        "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
+        "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
         "create_scene" => "Create a new scene",
+        "start_scene_bake" => {
+            "Start a scene bake job for Lighting, legacy NavMesh, NavMeshSurface, or Occlusion"
+        }
+        "get_scene_bake_status" => {
+            "Poll a bake job for progress, failure, and verified saved artifacts"
+        }
+        "get_timeline" => {
+            "Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings"
+        }
+        "manage_timeline" => {
+            "Create and edit Timeline AnimationTracks, bind a director, or evaluate a time"
+        }
         "list_packages" => "List installed packages",
         "create_animator_controller" => {
             "Create an AnimatorController asset with parameters, states, and transitions"
         }
         "create_animation_clip" => {
             "Create an AnimationClip asset from sprite frames with frame rate and loop settings"
+        }
+        "get_animation_curves" => {
+            "Read float curve bindings, keys, and tangent modes from an AnimationClip"
+        }
+        "edit_animation_curve" => {
+            "Set, upsert, or remove float curve keys on a standalone AnimationClip"
         }
         "create_sprite_atlas" => "Create a SpriteAtlas asset with packables and packing settings",
         "read" => "Read a C# source file",
@@ -206,6 +244,28 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "build_player" => "Queue a standalone player build on the Unity Editor host",
+        "get_build_status" => "Get player build status, report, and artifacts",
+        "hot_reload_status" => "Inspect optional FastScriptReload support, preview session and verified revision",
+        "hot_reload" => "Preview method-body changes during Play; explicitly recover by stopping and recompiling",
+        "vfx_describe_graph" => {
+            "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile errors (`errors`, on by default), the last compile outcome (`compile`), and canvas layout diagnostics (`layout.overlapCount`). Large graphs describe big: narrow the payload with `include` (top-level sections to keep) and `includeSlots:false` (omit slot trees, which dominate the output)"
+        }
+        "vfx_list_library" => {
+            "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)"
+        }
+        "vfx_apply" => {
+            "Apply an authoring mutation to a Visual Effect Graph asset; every op response carries a `compile` summary of the recompile it triggered. Pass autoCompile:false to skip that recompile and batch edits, then one `compile` op to flush (ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, remove_group, auto_layout, compile, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, set_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template)"
+        }
+        "vfx_runtime" => {
+            "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state)"
+        }
+        "vfx_settings" => {
+            "Read or write VFX environment settings — ops: get (read all), set (write one named setting). Scope: 'project' (default — ProjectSettings/VFXManager.asset; fixedTimeStep, maxDeltaTime, maxCapacity, ...) or 'preferences' (per-machine EditorPrefs via UnityEditor.VFX.VFXViewPreference; instancingEnabled, displayExperimentalOperator, multithreadUpdateEnabled, ...)"
+        }
+        "vfx_bake_sdf" => {
+            "Bake a Mesh asset into a Signed Distance Field Texture3D asset (programmatic SDF Bake Tool, via the public MeshToSDFBaker). Params: meshPath (source Mesh), outputPath (.asset to create), maxResolution (default 64), center/size ([x,y,z]; default = mesh bounds), signPassCount (default 1), threshold (default 0.5), sdfOffset (default 0), overwrite (default false). Requires compute shader support."
+        }
         _ => "Unity CLI tool operation",
     }
 }
@@ -252,6 +312,8 @@ fn is_read_only_tool(name: &str) -> bool {
         "addressables_analyze"
             | "get_animator_runtime_info"
             | "get_animator_state"
+            | "get_timeline"
+            | "get_animation_curves"
             | "find_by_component"
             | "get_component_values"
             | "get_gameobject_details"
@@ -259,6 +321,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "analyze_scene_contents"
             | "analyze_asset_dependencies"
             | "get_compilation_state"
+            | "hot_reload_status"
             | "get_component_types"
             | "list_components"
             | "read_console"
@@ -269,9 +332,11 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_current_input_state"
             | "get_editor_info"
             | "get_editor_state"
+            | "get_eval_status"
             | "profiler_get_metrics"
             | "profiler_status"
             | "get_scene_info"
+            | "get_scene_bake_status"
             | "list_scenes"
             | "analyze_screenshot"
             | "list_packages"
@@ -287,6 +352,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_command_stats"
             | "ping"
             | "get_test_status"
+            | "get_build_status"
             | "find_ui_elements"
             | "get_ui_element_state"
             | "capture_video_status"
@@ -298,11 +364,180 @@ fn is_read_only_tool(name: &str) -> bool {
             | "reference_diff"
             | "reference_resolve_symbol_at"
             | "reference_embed_search"
+            | "vfx_describe_graph"
+            | "vfx_list_library"
     )
 }
 
 fn tool_params_schema(name: &str) -> Value {
     match name {
+        "eval_csharp" => object_schema(
+            &[
+                ("code", string_schema()),
+                (
+                    "mode",
+                    json!({"type":"string", "enum":["expression", "statements"]}),
+                ),
+                ("requestId", string_schema()),
+            ],
+            &["code"],
+            false,
+        ),
+        "get_eval_status" => {
+            object_schema(&[("requestId", string_schema())], &["requestId"], false)
+        }
+        "start_scene_bake" => {
+            let mut schema = object_schema(
+                &[
+                    (
+                        "target",
+                        enum_string_schema(&[
+                            "lighting",
+                            "navmesh-legacy",
+                            "navmesh-surface",
+                            "occlusion",
+                        ]),
+                    ),
+                    (
+                        "scenePath",
+                        json!({"type": "string", "minLength": 1, "description": "Saved, clean, active scene under Assets; only one scene may be loaded"}),
+                    ),
+                    (
+                        "surfacePath",
+                        json!({"type": "string", "minLength": 1, "description": "GameObject hierarchy path containing NavMeshSurface; required for navmesh-surface"}),
+                    ),
+                ],
+                &["target", "scenePath"],
+                false,
+            );
+            schema["oneOf"] = json!([
+                {"type": "object", "properties": {"target": {"enum": ["navmesh-surface"]}}, "required": ["surfacePath"]},
+                {"type": "object", "properties": {"target": {"enum": ["lighting", "navmesh-legacy", "occlusion"]}}}
+            ]);
+            schema
+        }
+        "get_scene_bake_status" => object_schema(
+            &[("jobId", json!({"type": "string", "minLength": 1}))],
+            &["jobId"],
+            false,
+        ),
+        "get_timeline" => with_any_of(
+            object_schema(
+                &[
+                    ("assetPath", string_schema()),
+                    ("directorPath", string_schema()),
+                ],
+                &[],
+                false,
+            ),
+            vec![
+                object_schema(&[], &["assetPath"], true),
+                object_schema(&[], &["directorPath"], true),
+            ],
+        ),
+        "manage_timeline" => with_one_of(
+            object_schema(
+                &[
+                    (
+                        "action",
+                        enum_string_schema(&[
+                            "create_asset",
+                            "assign_director",
+                            "create_track",
+                            "delete_track",
+                            "add_clip",
+                            "update_clip",
+                            "remove_clip",
+                            "set_binding",
+                            "clear_binding",
+                            "evaluate",
+                        ]),
+                    ),
+                    ("assetPath", string_schema()),
+                    ("directorPath", string_schema()),
+                    ("animatorPath", string_schema()),
+                    (
+                        "trackId",
+                        json!({"type": "string", "description": "Stable GUID:localID returned by get_timeline"}),
+                    ),
+                    ("trackName", string_schema()),
+                    ("trackType", enum_string_schema(&["AnimationTrack"])),
+                    ("animationClipPath", string_schema()),
+                    ("clipIndex", json!({"type": "integer", "minimum": 0})),
+                    (
+                        "expectedClip",
+                        object_schema(
+                            &[
+                                ("animationClipPath", string_schema()),
+                                (
+                                    "start",
+                                    json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                                ),
+                                (
+                                    "duration",
+                                    json!({"type": "number", "exclusiveMinimum": 0, "maximum": 1000000}),
+                                ),
+                            ],
+                            &["animationClipPath", "start", "duration"],
+                            false,
+                        ),
+                    ),
+                    (
+                        "start",
+                        json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                    ),
+                    (
+                        "duration",
+                        json!({"type": "number", "exclusiveMinimum": 0, "maximum": 1000000}),
+                    ),
+                    (
+                        "time",
+                        json!({"type": "number", "minimum": 0, "maximum": 1000000}),
+                    ),
+                ],
+                &["action"],
+                false,
+            ),
+            [
+                ("create_asset", vec!["assetPath"]),
+                ("assign_director", vec!["assetPath", "directorPath"]),
+                ("create_track", vec!["assetPath", "trackName"]),
+                ("delete_track", vec!["assetPath", "trackId"]),
+                (
+                    "add_clip",
+                    vec![
+                        "assetPath",
+                        "trackId",
+                        "animationClipPath",
+                        "start",
+                        "duration",
+                    ],
+                ),
+                (
+                    "update_clip",
+                    vec!["assetPath", "trackId", "clipIndex", "expectedClip"],
+                ),
+                (
+                    "remove_clip",
+                    vec!["assetPath", "trackId", "clipIndex", "expectedClip"],
+                ),
+                (
+                    "set_binding",
+                    vec!["directorPath", "trackId", "animatorPath"],
+                ),
+                ("clear_binding", vec!["directorPath", "trackId"]),
+                ("evaluate", vec!["directorPath", "time"]),
+            ]
+            .into_iter()
+            .map(|(action, required)| {
+                object_schema(
+                    &[("action", enum_string_schema(&[action]))],
+                    &required,
+                    true,
+                )
+            })
+            .collect(),
+        ),
         "ping" => object_schema(&[("message", string_schema())], &[], false),
         "create_scene" => object_schema(
             &[
@@ -673,6 +908,40 @@ fn tool_params_schema(name: &str) -> Value {
             ],
             &[],
             false,
+        ),
+        "hot_reload_status" => object_schema(&[], &[], false),
+        "hot_reload" => with_one_of(
+            object_schema(
+                &[
+                    ("action", enum_string_schema(&["begin", "apply", "recover"])),
+                    ("path", string_schema()),
+                    ("source", string_schema()),
+                    ("expectedRevision", string_schema()),
+                    (
+                        "timeoutSeconds",
+                        json!({"type":"number", "minimum":1, "maximum":60}),
+                    ),
+                ],
+                &["action"],
+                false,
+            ),
+            vec![
+                object_schema(
+                    &[("action", enum_string_schema(&["begin"]))],
+                    &["action", "path"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["apply"]))],
+                    &["action", "source", "expectedRevision"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["recover"]))],
+                    &["action"],
+                    true,
+                ),
+            ],
         ),
         "get_compilation_state" => object_schema(
             &[
@@ -1200,6 +1469,44 @@ fn tool_params_schema(name: &str) -> Value {
                 ("overwrite", boolean_schema()),
             ],
             &["clipPath", "spritePaths"],
+            false,
+        ),
+        "get_animation_curves" => object_schema(
+            &[
+                ("clipPath", string_schema()),
+                ("binding", animation_curve_binding_schema()),
+            ],
+            &["clipPath"],
+            false,
+        ),
+        "edit_animation_curve" => object_schema(
+            &[
+                ("clipPath", string_schema()),
+                ("animationRoot", integer_schema()),
+                ("binding", animation_curve_binding_schema()),
+                (
+                    "operation",
+                    enum_string_schema(&["set", "upsert_keys", "remove_keys", "remove_curve"]),
+                ),
+                ("createIfMissing", boolean_schema()),
+                (
+                    "keys",
+                    array_of(object_schema(
+                        &[
+                            ("time", number_schema()),
+                            ("value", number_schema()),
+                            ("leftTangentMode", animation_curve_tangent_mode_schema()),
+                            ("rightTangentMode", animation_curve_tangent_mode_schema()),
+                            ("inTangent", number_schema()),
+                            ("outTangent", number_schema()),
+                        ],
+                        &["time", "value"],
+                        false,
+                    )),
+                ),
+                ("times", array_of(number_schema())),
+            ],
+            &["clipPath", "animationRoot", "binding", "operation"],
             false,
         ),
         "create_sprite_atlas" => object_schema(
@@ -2231,6 +2538,23 @@ fn tool_params_schema(name: &str) -> Value {
                 ),
             ],
         ),
+        "build_player" => object_schema(
+            &[
+                (
+                    "target",
+                    enum_string_schema(&["StandaloneWindows64", "StandaloneOSX"]),
+                ),
+                (
+                    "scenes",
+                    json!({"type": "array", "items": {"type": "string"}, "minItems": 1}),
+                ),
+                ("outputPath", string_schema()),
+                ("development", json!({"type": "boolean", "default": false})),
+            ],
+            &["target", "scenes", "outputPath"],
+            false,
+        ),
+        "get_build_status" => object_schema(&[("buildId", string_schema())], &["buildId"], false),
         "run_tests" => object_schema(
             &[
                 (
@@ -2362,8 +2686,155 @@ fn tool_params_schema(name: &str) -> Value {
             &["query"],
             false,
         ),
+        "vfx_describe_graph" => object_schema(
+            &[
+                ("assetPath", string_schema()),
+                ("includeErrors", boolean_schema()),
+                ("includeSlots", boolean_schema()),
+                ("include", array_of(string_schema())),
+            ],
+            &["assetPath"],
+            false,
+        ),
+        "vfx_list_library" => object_schema(
+            &[("filter", string_schema()), ("kind", string_schema())],
+            &[],
+            false,
+        ),
+        "vfx_apply" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("assetPath", string_schema()),
+                ("contextType", string_schema()),
+                ("contextIndex", integer_schema()),
+                ("blockName", string_schema()),
+                ("settings", any_object_schema()),
+                ("blockIndex", integer_schema()),
+                ("enabled", boolean_schema()),
+                ("toContextType", string_schema()),
+                ("toContextIndex", integer_schema()),
+                ("operatorIndex", integer_schema()),
+                ("parameterIndex", integer_schema()),
+                ("index", integer_schema()),
+                ("setting", string_schema()),
+                ("value", any_schema()),
+                ("contextName", string_schema()),
+                ("linkFrom", string_schema()),
+                ("fromIndex", integer_schema()),
+                ("toIndex", integer_schema()),
+                ("operatorName", string_schema()),
+                ("parameterName", string_schema()),
+                ("name", string_schema()),
+                ("space", string_schema()),
+                ("type", string_schema()),
+                ("exposed", boolean_schema()),
+                ("isOutput", boolean_schema()),
+                ("tooltip", string_schema()),
+                ("category", string_schema()),
+                ("min", any_schema()),
+                ("max", any_schema()),
+                ("from", any_object_schema()),
+                ("to", any_object_schema()),
+                ("target", any_object_schema()),
+                ("subPath", array_of(string_schema())),
+                ("mode", string_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("padding", array_of(number_schema())),
+                ("title", string_schema()),
+                ("contents", string_schema()),
+                ("position", array_of(number_schema())),
+                ("nodes", array_of(any_object_schema())),
+                ("colorTheme", integer_schema()),
+                ("textSize", string_schema()),
+                ("avoidNodes", boolean_schema()),
+                ("autoCompile", boolean_schema()),
+                ("note", any_object_schema()),
+                ("capacity", integer_schema()),
+                ("subgraphPath", string_schema()),
+                ("kind", string_schema()),
+                ("targetPath", string_schema()),
+                ("template", string_schema()),
+                ("attributeName", string_schema()),
+                ("attributeType", string_schema()),
+                ("description", string_schema()),
+                ("isReadOnly", boolean_schema()),
+                ("eventName", string_schema()),
+                ("operandType", string_schema()),
+                ("order", integer_schema()),
+                ("newCategory", string_schema()),
+                ("exposedName", string_schema()),
+                ("valueFilter", string_schema()),
+                ("duplicateShared", boolean_schema()),
+                ("splitParameters", boolean_schema()),
+                ("scope", string_schema()),
+                ("contexts", array_of(integer_schema())),
+                ("icon", string_schema()),
+                ("thumbnail", string_schema()),
+            ],
+            // assetPath required for every op except create_subgraph_asset (whose target is its own
+            // new subgraphPath). Per-op validation lives in the handler.
+            &["op"],
+            false,
+        ),
+        "vfx_runtime" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("gameObject", string_schema()),
+                ("assetPath", string_schema()),
+                ("name", string_schema()),
+                ("value", any_schema()),
+                ("eventName", string_schema()),
+                ("attributes", any_schema()),
+                ("deltaTime", number_schema()),
+                ("steps", integer_schema()),
+            ],
+            &["op", "gameObject"],
+            false,
+        ),
+        "vfx_settings" => object_schema(
+            &[
+                ("op", string_schema()),
+                ("scope", string_schema()),
+                ("setting", string_schema()),
+                ("value", any_schema()),
+            ],
+            &["op"],
+            false,
+        ),
+        "vfx_bake_sdf" => object_schema(
+            &[
+                ("meshPath", string_schema()),
+                ("outputPath", string_schema()),
+                ("maxResolution", integer_schema()),
+                ("center", array_of(number_schema())),
+                ("size", array_of(number_schema())),
+                ("signPassCount", integer_schema()),
+                ("threshold", number_schema()),
+                ("sdfOffset", number_schema()),
+                ("overwrite", boolean_schema()),
+            ],
+            &["meshPath", "outputPath"],
+            false,
+        ),
         _ => default_params_schema(),
     }
+}
+
+fn animation_curve_binding_schema() -> Value {
+    object_schema(
+        &[
+            ("path", string_schema()),
+            ("component", string_schema()),
+            ("property", string_schema()),
+        ],
+        &["path", "component", "property"],
+        false,
+    )
+}
+
+fn animation_curve_tangent_mode_schema() -> Value {
+    enum_string_schema(&["Linear", "Constant", "Auto", "ClampedAuto", "Free"])
 }
 
 fn default_params_schema() -> Value {
@@ -2475,8 +2946,180 @@ mod tests {
     use serde_json::{json, Value};
 
     #[test]
+    fn hot_reload_tools_expose_explicit_preview_and_recovery_contract() {
+        let status = get_tool_spec("hot_reload_status").expect("status tool exists");
+        assert!(!status.mutating);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(status.params_schema["additionalProperties"], false);
+        let apply = get_tool_spec("hot_reload").expect("hot reload tool exists");
+        assert!(apply.mutating);
+        assert_eq!(apply.executor, ToolExecutor::Remote);
+        assert_eq!(
+            apply.params_schema["properties"]["action"]["enum"],
+            json!(["begin", "apply", "recover"])
+        );
+        assert_eq!(
+            apply.params_schema["properties"]["timeoutSeconds"]["maximum"],
+            60
+        );
+        assert_eq!(apply.params_schema["oneOf"].as_array().unwrap().len(), 3);
+        assert_eq!(apply.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 130);
+        assert_eq!(TOOL_NAMES.len(), 148);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn all_tools_e2e_does_not_treat_disconnection_as_ready() {
+        let runner = include_str!("../../scripts/e2e-all-tools.sh");
+        let functions = runner
+            .split("query_is_playing() {")
+            .nth(1)
+            .unwrap()
+            .split("if ! \"${UNITY_CLI}\" system ping")
+            .next()
+            .unwrap();
+        for wait in [
+            "wait_for_play_state false",
+            "wait_for_compile_idle",
+            "wait_for_tests_done",
+        ] {
+            let script = format!("query_is_playing() {{{functions}\ninvoke_tool() {{ echo '{{\"error\":\"reloading\"}}'; }}\nsleep() {{ :; }}\n{wait}");
+            let status = std::process::Command::new("bash")
+                .args(["-c", &script])
+                .status()
+                .unwrap();
+            assert!(
+                !status.success(),
+                "disconnected Editor was considered ready by {wait}"
+            );
+            let script = format!(
+                "query_is_playing() {{{functions}\ninvoke_tool() {{ echo '{{\"state\":{{\"isPlaying\":false}},\"isCompiling\":false,\"isUpdating\":false,\"status\":\"completed\"}}'; }}\n{wait}"
+            );
+            assert!(
+                std::process::Command::new("bash")
+                    .args(["-c", &script])
+                    .status()
+                    .unwrap()
+                    .success(),
+                "healthy Editor was rejected by {wait}"
+            );
+        }
+    }
+
+    #[test]
+    fn all_tools_e2e_covers_catalog_or_documents_exclusion() {
+        let runner = include_str!("../../scripts/e2e-all-tools.sh");
+        let exclusions_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("scripts/e2e-all-tools-exclusions.json");
+        let exclusions: std::collections::BTreeMap<String, String> = serde_json::from_str(
+            &std::fs::read_to_string(exclusions_path).unwrap_or_else(|_| "{}".to_owned()),
+        )
+        .unwrap();
+        let called: std::collections::BTreeSet<_> = runner
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("run_tool \""))
+            .filter_map(|line| line.split('"').next())
+            .collect();
+        let missing: Vec<_> = TOOL_NAMES
+            .iter()
+            .filter(|name| !called.contains(**name) && !exclusions.contains_key(**name))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "Missing E2E coverage or exclusion: {missing:?}"
+        );
+        for (name, reason) in exclusions {
+            assert!(
+                TOOL_NAMES.contains(&name.as_str()),
+                "stale exclusion: {name}"
+            );
+            assert!(!called.contains(name.as_str()), "already exercised: {name}");
+            assert!(
+                !reason.trim().is_empty(),
+                "missing exclusion reason: {name}"
+            );
+        }
+    }
+
+    #[test]
+    fn baking_tools_have_explicit_target_and_polling_contracts() {
+        let start = get_tool_spec("start_scene_bake").expect("bake start is registered");
+        let status = get_tool_spec("get_scene_bake_status").expect("bake status is registered");
+        assert!(start.mutating);
+        assert!(!status.mutating);
+        assert_eq!(start.executor, ToolExecutor::Remote);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(
+            start.params_schema["required"],
+            json!(["target", "scenePath"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["target"]["enum"],
+            json!(["lighting", "navmesh-legacy", "navmesh-surface", "occlusion"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["surfacePath"]["type"],
+            "string"
+        );
+        assert_eq!(status.params_schema["required"], json!(["jobId"]));
+        assert_eq!(start.params_schema["additionalProperties"], false);
+        assert_eq!(status.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
+    fn timeline_tools_are_discoverable_with_correct_mutation_flags() {
+        let specs = list_tool_specs();
+        for (name, mutating) in [("get_timeline", false), ("manage_timeline", true)] {
+            let spec = specs
+                .iter()
+                .find(|spec| spec.name == name)
+                .expect("Timeline tool is registered");
+            assert_eq!(spec.mutating, mutating);
+            assert_eq!(spec.executor, ToolExecutor::Remote);
+            assert_eq!(spec.params_schema["additionalProperties"], false);
+        }
+    }
+
+    #[test]
+    fn timeline_schema_exposes_actions_and_stale_clip_guard() {
+        let spec = get_tool_spec("manage_timeline").expect("manage_timeline exists");
+        let props = &spec.params_schema["properties"];
+        assert_eq!(
+            props["action"]["enum"],
+            json!([
+                "create_asset",
+                "assign_director",
+                "create_track",
+                "delete_track",
+                "add_clip",
+                "update_clip",
+                "remove_clip",
+                "set_binding",
+                "clear_binding",
+                "evaluate"
+            ])
+        );
+        assert_eq!(props["trackType"]["enum"], json!(["AnimationTrack"]));
+        assert_eq!(
+            props["expectedClip"]["required"],
+            json!(["animationClipPath", "start", "duration"])
+        );
+        assert_eq!(props["start"]["minimum"], 0);
+        assert_eq!(props["duration"]["exclusiveMinimum"], 0);
+        assert_eq!(props["time"]["minimum"], 0);
+        for field in ["start", "duration", "time"] {
+            assert_eq!(props[field]["maximum"], 1_000_000);
+        }
+        for field in ["start", "duration"] {
+            assert_eq!(
+                props["expectedClip"]["properties"][field]["maximum"],
+                1_000_000
+            );
+        }
     }
 
     #[test]
@@ -2557,6 +3200,45 @@ mod tests {
     }
 
     #[test]
+    fn vfx_describe_graph_is_read_only_and_requires_asset_path() {
+        let spec = get_tool_spec("vfx_describe_graph").expect("vfx_describe_graph must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["assetPath"]));
+    }
+
+    #[test]
+    fn vfx_apply_is_mutating_and_requires_op() {
+        let spec = get_tool_spec("vfx_apply").expect("vfx_apply must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        // assetPath is per-op (every op except create_subgraph_asset needs it; handler enforces).
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
+    }
+
+    #[test]
+    fn vfx_runtime_is_mutating_and_requires_op_and_game_object() {
+        let spec = get_tool_spec("vfx_runtime").expect("vfx_runtime must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op", "gameObject"]));
+    }
+
+    #[test]
+    fn vfx_settings_is_mutating_and_requires_op() {
+        let spec = get_tool_spec("vfx_settings").expect("vfx_settings must exist");
+        // The tool carries both a read-only `get` and a mutating `set` op; like vfx_runtime it is
+        // marked mutating at the tool level (per-op read-only behavior is documented, not flagged).
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["op"]));
+    }
+
+    #[test]
     fn local_executor_tools_are_marked() {
         let spec = get_tool_spec("search").expect("search must exist");
         assert_eq!(spec.executor, ToolExecutor::Local);
@@ -2617,6 +3299,42 @@ mod tests {
         assert_eq!(
             spec.params_schema["properties"]["testMode"]["enum"],
             json!(["EditMode", "PlayMode", "All"])
+        );
+    }
+
+    #[test]
+    fn build_player_schema_requires_explicit_safe_build_inputs() {
+        let spec = get_tool_spec("build_player").expect("build_player must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(
+            spec.params_schema["required"],
+            json!(["target", "scenes", "outputPath"])
+        );
+        let properties = &spec.params_schema["properties"];
+        assert_eq!(
+            properties["target"]["enum"],
+            json!(["StandaloneWindows64", "StandaloneOSX"])
+        );
+        assert_eq!(properties["scenes"]["type"], "array");
+        assert_eq!(properties["scenes"]["items"]["type"], "string");
+        assert_eq!(properties["scenes"]["minItems"], 1);
+        assert_eq!(properties["outputPath"]["type"], "string");
+        assert_eq!(properties["development"]["type"], "boolean");
+        assert_eq!(properties["development"]["default"], false);
+    }
+
+    #[test]
+    fn get_build_status_is_read_only_and_requires_build_id() {
+        let spec = get_tool_spec("get_build_status").expect("get_build_status must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["buildId"]));
+        assert_eq!(
+            spec.params_schema["properties"]["buildId"]["type"],
+            "string"
         );
     }
 
@@ -2716,6 +3434,32 @@ mod tests {
             spec.params_schema["properties"]["spritePaths"]["items"]["type"],
             "string"
         );
+    }
+
+    #[test]
+    fn animation_curve_tools_advertise_strict_unity_contracts() {
+        for (name, mutating, required) in [
+            ("get_animation_curves", false, json!(["clipPath"])),
+            (
+                "edit_animation_curve",
+                true,
+                json!(["clipPath", "animationRoot", "binding", "operation"]),
+            ),
+        ] {
+            let spec = get_tool_spec(name).expect("animation curve tool must be discoverable");
+            assert_eq!(spec.mutating, mutating);
+            assert_eq!(spec.executor, ToolExecutor::Remote);
+            assert_eq!(spec.params_schema["required"], required);
+            assert_eq!(spec.params_schema["additionalProperties"], false);
+            assert_eq!(
+                spec.params_schema["properties"]["binding"]["required"],
+                json!(["path", "component", "property"])
+            );
+            assert_eq!(
+                spec.params_schema["properties"]["binding"]["additionalProperties"],
+                false
+            );
+        }
     }
 
     #[test]

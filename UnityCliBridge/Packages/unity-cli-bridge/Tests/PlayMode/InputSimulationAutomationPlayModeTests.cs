@@ -7,6 +7,9 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace UnityCliBridge.Tests.PlayMode
 {
@@ -15,6 +18,15 @@ namespace UnityCliBridge.Tests.PlayMode
         private const int DefaultTimeoutFrames = 600;
 
         private readonly List<GameObject> _created = new List<GameObject>();
+#if ENABLE_INPUT_SYSTEM
+        private HashSet<int> _existingDeviceIds;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _existingDeviceIds = new HashSet<int>(InputSystem.devices.Select(device => device.deviceId));
+        }
+#endif
 
         [TearDown]
         public void TearDown()
@@ -25,6 +37,14 @@ namespace UnityCliBridge.Tests.PlayMode
             }
 
             _created.Clear();
+#if ENABLE_INPUT_SYSTEM
+            foreach (var device in InputSystem.devices.ToArray())
+            {
+                if (!_existingDeviceIds.Contains(device.deviceId) &&
+                    device.name.StartsWith("UnityCliVirtual", System.StringComparison.Ordinal))
+                    InputSystem.RemoveDevice(device);
+            }
+#endif
         }
 
         [UnityTest]
@@ -277,6 +297,77 @@ namespace UnityCliBridge.Tests.PlayMode
             Assert.AreEqual(0.5f, inputState["gamepad"]?["sticks"]?["left"]?["y"]?.ToObject<float>() ?? -1f, 0.05f);
 
             yield return WaitForStatusContains("MousePosition=222.0,111.0");
+        }
+
+        [UnityTest]
+        public IEnumerator KeyboardHoldSeconds_30Fps_UsesElapsedTime() => VerifyKeyboardHoldSeconds(30);
+
+        [UnityTest]
+        public IEnumerator KeyboardHoldSeconds_60Fps_UsesElapsedTime() => VerifyKeyboardHoldSeconds(60);
+
+        [UnityTest]
+        public IEnumerator KeyboardHoldSeconds_120Fps_UsesElapsedTime() => VerifyKeyboardHoldSeconds(120);
+
+        [UnityTest]
+        public IEnumerator KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime() => VerifyKeyboardHoldSeconds(-1);
+
+        private IEnumerator VerifyKeyboardHoldSeconds(int targetFrameRate)
+        {
+            Assert.IsTrue(Application.isPlaying, "Test must run in Play Mode");
+            int previousFrameRate = Application.targetFrameRate;
+            int previousVSync = QualitySettings.vSyncCount;
+            try
+            {
+                QualitySettings.vSyncCount = 0;
+                Application.targetFrameRate = targetFrameRate;
+                yield return null;
+
+                double started = Time.realtimeSinceStartupAsDouble;
+                int startedFrame = Time.frameCount;
+                AssertNoError(InvokeInputHandler("SimulateKeyboardInput", new JObject
+                {
+                    ["action"] = "press",
+                    ["key"] = "Space",
+                    ["holdSeconds"] = 1
+                }));
+
+                // Read the actual game device without the bootstrap or a state
+                // query: those queries also process timers and can hide a broken
+                // automatic-release subscription.
+                var keyboardType = FindType("UnityEngine.InputSystem.Keyboard");
+                Assert.IsNotNull(keyboardType);
+                var keyboard = keyboardType.GetProperty("current").GetValue(null);
+                var spaceKey = keyboardType.GetProperty("spaceKey").GetValue(keyboard);
+                var isPressed = spaceKey.GetType().GetProperty("isPressed");
+                Assert.IsTrue((bool)isPressed.GetValue(spaceKey), "Press must reach the game keyboard.");
+                while ((bool)isPressed.GetValue(spaceKey) &&
+                       Time.realtimeSinceStartupAsDouble - started < 2)
+                {
+                    // Batch-mode Editor ignores targetFrameRate. Pace the test's
+                    // player-loop iterations so the capped cases exercise slow frames too.
+                    if (targetFrameRate > 0)
+                    {
+                        System.Threading.Thread.Sleep(Mathf.CeilToInt(1000f / targetFrameRate));
+                    }
+                    yield return null;
+                }
+
+                double elapsed = Time.realtimeSinceStartupAsDouble - started;
+                TestContext.WriteLine($"targetFrameRate={targetFrameRate}, elapsed={elapsed:F6}s, frames={Time.frameCount - startedFrame}");
+                Assert.IsFalse((bool)isPressed.GetValue(spaceKey), "Input must release without another CLI command.");
+                Assert.That(elapsed, Is.InRange(0.98d, 1.3d),
+                    "holdSeconds=1 must use elapsed time, regardless of the number of rendered frames.");
+            }
+            finally
+            {
+                InvokeInputHandler("SimulateKeyboardInput", new JObject
+                {
+                    ["action"] = "release",
+                    ["key"] = "Space"
+                });
+                Application.targetFrameRate = previousFrameRate;
+                QualitySettings.vSyncCount = previousVSync;
+            }
         }
 
         private void EnsureBootstrap()
