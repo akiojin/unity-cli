@@ -210,6 +210,10 @@ scripts/e2e-test.sh
 # Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
 scripts/e2e-reference-fetch.sh --port 6400
 
+# Automatic ref resolution + provenance regression (live Editor; separate temporary caches)
+# Covers the real project, a 6000.4.12f1 fixture, and explicit public ref 6000.4.
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
 # Player build: relevant EditMode tests, real build/report, polling, failures,
 # restart recovery, and headless launch (isolated project copy on macOS)
 python3 scripts/e2e-player-build.py --launch --editmode
@@ -786,6 +790,10 @@ scripts/e2e-test.sh
 # 参照ソース取得の回帰検証（起動済み Editor・隔離キャッシュ・UnityCsReference を取得）
 # 先に cargo build、または UNITY_CLI_BIN で検証バイナリを指定する。
 scripts/e2e-reference-fetch.sh --port 6400
+
+# 参照の自動解決・取得元情報の検証（起動済み Editor・ケース別の一時キャッシュ）
+# 実プロジェクト、6000.4.12f1 fixture、公開 ref 6000.4 の明示指定を検証する。
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
 
 # Player build: 隔離コピーで EditMode・実ビルド・状態取得・失敗・再起動・画面なし起動
 python3 scripts/e2e-player-build.py --launch --editmode

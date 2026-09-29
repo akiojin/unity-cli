@@ -47,15 +47,12 @@ env = dict(os.environ, UNITY_CLI_NO_AUTO_UPDATE="1")
 base = [cli, "--host", host, "--port", port, "--output", "json"]
 
 
-def invoke(name, args, expect_success=True):
+def invoke(name, args):
     command = base + args
     (artifacts / f"{name}.command.json").write_text(json.dumps(command, indent=2))
     process = subprocess.run(command, env=env, capture_output=True, text=True, timeout=300)
     (artifacts / f"{name}.stdout.log").write_text(process.stdout)
     (artifacts / f"{name}.stderr.log").write_text(process.stderr)
-    if not expect_success:
-        assert process.returncode != 0, "Expected command to reject omitted branch"
-        return process.stderr + process.stdout
     assert process.returncode == 0, process.stderr or process.stdout
     value = json.loads(process.stdout)
     assert value.get("ok") is not False and value.get("success") is not False, value
@@ -111,12 +108,16 @@ if check("live Editor readiness", editor_ready):
         def omitted_branch():
             request = artifacts / "omitted-branch.request.json"
             request.write_text(json.dumps({"projectRoot": str(project), "acceptLicense": True}))
-            error = invoke("omitted-branch", ["raw", "reference_fetch", "--params-file", str(request)], False)
-            assert "6000.4.12f1" in error and "--branch" in error, error
+            result = invoke("omitted-branch", ["raw", "reference_fetch", "--params-file", str(request)])
+            assert result["skipped"] is True, result
+            assert result["version"] == "6000.4.12f1", result
+            assert result["branch"] == "6000.4", result
+            assert result["exactMatch"] is False, result
+            assert result["sourceRef"] and result["commitSha"] and result["selectionReason"], result
 
         check("branch-only real fetch", lambda: fetch("branch-only", {"branch": "6000.4"}, False))
         check("branch-only cache reuse", lambda: fetch("cache-reuse", {"branch": "6000.4"}, True))
-        check("omitted branch retains guidance", omitted_branch)
+        check("omitted branch preserves cached provenance", omitted_branch)
         check("explicit version and branch", lambda: fetch("explicit-both", {"version": "6000.4.12f1", "branch": "6000.4"}, True))
 
 passed = sum(result["passed"] for result in results)
