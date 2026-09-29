@@ -3,7 +3,8 @@
     "rootNamespace": "UnityCliBridge.Tests",
     "references": [
         "UnityCliBridge.Editor",
-        "UnityCliBridge.Runtime"
+        "UnityCliBridge.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"
@@ -27,6 +28,11 @@
             "name": "com.unity.inputsystem",
             "expression": "",
             "define": "UNITY_INPUT_SYSTEM_PACKAGE"
+        },
+        {
+            "name": "com.unity.visualeffectgraph",
+            "expression": "",
+            "define": "UNITY_VFX_GRAPH"
         }
     ],
     "noEngineReferences": false

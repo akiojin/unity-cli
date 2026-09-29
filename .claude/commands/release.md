@@ -59,7 +59,7 @@ git pull --ff-only origin develop
 
 `--ff-only` により、fast-forward できない場合は失敗して止まる（Step 1 の ancestor check で事前に確認済みのため通常は成功）。
 
-これは **branch 切替ではなく、現在の branch の HEAD を origin/develop tip まで前進させる操作** であり、AGENTS.md「branch / worktree を手動で作成・切替・削除しない」に抵触しない。HEAD が既に origin/develop と一致している場合は no-op で成功する。
+これは **branch 切替ではなく、現在の branch の HEAD を origin/develop tip まで前進させる操作** であり、branch / worktree の作成・切替・削除には当たらない。HEAD が既に origin/develop と一致している場合は no-op で成功する。
 
 ### 3. リリース対象コミット確認
 
@@ -125,7 +125,7 @@ cargo update -w
 
 #### 5.5 CHANGELOG.md
 
-前回リリースタグ以降の変更のみを追加してください。git-cliffが過去の変更を含める場合は、手動でv{PREV_TAG}以降の変更のみを追加してください。
+前回リリースタグ以降の変更のみを追加してください。git-cliffが過去の変更を含める場合は、手動で{PREV_TAG}以降の変更のみを追加してください。
 
 ```bash
 GITHUB_TOKEN=$(gh auth token) git-cliff --unreleased --tag v{NEW_VERSION} --prepend CHANGELOG.md

@@ -127,6 +127,8 @@ namespace UnityCliBridge.Core
                 ["list_components"] = command => Success(command, ComponentHandler.ListComponents(command.Parameters)),
                 ["get_component_types"] = command => Success(command, ComponentHandler.GetComponentTypes(command.Parameters)),
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
+                ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
+                ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
@@ -153,7 +155,13 @@ namespace UnityCliBridge.Core
                 ["set_package_setting"] = command => Success(command, PackageSettingsHandler.SetPackageSetting(command.Parameters)),
                 ["get_editor_info"] = HandleGetEditorInfo,
                 ["update_project_settings"] = command => Success(command, ProjectSettingsHandler.UpdateProjectSettings(command.Parameters)),
-                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot())
+                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot()),
+                ["vfx_describe_graph"] = command => Success(command, VfxGraphHandler.DescribeGraph(command.Parameters)),
+                ["vfx_list_library"] = command => Success(command, VfxGraphHandler.ListLibrary(command.Parameters)),
+                ["vfx_apply"] = command => Success(command, VfxGraphHandler.Apply(command.Parameters)),
+                ["vfx_runtime"] = command => Success(command, VfxGraphHandler.Runtime(command.Parameters)),
+                ["vfx_settings"] = command => Success(command, VfxGraphHandler.Settings(command.Parameters)),
+                ["vfx_bake_sdf"] = command => Success(command, VfxGraphHandler.BakeSdf(command.Parameters))
             };
 
         internal static IReadOnlyCollection<string> RegisteredCommandTypes => Handlers.Keys.ToArray();
