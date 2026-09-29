@@ -1,3 +1,21 @@
+## [0.15.0] - 2026-09-29
+
+### 🚀 Features
+
+- *(compat)* Verify all installed Unity Editors and close VFX version gaps
+- *(animation)* Add numeric curve editing and Unity E2E
+
+### 🐛 Bug Fixes
+
+- *(e2e)* Cover tool catalog and stabilize daemon responses
+- *(animation)* Integrate curve tools with current develop catalog
+- *(animation)* Preserve dedicated e2e coverage after develop sync
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record issue 339 verification handoff
+- *(work)* Record issue 346 release start
+
 ## [0.14.1] - 2026-09-29
 
 ### 🚀 Features
