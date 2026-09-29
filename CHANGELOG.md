@@ -1,3 +1,48 @@
+## [0.14.1] - 2026-09-29
+
+### 🚀 Features
+
+- Add verified Play Mode hot reload previews
+- *(reference)* Resolve published Unity source refs and track provenance
+- Add verified scene baking jobs
+- *(build)* Add player builds and structured reports
+
+### 🐛 Bug Fixes
+
+- Clear preview revision while verifying native patches
+- *(build)* Reconcile tool catalog count with Timeline tools
+- *(build)* Integrate player builds with current develop
+- *(build)* Preserve player tools alongside vfx and hot reload
+- *(input)* Integrate elapsed-time holds with editor notifications
+- *(test)* Recover PlayMode results across domain reload
+- *(input)* Preserve action types on latest develop
+- *(bridge)* Use compatible object IDs in VFX handlers
+
+### 🧪 Testing
+
+- Observe pending hot reload inside the Editor
+- *(build)* Compare complete CLI build reports
+- *(build)* Retry E2E refresh while restarted Editor compiles
+- *(instances)* Isolate runner instances test registry
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record hot reload PR handoff
+- *(hot-reload)* Integrate previews with current develop
+- *(work)* Record hot reload integration verification
+- *(hot-reload)* Preserve VFX tools during develop integration
+- *(work)* Record issue 254 pull request handoff
+- *(reference)* Integrate published source resolution with develop
+- *(work)* Record scene baking PR
+- Integrate verified scene baking with develop
+- *(work)* Record player build replacement PR handoff
+- *(work)* Record player build replacement verification
+- *(work)* Finalize player build replacement handoff
+- Preserve baking alongside player builds and hot reload
+- Preserve reference checks alongside player and bake tools
+- *(work)* Record issue 318 integration
+- *(work)* Finalize issue 318 integration record
+
 ## [0.14.0] - 2026-09-29
 
 ### 🚀 Features

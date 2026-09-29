@@ -210,6 +210,14 @@ scripts/e2e-test.sh
 # Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
 scripts/e2e-reference-fetch.sh --port 6400
 
+# Automatic ref resolution + provenance regression (live Editor; separate temporary caches)
+# Covers the real project, a 6000.4.12f1 fixture, and explicit public ref 6000.4.
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
+# Player build: relevant EditMode tests, real build/report, polling, failures,
+# restart recovery, and headless launch (isolated project copy on macOS)
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
@@ -230,8 +238,22 @@ scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
 # Requires the project's default DisableDomainReload setting and a running listener.
 scripts/e2e-test-results.sh
 
+# Input Actions types (both creation routes; requires this checkout's listener)
+scripts/e2e-input-actions.sh
+
 # Headless batch-host input simulation E2E
 scripts/e2e-input-batch-host.sh
+
+# Real Lighting / legacy NavMesh / NavMeshSurface / Occlusion bake and reload
+cargo build --bin unity-cli
+scripts/e2e-bake-batch-host.sh --port 6477
+
+# Isolated optional hot reload backend / real Editor checks
+scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
+# See docs/hot-reload.md for installed-backend and supported x64 runs.
+
+# PlayMode result collection with Domain Reload enabled and disabled
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Recommended local path when no Unity GUI listener is already running
 scripts/e2e-input-batch-host.sh --port 6402
@@ -257,6 +279,15 @@ scripts/e2e-video-formats.sh --port 6400
 ```
 
 ### Scene Layout Policy
+
+Baking E2E creates fixtures under `Assets/Scenes/Generated/E2E/Baking/` and
+checks generated assets, saved scene references, and navigation queries after
+scene reload. Its batch host enables graphics for actual lightmap generation;
+do not add `-nographics`. Logs and pass/fail counts are kept in the printed
+`/tmp/unity-cli-bake-e2e.*` directory. Against a running Editor, use
+`scripts/e2e-bake.sh --port <port>`. Save unrelated scenes first. Use
+`--targets lighting,navmesh-legacy,navmesh-surface,occlusion` to select targets;
+acceptance verification requires the default full set.
 
 Timeline E2E uses `Assets/Scenes/Generated/E2E/Timeline/` for its fixture
 scene and assets. The suite checks clip timing, binding, asset unload/reimport
@@ -766,12 +797,22 @@ scripts/e2e-test.sh
 # 先に cargo build、または UNITY_CLI_BIN で検証バイナリを指定する。
 scripts/e2e-reference-fetch.sh --port 6400
 
+# 参照の自動解決・取得元情報の検証（起動済み Editor・ケース別の一時キャッシュ）
+# 実プロジェクト、6000.4.12f1 fixture、公開 ref 6000.4 の明示指定を検証する。
+scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
+
+# Player build: 隔離コピーで EditMode・実ビルド・状態取得・失敗・再起動・画面なし起動
+python3 scripts/e2e-player-build.py --launch --editmode
+
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
 
 # テスト件数の回帰検証（EditMode 7件 + PlayMode 2件）
 # プロジェクト既定の DisableDomainReload 設定と起動済み listener が必要です。
 scripts/e2e-test-results.sh
+
+# Input Actions の型指定（両作成経路、この checkout の listener が必要）
+scripts/e2e-input-actions.sh
 
 # headless batch host 入力 E2E
 scripts/e2e-input-batch-host.sh
@@ -780,6 +821,9 @@ scripts/e2e-input-batch-host.sh
 cargo build
 python3 scripts/e2e-unityd.py --port 6453
 # 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
+
+# Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
+python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402

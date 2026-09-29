@@ -31,19 +31,49 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 140 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 129 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 146 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 135 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (129 tools)
+## Runtime Tool APIs (135 tools)
 
 ### Scenes
 
-| Tool             | Description            |
-| ---------------- | ---------------------- |
-| `create_scene`   | Create a new scene     |
-| `get_scene_info` | Get scene metadata     |
-| `list_scenes`    | List all scenes        |
-| `load_scene`     | Load a scene           |
-| `save_scene`     | Save the current scene |
+| Tool | Description |
+| ---- | ----------- |
+| `create_scene` | Create a new scene |
+| `get_scene_info` | Get scene metadata |
+| `list_scenes` | List all scenes |
+| `load_scene` | Load a scene |
+| `save_scene` | Save the current scene |
+| `start_scene_bake` | Start Lighting, legacy NavMesh, NavMeshSurface, or Occlusion baking |
+| `get_scene_bake_status` | Poll bake progress, terminal failure, and verified saved artifacts |
+
+### Scene baking
+
+Use `start_scene_bake` with a `target` of `lighting`, `navmesh-legacy`,
+`navmesh-surface`, or `occlusion`, and the saved active `scenePath`. Save scene
+edits first and load only the target scene. Surface baking additionally requires
+`surfacePath`, the hierarchy path of a GameObject with a NavMeshSurface component
+from `com.unity.ai.navigation`.
+Use a single navigation backend in a scene: mixed legacy data and Surface data
+are rejected so that an older NavMesh cannot make a new bake appear usable.
+
+```bash
+unity-cli tool call start_scene_bake --json '{"target":"lighting","scenePath":"Assets/Scenes/Level.unity"}'
+unity-cli tool call start_scene_bake --json '{"target":"navmesh-surface","scenePath":"Assets/Scenes/Level.unity","surfacePath":"/Navigation"}'
+unity-cli tool call get_scene_bake_status --json '{"jobId":"<returned-job-id>"}'
+```
+
+Starting a job is not completion. Poll the returned `jobId` until `status` is
+`succeeded` or `failed`. A successful job reports saved `artifacts` and verification
+results; failure reports a reason/code, including missing output. Lighting verifies
+lightmaps and scene lighting data; NavMesh verifies generated data and navigation
+queries; Occlusion verifies saved data assigned to the scene. Each response identifies
+the selected backend and Unity version. Jobs are exclusive, and interruption by an
+assembly reload is a failure. Keep the target scene loaded while a job runs.
+
+This operation rebuilds the selected bake output. Use the target's normal Unity
+settings and eligible static geometry; missing packages, invalid settings, unsupported
+environments, and empty output must be addressed before retrying.
 
 ### GameObjects
 
@@ -185,6 +215,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | Tool                    | Description                      |
 | ----------------------- | -------------------------------- |
 | `get_compilation_state` | Get C# compilation state         |
+| `hot_reload_status`     | Inspect hot reload preview state |
+| `hot_reload`            | Preview methods or recover Play  |
 | `read`                  | Read a C# source file            |
 | `find_refs`             | Find symbol references           |
 | `search`                | Search code by pattern           |
@@ -260,6 +292,40 @@ can further change readings and are not inverted by this command.
 | `stop_game`       | Exit Play mode              |
 | `get_test_status` | Get test run status         |
 | `run_tests`       | Run EditMode/PlayMode tests |
+
+### Player Builds
+
+| Tool               | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| `build_player`     | Queue a standalone player build on the Unity Editor host  |
+| `get_build_status` | Read build status, report, and artifact paths by build ID |
+
+`build_player` requires `target` (`StandaloneWindows64` or `StandaloneOSX`),
+`scenes` (a nonempty array of scene asset paths), and `outputPath` (the executable
+or app path, for example `C:/Builds/Player/Player.exe` or `/Users/me/Builds/Player/Player.app`).
+The optional `development` boolean defaults to `false`.
+Invoke these tools through `raw` or `tool call`; no dedicated subcommand is required.
+
+The target must already be active in the Editor and its build support module must
+be installed. The Editor must not be compiling, playing, or updating assets.
+The output path's parent directory must be new or empty. The tool does not switch targets,
+write project or scene build settings, or overwrite existing output. Unity's build
+pipeline and project build callbacks can update settings; `changedProjectSettings`
+lists the changed files under `ProjectSettings/` in the completed result.
+Output under Assets, Packages, ProjectSettings, Library, or symbolic-link ancestors is rejected.
+Paths refer to
+the **Unity Editor host**, including when the CLI runs on another machine.
+
+The initial response returns a `buildId`. Poll `get_build_status` with the required
+`buildId` string for `result.state`: `queued`, `running`, `succeeded`, `failed`,
+or `interrupted` (failure snapshots are in `details` on the error envelope).
+The completed report includes `reportResult`, `totalErrors`,
+`totalWarnings`, `errors`, `warnings`, `durationSeconds`, `outputPath`, and
+`artifacts` (an array of artifact paths). A failed or interrupted build status produces a
+non-success CLI exit; accepting a queued build does not mean the build succeeded.
+`get_build_status` is read-only, including under `--dry-run`.
+Report result and counts are null if Unity never produced a report. The latest
+build survives Editor restart; up to 16 recent jobs are retained during a session.
 
 ### Profiler
 

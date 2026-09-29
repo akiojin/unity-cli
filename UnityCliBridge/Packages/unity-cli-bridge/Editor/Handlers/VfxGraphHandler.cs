@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityCliBridge.Logging;
+using UnityCliBridge.Helpers;
 
 namespace UnityCliBridge.Handlers
 {
@@ -19,6 +20,9 @@ namespace UnityCliBridge.Handlers
     /// </summary>
     public static class VfxGraphHandler
     {
+        private static int? InstanceId(object value) => value is UnityEngine.Object obj
+            ? ObjectIdentity.GetInstanceId(obj) : (int?)null;
+
         // ---- Reflection type resolution -------------------------------------
 
         private const string EditorAsmHint = "Unity.VisualEffectGraph.Editor";
@@ -576,7 +580,7 @@ namespace UnityCliBridge.Handlers
                 try
                 {
                     var data = Call(ctx, ContextType, "GetData");
-                    if (data is UnityEngine.Object uo) dataId = uo.GetInstanceID();
+                    if (data is UnityEngine.Object uo) dataId = ObjectIdentity.GetInstanceId(uo);
                     if (data != null)
                     {
                         try { simSpace = Prop(data, "space")?.ToString(); }
@@ -599,7 +603,7 @@ namespace UnityCliBridge.Handlers
                 contexts.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (ctx as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(ctx),
                     ["contextType"] = ctxType,
                     ["type"] = ctx.GetType().Name,
                     ["name"] = ModelName(ctx),
@@ -623,7 +627,7 @@ namespace UnityCliBridge.Handlers
                 operators.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (op as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(op),
                     ["type"] = op.GetType().Name,
                     ["name"] = ModelName(op),
                     ["position"] = PositionJson(ModelPosition(op)),
@@ -667,7 +671,7 @@ namespace UnityCliBridge.Handlers
                 paramsJson.Add(new JObject
                 {
                     ["index"] = i,
-                    ["instanceId"] = (p as UnityEngine.Object)?.GetInstanceID(),
+                    ["instanceId"] = InstanceId(p),
                     ["type"] = p.GetType().Name,
                     ["parameterType"] = (Prop(p, "type") as Type)?.Name,
                     ["exposedName"] = exposedName,
@@ -798,7 +802,7 @@ namespace UnityCliBridge.Handlers
         {
             s_Touched.TryGetValue(assetPath, out var set);
             JArray Idx(List<object> list) => new JArray(list.Select((m, i) => (m, i))
-                .Where(t => set != null && set.Contains((t.m as UnityEngine.Object)?.GetInstanceID() ?? 0))
+                .Where(t => set != null && set.Contains(InstanceId(t.m) ?? 0))
                 .Select(t => (JToken)t.i));
             return new JObject { ["contexts"] = Idx(ctxList), ["operators"] = Idx(opList), ["parameters"] = Idx(paramList) };
         }
@@ -2219,12 +2223,12 @@ namespace UnityCliBridge.Handlers
                 throw new Exception(
                     $"Context '{target.GetType().Name}' has no VFXData — it isn't part of a particle system " +
                     "(Spawn/Event contexts can't address a system). Address an Init/Update/Output context.");
-            int systemId = targetData.GetInstanceID();
+            int systemId = ObjectIdentity.GetInstanceId(targetData);
 
             var members = ctxList.Where(c =>
             {
                 var d = Call(c, ContextType, "GetData") as UnityEngine.Object;
-                return d != null && d.GetInstanceID() == systemId;
+                return d != null && ObjectIdentity.GetInstanceId(d) == systemId;
             }).ToList();
 
             foreach (var ctx in members)
@@ -2890,8 +2894,8 @@ namespace UnityCliBridge.Handlers
                     "Link rejected: output slot type is incompatible with the input slot (or directions are wrong). " +
                     "'from' must reference an output slot, 'to' an input slot.");
             if (ParameterType.IsInstanceOfType(fromNode) && !string.IsNullOrEmpty(assetPath))
-                NewParamLinksFor(assetPath).Add(((fromNode as UnityEngine.Object)?.GetInstanceID() ?? 0,
-                                                 (inSlot as UnityEngine.Object)?.GetInstanceID() ?? 0));
+                NewParamLinksFor(assetPath).Add((InstanceId(fromNode) ?? 0,
+                                                 InstanceId(inSlot) ?? 0));
 
             // A parameter linked for the first time has no canvas node yet; the editor creates one at
             // the model position when the graph is opened. Seed that position in free space just left
@@ -3549,7 +3553,7 @@ namespace UnityCliBridge.Handlers
             if (ContextType.IsInstanceOfType(node))
             {
                 s_Created.TryGetValue(assetPath, out var createdSet);
-                bool created = createdSet != null && createdSet.Contains((node as UnityEngine.Object)?.GetInstanceID() ?? 0);
+                bool created = createdSet != null && createdSet.Contains(InstanceId(node) ?? 0);
                 var current = ModelPosition(node);
                 if (!created && Math.Abs(current.x - pos.Value.x) > 0.5f)
                 {
@@ -4324,7 +4328,7 @@ namespace UnityCliBridge.Handlers
             var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
-            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            int IdOf(object m) => InstanceId(m) ?? 0;
             s_Created.TryGetValue(assetPath, out var created);
             created = created ?? new HashSet<int>();
             var newLinks = NewParamLinksFor(assetPath);
@@ -4717,7 +4721,7 @@ namespace UnityCliBridge.Handlers
             var ctxs = Children(graph).Where(c => ContextType.IsInstanceOfType(c)).ToList();
             var ops = Children(graph).Where(c => OperatorType.IsInstanceOfType(c)).ToList();
             var ps = Children(graph).Where(c => ParameterType.IsInstanceOfType(c)).ToList();
-            int IdOf(object m) => (m as UnityEngine.Object)?.GetInstanceID() ?? 0;
+            int IdOf(object m) => InstanceId(m) ?? 0;
             // Where every node was before this pass, by model (first rect per model): group boxes that
             // contain sticky notes move their notes by the same displacement as their other members.
             var beforeRectOfModel = new Dictionary<object, Rect>(RefEq.Instance);

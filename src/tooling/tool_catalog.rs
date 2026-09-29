@@ -32,6 +32,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "update_index",
     "get_index_status",
     "get_compilation_state",
+    "hot_reload_status",
+    "hot_reload",
     "add_component",
     "set_component_field",
     "get_component_types",
@@ -85,6 +87,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "profiler_stop",
     "create_scene",
     "get_scene_info",
+    "start_scene_bake",
+    "get_scene_bake_status",
     "list_scenes",
     "load_scene",
     "save_scene",
@@ -117,6 +121,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "refresh_assets",
     "get_test_status",
     "run_tests",
+    "build_player",
+    "get_build_status",
     "click_ui_element",
     "find_ui_elements",
     "get_ui_element_state",
@@ -201,6 +207,12 @@ fn tool_description(name: &str) -> &'static str {
         "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
         "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
         "create_scene" => "Create a new scene",
+        "start_scene_bake" => {
+            "Start a scene bake job for Lighting, legacy NavMesh, NavMeshSurface, or Occlusion"
+        }
+        "get_scene_bake_status" => {
+            "Poll a bake job for progress, failure, and verified saved artifacts"
+        }
         "get_timeline" => {
             "Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings"
         }
@@ -224,6 +236,10 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "build_player" => "Queue a standalone player build on the Unity Editor host",
+        "get_build_status" => "Get player build status, report, and artifacts",
+        "hot_reload_status" => "Inspect optional FastScriptReload support, preview session and verified revision",
+        "hot_reload" => "Preview method-body changes during Play; explicitly recover by stopping and recompiling",
         "vfx_describe_graph" => {
             "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile errors (`errors`, on by default), the last compile outcome (`compile`), and canvas layout diagnostics (`layout.overlapCount`). Large graphs describe big: narrow the payload with `include` (top-level sections to keep) and `includeSlots:false` (omit slot trees, which dominate the output)"
         }
@@ -296,6 +312,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "analyze_scene_contents"
             | "analyze_asset_dependencies"
             | "get_compilation_state"
+            | "hot_reload_status"
             | "get_component_types"
             | "list_components"
             | "read_console"
@@ -310,6 +327,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "profiler_get_metrics"
             | "profiler_status"
             | "get_scene_info"
+            | "get_scene_bake_status"
             | "list_scenes"
             | "analyze_screenshot"
             | "list_packages"
@@ -325,6 +343,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_command_stats"
             | "ping"
             | "get_test_status"
+            | "get_build_status"
             | "find_ui_elements"
             | "get_ui_element_state"
             | "capture_video_status"
@@ -358,6 +377,41 @@ fn tool_params_schema(name: &str) -> Value {
         "get_eval_status" => {
             object_schema(&[("requestId", string_schema())], &["requestId"], false)
         }
+        "start_scene_bake" => {
+            let mut schema = object_schema(
+                &[
+                    (
+                        "target",
+                        enum_string_schema(&[
+                            "lighting",
+                            "navmesh-legacy",
+                            "navmesh-surface",
+                            "occlusion",
+                        ]),
+                    ),
+                    (
+                        "scenePath",
+                        json!({"type": "string", "minLength": 1, "description": "Saved, clean, active scene under Assets; only one scene may be loaded"}),
+                    ),
+                    (
+                        "surfacePath",
+                        json!({"type": "string", "minLength": 1, "description": "GameObject hierarchy path containing NavMeshSurface; required for navmesh-surface"}),
+                    ),
+                ],
+                &["target", "scenePath"],
+                false,
+            );
+            schema["oneOf"] = json!([
+                {"type": "object", "properties": {"target": {"enum": ["navmesh-surface"]}}, "required": ["surfacePath"]},
+                {"type": "object", "properties": {"target": {"enum": ["lighting", "navmesh-legacy", "occlusion"]}}}
+            ]);
+            schema
+        }
+        "get_scene_bake_status" => object_schema(
+            &[("jobId", json!({"type": "string", "minLength": 1}))],
+            &["jobId"],
+            false,
+        ),
         "get_timeline" => with_any_of(
             object_schema(
                 &[
@@ -845,6 +899,40 @@ fn tool_params_schema(name: &str) -> Value {
             ],
             &[],
             false,
+        ),
+        "hot_reload_status" => object_schema(&[], &[], false),
+        "hot_reload" => with_one_of(
+            object_schema(
+                &[
+                    ("action", enum_string_schema(&["begin", "apply", "recover"])),
+                    ("path", string_schema()),
+                    ("source", string_schema()),
+                    ("expectedRevision", string_schema()),
+                    (
+                        "timeoutSeconds",
+                        json!({"type":"number", "minimum":1, "maximum":60}),
+                    ),
+                ],
+                &["action"],
+                false,
+            ),
+            vec![
+                object_schema(
+                    &[("action", enum_string_schema(&["begin"]))],
+                    &["action", "path"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["apply"]))],
+                    &["action", "source", "expectedRevision"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["recover"]))],
+                    &["action"],
+                    true,
+                ),
+            ],
         ),
         "get_compilation_state" => object_schema(
             &[
@@ -2403,6 +2491,23 @@ fn tool_params_schema(name: &str) -> Value {
                 ),
             ],
         ),
+        "build_player" => object_schema(
+            &[
+                (
+                    "target",
+                    enum_string_schema(&["StandaloneWindows64", "StandaloneOSX"]),
+                ),
+                (
+                    "scenes",
+                    json!({"type": "array", "items": {"type": "string"}, "minItems": 1}),
+                ),
+                ("outputPath", string_schema()),
+                ("development", json!({"type": "boolean", "default": false})),
+            ],
+            &["target", "scenes", "outputPath"],
+            false,
+        ),
+        "get_build_status" => object_schema(&[("buildId", string_schema())], &["buildId"], false),
         "run_tests" => object_schema(
             &[
                 (
@@ -2778,8 +2883,54 @@ mod tests {
     use serde_json::{json, Value};
 
     #[test]
+    fn hot_reload_tools_expose_explicit_preview_and_recovery_contract() {
+        let status = get_tool_spec("hot_reload_status").expect("status tool exists");
+        assert!(!status.mutating);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(status.params_schema["additionalProperties"], false);
+        let apply = get_tool_spec("hot_reload").expect("hot reload tool exists");
+        assert!(apply.mutating);
+        assert_eq!(apply.executor, ToolExecutor::Remote);
+        assert_eq!(
+            apply.params_schema["properties"]["action"]["enum"],
+            json!(["begin", "apply", "recover"])
+        );
+        assert_eq!(
+            apply.params_schema["properties"]["timeoutSeconds"]["maximum"],
+            60
+        );
+        assert_eq!(apply.params_schema["oneOf"].as_array().unwrap().len(), 3);
+        assert_eq!(apply.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 140);
+        assert_eq!(TOOL_NAMES.len(), 146);
+    }
+
+    #[test]
+    fn baking_tools_have_explicit_target_and_polling_contracts() {
+        let start = get_tool_spec("start_scene_bake").expect("bake start is registered");
+        let status = get_tool_spec("get_scene_bake_status").expect("bake status is registered");
+        assert!(start.mutating);
+        assert!(!status.mutating);
+        assert_eq!(start.executor, ToolExecutor::Remote);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(
+            start.params_schema["required"],
+            json!(["target", "scenePath"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["target"]["enum"],
+            json!(["lighting", "navmesh-legacy", "navmesh-surface", "occlusion"])
+        );
+        assert_eq!(
+            start.params_schema["properties"]["surfacePath"]["type"],
+            "string"
+        );
+        assert_eq!(status.params_schema["required"], json!(["jobId"]));
+        assert_eq!(start.params_schema["additionalProperties"], false);
+        assert_eq!(status.params_schema["additionalProperties"], false);
     }
 
     #[test]
@@ -3011,6 +3162,42 @@ mod tests {
         assert_eq!(
             spec.params_schema["properties"]["testMode"]["enum"],
             json!(["EditMode", "PlayMode", "All"])
+        );
+    }
+
+    #[test]
+    fn build_player_schema_requires_explicit_safe_build_inputs() {
+        let spec = get_tool_spec("build_player").expect("build_player must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(
+            spec.params_schema["required"],
+            json!(["target", "scenes", "outputPath"])
+        );
+        let properties = &spec.params_schema["properties"];
+        assert_eq!(
+            properties["target"]["enum"],
+            json!(["StandaloneWindows64", "StandaloneOSX"])
+        );
+        assert_eq!(properties["scenes"]["type"], "array");
+        assert_eq!(properties["scenes"]["items"]["type"], "string");
+        assert_eq!(properties["scenes"]["minItems"], 1);
+        assert_eq!(properties["outputPath"]["type"], "string");
+        assert_eq!(properties["development"]["type"], "boolean");
+        assert_eq!(properties["development"]["default"], false);
+    }
+
+    #[test]
+    fn get_build_status_is_read_only_and_requires_build_id() {
+        let spec = get_tool_spec("get_build_status").expect("get_build_status must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["buildId"]));
+        assert_eq!(
+            spec.params_schema["properties"]["buildId"]["type"],
+            "string"
         );
     }
 
