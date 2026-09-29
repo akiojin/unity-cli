@@ -206,6 +206,10 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# Reference fetch regression (live Editor; isolated cache; downloads UnityCsReference)
+# Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
+scripts/e2e-reference-fetch.sh --port 6400
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
@@ -685,6 +689,10 @@ cargo build --release
 
 # スモークE2E
 scripts/e2e-test.sh
+
+# 参照ソース取得の回帰検証（起動済み Editor・隔離キャッシュ・UnityCsReference を取得）
+# 先に cargo build、または UNITY_CLI_BIN で検証バイナリを指定する。
+scripts/e2e-reference-fetch.sh --port 6400
 
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
