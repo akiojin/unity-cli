@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -41,10 +40,14 @@ namespace UnityCliBridge.Tests
             ["keys"] = JArray.FromObject(new[] { new { time = 0f, value = 0f }, new { time = 1f, value = 2f } })
         };
 
-        private static async Task<JObject> Call(string name, JObject request)
+        // The animation routes complete synchronously. Keep the tests synchronous: the Test
+        // Framework bundled with Unity 2022.3 (1.1.x) cannot run async Task tests.
+        private static JObject Call(string name, JObject request)
         {
-            var response = JObject.Parse(await BridgeCommandRouter.Handle(new Command
-            { Id = "animation-test", Type = name, Parameters = request }));
+            var pending = BridgeCommandRouter.Handle(new Command
+            { Id = "animation-test", Type = name, Parameters = request });
+            Assert.IsTrue(pending.IsCompleted, name + " should complete synchronously");
+            var response = JObject.Parse(pending.GetAwaiter().GetResult());
             Assert.AreEqual("success", (string)response["status"], response.ToString());
             return (JObject)response["result"];
         }
@@ -56,9 +59,9 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
-        public async Task Set_LinearMidpointAndReimport_PreserveKeysAndTangents()
+        public void Set_LinearMidpointAndReimport_PreserveKeysAndTangents()
         {
-            Success(await Call("edit_animation_curve", Request()));
+            Success(Call("edit_animation_curve", Request()));
             AssetDatabase.ImportAsset(ClipPath, ImportAssetOptions.ForceUpdate);
             var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath);
             var curve = AnimationUtility.GetEditorCurve(clip, X);
@@ -67,14 +70,14 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual(2f, curve.keys[1].value);
             Assert.AreEqual(AnimationUtility.TangentMode.Linear, AnimationUtility.GetKeyRightTangentMode(curve, 0));
             Assert.AreEqual(AnimationUtility.TangentMode.Linear, AnimationUtility.GetKeyLeftTangentMode(curve, 1));
-            var result = await Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath });
+            var result = Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath });
             Success(result);
             Assert.AreEqual("m_LocalPosition.x", (string)result["curves"][0]["binding"]["property"]);
             Assert.AreEqual("Linear", (string)result["curves"][0]["keys"][0]["rightTangentMode"]);
         }
 
         [Test]
-        public async Task UpsertRemove_PreserveOtherBindingsEventsAndSettings()
+        public void UpsertRemove_PreserveOtherBindingsEventsAndSettings()
         {
             var clip = new AnimationClip { frameRate = 24 };
             AssetDatabase.CreateAsset(clip, ClipPath);
@@ -84,23 +87,23 @@ namespace UnityCliBridge.Tests
             AnimationUtility.SetObjectReferenceCurve(clip, sprite, new[] { new ObjectReferenceKeyframe { time = 0, value = null } });
             AnimationUtility.SetAnimationEvents(clip, new[] { new AnimationEvent { time = .25f, functionName = "Marker" } });
             var original = AnimationUtility.GetEditorCurve(clip, other).keys;
-            Success(await Call("edit_animation_curve", Request()));
+            Success(Call("edit_animation_curve", Request()));
             var edit = Request("upsert_keys");
             edit["keys"] = JArray.FromObject(new[] { new { time = 1f, value = 4f }, new { time = 2f, value = 8f } });
-            Success(await Call("edit_animation_curve", edit));
+            Success(Call("edit_animation_curve", edit));
             Assert.AreEqual(4, AnimationUtility.GetEditorCurve(clip, X).keys[1].value);
             edit = Request("remove_keys");
             edit.Remove("keys"); edit["times"] = new JArray(2f);
-            Success(await Call("edit_animation_curve", edit));
+            Success(Call("edit_animation_curve", edit));
             Assert.AreEqual(2, AnimationUtility.GetEditorCurve(clip, X).length);
             CollectionAssert.AreEqual(original, AnimationUtility.GetEditorCurve(clip, other).keys);
             Assert.AreEqual(1, AnimationUtility.GetObjectReferenceCurve(clip, sprite).Length);
             Assert.AreEqual("Marker", AnimationUtility.GetAnimationEvents(clip)[0].functionName);
             Assert.AreEqual(24, clip.frameRate);
-            var get = await Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath });
+            var get = Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath });
             Assert.AreEqual(1, ((JArray)get["objectReferenceBindings"]).Count);
             edit = Request("remove_curve"); edit.Remove("keys");
-            Success(await Call("edit_animation_curve", edit));
+            Success(Call("edit_animation_curve", edit));
             Assert.IsNull(AnimationUtility.GetEditorCurve(clip, X));
             CollectionAssert.AreEqual(original, AnimationUtility.GetEditorCurve(clip, other).keys);
         }
@@ -109,7 +112,7 @@ namespace UnityCliBridge.Tests
         [TestCase("Auto")]
         [TestCase("ClampedAuto")]
         [TestCase("Free")]
-        public async Task TangentModes_RoundTripAndOmittedUpdatesPreserve(string mode)
+        public void TangentModes_RoundTripAndOmittedUpdatesPreserve(string mode)
         {
             var request = Request();
             foreach (JObject key in (JArray)request["keys"])
@@ -117,10 +120,10 @@ namespace UnityCliBridge.Tests
                 key["leftTangentMode"] = mode; key["rightTangentMode"] = mode;
                 key["inTangent"] = .75f; key["outTangent"] = 1.25f;
             }
-            Success(await Call("edit_animation_curve", request));
+            Success(Call("edit_animation_curve", request));
             request = Request("upsert_keys");
             request["keys"] = JArray.FromObject(new[] { new { time = 1f, value = 5f } });
-            Success(await Call("edit_animation_curve", request));
+            Success(Call("edit_animation_curve", request));
             AssetDatabase.ImportAsset(ClipPath, ImportAssetOptions.ForceUpdate);
             var curve = AnimationUtility.GetEditorCurve(AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath), X);
             Assert.AreEqual(mode, AnimationUtility.GetKeyLeftTangentMode(curve, 1).ToString());
@@ -138,7 +141,7 @@ namespace UnityCliBridge.Tests
         [TestCase("infinity")]
         [TestCase("packages")]
         [TestCase("extension")]
-        public async Task InvalidInput_DoesNotCreateAsset(string invalid)
+        public void InvalidInput_DoesNotCreateAsset(string invalid)
         {
             var request = Request();
             switch (invalid)
@@ -154,29 +157,29 @@ namespace UnityCliBridge.Tests
                 case "packages": request["clipPath"] = "Packages/invalid.anim"; break;
                 case "extension": request["clipPath"] = Folder + "/invalid.fbx"; break;
             }
-            var result = await Call("edit_animation_curve", request);
+            var result = Call("edit_animation_curve", request);
             Assert.IsNotNull(result["error"], result.ToString());
             Assert.IsNull(AssetDatabase.LoadMainAssetAtPath(ClipPath));
         }
 
         [Test]
-        public async Task MissingRemovalKey_DoesNotPartiallyWrite()
+        public void MissingRemovalKey_DoesNotPartiallyWrite()
         {
-            Success(await Call("edit_animation_curve", Request()));
+            Success(Call("edit_animation_curve", Request()));
             var before = File.ReadAllBytes(ClipPath);
             var request = Request("remove_keys"); request.Remove("keys"); request["times"] = new JArray(0, 99);
-            Assert.IsNotNull((await Call("edit_animation_curve", request))["error"]);
+            Assert.IsNotNull((Call("edit_animation_curve", request))["error"]);
             CollectionAssert.AreEqual(before, File.ReadAllBytes(ClipPath));
         }
 
         [Test]
-        public async Task ChildComponentCurve_AndFilter()
+        public void ChildComponentCurve_AndFilter()
         {
             var child = new GameObject("Child", typeof(Camera)); child.transform.SetParent(root.transform);
             var request = Request();
             request["binding"] = JObject.FromObject(new { path = "Child", component = "UnityEngine.Camera", property = "field of view" });
-            Success(await Call("edit_animation_curve", request));
-            var result = await Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath, ["binding"] = request["binding"].DeepClone() });
+            Success(Call("edit_animation_curve", request));
+            var result = Call("get_animation_curves", new JObject { ["clipPath"] = ClipPath, ["binding"] = request["binding"].DeepClone() });
             Assert.AreEqual(1, ((JArray)result["curves"]).Count);
         }
 
@@ -189,65 +192,65 @@ namespace UnityCliBridge.Tests
 
         [TestCase("m_Sprite", "UnityEngine.SpriteRenderer")]
         [TestCase("m_Enabled", "UnityEngine.BoxCollider")]
-        public async Task NonNumericBinding_IsRejected(string property, string component)
+        public void NonNumericBinding_IsRejected(string property, string component)
         {
             root.AddComponent<SpriteRenderer>(); root.AddComponent<BoxCollider>();
             var request = Request();
             request["binding"]["component"] = component;
             request["binding"]["property"] = property;
-            Assert.IsNotNull((await Call("edit_animation_curve", request))["error"]);
+            Assert.IsNotNull((Call("edit_animation_curve", request))["error"]);
             Assert.IsNull(AssetDatabase.LoadMainAssetAtPath(ClipPath));
         }
 
         [Test]
-        public async Task ReadOnlyClip_IsRejectedWithoutMutation()
+        public void ReadOnlyClip_IsRejectedWithoutMutation()
         {
-            Success(await Call("edit_animation_curve", Request()));
+            Success(Call("edit_animation_curve", Request()));
             var before = File.ReadAllBytes(ClipPath);
             File.SetAttributes(ClipPath, File.GetAttributes(ClipPath) | FileAttributes.ReadOnly);
             try
             {
-                Assert.IsNotNull((await Call("edit_animation_curve", Request()))["error"]);
+                Assert.IsNotNull((Call("edit_animation_curve", Request()))["error"]);
                 CollectionAssert.AreEqual(before, File.ReadAllBytes(ClipPath));
             }
             finally { File.SetAttributes(ClipPath, FileAttributes.Normal); }
         }
 
         [Test]
-        public async Task InvalidLaterKey_IsAtomicForExistingClip()
+        public void InvalidLaterKey_IsAtomicForExistingClip()
         {
-            Success(await Call("edit_animation_curve", Request()));
+            Success(Call("edit_animation_curve", Request()));
             var before = File.ReadAllBytes(ClipPath);
             var request = Request("upsert_keys");
             request["keys"][0]["value"] = 123;
             request["keys"][1]["rightTangentMode"] = "bogus";
-            Assert.IsNotNull((await Call("edit_animation_curve", request))["error"]);
+            Assert.IsNotNull((Call("edit_animation_curve", request))["error"]);
             CollectionAssert.AreEqual(before, File.ReadAllBytes(ClipPath));
             Assert.AreEqual(0, AnimationUtility.GetEditorCurve(AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath), X).keys[0].value);
         }
 
         [TestCase("upsert_keys")]
         [TestCase("remove_keys")]
-        public async Task KeyEdits_RecalculateNeighboringLinearTangents(string operation)
+        public void KeyEdits_RecalculateNeighboringLinearTangents(string operation)
         {
             var request = Request();
             request["keys"] = JArray.FromObject(new[] { new { time = 0f, value = 0f }, new { time = 1f, value = 2f }, new { time = 2f, value = 2f } });
-            Success(await Call("edit_animation_curve", request));
+            Success(Call("edit_animation_curve", request));
             request = Request(operation);
             if (operation == "remove_keys") { request.Remove("keys"); request["times"] = new JArray(1f); }
             else request["keys"] = JArray.FromObject(new[] { new { time = 1f, value = 1f } });
-            Success(await Call("edit_animation_curve", request));
+            Success(Call("edit_animation_curve", request));
             var curve = AnimationUtility.GetEditorCurve(AssetDatabase.LoadAssetAtPath<AnimationClip>(ClipPath), X);
             Assert.AreEqual(.5f, curve.Evaluate(.5f), 1e-5f);
             Assert.AreEqual(1f, curve.keys[0].outTangent, 1e-5f);
         }
 
         [Test]
-        public async Task ExistingUnimportedFile_IsNotOverwritten()
+        public void ExistingUnimportedFile_IsNotOverwritten()
         {
             File.WriteAllText(ClipPath, "unimported asset must survive");
             var before = File.ReadAllBytes(ClipPath);
-            Assert.IsNotNull((await Call("edit_animation_curve", Request()))["error"]);
+            Assert.IsNotNull((Call("edit_animation_curve", Request()))["error"]);
             CollectionAssert.AreEqual(before, File.ReadAllBytes(ClipPath));
         }
     }

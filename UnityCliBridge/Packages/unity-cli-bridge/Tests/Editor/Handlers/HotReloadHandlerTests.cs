@@ -1,8 +1,10 @@
+using System.Collections;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityCliBridge.Tests.Helpers;
+using UnityEngine.TestTools;
 using UnityCliBridge.Core;
 using UnityCliBridge.Handlers;
 
@@ -19,8 +21,8 @@ namespace UnityCliBridge.Tests.Editor.Handlers
                 .Any(a => a.Name.StartsWith("FastScriptReload", StringComparison.Ordinal)));
         }
 
-        [Test]
-        public async Task MissingBackendNeverReportsAppliedOrChangesPlayState()
+        [UnityTest]
+        public IEnumerator MissingBackendNeverReportsAppliedOrChangesPlayState() => TaskTestUtility.Await(async () =>
         {
             if (Type.GetType("UnityCliBridge.HotReload.FastScriptReloadAdapter, UnityCliBridge.HotReload.Editor") != null)
                 Assert.Ignore("This case requires the optional package to be absent.");
@@ -42,6 +44,6 @@ namespace UnityCliBridge.Tests.Editor.Handlers
             }));
             Assert.AreEqual("error", routed["status"].Value<string>(), "CLI must receive a transport error, not success with nested error data.");
             Assert.AreEqual("HOT_RELOAD_PACKAGE_MISSING", routed["code"].Value<string>());
-        }
+        });
     }
 }

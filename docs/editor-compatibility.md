@@ -57,20 +57,30 @@ Version-specific behavior:
   rejection and performs the real bake in Play Mode.
 - VFX 14 has no blackboard custom-attribute API: `add_custom_attribute` returns
   `VFX_API_UNSUPPORTED`. `convert_to_property` resolves VFX 14 parameter types.
+- VFX 14 has no Custom HLSL: requesting the `Custom HLSL` block or operator
+  returns `VFX_API_UNSUPPORTED`. It also has no `VFXErrorReporter`, so
+  `includeErrors` returns one entry with `code: VFX_API_UNSUPPORTED` instead of
+  validation errors.
 - Sticky notes work on every version. Indexed `colorTheme` exists from VFX 17.4;
   on older packages an explicit `colorTheme` returns `VFX_API_UNSUPPORTED`
   without changing the graph, while notes without it are created normally.
+  `group_nodes` rejects a note `colorTheme` before it creates the group.
+- `designate_template` needs the GraphView template descriptor, absent in VFX 14
+  and 17.0; there it returns `VFX_API_UNSUPPORTED`.
+- GPU Event contexts and Trigger Event blocks are experimental before VFX 17.3:
+  enable `displayExperimentalOperator` (`vfx_settings` preferences) to list them.
+  VFX 17.0 reports a composed strip output without a Shader Graph as an Error.
 - VFX 17.6+ removed the `allowShaderExternalization` preference: `get` omits it
   and `set` returns `VFX_API_UNSUPPORTED`.
 - VFX 17.6+ reimports rebuild a Shader Graph output's nested shading object.
   `set_context_setting` refreshes the output's setting cache before writing and
   verifies the value, so a `shaderGraph` assignment is never silently dropped.
 
-The Bridge's `VfxGraphHandlerTests` (EditMode NUnit) were written against VFX
-17.4 and pass 222/222 on 6000.3 and 6000.4. On other versions the remaining
-failures are fixture expectations that hard-code 17.4 template names, descriptor
-names, node counts or UI schema; the handler returns the stable codes above.
-Making those fixtures version-aware is tracked by Issue #344, not #340.
+The Bridge's `VfxGraphHandlerTests` (EditMode NUnit) select template names,
+library names and expectations from the installed VFX Graph package, and verify
+`VFX_API_UNSUPPORTED` where a package lacks a feature. They pass on 2022.3.62f3
+(VFX 14.0.12), 6000.0.84f1 (17.0.4), 6000.4.11f1 (17.4.0) and 6000.7.0b2
+(17.7.0). See the [Issue #344 evidence](verification/issue-344.md).
 
 ## Unity 6000.7 and CoreCLR
 

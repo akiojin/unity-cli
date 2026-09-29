@@ -1,3 +1,15 @@
+## [0.15.2] - 2026-09-29
+
+### 🧪 Testing
+
+- *(bridge)* Run async tests on Unity 2022.3 test framework
+- *(bridge)* Make collector tests pass on Unity 2022.3 test framework
+- *(vfx)* Select VFX NUnit fixtures per installed VFX Graph package
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record issue 354 release start
+
 ## [0.15.1] - 2026-09-29
 
 ### 🐛 Bug Fixes

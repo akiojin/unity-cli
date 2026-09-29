@@ -3,6 +3,7 @@
 Custom HLSL needs no dedicated op. The Custom HLSL **block** (descriptor `Custom HLSL`, category
 `HLSL`) and the Custom HLSL **operator** (category `Operator/HLSL`) are library nodes: add them with
 `add_block` / `add_operator`, then write the source with `set_block_setting` / `set_operator_setting`.
+Custom HLSL requires VFX Graph 17.0 or newer; on VFX 14 (Unity 2022.3) both return `VFX_API_UNSUPPORTED`.
 
 ```bash
 unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/FX/Burst.vfx","contextType":"Update","blockName":"Custom HLSL"}'
