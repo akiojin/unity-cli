@@ -18,5 +18,19 @@ namespace UnityCliBridge.Helpers
 #pragma warning restore CS0618
 #endif
         }
+
+        /// <summary>Resolves a wire-contract integer ID from <see cref="GetInstanceId"/>.</summary>
+        internal static Object FindObject(int instanceId)
+        {
+#if UNITY_6000_5_OR_NEWER
+            // InstanceIDToObject is an error in 6000.7+ and the int projection
+            // is not reversible to an EntityId, so match the same projection.
+            foreach (var candidate in Resources.FindObjectsOfTypeAll<Object>())
+                if (candidate != null && GetInstanceId(candidate) == instanceId) return candidate;
+            return null;
+#else
+            return UnityEditor.EditorUtility.InstanceIDToObject(instanceId);
+#endif
+        }
     }
 }
