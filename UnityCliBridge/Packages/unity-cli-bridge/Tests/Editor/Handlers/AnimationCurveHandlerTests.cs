@@ -35,7 +35,7 @@ namespace UnityCliBridge.Tests
 
         private JObject Request(string operation = "set") => new JObject
         {
-            ["clipPath"] = ClipPath, ["animationRoot"] = root.GetInstanceID(),
+            ["clipPath"] = ClipPath, ["animationRoot"] = UnityCliBridge.Helpers.ObjectIdentity.GetInstanceId(root),
             ["binding"] = JObject.FromObject(new { path = "", component = "UnityEngine.Transform", property = "localPosition.x" }),
             ["operation"] = operation, ["createIfMissing"] = true,
             ["keys"] = JArray.FromObject(new[] { new { time = 0f, value = 0f }, new { time = 1f, value = 2f } })

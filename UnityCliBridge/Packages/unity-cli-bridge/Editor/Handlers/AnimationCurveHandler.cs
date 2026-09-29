@@ -115,7 +115,7 @@ namespace UnityCliBridge.Handlers
         {
             if (parameters["animationRoot"]?.Type != JTokenType.Integer)
                 throw new ArgumentException("animationRoot must be a GameObject instance ID");
-            var root = EditorUtility.InstanceIDToObject(parameters["animationRoot"].Value<int>()) as GameObject;
+            var root = UnityCliBridge.Helpers.ObjectIdentity.FindObject(parameters["animationRoot"].Value<int>()) as GameObject;
             if (root == null) throw new ArgumentException("animationRoot GameObject not found");
             var requested = ParseBinding(parameters["binding"] as JObject);
             var target = requested.path.Length == 0 ? root.transform : root.transform.Find(requested.path);
