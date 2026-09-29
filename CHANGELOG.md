@@ -1,3 +1,13 @@
+## [0.15.1] - 2026-09-29
+
+### 🐛 Bug Fixes
+
+- *(bridge)* Resolve animationRoot without APIs removed in Unity 6000.7
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record issue 349 release start
+
 ## [0.15.0] - 2026-09-29
 
 ### 🚀 Features
