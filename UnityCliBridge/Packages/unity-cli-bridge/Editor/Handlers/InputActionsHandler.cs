@@ -205,8 +205,7 @@ namespace UnityCliBridge.Handlers
                 }
 
                 // Save the asset
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -249,8 +248,7 @@ namespace UnityCliBridge.Handlers
 
                 asset.RemoveActionMap(map);
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -310,8 +308,7 @@ namespace UnityCliBridge.Handlers
                     action.expectedControlType = GetExpectedControlType(type);
                 }
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -369,8 +366,7 @@ namespace UnityCliBridge.Handlers
                 // Note: There's no direct API to remove an action from a map in Unity Input System
                 // The action still exists but has no bindings
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -429,8 +425,7 @@ namespace UnityCliBridge.Handlers
                 // Add binding
                 action.AddBinding(path, interactions: interactions, processors: processors, groups: groups);
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -513,8 +508,7 @@ namespace UnityCliBridge.Handlers
                 // Use ChangeBinding to remove binding
                 action.ChangeBinding(removeIndex).Erase();
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -570,8 +564,7 @@ namespace UnityCliBridge.Handlers
                     action.ChangeBinding(0).Erase();
                 }
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -655,8 +648,7 @@ namespace UnityCliBridge.Handlers
                     action.AddCompositeBinding(compositeType);
                 }
 
-                EditorUtility.SetDirty(asset);
-                AssetDatabase.SaveAssets();
+                SaveInputActionsAsset(asset, assetPath);
 
                 return new { 
                     success = true, 
@@ -724,8 +716,7 @@ namespace UnityCliBridge.Handlers
                         // Add control scheme
                         asset.AddControlScheme(new InputControlScheme(schemeName, deviceRequirements.ToArray()));
 
-                        EditorUtility.SetDirty(asset);
-                        AssetDatabase.SaveAssets();
+                        SaveInputActionsAsset(asset, assetPath);
 
                         return new { 
                             success = true, 
@@ -746,8 +737,7 @@ namespace UnityCliBridge.Handlers
 
                         asset.RemoveControlScheme(schemeName);
 
-                        EditorUtility.SetDirty(asset);
-                        AssetDatabase.SaveAssets();
+                        SaveInputActionsAsset(asset, assetPath);
 
                         return new { 
                             success = true, 
@@ -767,6 +757,39 @@ namespace UnityCliBridge.Handlers
         #endregion
 
         #region Helper Methods
+
+        private static void SaveInputActionsAsset(InputActionAsset asset, string assetPath)
+        {
+            if (string.Equals(Path.GetExtension(assetPath), ".inputactions", StringComparison.OrdinalIgnoreCase))
+            {
+                // Imported assets are regenerated from this JSON; SaveAssets alone cannot persist edits.
+                // Do not reimport here: callers still use action/map references to build their response.
+                // Input System 1.19 ToJson throws when removing the last map leaves its
+                // internal map array null. Serialize the empty-map case without that API.
+                var json = asset.actionMaps.Count > 0 ? asset.ToJson() : new JObject
+                {
+                    ["version"] = 1,
+                    ["name"] = asset.name,
+                    ["maps"] = new JArray(),
+                    ["controlSchemes"] = new JArray(asset.controlSchemes.Select(scheme => new JObject
+                    {
+                        ["name"] = scheme.name,
+                        ["bindingGroup"] = scheme.bindingGroup,
+                        ["devices"] = new JArray(scheme.deviceRequirements.Select(device => new JObject
+                        {
+                            ["devicePath"] = device.controlPath,
+                            ["isOptional"] = device.isOptional,
+                            ["isOR"] = device.isOR
+                        }))
+                    }))
+                }.ToString();
+                File.WriteAllText(assetPath, json);
+                return;
+            }
+
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+        }
 
         private static List<Dictionary<string, object>> GetActionMapsInfo(InputActionAsset asset, bool includeBindings)
         {
