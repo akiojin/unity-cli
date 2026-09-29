@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditor.Recorder;
 using UnityEditor.Recorder.Input;
+using UnityEditor.Recorder.Encoder;
 using UnityCliBridge.Core;
 using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
@@ -14,9 +15,7 @@ using UnityCliBridge.Logging;
 namespace UnityCliBridge.Recorder
 {
     /// <summary>
-    /// Minimal video capture handler skeleton.
-    /// Phase 1: manage session state and paths without actual encoding.
-    /// Later phases will integrate Unity Recorder / ffmpeg / PNG fallback.
+    /// Records Game View movies or PNG sequences with Unity Recorder.
     /// </summary>
     public static class VideoCaptureBackend
     {
@@ -32,7 +31,8 @@ namespace UnityCliBridge.Recorder
         // Recorder integration (compiled only when the optional package is installed).
         private static RecorderController s_RecorderController;
         private static RecorderControllerSettings s_RecorderControllerSettings;
-        private static MovieRecorderSettings s_MovieRecorderSettings;
+        private static RecorderSettings s_RecorderSettings;
+        private static bool s_IsPngSequence;
         private static bool s_IncludeUI;
         private static double s_MaxDurationSec;
         private static bool s_AutoStopping;
@@ -67,14 +67,25 @@ namespace UnityCliBridge.Recorder
                 {
                     return new { error = "Invalid format. Use 'mp4', 'webm' or 'png_sequence'", code = "E_INVALID_FORMAT" };
                 }
+                format = format.ToLowerInvariant();
+#if UNITY_EDITOR_LINUX
+                if (format == "mp4")
+                    return new { error = "MP4 recording is not supported on Linux. Use 'webm' or 'png_sequence'.", code = "E_UNSUPPORTED_FORMAT" };
+#endif
+                if (!EditorApplication.isPlaying)
+                    return new { error = "Recording requires Play mode.", code = "E_NOT_PLAYING" };
+
+                s_IsPngSequence = format == "png_sequence";
                 // 生成ファイルパスを固定で作成 (<unityProjectRoot>/.unity/capture)
                 {
-                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + "_" + Guid.NewGuid().ToString("N");
                     var projectRoot = CapturePathResolver.GetProjectRootFromAssetsPath(Application.dataPath);
                     var captureDir = CapturePathResolver.GetCaptureDirectory(projectRoot);
                     if (!Directory.Exists(captureDir)) Directory.CreateDirectory(captureDir);
-                    string ext = string.Equals(format, "webm", StringComparison.OrdinalIgnoreCase) ? ".webm" : ".mp4";
+                    string ext = s_IsPngSequence ? "" : "." + format;
                     s_OutputPath = CapturePathResolver.BuildCaptureFilePath(projectRoot, "video", s_CaptureMode, timestamp, ext);
+                    if (s_IsPngSequence)
+                        s_OutputPath = Path.Combine(s_OutputPath, "frame_0000.png");
                 }
 
                 // Guard: dimensions
@@ -97,12 +108,35 @@ namespace UnityCliBridge.Recorder
                 // Recorder 設定
                 s_RecorderControllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
                 s_RecorderController = new RecorderController(s_RecorderControllerSettings);
-                s_MovieRecorderSettings = ScriptableObject.CreateInstance<MovieRecorderSettings>();
+                var input = new GameViewInputSettings
+                {
+                    OutputWidth = s_Width > 0 ? s_Width : 1280,
+                    OutputHeight = s_Height > 0 ? s_Height : 720
+                };
+                if (s_IsPngSequence)
+                {
+                    var images = ScriptableObject.CreateInstance<ImageRecorderSettings>();
+                    images.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
+                    images.imageInputSettings = input;
+                    s_RecorderSettings = images;
+                }
+                else
+                {
+                    var movie = ScriptableObject.CreateInstance<MovieRecorderSettings>();
+                    movie.EncoderSettings = new CoreEncoderSettings
+                    {
+                        Codec = format == "webm" ? CoreEncoderSettings.OutputCodec.WEBM : CoreEncoderSettings.OutputCodec.MP4
+                    };
+                    movie.ImageInputSettings = input;
+                    if (movie.AudioInputSettings != null)
+                        movie.AudioInputSettings.PreserveAudio = true;
+                    s_RecorderSettings = movie;
+                }
 
-                s_MovieRecorderSettings.Enabled = true;
+                s_RecorderSettings.Enabled = true;
                 // 出力先（プロジェクト直下 .unity/capture/<file>）に設定
                 var fileNoExt = Path.GetFileNameWithoutExtension(s_OutputPath);
-                s_MovieRecorderSettings.FileNameGenerator.Root = OutputPath.Root.Project;
+                s_RecorderSettings.FileNameGenerator.Root = OutputPath.Root.Project;
                 {
                     string captureDir = Path.GetDirectoryName(s_OutputPath);
                     string leaf = "/.unity/capture";
@@ -117,38 +151,24 @@ namespace UnityCliBridge.Recorder
                     catch { leaf = ".unity/capture"; }
                     leaf = leaf.Replace('\\', '/');
                     if (!leaf.StartsWith("/")) leaf = "/" + leaf;
-                    s_MovieRecorderSettings.FileNameGenerator.Leaf = leaf;
+                    s_RecorderSettings.FileNameGenerator.Leaf = leaf;
                 }
-                s_MovieRecorderSettings.FileNameGenerator.FileName = fileNoExt;
-                // フォーマット設定はデフォルト（MP4/H.264）を使用
-
-                int ow = s_Width > 0 ? s_Width : 1280;
-                int oh = s_Height > 0 ? s_Height : 720;
-                var input = new GameViewInputSettings
-                {
-                    OutputWidth = ow,
-                    OutputHeight = oh
-                };
-                s_MovieRecorderSettings.ImageInputSettings = input;
-                s_MovieRecorderSettings.FrameRate = s_Fps;
-                // 音声（最小有効化）
-                if (s_MovieRecorderSettings.AudioInputSettings != null)
-                {
-                    s_MovieRecorderSettings.AudioInputSettings.PreserveAudio = true;
-                }
+                s_RecorderSettings.FileNameGenerator.FileName = s_IsPngSequence ? "frame_" + DefaultWildcard.Frame : fileNoExt;
+                s_RecorderSettings.FrameRate = s_Fps;
 
                 // 収録動作パラメータ
                 s_RecorderControllerSettings.FrameRatePlayback = FrameRatePlayback.Variable;
                 s_RecorderControllerSettings.FrameRate = s_Fps;
                 s_RecorderControllerSettings.CapFrameRate = false;
-                s_RecorderControllerSettings.AddRecorderSettings(s_MovieRecorderSettings);
+                s_RecorderControllerSettings.AddRecorderSettings(s_RecorderSettings);
                 s_RecorderControllerSettings.SetRecordModeToManual();
                 s_RecorderController.PrepareRecording();
                 var startedOk = s_RecorderController.StartRecording();
                 RecorderOptions.VerboseMode = true;
-                if (!startedOk)
+                if (!startedOk || !s_RecorderController.IsRecording())
                 {
-                    BridgeLogger.LogError("VideoCaptureHandler", "Recorder did not start (StartRecording returned false)");
+                    ReleaseRecorder();
+                    return new { error = "Recorder could not start with the requested format and settings. Check the Unity console.", code = "E_RECORDING_START_FAILED" };
                 }
                 s_LastCaptureTime = EditorApplication.timeSinceStartup;
                 EditorApplication.update -= OnEditorUpdate;
@@ -171,12 +191,13 @@ namespace UnityCliBridge.Recorder
                     width = s_Width,
                     height = s_Height,
                     startedAt = s_StartedAt.ToString("o"),
-                    note = "Recording started (Recorder mp4/webm).",
+                    note = "Recording started. outputPath is the planned file path until capture completes.",
                     isRecording = s_RecorderController.IsRecording()
                 }), timings);
             }
             catch (Exception ex)
             {
+                ReleaseRecorder();
                 BridgeLogger.LogError("VideoCaptureHandler", $"Start error: {ex.Message}");
                 return new { error = $"Failed to start recording: {ex.Message}", code = "E_UNKNOWN" };
             }
@@ -203,24 +224,29 @@ namespace UnityCliBridge.Recorder
                 s_RecordingId = null;
                 // detach update
                 EditorApplication.update -= OnEditorUpdate;
-                // stop recorder
-                if (s_RecorderController != null)
+                // Finalize encoding before reporting an output file.
+                var stopStopwatch = Stopwatch.StartNew();
+                try
                 {
-                    try
-                    {
-                        var stopStopwatch = Stopwatch.StartNew();
-                        s_RecorderController.StopRecording();
-                        stopStopwatch.Stop();
-                        timings["stopRecorderMs"] = stopStopwatch.Elapsed.TotalMilliseconds;
-                    }
-                    catch (Exception e)
-                    {
-                        BridgeLogger.LogWarning("VideoCaptureHandler", $"Recorder stop warning: {e.Message}");
-                    }
+                    s_RecorderController?.StopRecording();
                 }
+                finally
+                {
+                    ReleaseRecorder();
+                }
+                stopStopwatch.Stop();
+                timings["stopRecorderMs"] = stopStopwatch.Elapsed.TotalMilliseconds;
                 s_AutoStopping = false;
 
                 double duration = (DateTime.UtcNow - started).TotalSeconds;
+                if (s_IsPngSequence)
+                {
+                    var files = Directory.GetFiles(Path.GetDirectoryName(path), "frame_*.png");
+                    Array.Sort(files, StringComparer.Ordinal);
+                    path = files.Length > 0 ? files[0] : null;
+                }
+                if (string.IsNullOrEmpty(path) || !File.Exists(path) || new FileInfo(path).Length == 0)
+                    return new { error = "Recording stopped without producing an output file.", code = "E_RECORDING_OUTPUT_MISSING", recordingId = id };
 
                 return AttachTimings(JObject.FromObject(new
                 {
@@ -275,6 +301,21 @@ namespace UnityCliBridge.Recorder
         {
             // 現段階では GameView のみ対応
             return mode == "game";
+        }
+
+        private static void ReleaseRecorder()
+        {
+            EditorApplication.update -= OnEditorUpdate;
+            s_IsRecording = false;
+            s_AutoStopping = false;
+            s_RecordingId = null;
+            try { s_RecorderController?.StopRecording(); }
+            catch (Exception ex) { BridgeLogger.LogWarning("VideoCaptureHandler", $"Recorder cleanup: {ex.Message}"); }
+            s_RecorderController = null;
+            if (s_RecorderSettings != null) UnityEngine.Object.DestroyImmediate(s_RecorderSettings);
+            if (s_RecorderControllerSettings != null) UnityEngine.Object.DestroyImmediate(s_RecorderControllerSettings);
+            s_RecorderSettings = null;
+            s_RecorderControllerSettings = null;
         }
 
         private static bool IsValidFormat(string fmt)

@@ -9,6 +9,7 @@ Snapshot date: `2026-09-28`
 | `raw`       | (direct tool invocation)  |
 | `tool`      | `list`, `schema`, `call`  |
 | `system`    | `ping`                    |
+| `editor`    | `eval`, `eval-status`     |
 | `scene`     | `create`                  |
 | `instances` | `list`, `set-active`      |
 | `cli`       | `install`, `doctor`       |
@@ -30,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 132 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 121 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 134 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 123 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (121 tools)
+## Runtime Tool APIs (123 tools)
 
 ### Scenes
 
@@ -214,6 +215,21 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `create_input_sequence`       | Create an input sequence           |
 | `get_current_input_state`     | Get current input device state     |
 
+For `input_gamepad` with `action: "stick"`, `x` and `y` are **processed
+individual axis values**, clamped independently to `[-1, 1]`. On the standard
+Gamepad layout, `leftStick.x.ReadValue()` / `leftStick.y.ReadValue()` (or the
+right-stick equivalents) match those values, including single-axis input.
+The bridge compensates once for the axis deadzone using the current Input
+System `defaultDeadzoneMin` / `defaultDeadzoneMax` settings. The response and
+simulated-state snapshot also use the clamped values.
+
+`stick.ReadUnprocessedValue()` returns the compensated device values, not the
+requested values. `stick.ReadValue()` applies Unity's radial stick deadzone,
+so its Vector2 components can differ from the individual axis readings on
+diagonals. For example, `(1, 1)` gives individual axes `(1, 1)` while the
+Vector2 is approximately `(0.7071, 0.7071)`. Custom control/action processors
+can further change readings and are not inverted by this command.
+
 ### UI
 
 | Tool                   | Description                  |
@@ -257,6 +273,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `manage_tools`            | Manage editor tools         |
 | `manage_windows`          | Manage editor windows       |
 | `execute_menu_item`       | Execute a menu item         |
+| `eval_csharp`             | Evaluate synchronous C#     |
+| `get_eval_status`         | Query evaluation result     |
 | `package_manager`         | Manage packages             |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |
