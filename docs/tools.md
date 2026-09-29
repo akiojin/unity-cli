@@ -31,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 142 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 131 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 146 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 135 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (131 tools)
+## Runtime Tool APIs (135 tools)
 
 ### Scenes
 
@@ -215,6 +215,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | Tool                    | Description                      |
 | ----------------------- | -------------------------------- |
 | `get_compilation_state` | Get C# compilation state         |
+| `hot_reload_status`     | Inspect hot reload preview state |
+| `hot_reload`            | Preview methods or recover Play  |
 | `read`                  | Read a C# source file            |
 | `find_refs`             | Find symbol references           |
 | `search`                | Search code by pattern           |
@@ -290,6 +292,40 @@ can further change readings and are not inverted by this command.
 | `stop_game`       | Exit Play mode              |
 | `get_test_status` | Get test run status         |
 | `run_tests`       | Run EditMode/PlayMode tests |
+
+### Player Builds
+
+| Tool               | Description                                               |
+| ------------------ | --------------------------------------------------------- |
+| `build_player`     | Queue a standalone player build on the Unity Editor host  |
+| `get_build_status` | Read build status, report, and artifact paths by build ID |
+
+`build_player` requires `target` (`StandaloneWindows64` or `StandaloneOSX`),
+`scenes` (a nonempty array of scene asset paths), and `outputPath` (the executable
+or app path, for example `C:/Builds/Player/Player.exe` or `/Users/me/Builds/Player/Player.app`).
+The optional `development` boolean defaults to `false`.
+Invoke these tools through `raw` or `tool call`; no dedicated subcommand is required.
+
+The target must already be active in the Editor and its build support module must
+be installed. The Editor must not be compiling, playing, or updating assets.
+The output path's parent directory must be new or empty. The tool does not switch targets,
+write project or scene build settings, or overwrite existing output. Unity's build
+pipeline and project build callbacks can update settings; `changedProjectSettings`
+lists the changed files under `ProjectSettings/` in the completed result.
+Output under Assets, Packages, ProjectSettings, Library, or symbolic-link ancestors is rejected.
+Paths refer to
+the **Unity Editor host**, including when the CLI runs on another machine.
+
+The initial response returns a `buildId`. Poll `get_build_status` with the required
+`buildId` string for `result.state`: `queued`, `running`, `succeeded`, `failed`,
+or `interrupted` (failure snapshots are in `details` on the error envelope).
+The completed report includes `reportResult`, `totalErrors`,
+`totalWarnings`, `errors`, `warnings`, `durationSeconds`, `outputPath`, and
+`artifacts` (an array of artifact paths). A failed or interrupted build status produces a
+non-success CLI exit; accepting a queued build does not mean the build succeeded.
+`get_build_status` is read-only, including under `--dry-run`.
+Report result and counts are null if Unity never produced a report. The latest
+build survives Editor restart; up to 16 recent jobs are retained during a session.
 
 ### Profiler
 

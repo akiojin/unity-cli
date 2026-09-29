@@ -23,6 +23,8 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
+                ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
                 {
                     message = "pong",
@@ -131,6 +133,8 @@ namespace UnityCliBridge.Core
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
                 ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
                 ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
+                ["hot_reload_status"] = command => Success(command, HotReloadHandler.Status()),
+                ["hot_reload"] = HandleHotReload,
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
@@ -170,6 +174,8 @@ namespace UnityCliBridge.Core
 
         internal static Task<string> Handle(Command command)
         {
+            if (command != null && PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
+                return Task.FromResult(buildResponse);
             if (command?.Type != null && Handlers.TryGetValue(command.Type, out var handler))
             {
                 return handler(command);
@@ -185,6 +191,16 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+        private static async Task<string> HandleHotReload(Command command)
+        {
+            var result = Newtonsoft.Json.Linq.JObject.FromObject(await HotReloadHandler.Handle(command.Parameters));
+            if (result.Value<bool?>("success") == false || result["error"] != null)
+                return Response.ErrorResult(command.Id,
+                    result.Value<string>("message") ?? result.Value<string>("error") ?? "Hot reload failed",
+                    result.Value<string>("code") ?? "HOT_RELOAD_FAILED", result);
+            return Response.SuccessResult(command.Id, result);
+        }
 
         private static Task<string> HandleGetEditorState(Command command)
         {

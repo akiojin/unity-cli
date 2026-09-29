@@ -24,6 +24,7 @@ ExportedObj/
 *.csproj
 !lsp/*.csproj
 !lsp/Server.Core/*.csproj
+!tests/hot-reload/*.csproj
 !roslyn-cli/*.csproj
 *.unityproj
 *.sln
