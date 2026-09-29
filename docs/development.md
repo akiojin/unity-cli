@@ -81,6 +81,16 @@ For Docker, WSL2, and multi-instance examples, see
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 `UNITY_CLI_UNITYD` has been removed; unityd is always auto-managed.
 
+Remote typed, raw and batch commands start unityd on demand when its IPC endpoint
+is unavailable, including after the idle timeout (600 seconds by default;
+`UNITY_CLI_UNITYD_IDLE_TIMEOUT` overrides it). Automatic startup uses the invoking
+CLI binary and serializes concurrent starts. `unityd stop` stops the current
+process; the next remote operation starts it again. `unityd status` does not
+start it. Host/port resolution is unchanged, and connections are pooled by both.
+If startup fails, stderr explains the failure and direct TCP fallback.
+Use `-v` to inspect `route`, `startup_ms` and `operation_ms` separately on stderr;
+JSON results stay on stdout. `unityd status` reports the PID and connection count.
+
 ## Tool Invocation & Discovery
 
 Use one of these paths:
@@ -196,8 +206,18 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# Reference fetch regression (live Editor; isolated cache; downloads UnityCsReference)
+# Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
+scripts/e2e-reference-fetch.sh --port 6400
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
+
+# C# eval E2E against an existing listener (see editor-eval.md)
+scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
+
+# C# eval with an isolated batch host (build the debug CLI first)
+scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
 
 # Timeline editing, persistence and Animator evaluation (real Editor)
 cargo build --bin unity-cli
@@ -562,6 +582,15 @@ Docker、WSL2、複数インスタンスの設定例は
 旧 MCP プレフィックス環境変数は未サポートです。`UNITY_CLI_*` のみ使用してください。
 `UNITY_CLI_UNITYD` は廃止済みで、unityd は常時自動管理です。
 
+リモートの typed / raw / batch 操作は、IPC 接続先がない場合に unityd を自動起動します。
+idle 終了（既定 600 秒、`UNITY_CLI_UNITYD_IDLE_TIMEOUT` で変更可能）後も同様です。
+自動起動には実行中の CLI と同じバイナリを使い、同時起動を排他制御します。
+`unityd stop` 後の次のリモート操作では再起動し、`unityd status` 単独では起動しません。
+host/port の解決方法は維持し、接続を両方の組み合わせごとに再利用します。
+起動失敗の理由と直接 TCP 接続への fallback は stderr に表示します。
+`-v` で `route` / `startup_ms` / `operation_ms` を stderr に分けて記録し、
+stdout は JSON 結果用に維持します。PID と接続数は `unityd status` で確認できます。
+
 ## ツール呼び出しと探索
 
 呼び出し経路は2種類です。
@@ -671,6 +700,10 @@ cargo build --release
 # スモークE2E
 scripts/e2e-test.sh
 
+# 参照ソース取得の回帰検証（起動済み Editor・隔離キャッシュ・UnityCsReference を取得）
+# 先に cargo build、または UNITY_CLI_BIN で検証バイナリを指定する。
+scripts/e2e-reference-fetch.sh --port 6400
+
 # 入力シミュレーション決定的 E2E
 scripts/e2e-input-tools.sh
 
@@ -680,6 +713,11 @@ scripts/e2e-test-results.sh
 
 # headless batch host 入力 E2E
 scripts/e2e-input-batch-host.sh
+
+# unityd 自動起動・idle 復帰・同時操作 E2E（専用 batch host を起動・終了）
+cargo build
+python3 scripts/e2e-unityd.py --port 6453
+# 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
@@ -696,6 +734,20 @@ scripts/e2e-all-tools.sh --host 192.168.1.10 --port 9090
 # media capture / profiler ベンチマーク
 scripts/perf-media-benchmark.sh
 ```
+
+### タップ・スワイプの検証
+
+入力の `tap` / `swipe` は開始受付後すぐ応答し、自然な Input System 更新で
+複数フレームにわたって実行します。`holdSeconds` / `duration` は実時間で計測し、
+swipe は途中の位置と終点をゲームの Update に公開してから解除します。
+同じ `touchId` は受付順に実行し、異なる ID は並行して実行します。
+CLI の `touchId` はゼロ始まりで、Input System の `touchId` はその値 + 1 です。
+`touches` 配列内の物理スロットは Unity が割り当てます。
+batch / sequence の応答もジェスチャー終了待ちではなく受付結果です。
+
+`TouchGesturePlayModeTests` は実 Touchscreen を MonoBehaviour.Update から観測し、
+30fps・120fps・無制限での保持と移動、既定 tap、同一/別 ID、デバイス削除を検証します。
+実 Editor の PlayMode テストランナーでこのクラスを指定して実行してください。
 
 ### シーン配置ポリシー
 

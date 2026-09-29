@@ -42,6 +42,10 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     Raw(RawArgs),
+    Editor {
+        #[command(subcommand)]
+        command: EditorCommand,
+    },
     Tool {
         #[command(subcommand)]
         command: ToolCommand,
@@ -118,6 +122,28 @@ pub enum SystemCommand {
         #[arg(long)]
         message: Option<String>,
     },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+pub enum EvalMode {
+    #[default]
+    Expression,
+    Statements,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum EditorCommand {
+    /// Evaluate synchronous C# in the Editor. Timeout does not cancel execution.
+    Eval {
+        code: String,
+        #[arg(long, value_enum, default_value_t = EvalMode::Expression)]
+        mode: EvalMode,
+        /// Reuse this ID to query the result after a timeout. Never retry with a new ID.
+        #[arg(long)]
+        request_id: Option<String>,
+    },
+    /// Retrieve a result from the current Editor domain (unknown after reload).
+    EvalStatus { request_id: String },
 }
 
 #[derive(Debug, Subcommand)]
