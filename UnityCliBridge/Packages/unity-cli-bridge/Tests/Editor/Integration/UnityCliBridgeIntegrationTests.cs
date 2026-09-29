@@ -1,200 +1,116 @@
 using NUnit.Framework;
 using UnityCliBridge.Core;
 using UnityCliBridge.Models;
+using UnityCliBridge.Tests.Helpers;
+using System.Collections;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using UnityEngine;
+using Newtonsoft.Json.Linq;
+using UnityEngine.TestTools;
 using System;
-using System.Diagnostics;
 
 namespace UnityCliBridge.Tests.Integration
 {
+    /// <summary>
+    /// Exercises the real TCP transport (4-byte big-endian length framing) on an ephemeral
+    /// loopback port, so the tests also run inside -runTests processes where the configured
+    /// listener is intentionally skipped. Awaits use ConfigureAwait(false): socket I/O must not
+    /// depend on the main-thread context, which has to stay free to drain the command queue.
+    /// </summary>
     [TestFixture]
     public class UnityCliBridgeIntegrationTests
     {
-        private const int TEST_PORT = 6401; // Different port to avoid conflicts
-        private const int CONNECTION_TIMEOUT_MS = 5000;
-        
-        [SetUp]
-        public void Setup()
+        private const int TIMEOUT_MS = 5000;
+        private int port;
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
-            if (!Application.isBatchMode)
-            {
-                Core.UnityCliBridge.ChangePort(TEST_PORT);
-            }
-            EnsureServerRunning();
+            port = Core.UnityCliBridge.StartOnEphemeralLoopbackPortForTesting();
         }
 
-        [Test]
-        public async Task UnityCliBridge_ShouldAcceptTcpConnection()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
-            // Arrange
-            TcpClient client = null;
-            
-            try
+            // Return to the configured endpoint (and to "no listener" in batch/test processes).
+            Core.UnityCliBridge.Restart();
+        }
+
+        [UnityTest]
+        public IEnumerator UnityCliBridge_ShouldAcceptTcpConnection() => TaskTestUtility.Await(async () =>
+        {
+            using (var client = await ConnectAsync().ConfigureAwait(false))
             {
-                // Act - Try to connect to the Unity TCP server
-                client = new TcpClient();
-                var connectTask = client.ConnectAsync("127.0.0.1", TEST_PORT);
-                
-                // Wait for connection with timeout
-                var completed = await Task.WhenAny(connectTask, Task.Delay(CONNECTION_TIMEOUT_MS));
-                
-                // Assert
-                Assert.IsTrue(completed == connectTask, "Connection should complete within timeout");
                 Assert.IsTrue(client.Connected, "Client should be connected");
+                var elapsed = Stopwatch.StartNew();
+                while (Core.UnityCliBridge.Status != BridgeStatus.Connected && elapsed.ElapsedMilliseconds < TIMEOUT_MS)
+                {
+                    await Task.Delay(20).ConfigureAwait(false);
+                }
                 Assert.AreEqual(BridgeStatus.Connected, Core.UnityCliBridge.Status, "Bridge status should be Connected");
             }
-            finally
-            {
-                client?.Close();
-                client?.Dispose();
-            }
-        }
+        });
 
-        [Test]
-        public async Task UnityCliBridge_ShouldProcessPingCommand()
+        [UnityTest]
+        public IEnumerator UnityCliBridge_ShouldProcessPingCommand() => TaskTestUtility.Await(async () =>
         {
-            // Arrange
-            TcpClient client = null;
-            
-            try
+            using (var client = await ConnectAsync().ConfigureAwait(false))
             {
-                client = new TcpClient();
-                await client.ConnectAsync("127.0.0.1", TEST_PORT);
-                
                 var stream = client.GetStream();
-                
-                // Create ping command
-                var pingCommand = new Command
+                await WriteFrameAsync(stream, JsonConvert.SerializeObject(new Command
                 {
                     Id = "test-ping-001",
                     Type = "ping",
-                    Parameters = new Newtonsoft.Json.Linq.JObject
-                    {
-                        ["message"] = "Hello Unity"
-                    }
-                };
-                
-                // Act - Send ping command
-                var commandJson = JsonConvert.SerializeObject(pingCommand);
-                var commandBytes = Encoding.UTF8.GetBytes(commandJson + "\n");
-                await stream.WriteAsync(commandBytes, 0, commandBytes.Length);
-                await stream.FlushAsync();
-                
-                // Read response
-                var buffer = new byte[1024];
-                var responseTask = stream.ReadAsync(buffer, 0, buffer.Length);
-                var completed = await Task.WhenAny(responseTask, Task.Delay(CONNECTION_TIMEOUT_MS));
-                
-                if (completed != responseTask)
-                {
-                    Assert.Ignore("Unity CLI Bridge listener did not respond to ping within the allotted timeout. Skipping integration test.");
-                }
-                
-                var bytesRead = await responseTask;
-                var responseJson = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-                dynamic response = JsonConvert.DeserializeObject(responseJson);
-                
-                // Assert
-                Assert.IsNotNull(response, "Response should not be null");
-                Assert.AreEqual("test-ping-001", (string)response.id, "Response ID should match command ID");
-                Assert.IsTrue((bool)response.success, "Response should indicate success");
-                Assert.AreEqual("pong", (string)response.data.message, "Response should contain pong message");
-            }
-            finally
-            {
-                client?.Close();
-                client?.Dispose();
-            }
-        }
+                    Parameters = new JObject { ["message"] = "Hello Unity" }
+                })).ConfigureAwait(false);
 
-        [Test]
-        public async Task UnityCliBridge_ShouldHandleInvalidJson()
+                var response = await ReadFrameAsync(stream).ConfigureAwait(false);
+
+                Assert.AreEqual("test-ping-001", response["id"]?.Value<string>(), response.ToString());
+                Assert.AreEqual("success", response["status"]?.Value<string>(), response.ToString());
+                Assert.AreEqual("pong", response["result"]?["message"]?.Value<string>(), response.ToString());
+                Assert.AreEqual("Hello Unity", response["result"]?["echo"]?.Value<string>(), response.ToString());
+            }
+        });
+
+        [UnityTest]
+        public IEnumerator UnityCliBridge_ShouldHandleInvalidJson() => TaskTestUtility.Await(async () =>
         {
-            // Arrange
-            TcpClient client = null;
-            
-            try
+            using (var client = await ConnectAsync().ConfigureAwait(false))
             {
-                client = new TcpClient();
-                await client.ConnectAsync("127.0.0.1", TEST_PORT);
-                
                 var stream = client.GetStream();
-                
-                // Act - Send invalid JSON
-                var invalidJson = "{ invalid json }\n";
-                var commandBytes = Encoding.UTF8.GetBytes(invalidJson);
-                await stream.WriteAsync(commandBytes, 0, commandBytes.Length);
-                await stream.FlushAsync();
-                
-                // Read response
-                var buffer = new byte[1024];
-                var responseTask = stream.ReadAsync(buffer, 0, buffer.Length);
-                var completed = await Task.WhenAny(responseTask, Task.Delay(CONNECTION_TIMEOUT_MS));
-                
-                if (completed != responseTask)
-                {
-                    Assert.Ignore("Unity CLI Bridge listener did not respond to invalid JSON within the allotted timeout. Skipping integration test.");
-                }
-                
-                var bytesRead = await responseTask;
-                var responseJson = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
-                dynamic response = JsonConvert.DeserializeObject(responseJson);
-                
-                // Assert
-                Assert.IsFalse((bool)response.success, "Response should indicate failure");
-                Assert.IsTrue(((string)response.error).Contains("parse"), "Error should mention parsing issue");
+                await WriteFrameAsync(stream, "{ invalid json }").ConfigureAwait(false);
+
+                var response = await ReadFrameAsync(stream).ConfigureAwait(false);
+
+                Assert.AreEqual("error", response["status"]?.Value<string>(), response.ToString());
+                Assert.AreEqual("JSON_ERROR", response["code"]?.Value<string>(), response.ToString());
+                StringAssert.Contains("parsing", response["error"]?.Value<string>());
             }
-            finally
-            {
-                client?.Close();
-                client?.Dispose();
-            }
-        }
-        
-        [Test]
-        public async Task UnityCliBridge_ShouldHandleMultipleClients()
+        });
+
+        [UnityTest]
+        public IEnumerator UnityCliBridge_ShouldHandleMultipleClients() => TaskTestUtility.Await(async () =>
         {
-            // Arrange
-            TcpClient client1 = null;
-            TcpClient client2 = null;
-            
-            try
+            using (var client1 = await ConnectAsync().ConfigureAwait(false))
+            using (var client2 = await ConnectAsync().ConfigureAwait(false))
             {
-                // Act - Connect two clients
-                client1 = new TcpClient();
-                await client1.ConnectAsync("127.0.0.1", Core.UnityCliBridge.DEFAULT_PORT);
-                
-                client2 = new TcpClient();
-                await client2.ConnectAsync("127.0.0.1", Core.UnityCliBridge.DEFAULT_PORT);
-                
-                // Send commands from both clients
-                var command1 = new Command { Id = "client1-cmd", Type = "ping" };
-                var command2 = new Command { Id = "client2-cmd", Type = "ping" };
-                
-                var json1 = JsonConvert.SerializeObject(command1) + "\n";
-                var json2 = JsonConvert.SerializeObject(command2) + "\n";
-                
-                await client1.GetStream().WriteAsync(Encoding.UTF8.GetBytes(json1), 0, json1.Length);
-                await client2.GetStream().WriteAsync(Encoding.UTF8.GetBytes(json2), 0, json2.Length);
-                
-                // Assert - Both clients should be connected
-                Assert.IsTrue(client1.Connected, "Client 1 should remain connected");
-                Assert.IsTrue(client2.Connected, "Client 2 should remain connected");
+                await WriteFrameAsync(client1.GetStream(), JsonConvert.SerializeObject(new Command { Id = "client1-cmd", Type = "ping" })).ConfigureAwait(false);
+                await WriteFrameAsync(client2.GetStream(), JsonConvert.SerializeObject(new Command { Id = "client2-cmd", Type = "ping" })).ConfigureAwait(false);
+
+                var response1 = await ReadFrameAsync(client1.GetStream()).ConfigureAwait(false);
+                var response2 = await ReadFrameAsync(client2.GetStream()).ConfigureAwait(false);
+
+                Assert.AreEqual("client1-cmd", response1["id"]?.Value<string>(), "Client 1 should receive its own response");
+                Assert.AreEqual("client2-cmd", response2["id"]?.Value<string>(), "Client 2 should receive its own response");
+                Assert.AreEqual("success", response1["status"]?.Value<string>(), response1.ToString());
+                Assert.AreEqual("success", response2["status"]?.Value<string>(), response2.ToString());
             }
-            finally
-            {
-                client1?.Close();
-                client1?.Dispose();
-                client2?.Close();
-                client2?.Dispose();
-            }
-        }
-        
+        });
+
         [Test]
         public void UnityCliBridge_StatusShouldBeDisconnectedOnStartup()
         {
@@ -208,89 +124,80 @@ namespace UnityCliBridge.Tests.Integration
                 "Status should be Disconnected, Connected, or NotConfigured in batch/test mode"
             );
         }
-        
-        [Test]
-        public async Task UnityCliBridge_ShouldReconnectAfterDisconnection()
+
+        [UnityTest]
+        public IEnumerator UnityCliBridge_ShouldReconnectAfterDisconnection() => TaskTestUtility.Await(async () =>
         {
-            // Arrange
-            TcpClient client = null;
-            
-            try
+            using (var first = await ConnectAsync().ConfigureAwait(false))
             {
-                // First connection
-                client = new TcpClient();
-                await client.ConnectAsync("127.0.0.1", TEST_PORT);
-                Assert.IsTrue(client.Connected, "Should connect initially");
-                
-                // Disconnect
-                client.Close();
+                Assert.IsTrue(first.Connected, "Should connect initially");
+            }
+
+            // Wait a bit for server to process disconnection
+            await Task.Delay(500).ConfigureAwait(false);
+
+            using (var client = await ConnectAsync().ConfigureAwait(false))
+            {
+                var stream = client.GetStream();
+                await WriteFrameAsync(stream, JsonConvert.SerializeObject(new Command { Id = "reconnect-ping", Type = "ping" })).ConfigureAwait(false);
+                var response = await ReadFrameAsync(stream).ConfigureAwait(false);
+                Assert.AreEqual("reconnect-ping", response["id"]?.Value<string>(), response.ToString());
+                Assert.AreEqual("success", response["status"]?.Value<string>(), response.ToString());
+            }
+        });
+
+        private async Task<TcpClient> ConnectAsync()
+        {
+            var client = new TcpClient();
+            var connect = client.ConnectAsync("127.0.0.1", port);
+            if (await Task.WhenAny(connect, Task.Delay(TIMEOUT_MS)).ConfigureAwait(false) != connect)
+            {
                 client.Dispose();
-                
-                // Wait a bit for server to process disconnection
-                await Task.Delay(500);
-                
-                // Act - Reconnect
-                client = new TcpClient();
-                var reconnectTask = client.ConnectAsync("127.0.0.1", TEST_PORT);
-                var completed = await Task.WhenAny(reconnectTask, Task.Delay(CONNECTION_TIMEOUT_MS));
-                
-                // Assert
-                Assert.IsTrue(completed == reconnectTask, "Should reconnect within timeout");
-                Assert.IsTrue(client.Connected, "Should be connected after reconnection");
+                Assert.Fail($"Connection to 127.0.0.1:{port} did not complete within {TIMEOUT_MS} ms");
             }
-            finally
-            {
-                client?.Close();
-                client?.Dispose();
-            }
+            await connect.ConfigureAwait(false);
+            return client;
         }
 
-        private static void EnsureServerRunning()
+        private static async Task WriteFrameAsync(NetworkStream stream, string message)
         {
-            if (IsServerReachable(TEST_PORT))
-            {
-                return;
-            }
-
-            if (!Application.isBatchMode)
-            {
-                Core.UnityCliBridge.ChangePort(TEST_PORT);
-                Core.UnityCliBridge.Restart();
-            }
-
-            var sw = Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < CONNECTION_TIMEOUT_MS)
-            {
-                if (IsServerReachable(TEST_PORT))
-                {
-                    return;
-                }
-                Thread.Sleep(200);
-            }
-
-            Assert.Ignore($"Unity CLI Bridge TCP listener is not reachable on port {TEST_PORT}. Integration tests skipped.");
+            var payload = Encoding.UTF8.GetBytes(message);
+            var length = BitConverter.GetBytes(payload.Length);
+            if (BitConverter.IsLittleEndian) Array.Reverse(length);
+            await stream.WriteAsync(length, 0, length.Length).ConfigureAwait(false);
+            await stream.WriteAsync(payload, 0, payload.Length).ConfigureAwait(false);
+            await stream.FlushAsync().ConfigureAwait(false);
         }
 
-        private static bool IsServerReachable(int port)
+        private static async Task<JObject> ReadFrameAsync(NetworkStream stream)
         {
-            try
-            {
-                using (var client = new TcpClient())
-                {
-                    var connectTask = client.ConnectAsync("127.0.0.1", port);
-                    var completed = Task.WhenAny(connectTask, Task.Delay(500));
-                    if (!completed.Wait(500))
-                    {
-                        return false;
-                    }
+            var length = await ReadExactlyAsync(stream, 4).ConfigureAwait(false);
+            if (BitConverter.IsLittleEndian) Array.Reverse(length);
+            var payload = await ReadExactlyAsync(stream, BitConverter.ToInt32(length, 0)).ConfigureAwait(false);
+            return JObject.Parse(Encoding.UTF8.GetString(payload));
+        }
 
-                    return connectTask.IsCompletedSuccessfully && client.Connected;
-                }
-            }
-            catch
+        private static async Task<byte[]> ReadExactlyAsync(NetworkStream stream, int count)
+        {
+            var buffer = new byte[count];
+            var offset = 0;
+            var elapsed = Stopwatch.StartNew();
+            while (offset < count)
             {
-                return false;
+                var read = stream.ReadAsync(buffer, offset, count - offset);
+                var remaining = Math.Max(1, TIMEOUT_MS - (int)elapsed.ElapsedMilliseconds);
+                if (await Task.WhenAny(read, Task.Delay(remaining)).ConfigureAwait(false) != read)
+                {
+                    Assert.Fail($"No response frame within {TIMEOUT_MS} ms");
+                }
+                var bytesRead = await read.ConfigureAwait(false);
+                if (bytesRead == 0)
+                {
+                    Assert.Fail("Connection closed before a complete response frame arrived");
+                }
+                offset += bytesRead;
             }
+            return buffer;
         }
     }
 }

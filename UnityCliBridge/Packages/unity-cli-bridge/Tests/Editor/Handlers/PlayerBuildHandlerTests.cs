@@ -1,8 +1,11 @@
+using System.Collections;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityCliBridge.Tests.Helpers;
+using UnityEngine.TestTools;
 using UnityCliBridge.Core;
 using UnityCliBridge.Models;
 using UnityCliBridge.Handlers;
@@ -27,8 +30,8 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual("INVALID_BUILD_PARAMETERS", (string)response["code"]);
         }
 
-        [Test]
-        public async Task Status_CanRespondOnBackgroundThreadWithoutUnityApi()
+        [UnityTest]
+        public IEnumerator Status_CanRespondOnBackgroundThreadWithoutUnityApi() => TaskTestUtility.Await(async () =>
         {
             PlayerBuildHandler.Initialize();
             var response = await Task.Run(() => PlayerBuildHandler.Status(new Command
@@ -38,7 +41,7 @@ namespace UnityCliBridge.Tests
             var json = JObject.Parse(response);
             Assert.AreEqual("background", (string)json["id"]);
             Assert.AreEqual("BUILD_NOT_FOUND", (string)json["code"]);
-        }
+        });
 
         [Test]
         public void Output_RequiresDedicatedDirectoryAndNeverOverwrites()
@@ -72,8 +75,8 @@ namespace UnityCliBridge.Tests
                 Path.Combine(Application.dataPath, "GeneratedBuild", "Player.app"), BuildTarget.StandaloneOSX));
         }
 
-        [Test]
-        public async Task Start_RequiresExplicitParameters()
+        [UnityTest]
+        public IEnumerator Start_RequiresExplicitParameters() => TaskTestUtility.Await(async () =>
         {
             var response = JObject.Parse(await BridgeCommandRouter.Handle(new Command
             {
@@ -81,10 +84,10 @@ namespace UnityCliBridge.Tests
             }));
             Assert.AreEqual("error", (string)response["status"]);
             Assert.AreEqual("INVALID_BUILD_PARAMETERS", (string)response["code"]);
-        }
+        });
 
-        [Test]
-        public async Task Status_UnknownBuildIsNotSuccess()
+        [UnityTest]
+        public IEnumerator Status_UnknownBuildIsNotSuccess() => TaskTestUtility.Await(async () =>
         {
             var response = JObject.Parse(await BridgeCommandRouter.Handle(new Command
             {
@@ -94,6 +97,6 @@ namespace UnityCliBridge.Tests
             Assert.AreEqual("status", (string)response["id"]);
             Assert.AreEqual("error", (string)response["status"]);
             Assert.AreEqual("BUILD_NOT_FOUND", (string)response["code"]);
-        }
+        });
     }
 }

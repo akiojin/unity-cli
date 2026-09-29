@@ -1,7 +1,9 @@
-using System.Threading.Tasks;
+using System.Collections;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityCliBridge.Tests.Helpers;
+using UnityEngine.TestTools;
 using UnityCliBridge.Core;
 using UnityCliBridge.Models;
 
@@ -10,8 +12,8 @@ namespace UnityCliBridge.Tests.Editor.Core
     [TestFixture]
     public class BridgeCommandRouterTests
     {
-        [Test]
-        public async Task Handle_Ping_ReturnsExistingSuccessResponseShape()
+        [UnityTest]
+        public IEnumerator Handle_Ping_ReturnsExistingSuccessResponseShape() => TaskTestUtility.Await(async () =>
         {
             var response = await BridgeCommandRouter.Handle(new Command
             {
@@ -26,10 +28,10 @@ namespace UnityCliBridge.Tests.Editor.Core
             Assert.AreEqual("success", json["status"]?.Value<string>());
             Assert.AreEqual("pong", json["result"]?["message"]?.Value<string>());
             Assert.AreEqual("hello", json["result"]?["echo"]?.Value<string>());
-        }
+        });
 
-        [Test]
-        public async Task Handle_UnknownCommand_ReturnsExistingErrorResponseShape()
+        [UnityTest]
+        public IEnumerator Handle_UnknownCommand_ReturnsExistingErrorResponseShape() => TaskTestUtility.Await(async () =>
         {
             var response = await BridgeCommandRouter.Handle(new Command
             {
@@ -44,7 +46,7 @@ namespace UnityCliBridge.Tests.Editor.Core
             Assert.AreEqual("error", json["status"]?.Value<string>());
             Assert.AreEqual("UNKNOWN_COMMAND", json["code"]?.Value<string>());
             Assert.AreEqual("missing_tool", json["details"]?["commandType"]?.Value<string>());
-        }
+        });
 
         [Test]
         public void RegisteredCommandTypes_ExposesTimelineWithoutRequiringOptionalPackage()
