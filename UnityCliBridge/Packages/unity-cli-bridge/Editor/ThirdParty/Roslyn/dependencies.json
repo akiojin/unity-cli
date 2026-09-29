@@ -1,0 +1,56 @@
+[
+  {
+    "package": "Microsoft.CodeAnalysis.Common",
+    "version": "4.8.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.common/4.8.0/microsoft.codeanalysis.common.4.8.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "dc81229d54d9abafda6a331503c5d344edcb4c812dd0fba11b22131892edab3e",
+    "dll": "Microsoft.CodeAnalysis.dll",
+    "dllSha256": "aab3674134122f9c04fcb55a2d1af2d19342cf92a1e593159236dfbce05de59c"
+  },
+  {
+    "package": "Microsoft.CodeAnalysis.CSharp",
+    "version": "4.8.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/4.8.0/microsoft.codeanalysis.csharp.4.8.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "3263a75c9bddfdecece543dcab218b9db673e66f9579da517c1fa415979eaa45",
+    "dll": "Microsoft.CodeAnalysis.CSharp.dll",
+    "dllSha256": "bc4e4cfe276fb97e70978e1d484e806c5a1c9301d1f9752c6d39840840118723"
+  },
+  {
+    "package": "System.Collections.Immutable",
+    "version": "7.0.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.collections.immutable/7.0.0/system.collections.immutable.7.0.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "f5a9f6c1bc6e7b6aabb6e818112f5ac2c85083e29f26a6a386786ce3991021d9",
+    "dll": "System.Collections.Immutable.dll",
+    "dllSha256": "1255194f6ec9c1874085cdab24495fcd1430958018350d7b6630fd04b44bcb81"
+  },
+  {
+    "package": "System.Reflection.Metadata",
+    "version": "7.0.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.reflection.metadata/7.0.0/system.reflection.metadata.7.0.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "1b000a4219213c1613aa645d1bd73db5aaab292283c325203848562cac5634f2",
+    "dll": "System.Reflection.Metadata.dll",
+    "dllSha256": "c03b73b3ae01363313d151ad9fb77c3dff378814bdeb12b9b435a6d50f40b833"
+  },
+  {
+    "package": "System.Runtime.CompilerServices.Unsafe",
+    "version": "6.0.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "6c41b53e70e9eee298cff3a02ce5acdd15b04125589be0273f0566026720a762",
+    "dll": "System.Runtime.CompilerServices.Unsafe.dll",
+    "dllSha256": "01748200f2400c742aa689f1f5101bd6298efdfd92c00c18f4fa473847235ba9"
+  },
+  {
+    "package": "System.Text.Encoding.CodePages",
+    "version": "7.0.0",
+    "url": "https://api.nuget.org/v3-flatcontainer/system.text.encoding.codepages/7.0.0/system.text.encoding.codepages.7.0.0.nupkg",
+    "framework": "netstandard2.0",
+    "sha256": "782293570ba60f4e7564472825c0d54469c8180b04bcaa5f1f7c9d2a5b87c66a",
+    "dll": "System.Text.Encoding.CodePages.dll",
+    "dllSha256": "eaf68151619943ab2dc46247f2d22a29de0ea3805a56de0c32b75af12f89e74c"
+  }
+]
