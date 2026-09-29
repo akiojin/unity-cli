@@ -274,6 +274,50 @@ package lock. Set `UNITY_PATH` or `UNITY_CLI` to override binaries.
 Against an existing listener, run `scripts/e2e-timeline.sh --port <port>`;
 save unrelated dirty scenes first because the fixture opens its own scene.
 
+### VFX Graph verification
+
+The Bridge uses reflection for the optional `com.unity.visualeffectgraph`
+package; installing the Bridge does not install VFX Graph. The development
+project includes VFX Graph 17.4.0. Use Unity 6000.4.11f1 for this matrix.
+
+検証済み: Unity 6000.4.11f1 / VFX Graph 17.4.0 (macOS).
+
+```bash
+cargo build --bin unity-cli
+scripts/e2e-vfx-batch-host.sh --port 6476
+scripts/e2e-vfx-batch-host.sh --port 6477 --without-vfx
+```
+
+The normal run requires graphics/compute shader support for SDF baking; do not
+add `-nographics`. It creates a graph from a template, adds a context, block and
+parameter, verifies describe/compile, drives a VisualEffect in Play Mode with
+parameter writes and events (including `OnPlay`), and checks a baked Texture3D.
+Generated assets belong under `Assets/Scenes/Generated/E2E/Vfx/`.
+The package-absent run uses a temporary project and preserves the working
+project's manifest. It verifies compilation and `VFX_PACKAGE_MISSING` responses
+from all six VFX tools without Console errors.
+
+Run the focused NUnit suites on the same integrated source:
+
+```bash
+UNITY_PATH=/Applications/Unity/Hub/Editor/6000.4.11f1/Unity.app/Contents/MacOS/Unity
+"$UNITY_PATH" -batchmode -projectPath "$PWD/UnityCliBridge" -runTests \
+  -testPlatform EditMode -testFilter UnityCliBridge.Tests.VfxGraphHandlerTests \
+  -testResults /tmp/vfx-editmode.xml -logFile /tmp/vfx-editmode.log
+"$UNITY_PATH" -projectPath "$PWD/UnityCliBridge" -runTests \
+  -testPlatform PlayMode -testFilter VfxRuntimePlayModeTests \
+  -testResults /tmp/vfx-playmode.xml -logFile /tmp/vfx-playmode.log
+```
+
+The PlayMode suite needs a visible Editor/Game view to exercise GPU particle
+counts and output-event callbacks. Omit `-batchmode` for that suite: batch mode
+can advance the managed test loop without the rendered frames these assertions
+need. The command exits automatically when tests finish. EditMode tests and the
+CLI E2E host can run in batch mode with graphics enabled.
+
+Keep the XML results, Editor logs and E2E artifact paths in the integration PR.
+Windows verification is tracked separately in Issue #308.
+
 - Stable tracked scenes stay in `UnityCliBridge/Assets/Scenes/` (`SampleScene` only).
 - Local E2E-generated scenes go under `UnityCliBridge/Assets/Scenes/Generated/E2E/` and must not be committed.
 - UI manual test scenes continue to use `UnityCliBridge/Assets/Scenes/Generated/UI/`.
@@ -697,6 +741,9 @@ git config core.hooksPath .husky
 ## ローカル Unity E2E
 
 Unity E2E は CI では実行しません。Unity Editor が起動しているローカル環境でのみ実行します。
+
+VFX Graph の通常・非導入 E2E と EditMode / PlayMode の実行手順は
+[VFX Graph verification](#vfx-graph-verification) を参照してください。
 
 Input Actions のソース JSON 保存・再import・Editor 再起動の回帰検証は、
 `cargo build --bin unity-cli` の後に
