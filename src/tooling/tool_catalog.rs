@@ -11,6 +11,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "manage_timeline",
     "create_animator_controller",
     "create_animation_clip",
+    "get_animation_curves",
+    "edit_animation_curve",
     "create_sprite_atlas",
     "find_by_component",
     "get_component_values",
@@ -226,6 +228,12 @@ fn tool_description(name: &str) -> &'static str {
         "create_animation_clip" => {
             "Create an AnimationClip asset from sprite frames with frame rate and loop settings"
         }
+        "get_animation_curves" => {
+            "Read float curve bindings, keys, and tangent modes from an AnimationClip"
+        }
+        "edit_animation_curve" => {
+            "Set, upsert, or remove float curve keys on a standalone AnimationClip"
+        }
         "create_sprite_atlas" => "Create a SpriteAtlas asset with packables and packing settings",
         "read" => "Read a C# source file",
         "search" => "Search code by pattern",
@@ -305,6 +313,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_animator_runtime_info"
             | "get_animator_state"
             | "get_timeline"
+            | "get_animation_curves"
             | "find_by_component"
             | "get_component_values"
             | "get_gameobject_details"
@@ -1460,6 +1469,44 @@ fn tool_params_schema(name: &str) -> Value {
                 ("overwrite", boolean_schema()),
             ],
             &["clipPath", "spritePaths"],
+            false,
+        ),
+        "get_animation_curves" => object_schema(
+            &[
+                ("clipPath", string_schema()),
+                ("binding", animation_curve_binding_schema()),
+            ],
+            &["clipPath"],
+            false,
+        ),
+        "edit_animation_curve" => object_schema(
+            &[
+                ("clipPath", string_schema()),
+                ("animationRoot", integer_schema()),
+                ("binding", animation_curve_binding_schema()),
+                (
+                    "operation",
+                    enum_string_schema(&["set", "upsert_keys", "remove_keys", "remove_curve"]),
+                ),
+                ("createIfMissing", boolean_schema()),
+                (
+                    "keys",
+                    array_of(object_schema(
+                        &[
+                            ("time", number_schema()),
+                            ("value", number_schema()),
+                            ("leftTangentMode", animation_curve_tangent_mode_schema()),
+                            ("rightTangentMode", animation_curve_tangent_mode_schema()),
+                            ("inTangent", number_schema()),
+                            ("outTangent", number_schema()),
+                        ],
+                        &["time", "value"],
+                        false,
+                    )),
+                ),
+                ("times", array_of(number_schema())),
+            ],
+            &["clipPath", "animationRoot", "binding", "operation"],
             false,
         ),
         "create_sprite_atlas" => object_schema(
@@ -2774,6 +2821,22 @@ fn tool_params_schema(name: &str) -> Value {
     }
 }
 
+fn animation_curve_binding_schema() -> Value {
+    object_schema(
+        &[
+            ("path", string_schema()),
+            ("component", string_schema()),
+            ("property", string_schema()),
+        ],
+        &["path", "component", "property"],
+        false,
+    )
+}
+
+fn animation_curve_tangent_mode_schema() -> Value {
+    enum_string_schema(&["Linear", "Constant", "Auto", "ClampedAuto", "Free"])
+}
+
 fn default_params_schema() -> Value {
     json!({
         "type": "object",
@@ -2905,7 +2968,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 146);
+        assert_eq!(TOOL_NAMES.len(), 148);
     }
 
     #[test]
@@ -3371,6 +3434,32 @@ mod tests {
             spec.params_schema["properties"]["spritePaths"]["items"]["type"],
             "string"
         );
+    }
+
+    #[test]
+    fn animation_curve_tools_advertise_strict_unity_contracts() {
+        for (name, mutating, required) in [
+            ("get_animation_curves", false, json!(["clipPath"])),
+            (
+                "edit_animation_curve",
+                true,
+                json!(["clipPath", "animationRoot", "binding", "operation"]),
+            ),
+        ] {
+            let spec = get_tool_spec(name).expect("animation curve tool must be discoverable");
+            assert_eq!(spec.mutating, mutating);
+            assert_eq!(spec.executor, ToolExecutor::Remote);
+            assert_eq!(spec.params_schema["required"], required);
+            assert_eq!(spec.params_schema["additionalProperties"], false);
+            assert_eq!(
+                spec.params_schema["properties"]["binding"]["required"],
+                json!(["path", "component", "property"])
+            );
+            assert_eq!(
+                spec.params_schema["properties"]["binding"]["additionalProperties"],
+                false
+            );
+        }
     }
 
     #[test]

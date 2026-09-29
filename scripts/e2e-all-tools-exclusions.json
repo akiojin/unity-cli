@@ -1,4 +1,6 @@
 {
+  "get_animation_curves": "Requires the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.",
+  "edit_animation_curve": "Mutates the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.",
   "build_player": "Requires platform build modules and an isolated output/project; covered by scripts/e2e-player-build.py.",
   "get_build_status": "Requires a build_player job; covered by scripts/e2e-player-build.py.",
   "start_scene_bake": "Requires target-specific bake fixtures and long-running jobs; covered by scripts/e2e-bake-batch-host.sh.",
