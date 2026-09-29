@@ -193,10 +193,12 @@ namespace UnityCliBridge.Handlers
                         
                         if (!string.IsNullOrEmpty(actionName))
                         {
-                            var action = newMap.AddAction(actionName);
+                            var hasActionType = Enum.TryParse<InputActionType>(actionType, out var type)
+                                && Enum.IsDefined(typeof(InputActionType), type);
+                            var action = newMap.AddAction(actionName, hasActionType ? type : InputActionType.Value);
                             
                             // Set action type
-                            if (Enum.TryParse<InputActionType>(actionType, out var type))
+                            if (hasActionType)
                             {
                                 action.expectedControlType = GetExpectedControlType(type);
                             }
@@ -300,10 +302,12 @@ namespace UnityCliBridge.Handlers
                     return new { error = $"Action '{actionName}' already exists in map '{mapName}'" };
                 }
 
-                var action = map.AddAction(actionName);
+                var hasActionType = Enum.TryParse<InputActionType>(actionType, out var type)
+                    && Enum.IsDefined(typeof(InputActionType), type);
+                var action = map.AddAction(actionName, hasActionType ? type : InputActionType.Value);
                 
                 // Set action type
-                if (Enum.TryParse<InputActionType>(actionType, out var type))
+                if (hasActionType)
                 {
                     action.expectedControlType = GetExpectedControlType(type);
                 }
