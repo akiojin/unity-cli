@@ -259,7 +259,7 @@ fn handle_find_symbol(
         .and_then(Value::as_bool)
         .unwrap_or(false);
 
-    let response = session.request("workspace/symbol", json!({ "query": name }))?;
+    let response = session.request("workspace/symbol", json!({ "query": name, "scope": scope }))?;
     let items = response.as_array().cloned().unwrap_or_default();
 
     let mut grouped: BTreeMap<String, Vec<Value>> = BTreeMap::new();
@@ -376,7 +376,10 @@ fn handle_find_refs(
         .unwrap_or(5)
         .clamp(1, 100) as usize;
 
-    let response = session.request("unitycli/referencesByName", json!({ "name": name }))?;
+    let response = session.request(
+        "unitycli/referencesByName",
+        json!({ "name": name, "scope": scope }),
+    )?;
     let mut refs = response.as_array().cloned().unwrap_or_default();
 
     refs.sort_by(|a, b| {
@@ -1502,12 +1505,14 @@ while True:
     elif method == "textDocument/documentSymbol":
         send_message({"jsonrpc":"2.0","id":message_id,"result":[{"name":"Player","kind":5,"namePath":"Player","range":{"start":{"line":0,"character":0}},"children":[{"name":"Move","kind":6,"namePath":"Player/Move","container":"Player","containerPath":"Player","range":{"start":{"line":2,"character":4}}}]}]})
     elif method == "workspace/symbol":
+        assert "scope" in message["params"], "workspace query must forward its scope"
         send_message({"jsonrpc":"2.0","id":message_id,"result":[
             {"name":"Player","kind":5,"namePath":"Player","location":{"uri":PLAYER_URI,"range":{"start":{"line":0,"character":0}}}},
             {"name":"PlayerFactory","kind":5,"namePath":"PlayerFactory","location":{"uri":PLAYER_URI,"range":{"start":{"line":5,"character":1}}}},
             {"name":"Move","kind":6,"namePath":"Player/Move","containerName":"Player","location":{"uri":PLAYER_URI,"range":{"start":{"line":2,"character":4}}}}
         ]})
     elif method == "unitycli/referencesByName":
+        assert "scope" in message["params"], "reference query must forward its scope"
         send_message({"jsonrpc":"2.0","id":message_id,"result":[
             {"path":PLAYER_URI,"line":4,"column":8,"snippet":"var a = new Player();"},
             {"path":"Assets/Scripts/UserB.cs","line":7,"column":2,"snippet":"Player p;"}

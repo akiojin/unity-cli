@@ -142,7 +142,7 @@ namespace UnityCliBridge.Core
                 ["quit_editor"] = command =>
                 {
                     var response = Response.SuccessResult(command.Id, new { message = "Unity Editor quitting" });
-                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                    // The transport schedules exit only after this response is sent.
                     return Task.FromResult(response);
                 },
                 ["manage_tags"] = command => Success(command, TagManagementHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),

@@ -10,6 +10,27 @@ namespace UnityCliBridge.Tests.Editor
     [TestFixture]
     public class UnityCliBridgeHostConnectionTests
     {
+        [Test]
+        public void QuitEditor_DoesNotScheduleExitBeforeResponseIsSent()
+        {
+            var before = UnityEditor.EditorApplication.delayCall;
+            try
+            {
+                var response = global::UnityCliBridge.Core.BridgeCommandRouter.Handle(new Command
+                {
+                    Id = "quit-response-order", Type = "quit_editor",
+                    Parameters = new Newtonsoft.Json.Linq.JObject()
+                }).GetAwaiter().GetResult();
+                StringAssert.Contains("Unity Editor quitting", response);
+                Assert.AreEqual(before, UnityEditor.EditorApplication.delayCall,
+                    "Only the transport may schedule exit after flushing the response");
+            }
+            finally
+            {
+                UnityEditor.EditorApplication.delayCall = before;
+            }
+        }
+
         [SetUp]
         public void SetUp()
         {

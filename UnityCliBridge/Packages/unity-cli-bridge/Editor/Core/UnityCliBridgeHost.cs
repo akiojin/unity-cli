@@ -590,10 +590,17 @@ namespace UnityCliBridge.Core
 
                 // Send response
                 var responseWriteStopwatch = Stopwatch.StartNew();
-                await TrySendFramedMessage(responseStream, response, CancellationToken.None);
+                var responseSent = await TrySendFramedMessage(responseStream, response, CancellationToken.None);
                 responseWriteStopwatch.Stop();
                 BridgeCommandStats.RecordStageDuration("response_send_ms", responseWriteStopwatch.Elapsed.TotalMilliseconds);
                 statsScope.Complete(!responseIsError, Encoding.UTF8.GetByteCount(response));
+                if (responseSent && !responseIsError &&
+                    string.Equals(command.Type, "quit_editor", StringComparison.OrdinalIgnoreCase))
+                {
+                    // delayCall can run while an asynchronous write is suspended.
+                    // Register only after the complete success frame has been flushed.
+                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                }
             }
             catch (Exception ex)
             {
