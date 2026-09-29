@@ -117,6 +117,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "refresh_assets",
     "get_test_status",
     "run_tests",
+    "build_player",
+    "get_build_status",
     "click_ui_element",
     "find_ui_elements",
     "get_ui_element_state",
@@ -218,6 +220,8 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "build_player" => "Queue a standalone player build on the Unity Editor host",
+        "get_build_status" => "Get player build status, report, and artifacts",
         _ => "Unity CLI tool operation",
     }
 }
@@ -301,6 +305,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_command_stats"
             | "ping"
             | "get_test_status"
+            | "get_build_status"
             | "find_ui_elements"
             | "get_ui_element_state"
             | "capture_video_status"
@@ -2377,6 +2382,23 @@ fn tool_params_schema(name: &str) -> Value {
                 ),
             ],
         ),
+        "build_player" => object_schema(
+            &[
+                (
+                    "target",
+                    enum_string_schema(&["StandaloneWindows64", "StandaloneOSX"]),
+                ),
+                (
+                    "scenes",
+                    json!({"type": "array", "items": {"type": "string"}, "minItems": 1}),
+                ),
+                ("outputPath", string_schema()),
+                ("development", json!({"type": "boolean", "default": false})),
+            ],
+            &["target", "scenes", "outputPath"],
+            false,
+        ),
+        "get_build_status" => object_schema(&[("buildId", string_schema())], &["buildId"], false),
         "run_tests" => object_schema(
             &[
                 (
@@ -2622,7 +2644,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 134);
+        assert_eq!(TOOL_NAMES.len(), 136);
     }
 
     #[test]
@@ -2815,6 +2837,42 @@ mod tests {
         assert_eq!(
             spec.params_schema["properties"]["testMode"]["enum"],
             json!(["EditMode", "PlayMode", "All"])
+        );
+    }
+
+    #[test]
+    fn build_player_schema_requires_explicit_safe_build_inputs() {
+        let spec = get_tool_spec("build_player").expect("build_player must exist");
+        assert!(spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(
+            spec.params_schema["required"],
+            json!(["target", "scenes", "outputPath"])
+        );
+        let properties = &spec.params_schema["properties"];
+        assert_eq!(
+            properties["target"]["enum"],
+            json!(["StandaloneWindows64", "StandaloneOSX"])
+        );
+        assert_eq!(properties["scenes"]["type"], "array");
+        assert_eq!(properties["scenes"]["items"]["type"], "string");
+        assert_eq!(properties["scenes"]["minItems"], 1);
+        assert_eq!(properties["outputPath"]["type"], "string");
+        assert_eq!(properties["development"]["type"], "boolean");
+        assert_eq!(properties["development"]["default"], false);
+    }
+
+    #[test]
+    fn get_build_status_is_read_only_and_requires_build_id() {
+        let spec = get_tool_spec("get_build_status").expect("get_build_status must exist");
+        assert!(!spec.mutating);
+        assert_eq!(spec.executor, ToolExecutor::Remote);
+        assert_eq!(spec.params_schema["additionalProperties"], false);
+        assert_eq!(spec.params_schema["required"], json!(["buildId"]));
+        assert_eq!(
+            spec.params_schema["properties"]["buildId"]["type"],
+            "string"
         );
     }
 
