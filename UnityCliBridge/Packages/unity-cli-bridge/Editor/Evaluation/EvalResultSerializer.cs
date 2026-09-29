@@ -24,7 +24,7 @@ namespace UnityCliBridge.Evaluation
             if (--budget < 0 || depth > 8) throw new InvalidOperationException("Result exceeds 1024 values or depth 8.");
             if (value == null) return JValue.CreateNull();
             if (value is UnityEngine.Object obj)
-                return obj == null ? JValue.CreateNull() : new JObject { ["kind"] = "unity_object", ["type"] = obj.GetType().FullName, ["name"] = obj.name, ["instanceId"] = obj.GetInstanceID() };
+                return obj == null ? JValue.CreateNull() : new JObject { ["kind"] = "unity_object", ["type"] = obj.GetType().FullName, ["name"] = obj.name, ["instanceId"] = UnityCliBridge.Helpers.ObjectIdentity.GetInstanceId(obj) };
             if (value is string str)
             {
                 if (str.Length > 16384) throw new InvalidOperationException("String exceeds 16384 characters.");

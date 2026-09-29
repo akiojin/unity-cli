@@ -131,6 +131,8 @@ namespace UnityCliBridge.Core
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
                 ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
                 ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
+                ["hot_reload_status"] = command => Success(command, HotReloadHandler.Status()),
+                ["hot_reload"] = HandleHotReload,
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
@@ -157,7 +159,13 @@ namespace UnityCliBridge.Core
                 ["set_package_setting"] = command => Success(command, PackageSettingsHandler.SetPackageSetting(command.Parameters)),
                 ["get_editor_info"] = HandleGetEditorInfo,
                 ["update_project_settings"] = command => Success(command, ProjectSettingsHandler.UpdateProjectSettings(command.Parameters)),
-                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot())
+                ["get_command_stats"] = command => Success(command, BridgeCommandStats.CaptureSnapshot()),
+                ["vfx_describe_graph"] = command => Success(command, VfxGraphHandler.DescribeGraph(command.Parameters)),
+                ["vfx_list_library"] = command => Success(command, VfxGraphHandler.ListLibrary(command.Parameters)),
+                ["vfx_apply"] = command => Success(command, VfxGraphHandler.Apply(command.Parameters)),
+                ["vfx_runtime"] = command => Success(command, VfxGraphHandler.Runtime(command.Parameters)),
+                ["vfx_settings"] = command => Success(command, VfxGraphHandler.Settings(command.Parameters)),
+                ["vfx_bake_sdf"] = command => Success(command, VfxGraphHandler.BakeSdf(command.Parameters))
             };
 
         internal static IReadOnlyCollection<string> RegisteredCommandTypes => Handlers.Keys.ToArray();
@@ -181,6 +189,16 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+        private static async Task<string> HandleHotReload(Command command)
+        {
+            var result = Newtonsoft.Json.Linq.JObject.FromObject(await HotReloadHandler.Handle(command.Parameters));
+            if (result.Value<bool?>("success") == false || result["error"] != null)
+                return Response.ErrorResult(command.Id,
+                    result.Value<string>("message") ?? result.Value<string>("error") ?? "Hot reload failed",
+                    result.Value<string>("code") ?? "HOT_RELOAD_FAILED", result);
+            return Response.SuccessResult(command.Id, result);
+        }
 
         private static Task<string> HandleGetEditorState(Command command)
         {

@@ -31,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 136 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 125 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 144 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 133 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (125 tools)
+## Runtime Tool APIs (133 tools)
 
 ### Scenes
 
@@ -161,6 +161,17 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `modify_material`              | Modify Material properties                                     |
 | `refresh_assets`               | Refresh the AssetDatabase                                      |
 
+### Visual Effect Graph
+
+| Tool | Description |
+| --- | --- |
+| `vfx_describe_graph` | Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile `errors` (on by default; `includeErrors:false` to skip), the last `compile` outcome, and canvas `layout` diagnostics (`overlapCount` / `overlaps`). Large graphs describe big: `include` keeps only the named top-level sections (counts are always kept) and `includeSlots:false` omits the slot trees that dominate the payload, flagged by `slotsOmitted` |
+| `vfx_list_library` | List available Visual Effect Graph descriptors (`kind`: block, operator, context, parameter, or template) |
+| `vfx_apply` | Apply an authoring mutation to a Visual Effect Graph asset. Every op response carries a `compile` summary (`success`/`exception`/`errors`/`logs`) of the recompile it triggered; pass `autoCompile:false` to skip that recompile and batch edits, then one `compile` op to flush them (its response reports `flushedDeferred`). Ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, remove_group, auto_layout, compile, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, set_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template |
+| `vfx_runtime` | Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state). `simulate` advances the live sim via `VisualEffect.Simulate(deltaTime, steps)` — params `deltaTime` (0.05) and `steps` (1). |
+| `vfx_bake_sdf` | Bake a Mesh asset into a Signed Distance Field Texture3D asset (programmatic SDF Bake Tool, via the public `MeshToSDFBaker`). Params: `meshPath`, `outputPath`, `maxResolution` (64), `center`/`size` (default = mesh bounds), `signPassCount` (1), `threshold` (0.5), `sdfOffset` (0), `overwrite` (false). Requires compute shader support. |
+| `vfx_settings` | Read or write VFX environment settings — ops: `get` (read all), `set` (write one named setting). `scope`: `project` (default — `ProjectSettings/VFXManager.asset`; `fixedTimeStep`, `maxDeltaTime`, `maxCapacity`, and the Object-ref plumbing `m_IndirectShader`/`m_CopyBufferShader`/`m_SortShader`/`m_StripUpdateShader`/`m_RuntimeResources` set by asset path, ...) or `preferences` (per-machine EditorPrefs via `UnityEditor.VFX.VFXViewPreference`; `instancingEnabled`, `displayExperimentalOperator`, `multithreadUpdateEnabled`, `allowShaderExternalization`, ...) |
+
 ### Addressables
 
 | Tool                   | Description                            |
@@ -174,6 +185,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | Tool                    | Description                      |
 | ----------------------- | -------------------------------- |
 | `get_compilation_state` | Get C# compilation state         |
+| `hot_reload_status`     | Inspect hot reload preview state |
+| `hot_reload`            | Preview methods or recover Play  |
 | `read`                  | Read a C# source file            |
 | `find_refs`             | Find symbol references           |
 | `search`                | Search code by pattern           |

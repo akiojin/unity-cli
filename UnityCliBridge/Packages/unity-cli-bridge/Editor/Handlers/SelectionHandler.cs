@@ -269,7 +269,7 @@ namespace UnityCliBridge.Handlers
             {
                 { "path", GetGameObjectPath(go) },
                 { "name", go.name },
-                { "instanceId", go.GetInstanceID() },
+                { "instanceId", UnityCliBridge.Helpers.ObjectIdentity.GetInstanceId(go) },
                 { "tag", go.tag },
                 { "layer", go.layer },
                 { "isActive", go.activeSelf },
