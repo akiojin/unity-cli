@@ -41,6 +41,22 @@ namespace UnityCliBridge.Handlers
         }
 
         private static readonly List<ScheduledRelease> scheduledReleases = new List<ScheduledRelease>();
+        private sealed class TouchGesture
+        {
+            public Touchscreen Device;
+            public int Id;
+            public Vector2 Start;
+            public Vector2 End;
+            public double Duration;
+            public double StartedAt;
+            public bool Swipe;
+            public bool Started;
+            public bool AtEndpoint;
+            public bool Released;
+        }
+
+        private static readonly List<TouchGesture> touchGestures = new List<TouchGesture>();
+        private static int lastTouchUpdateFrame = -1;
         private static readonly System.Reflection.MethodInfo InputSystemUpdateWithType = typeof(InputSystem).GetMethod(
             "Update",
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic,
@@ -83,6 +99,8 @@ namespace UnityCliBridge.Handlers
             InputSystem.onDeviceChange += OnDeviceChange;
             EditorApplication.update -= ProcessScheduledReleases;
             EditorApplication.update += ProcessScheduledReleases;
+            InputSystem.onBeforeUpdate += ProcessTouchGestures;
+            EditorApplication.playModeStateChanged += OnTouchPlayModeChanged;
         }
 
         /// <summary>
@@ -103,6 +121,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleKeyboardAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -150,6 +169,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleMouseAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -200,6 +220,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleGamepadAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -247,6 +268,7 @@ namespace UnityCliBridge.Handlers
 
         private static object HandleTouchAction(JObject parameters)
         {
+            EnsureSimulationUpdateContext();
             ProcessScheduledReleases();
             string action = parameters?["action"]?.ToString();
 
@@ -466,24 +488,49 @@ namespace UnityCliBridge.Handlers
         private static void ApplyStateChange<TState>(InputControl control, TState state)
             where TState : struct
         {
+            EnsureSimulationUpdateContext();
             InputState.Change(control, state, GetSimulationUpdateType());
         }
 
         private static void ApplyStateEvent(InputDevice device, InputEventPtr eventPtr)
         {
+            EnsureSimulationUpdateContext();
             InputState.Change(device, eventPtr, GetSimulationUpdateType());
+        }
+
+        private static void EnsureSimulationUpdateContext()
+        {
+            // Passing Dynamic to Change selects the state buffer, but does not change
+            // currentUpdateType. InputAction ignores notifications in Editor context.
+            // Enter the game update before changing state so both press and release
+            // reach action monitors, including releases scheduled by EditorApplication.
+            if (Application.isPlaying && InputState.currentUpdateType == InputUpdateType.Editor)
+            {
+                FlushQueuedEvents();
+            }
         }
 
         private static InputUpdateType GetSimulationUpdateType()
         {
-            return Application.isPlaying ? InputUpdateType.Dynamic : default;
+            if (!Application.isPlaying)
+                return default;
+
+            switch (InputSystem.settings.updateMode)
+            {
+                case InputSettings.UpdateMode.ProcessEventsInFixedUpdate:
+                    return InputUpdateType.Fixed;
+                case InputSettings.UpdateMode.ProcessEventsManually:
+                    return InputUpdateType.Manual;
+                default:
+                    return InputUpdateType.Dynamic;
+            }
         }
 
         private static void FlushQueuedEvents()
         {
             if (Application.isPlaying && InputSystemUpdateWithType != null)
             {
-                InputSystemUpdateWithType.Invoke(null, new object[] { InputUpdateType.Dynamic });
+                InputSystemUpdateWithType.Invoke(null, new object[] { GetSimulationUpdateType() });
                 return;
             }
 
@@ -555,6 +602,9 @@ namespace UnityCliBridge.Handlers
         {
             if (change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected)
             {
+                foreach (var gesture in touchGestures.Where(g => g.Device == device && g.Started && !g.Released))
+                    UpdateSimulatedTouch(gesture.Id, gesture.End, UnityEngine.InputSystem.TouchPhase.Canceled);
+                touchGestures.RemoveAll(g => g.Device == device);
                 foreach (var key in activeDevices.Where(kvp => kvp.Value == device).Select(kvp => kvp.Key).ToList())
                 {
                     activeDevices.Remove(key);
@@ -1218,28 +1268,9 @@ namespace UnityCliBridge.Handlers
             float y = parameters["y"]?.ToObject<float>() ?? 0;
             int touchId = parameters["touchId"]?.ToObject<int>() ?? 0;
             
-            var touch = touchscreen.touches[touchId];
-            
-            using (StateEvent.From(touchscreen, out var beginEvent))
-            {
-                touch.position.WriteValueIntoEvent(new Vector2(x, y), beginEvent);
-                touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Began, beginEvent);
-                ApplyStateEvent(touchscreen, beginEvent);
-            }
-            UpdateSimulatedTouch(touchId, new Vector2(x, y), UnityEngine.InputSystem.TouchPhase.Began);
-
-            if (TryGetHoldSeconds(parameters, out double holdSeconds))
-            {
-                WaitForMilliseconds(Mathf.Max(1, Mathf.RoundToInt((float)(holdSeconds * 1000d))));
-            }
-            
-            using (StateEvent.From(touchscreen, out var endEvent))
-            {
-                touch.position.WriteValueIntoEvent(new Vector2(x, y), endEvent);
-                touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Ended, endEvent);
-                ApplyStateEvent(touchscreen, endEvent);
-            }
-            UpdateSimulatedTouch(touchId, new Vector2(x, y), UnityEngine.InputSystem.TouchPhase.Ended);
+            TryGetHoldSeconds(parameters, out double holdSeconds);
+            EnqueueTouchGesture(touchscreen, touchId, new Vector2(x, y), new Vector2(x, y),
+                Math.Max(0, holdSeconds), false);
             
             return new
             {
@@ -1260,41 +1291,8 @@ namespace UnityCliBridge.Handlers
             int duration = parameters["duration"]?.ToObject<int>() ?? 500;
             int touchId = parameters["touchId"]?.ToObject<int>() ?? 0;
             
-            var touch = touchscreen.touches[touchId];
-            
-            using (StateEvent.From(touchscreen, out var beginEvent))
-            {
-                touch.position.WriteValueIntoEvent(new Vector2(startX, startY), beginEvent);
-                touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Began, beginEvent);
-                ApplyStateEvent(touchscreen, beginEvent);
-            }
-            UpdateSimulatedTouch(touchId, new Vector2(startX, startY), UnityEngine.InputSystem.TouchPhase.Began);
-
-            if (duration > 1)
-            {
-                WaitForMilliseconds(Mathf.Max(1, duration / 2));
-            }
-            
-            using (StateEvent.From(touchscreen, out var moveEvent))
-            {
-                touch.position.WriteValueIntoEvent(new Vector2(endX, endY), moveEvent);
-                touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Moved, moveEvent);
-                ApplyStateEvent(touchscreen, moveEvent);
-            }
-            UpdateSimulatedTouch(touchId, new Vector2(endX, endY), UnityEngine.InputSystem.TouchPhase.Moved);
-
-            if (duration > 1)
-            {
-                WaitForMilliseconds(Mathf.Max(1, duration - Mathf.Max(1, duration / 2)));
-            }
-            
-            using (StateEvent.From(touchscreen, out var endEvent))
-            {
-                touch.position.WriteValueIntoEvent(new Vector2(endX, endY), endEvent);
-                touch.phase.WriteValueIntoEvent(UnityEngine.InputSystem.TouchPhase.Ended, endEvent);
-                ApplyStateEvent(touchscreen, endEvent);
-            }
-            UpdateSimulatedTouch(touchId, new Vector2(endX, endY), UnityEngine.InputSystem.TouchPhase.Ended);
+            EnqueueTouchGesture(touchscreen, touchId, new Vector2(startX, startY), new Vector2(endX, endY),
+                Math.Max(0, duration) / 1000d, true);
             
             return new
             {
@@ -1306,6 +1304,103 @@ namespace UnityCliBridge.Handlers
                 touchId = touchId,
                 message = $"Swipe from ({startX}, {startY}) to ({endX}, {endY})"
             };
+        }
+
+        private static void EnqueueTouchGesture(Touchscreen device, int id, Vector2 start, Vector2 end,
+            double duration, bool swipe)
+        {
+            if (id < 0 || id >= device.touches.Count)
+                throw new ArgumentOutOfRangeException(nameof(id), "touchId is outside the touchscreen range");
+            if (double.IsNaN(duration) || double.IsInfinity(duration))
+                throw new ArgumentOutOfRangeException(nameof(duration), "Touch duration must be finite");
+
+            touchGestures.Add(new TouchGesture
+            {
+                Device = device, Id = id, Start = start, End = end, Duration = duration, Swipe = swipe
+            });
+        }
+
+        private static void ProcessTouchGestures()
+        {
+            if (touchGestures.Count == 0)
+                return;
+
+            // Queue into the natural player input update; never pump InputSystem.Update recursively.
+            var updateType = InputState.currentUpdateType;
+            if (Application.isPlaying)
+            {
+                if (updateType == InputUpdateType.Editor || updateType == InputUpdateType.BeforeRender ||
+                    Time.frameCount == lastTouchUpdateFrame)
+                    return;
+                lastTouchUpdateFrame = Time.frameCount;
+            }
+            else if (updateType != InputUpdateType.Editor)
+                return;
+
+            double now = EditorApplication.timeSinceStartup;
+            var occupied = new HashSet<int>();
+            for (int i = 0; i < touchGestures.Count;)
+            {
+                var gesture = touchGestures[i];
+                if (!gesture.Device.added)
+                {
+                    touchGestures.RemoveAt(i);
+                    continue;
+                }
+                // A released gesture retains its turn for this update, so a queued gesture
+                // cannot overwrite Ended before the game has observed the release.
+                if (!occupied.Add(gesture.Id))
+                {
+                    i++;
+                    continue;
+                }
+                if (gesture.Released)
+                {
+                    touchGestures.RemoveAt(i);
+                    continue;
+                }
+
+                if (!gesture.Started)
+                {
+                    gesture.Started = true;
+                    gesture.StartedAt = now;
+                    QueueGestureTouch(gesture, gesture.Start, UnityEngine.InputSystem.TouchPhase.Began);
+                }
+                else if (gesture.AtEndpoint || (!gesture.Swipe && now - gesture.StartedAt >= gesture.Duration))
+                {
+                    QueueGestureTouch(gesture, gesture.End, UnityEngine.InputSystem.TouchPhase.Ended);
+                    gesture.Released = true;
+                }
+                else if (gesture.Swipe)
+                {
+                    float progress = gesture.Duration <= 0 ? 1 : Mathf.Clamp01((float)((now - gesture.StartedAt) / gesture.Duration));
+                    QueueGestureTouch(gesture, Vector2.Lerp(gesture.Start, gesture.End, progress), UnityEngine.InputSystem.TouchPhase.Moved);
+                    gesture.AtEndpoint = progress >= 1;
+                }
+                i++;
+            }
+        }
+
+        private static void QueueGestureTouch(TouchGesture gesture, Vector2 position, UnityEngine.InputSystem.TouchPhase phase)
+        {
+            // Native touch processing supplies press, primaryTouch, delta and start state.
+            // CLI ids remain zero-based; Input System requires nonzero touch identifiers.
+            InputSystem.QueueStateEvent(gesture.Device, new TouchState
+            {
+                touchId = gesture.Id + 1, position = position, phase = phase
+            });
+            UpdateSimulatedTouch(gesture.Id, position, phase);
+        }
+
+        private static void OnTouchPlayModeChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.ExitingPlayMode && state != PlayModeStateChange.ExitingEditMode)
+                return;
+            foreach (var gesture in touchGestures)
+                if (gesture.Started && !gesture.Released && gesture.Device.added)
+                    QueueGestureTouch(gesture, gesture.End, UnityEngine.InputSystem.TouchPhase.Canceled);
+            touchGestures.Clear();
+            lastTouchUpdateFrame = -1;
         }
 
         private static object SimulatePinch(Touchscreen touchscreen, JObject parameters)
@@ -1634,6 +1729,8 @@ namespace UnityCliBridge.Handlers
                 {
                     try
                     {
+                        // Release callbacks also read device state before changing it.
+                        EnsureSimulationUpdateContext();
                         scheduledReleases[i].Callback?.Invoke();
                     }
                     catch (Exception e)
@@ -1985,9 +2082,11 @@ namespace UnityCliBridge.Handlers
                     currentPhase != UnityEngine.InputSystem.TouchPhase.Ended &&
                     currentPhase != UnityEngine.InputSystem.TouchPhase.Canceled)
                 {
+                    var gesture = touchGestures.FirstOrDefault(g => g.Device == touchscreen &&
+                        g.Started && !g.Released && g.Id + 1 == touch.touchId.ReadValue());
                     activeTouches.Add(new
                     {
-                        id = i,
+                        id = gesture != null ? gesture.Id : i,
                         position = new { x = touch.position.x.ReadValue(), y = touch.position.y.ReadValue() },
                         phase = touch.phase.ReadValue().ToString()
                     });
