@@ -343,6 +343,14 @@ fn handle_request(request: DaemonRequest) -> Result<(DaemonResponse, ConnectionA
 
 fn request(request: DaemonRequest) -> Result<DaemonResponse> {
     let mut stream = connect_client()?;
+    // A tool can initialize the LSP and issue multiple 60-second RPCs.
+    // Keep short control-request deadlines, but do not cut tool execution off
+    // at the connection's ten-second timeout (EAGAIN on macOS).
+    if matches!(request, DaemonRequest::Tool { .. }) {
+        stream
+            .set_read_timeout(Some(Duration::from_secs(180)))
+            .context("Failed to set lspd tool response timeout")?;
+    }
     let payload =
         serde_json::to_string(&request).context("Failed to serialize daemon request payload")?;
     write_all_with_retry(
@@ -778,6 +786,38 @@ mod tests {
 
         cleanup_stale_files();
         assert!(!pid_path.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn tool_response_can_arrive_after_ten_second_transport_timeout() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_dir, _env) = prepare_tools_root();
+        let path = socket_path().unwrap();
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let listener = std::os::unix::net::UnixListener::bind(path).unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream);
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            thread::sleep(Duration::from_secs(11));
+            let _ = reader
+                .get_mut()
+                .write_all(b"{\"ok\":true,\"result\":{\"symbols\":[]}}\n");
+        });
+        let response = request(DaemonRequest::Tool {
+            tool_name: "find_symbol".into(),
+            params: json!({"name":"ButtonHandler"}),
+            project_root: "/unused".into(),
+        });
+        server.join().unwrap();
+        assert!(
+            response.is_ok(),
+            "valid slow LSP response was lost: {response:?}"
+        );
     }
 
     #[cfg(unix)]

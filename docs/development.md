@@ -278,6 +278,14 @@ scripts/perf-media-benchmark.sh
 scripts/e2e-video-formats.sh --port 6400
 ```
 
+The all-tools sweep checks the runtime catalog against its invocations and
+`scripts/e2e-all-tools-exclusions.json`. Each exclusion explains the required
+environment or separate suite; excluded tools are reported as skipped, not passed.
+`cargo test all_tools_e2e -- --test-threads=1` detects catalog drift and verifies
+that disconnected or reloading Editors are not treated as ready. For an isolated
+Editor project, set `UNITY_PROJECT_ROOT=/absolute/project/path` and pass its port.
+The sweep quits that Editor unless `--skip-quit` is specified.
+
 ### Scene Layout Policy
 
 Baking E2E creates fixtures under `Assets/Scenes/Generated/E2E/Baking/` and
@@ -843,6 +851,12 @@ scripts/perf-media-benchmark.sh
 # 録画形式: MP4 / WebM / PNG連番（描画可能なEditor）
 scripts/e2e-video-formats.sh --port 6400
 ```
+
+全ツール E2E の除外理由は `scripts/e2e-all-tools-exclusions.json` で管理し、
+除外ツールを PASS として数えません。`cargo test all_tools_e2e -- --test-threads=1`
+でカタログとの差分と、接続失敗を準備完了と扱わないことを検証します。
+隔離した Editor を使う場合は `UNITY_PROJECT_ROOT=/absolute/project/path` と
+ポートを指定してください。`--skip-quit` を指定しない場合、その Editor を終了します。
 
 ### タップ・スワイプの検証
 

@@ -104,7 +104,9 @@ impl ConnectionPool {
             let client = UnityClient::connect(&config).await?;
             self.connections.insert(key.clone(), client);
         }
-        Ok(self.connections.get_mut(&key).unwrap())
+        let client = self.connections.get_mut(&key).unwrap();
+        client.set_timeout(timeout);
+        Ok(client)
     }
 
     fn remove(&mut self, host: &str, port: u16) {
@@ -795,6 +797,43 @@ mod tests {
     use super::*;
     use std::io::{BufRead, BufReader, Write};
     use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn pooled_connection_uses_each_requests_timeout() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let length = stream.read_u32().await.unwrap();
+            let mut bytes = vec![0; length as usize];
+            stream.read_exact(&mut bytes).await.unwrap();
+            let request: Value = serde_json::from_slice(&bytes).unwrap();
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            let response = serde_json::to_vec(&json!({
+                "id": request["id"], "status":"success", "result":{"ok":true}
+            }))
+            .unwrap();
+            stream.write_u32(response.len() as u32).await.unwrap();
+            stream.write_all(&response).await.unwrap();
+        });
+        let mut pool = ConnectionPool::new();
+        pool.get_or_connect("127.0.0.1", port, Duration::from_millis(20))
+            .await
+            .unwrap();
+        let result = pool
+            .get_or_connect("127.0.0.1", port, Duration::from_secs(2))
+            .await
+            .unwrap()
+            .call_tool("package_manager", json!({"action":"list"}))
+            .await;
+        server.await.unwrap();
+        assert!(
+            result.is_ok(),
+            "warm request inherited the short startup timeout: {result:?}"
+        );
+        assert_eq!(pool.connections.len(), 1);
+    }
 
     fn env_lock() -> &'static std::sync::Mutex<()> {
         crate::test_env::env_lock()

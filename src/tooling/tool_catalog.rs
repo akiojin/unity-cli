@@ -2909,6 +2909,80 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
+    fn all_tools_e2e_does_not_treat_disconnection_as_ready() {
+        let runner = include_str!("../../scripts/e2e-all-tools.sh");
+        let functions = runner
+            .split("query_is_playing() {")
+            .nth(1)
+            .unwrap()
+            .split("if ! \"${UNITY_CLI}\" system ping")
+            .next()
+            .unwrap();
+        for wait in [
+            "wait_for_play_state false",
+            "wait_for_compile_idle",
+            "wait_for_tests_done",
+        ] {
+            let script = format!("query_is_playing() {{{functions}\ninvoke_tool() {{ echo '{{\"error\":\"reloading\"}}'; }}\nsleep() {{ :; }}\n{wait}");
+            let status = std::process::Command::new("bash")
+                .args(["-c", &script])
+                .status()
+                .unwrap();
+            assert!(
+                !status.success(),
+                "disconnected Editor was considered ready by {wait}"
+            );
+            let script = format!(
+                "query_is_playing() {{{functions}\ninvoke_tool() {{ echo '{{\"state\":{{\"isPlaying\":false}},\"isCompiling\":false,\"isUpdating\":false,\"status\":\"completed\"}}'; }}\n{wait}"
+            );
+            assert!(
+                std::process::Command::new("bash")
+                    .args(["-c", &script])
+                    .status()
+                    .unwrap()
+                    .success(),
+                "healthy Editor was rejected by {wait}"
+            );
+        }
+    }
+
+    #[test]
+    fn all_tools_e2e_covers_catalog_or_documents_exclusion() {
+        let runner = include_str!("../../scripts/e2e-all-tools.sh");
+        let exclusions_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("scripts/e2e-all-tools-exclusions.json");
+        let exclusions: std::collections::BTreeMap<String, String> = serde_json::from_str(
+            &std::fs::read_to_string(exclusions_path).unwrap_or_else(|_| "{}".to_owned()),
+        )
+        .unwrap();
+        let called: std::collections::BTreeSet<_> = runner
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("run_tool \""))
+            .filter_map(|line| line.split('"').next())
+            .collect();
+        let missing: Vec<_> = TOOL_NAMES
+            .iter()
+            .filter(|name| !called.contains(**name) && !exclusions.contains_key(**name))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "Missing E2E coverage or exclusion: {missing:?}"
+        );
+        for (name, reason) in exclusions {
+            assert!(
+                TOOL_NAMES.contains(&name.as_str()),
+                "stale exclusion: {name}"
+            );
+            assert!(!called.contains(name.as_str()), "already exercised: {name}");
+            assert!(
+                !reason.trim().is_empty(),
+                "missing exclusion reason: {name}"
+            );
+        }
+    }
+
+    #[test]
     fn baking_tools_have_explicit_target_and_polling_contracts() {
         let start = get_tool_spec("start_scene_bake").expect("bake start is registered");
         let status = get_tool_spec("get_scene_bake_status").expect("bake status is registered");
