@@ -1,3 +1,13 @@
+## [0.13.0] - 2026-09-29
+
+### 🚀 Features
+
+- Add Timeline animation track editing and evaluation
+
+### ⚙️ Miscellaneous Tasks
+
+- *(auto-merge)* Enable auto-merge for PRs into develop
+
 ## [0.12.0] - 2026-06-23
 
 ### 🚀 Features

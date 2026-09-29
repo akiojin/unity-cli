@@ -526,6 +526,12 @@ async fn call_remote_tool_with_timing(
     // Try daemon first (fast path).
     match unityd::try_call_tool_with_timing(tool_name, &params, config).await {
         Ok(call) => {
+            tracing::debug!(
+                route = "daemon",
+                startup_ms = ?call.startup_ms,
+                operation_ms = call.daemon_roundtrip_ms,
+                "Unity remote operation"
+            );
             let remote_timing = call.timing;
             let connect_ms = remote_timing.as_ref().and_then(|timing| timing.connect_ms);
             let unity_roundtrip_ms = remote_timing
@@ -558,7 +564,14 @@ async fn call_remote_tool_with_timing(
                 }),
             ));
         }
-        Err(error) if error.is_transport() => {}
+        Err(error) if error.is_transport() => {
+            tracing::warn!(
+                error = %format!("{error:#}"),
+                host = %config.host,
+                port = config.port,
+                "unityd unavailable; falling back to direct TCP"
+            );
+        }
         Err(error) => return Err(error.into()),
     }
 
@@ -580,6 +593,11 @@ async fn call_remote_tool_direct(
     let connect_ms = connect_started_at.elapsed().as_secs_f64() * 1000.0;
     let outcome = client.call_tool_with_timing(tool_name, params).await?;
     let unity_roundtrip_ms = outcome.timing.total_ms;
+    tracing::debug!(
+        route = "direct",
+        operation_ms = connect_ms + unity_roundtrip_ms,
+        "Unity remote operation"
+    );
     Ok((
         outcome.value,
         Some(CliCommandTiming {
@@ -625,6 +643,12 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),
             Err(error) if error.is_transport() => {
+                tracing::warn!(
+                    error = %format!("{error:#}"),
+                    host = %config.host,
+                    port = config.port,
+                    "unityd unavailable; falling back to direct TCP for batch"
+                );
                 let commands2: Vec<BatchItem> = serde_json::from_str(&raw)
                     .context("Batch input must be a JSON array of {tool, params}")?;
                 return execute_batch_direct(&config, commands2).await;
@@ -660,6 +684,7 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 }
 
 async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) -> Result<Value> {
+    let started_at = std::time::Instant::now();
     let mut client = UnityClient::connect(config).await.with_context(|| {
         format!(
             "Failed to connect to Unity at {}:{}",
@@ -675,6 +700,11 @@ async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) 
         }
     }
 
+    tracing::debug!(
+        route = "direct",
+        operation_ms = started_at.elapsed().as_secs_f64() * 1000.0,
+        "Unity remote batch"
+    );
     Ok(Value::Array(results))
 }
 
@@ -1080,6 +1110,7 @@ fn init_tracing(verbose: u8) -> Result<()> {
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(level));
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
+        .with_writer(std::io::stderr)
         .with_target(false)
         .compact()
         .try_init()
