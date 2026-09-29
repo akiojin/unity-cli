@@ -32,6 +32,8 @@ pub const TOOL_NAMES: &[&str] = &[
     "update_index",
     "get_index_status",
     "get_compilation_state",
+    "hot_reload_status",
+    "hot_reload",
     "add_component",
     "set_component_field",
     "get_component_types",
@@ -224,6 +226,8 @@ fn tool_description(name: &str) -> &'static str {
         "find_symbol" => "Find symbol definitions",
         "find_refs" => "Find symbol references",
         "run_tests" => "Run EditMode/PlayMode tests",
+        "hot_reload_status" => "Inspect optional FastScriptReload support, preview session and verified revision",
+        "hot_reload" => "Preview method-body changes during Play; explicitly recover by stopping and recompiling",
         "vfx_describe_graph" => {
             "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile errors (`errors`, on by default), the last compile outcome (`compile`), and canvas layout diagnostics (`layout.overlapCount`). Large graphs describe big: narrow the payload with `include` (top-level sections to keep) and `includeSlots:false` (omit slot trees, which dominate the output)"
         }
@@ -296,6 +300,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "analyze_scene_contents"
             | "analyze_asset_dependencies"
             | "get_compilation_state"
+            | "hot_reload_status"
             | "get_component_types"
             | "list_components"
             | "read_console"
@@ -845,6 +850,40 @@ fn tool_params_schema(name: &str) -> Value {
             ],
             &[],
             false,
+        ),
+        "hot_reload_status" => object_schema(&[], &[], false),
+        "hot_reload" => with_one_of(
+            object_schema(
+                &[
+                    ("action", enum_string_schema(&["begin", "apply", "recover"])),
+                    ("path", string_schema()),
+                    ("source", string_schema()),
+                    ("expectedRevision", string_schema()),
+                    (
+                        "timeoutSeconds",
+                        json!({"type":"number", "minimum":1, "maximum":60}),
+                    ),
+                ],
+                &["action"],
+                false,
+            ),
+            vec![
+                object_schema(
+                    &[("action", enum_string_schema(&["begin"]))],
+                    &["action", "path"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["apply"]))],
+                    &["action", "source", "expectedRevision"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["recover"]))],
+                    &["action"],
+                    true,
+                ),
+            ],
         ),
         "get_compilation_state" => object_schema(
             &[
@@ -2778,8 +2817,29 @@ mod tests {
     use serde_json::{json, Value};
 
     #[test]
+    fn hot_reload_tools_expose_explicit_preview_and_recovery_contract() {
+        let status = get_tool_spec("hot_reload_status").expect("status tool exists");
+        assert!(!status.mutating);
+        assert_eq!(status.executor, ToolExecutor::Remote);
+        assert_eq!(status.params_schema["additionalProperties"], false);
+        let apply = get_tool_spec("hot_reload").expect("hot reload tool exists");
+        assert!(apply.mutating);
+        assert_eq!(apply.executor, ToolExecutor::Remote);
+        assert_eq!(
+            apply.params_schema["properties"]["action"]["enum"],
+            json!(["begin", "apply", "recover"])
+        );
+        assert_eq!(
+            apply.params_schema["properties"]["timeoutSeconds"]["maximum"],
+            60
+        );
+        assert_eq!(apply.params_schema["oneOf"].as_array().unwrap().len(), 3);
+        assert_eq!(apply.params_schema["additionalProperties"], false);
+    }
+
+    #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 140);
+        assert_eq!(TOOL_NAMES.len(), 142);
     }
 
     #[test]

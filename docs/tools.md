@@ -31,9 +31,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 140 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 129 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 142 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 131 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (129 tools)
+## Runtime Tool APIs (131 tools)
 
 ### Scenes
 
@@ -185,6 +185,8 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | Tool                    | Description                      |
 | ----------------------- | -------------------------------- |
 | `get_compilation_state` | Get C# compilation state         |
+| `hot_reload_status`     | Inspect hot reload preview state |
+| `hot_reload`            | Preview methods or recover Play  |
 | `read`                  | Read a C# source file            |
 | `find_refs`             | Find symbol references           |
 | `search`                | Search code by pattern           |
