@@ -47,6 +47,14 @@ namespace UnityCliBridge.Tests.Editor.Core
         }
 
         [Test]
+        public void RegisteredCommandTypes_ExposesTimelineWithoutRequiringOptionalPackage()
+        {
+            var commandTypes = BridgeCommandRouter.RegisteredCommandTypes.ToArray();
+            Assert.Contains("get_timeline", commandTypes);
+            Assert.Contains("manage_timeline", commandTypes);
+        }
+
+        [Test]
         public void RegisteredCommandTypes_ExposesDelegateRegistry()
         {
             var commandTypes = BridgeCommandRouter.RegisteredCommandTypes.ToArray();
