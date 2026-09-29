@@ -36,7 +36,7 @@ pub trait Embedder {
 }
 
 pub struct FastEmbedder {
-    inner: fastembed::TextEmbedding,
+    inner: std::cell::RefCell<fastembed::TextEmbedding>,
     model_id: String,
 }
 
@@ -50,7 +50,10 @@ impl FastEmbedder {
         let options = fastembed::InitOptions::new(model);
         let inner = fastembed::TextEmbedding::try_new(options)
             .map_err(|e| anyhow!("failed to initialize embedding model: {e}"))?;
-        Ok(Self { inner, model_id })
+        Ok(Self {
+            inner: std::cell::RefCell::new(inner),
+            model_id,
+        })
     }
 }
 
@@ -60,7 +63,8 @@ impl Embedder for FastEmbedder {
             return Ok(Vec::new());
         }
         self.inner
-            .embed(texts.to_vec(), None)
+            .borrow_mut()
+            .embed(texts, None)
             .map_err(|e| anyhow!("embedding failed: {e}"))
     }
 
