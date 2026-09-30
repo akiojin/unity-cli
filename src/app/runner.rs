@@ -13,6 +13,7 @@ use crate::cli::{
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
+use crate::core::editor_discovery::TargetError;
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
 use crate::transport::{UnityClient, UnityCommandError};
@@ -27,7 +28,28 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
     let output = cli.output;
     let result = run_command(cli).await;
     if let Err(error) = &result {
-        if matches!(output, OutputFormat::Json) {
+        if let Some(target) = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<TargetError>())
+        {
+            if matches!(output, OutputFormat::Json) {
+                print_value(&target.to_json(), output)?;
+            } else {
+                for candidate in target.to_json()["data"]["candidates"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                {
+                    eprintln!(
+                        "  candidate: {} (pid {}, {}:{})",
+                        candidate["projectPath"].as_str().unwrap_or("?"),
+                        candidate["pid"],
+                        candidate["host"].as_str().unwrap_or("?"),
+                        candidate["port"]
+                    );
+                }
+            }
+        } else if matches!(output, OutputFormat::Json) {
             if let Some(failure) = error
                 .chain()
                 .find_map(|cause| cause.downcast_ref::<UnityCommandError>())
@@ -41,6 +63,12 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
 
 async fn run_command(cli: Cli) -> Result<()> {
     init_tracing(cli.verbose)?;
+
+    // `--project-path` and UNITY_PROJECT_ROOT are the same setting; local
+    // tools (script read/search, index) read the project root from the env.
+    if let Some(project_path) = &cli.project_path {
+        std::env::set_var("UNITY_PROJECT_ROOT", project_path);
+    }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
     // which manage the binary themselves.
@@ -183,9 +211,16 @@ async fn run_command(cli: Cli) -> Result<()> {
                 } else {
                     for status in statuses {
                         let marker = if status.active { "*" } else { " " };
+                        let project = status
+                            .project_path
+                            .as_deref()
+                            .map(|path| {
+                                format!(" pid={} project={path}", status.pid.unwrap_or_default())
+                            })
+                            .unwrap_or_default();
                         println!(
-                            "{} {:<21} {:<5} checked_at={}",
-                            marker, status.id, status.status, status.last_checked_at
+                            "{} {:<21} {:<11} checked_at={}{}",
+                            marker, status.id, status.status, status.last_checked_at, project
                         );
                     }
                 }
@@ -740,7 +775,7 @@ fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
         port: cli.port,
         timeout_ms: cli.timeout_ms,
         dry_run: cli.dry_run,
-        project_root: None,
+        project_root: cli.project_path.clone(),
     }
 }
 
@@ -1319,6 +1354,7 @@ mod tests {
             output,
             host: Some("127.0.0.1".to_string()),
             port: Some(9),
+            project_path: None,
             timeout_ms: Some(20),
             verbose: 0,
             dry_run: false,
@@ -1429,6 +1465,84 @@ mod tests {
         assert_eq!(overrides.timeout_ms, Some(20));
         assert!(overrides.dry_run);
         assert!(overrides.project_root.is_none());
+    }
+
+    #[test]
+    fn project_path_flag_is_global_and_feeds_runtime_overrides() {
+        let cli = Cli::try_parse_from([
+            "unity-cli",
+            "raw",
+            "get_hierarchy",
+            "--project-path",
+            "/work/ProjectA",
+        ])
+        .unwrap();
+
+        let overrides = runtime_overrides_from_cli(&cli);
+
+        assert_eq!(
+            overrides.project_root.as_deref(),
+            Some(std::path::Path::new("/work/ProjectA"))
+        );
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn ambiguous_editor_fails_before_contacting_any_editor() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempfile::tempdir().unwrap();
+        for key in ["UNITY_CLI_HOST", "UNITY_CLI_PORT", "UNITY_PROJECT_ROOT"] {
+            std::env::remove_var(key);
+        }
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));
+        let a = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
+        let b = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        for (name, listener) in [("A", &a), ("B", &b)] {
+            crate::core::editor_discovery::tests::write_lock(
+                &dir.path().join("editors"),
+                std::process::id(),
+                &dir.path().join(name),
+                listener.local_addr().unwrap().port(),
+                now,
+            );
+        }
+        let mut cli = cli_for(Command::Raw(RawArgs {
+            tool_name: "get_hierarchy".to_string(),
+            json: Some("{}".to_string()),
+            params_file: None,
+        }));
+        cli.host = None;
+        cli.port = None;
+
+        let error = super::run_command(cli)
+            .await
+            .expect_err("target is ambiguous");
+
+        let target = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<super::TargetError>())
+            .expect("TargetError expected");
+        assert_eq!(target.code(), "AMBIGUOUS_EDITOR");
+        assert_eq!(target.exit_code(), 6);
+        for listener in [&a, &b] {
+            let accepted =
+                tokio::time::timeout(std::time::Duration::from_millis(200), listener.accept())
+                    .await;
+            assert!(accepted.is_err(), "no Editor may be contacted");
+        }
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        std::env::remove_var("UNITY_CLI_EDITORS_DIR");
     }
 
     #[test]

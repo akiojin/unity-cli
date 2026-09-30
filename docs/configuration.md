@@ -5,16 +5,19 @@ multi-instance workflows.
 
 ## Core Variables
 
-| Variable                  |       Default | Use                                                          |
-| ------------------------- | ------------: | ------------------------------------------------------------ |
-| `UNITY_PROJECT_ROOT`      |   auto-detect | Unity project directory containing `Assets/` and `Packages/` |
-| `UNITY_CLI_HOST`          |   `127.0.0.1` | Hostname used by the CLI to reach the Unity TCP listener     |
-| `UNITY_CLI_PORT`          |        `6400` | Unity TCP listener port                                      |
-| `UNITY_CLI_TIMEOUT_MS`    |       `30000` | Command timeout in milliseconds                              |
-| `UNITY_CLI_REGISTRY_PATH` | OS config dir | Optional path for the instance registry                      |
+| Variable                  |                Default | Use                                                                    |
+| ------------------------- | ---------------------: | ---------------------------------------------------------------------- |
+| `UNITY_PROJECT_ROOT`      |            auto-detect | Unity project directory; same as `--project-path` (selects the Editor) |
+| `UNITY_CLI_HOST`          |            `127.0.0.1` | Hostname used by the CLI to reach the Unity TCP listener               |
+| `UNITY_CLI_PORT`          |                 `6400` | Unity TCP listener port                                                |
+| `UNITY_CLI_TIMEOUT_MS`    |                `30000` | Command timeout in milliseconds                                        |
+| `UNITY_CLI_REGISTRY_PATH` |          OS config dir | Optional path for the instance registry                                |
+| `UNITY_CLI_EDITORS_DIR`   | `~/.unity-cli/editors` | Editor lockfile directory (set the same value for Unity and the CLI)   |
 
 Unity-side listener settings live at `Edit -> Project Settings -> Unity CLI Bridge`.
-The Unity-side `Port` must match `UNITY_CLI_PORT`.
+Locally you do not need to match ports: the CLI finds the Editor through its
+lockfile (see [Multiple Unity Instances](#multiple-unity-instances)). Set
+`UNITY_CLI_PORT` only when the CLI cannot read the lockfiles (Docker, WSL2).
 
 The default host is the IPv4 loopback literal `127.0.0.1`, not `localhost`. The
 Unity listener binds IPv4, while `localhost` resolves to `::1` first on Windows,
@@ -69,16 +72,63 @@ If DNS for `host.docker.internal` is unavailable, use the Windows host IP from
 
 ## Multiple Unity Instances
 
-Use explicit port lists when several Unity Editors are running:
+Each Unity CLI Bridge writes a lockfile to `~/.unity-cli/editors/<pid>.json`
+(`%USERPROFILE%\.unity-cli\editors` on Windows). The lockfile holds the pid,
+project path, host, port, Unity version, state, and a heartbeat that is
+refreshed every 5 seconds. It is kept, with state `reloading`, during a domain
+reload and deleted when the Editor quits. When the configured port is already in
+use (for example, two projects with the default 6400), the Bridge listens on the
+next free port (up to +20) and records that port in the lockfile.
+
+Commands pick the target Editor in this order:
+
+1. `--port` / `UNITY_CLI_PORT` (with `--host` / `UNITY_CLI_HOST`), or `--host` alone
+2. `--project-path <path>` / `UNITY_PROJECT_ROOT`: the Editor whose project contains the path
+3. the Editor chosen with `instances set-active`
+4. the deepest project containing the current directory
+5. the only running Editor
+6. `127.0.0.1:6400` when no lockfile exists (Bridge versions without lockfiles)
+
+If several Editors are running and none of these selects one, the command fails
+before contacting any Editor with `AMBIGUOUS_EDITOR` (exit code 6) and lists the
+candidates:
+
+```json
+{
+  "success": false,
+  "error": { "code": "AMBIGUOUS_EDITOR", "message": "..." },
+  "data": {
+    "candidates": [
+      {
+        "projectPath": "/work/A",
+        "host": "127.0.0.1",
+        "port": 6400,
+        "pid": 4242,
+        "unityVersion": "6000.3.25f1",
+        "state": "ready"
+      }
+    ]
+  }
+}
+```
+
+`--project-path` pointing at a project with no running Editor fails with
+`EDITOR_NOT_FOUND`.
 
 ```bash
+unity-cli --project-path ~/work/ProjectA raw get_hierarchy
+unity-cli instances list                      # lockfile Editors, with project paths
 unity-cli instances list --host 127.0.0.1 --ports 6400,6401,6402
 unity-cli instances set-active 127.0.0.1:6401
 ```
 
-Duplicate `--ports` values are ignored and reported as a warning. Instance
-health checks require a Unity Bridge `ping` response, so unrelated processes that
-only keep a TCP socket open are reported as `down`.
+`instances list` shows every lockfile Editor with `projectPath` and `pid`. An
+Editor whose process is gone or whose heartbeat is older than 120 seconds is
+shown as `unreachable`. `--ports` still adds endpoints manually, for example
+for Bridge versions without lockfiles. Duplicate `--ports` values are ignored
+and reported as a warning. Instance health checks require a Unity Bridge `ping`
+response, so unrelated processes that only keep a TCP socket open are reported
+as `down`.
 
 ## 設定ガイド
 
@@ -86,16 +136,19 @@ only keep a TCP socket open are reported as `down`.
 
 ### 基本環境変数
 
-| 環境変数                  |          デフォルト | 用途                                               |
-| ------------------------- | ------------------: | -------------------------------------------------- |
-| `UNITY_PROJECT_ROOT`      |            自動検出 | `Assets/` と `Packages/` を含む Unity プロジェクト |
-| `UNITY_CLI_HOST`          |         `127.0.0.1` | CLI から Unity TCP リスナーへ接続するホスト名      |
-| `UNITY_CLI_PORT`          |              `6400` | Unity TCP リスナーのポート                         |
-| `UNITY_CLI_TIMEOUT_MS`    |             `30000` | コマンドタイムアウト（ミリ秒）                     |
-| `UNITY_CLI_REGISTRY_PATH` | OS 設定ディレクトリ | インスタンスレジストリの任意パス                   |
+| 環境変数                  |             デフォルト | 用途                                                               |
+| ------------------------- | ---------------------: | ------------------------------------------------------------------ |
+| `UNITY_PROJECT_ROOT`      |               自動検出 | Unity プロジェクト。`--project-path` と同じ（Editor 選択にも使用） |
+| `UNITY_CLI_HOST`          |            `127.0.0.1` | CLI から Unity TCP リスナーへ接続するホスト名                      |
+| `UNITY_CLI_PORT`          |                 `6400` | Unity TCP リスナーのポート                                         |
+| `UNITY_CLI_TIMEOUT_MS`    |                `30000` | コマンドタイムアウト（ミリ秒）                                     |
+| `UNITY_CLI_REGISTRY_PATH` |    OS 設定ディレクトリ | インスタンスレジストリの任意パス                                   |
+| `UNITY_CLI_EDITORS_DIR`   | `~/.unity-cli/editors` | Editor lockfile の配置先（Unity と CLI に同じ値を設定）            |
 
 Unity 側の待受設定は `Edit -> Project Settings -> Unity CLI Bridge` にあります。
-Unity 側の `Port` は `UNITY_CLI_PORT` と一致させてください。
+ローカルでは CLI が lockfile から Editor を見つけるため、ポートを合わせる必要は
+ありません（[複数 Unity インスタンス](#複数-unity-インスタンス) 参照）。lockfile を
+読めない環境（Docker、WSL2）でのみ `UNITY_CLI_PORT` を指定してください。
 
 デフォルトのホストは `localhost` ではなく IPv4 ループバックのリテラル `127.0.0.1`
 です。Unity 側リスナーは IPv4 で待ち受けますが、Windows では `localhost` が先に
@@ -149,13 +202,37 @@ unity-cli system ping
 
 ### 複数 Unity インスタンス
 
-複数の Unity Editor を起動している場合は、ポートリストを明示します。
+Unity CLI Bridge は Editor ごとに `~/.unity-cli/editors/<pid>.json`
+（Windows は `%USERPROFILE%\.unity-cli\editors`）へ lockfile を書きます。lockfile には
+pid、プロジェクトパス、ホスト、ポート、Unity バージョン、状態、5 秒ごとに更新する
+heartbeat が入ります。ドメインリロード中は状態 `reloading` で残り、Editor 終了時に
+削除されます。設定ポートが使用中の場合（例: 2 プロジェクトとも既定の 6400）、Bridge は
+次の空きポート（最大 +20）で待ち受け、そのポートを lockfile に記録します。
+
+コマンドの接続先は次の順に決まります。
+
+1. `--port` / `UNITY_CLI_PORT`（`--host` / `UNITY_CLI_HOST` と併用可）、または `--host` のみ
+2. `--project-path <path>` / `UNITY_PROJECT_ROOT`: そのパスを含むプロジェクトの Editor
+3. `instances set-active` で選択した Editor
+4. カレントディレクトリを含む最も深いプロジェクト
+5. 起動中の Editor が 1 つだけならその Editor
+6. lockfile が 1 つも無い場合は `127.0.0.1:6400`（lockfile 非対応の Bridge 向け）
+
+複数の Editor が起動していてどれにも決まらない場合、どの Editor にも接続せずに
+`AMBIGUOUS_EDITOR`（終了コード 6）で失敗し、候補（`projectPath`、`port`、`pid` など）を
+`data.candidates` に返します。`--project-path` のプロジェクトで Editor が起動していない
+場合は `EDITOR_NOT_FOUND` になります。
 
 ```bash
+unity-cli --project-path ~/work/ProjectA raw get_hierarchy
+unity-cli instances list                      # lockfile の Editor をプロジェクトパス付きで表示
 unity-cli instances list --host 127.0.0.1 --ports 6400,6401,6402
 unity-cli instances set-active 127.0.0.1:6401
 ```
 
-重複した `--ports` 値は無視され、警告として報告されます。インスタンスの
-ヘルスチェックは Unity Bridge の `ping` 応答を要求するため、TCPソケットだけを
+`instances list` は lockfile の Editor を `projectPath` と `pid` 付きで表示します。
+プロセスが存在しない、または heartbeat が 120 秒以上古い Editor は `unreachable` と
+表示されます。`--ports` は lockfile 非対応の Bridge などのために引き続き手動で
+エンドポイントを追加できます。重複した `--ports` 値は無視され、警告として報告されます。
+インスタンスのヘルスチェックは Unity Bridge の `ping` 応答を要求するため、TCPソケットだけを
 開いている無関係なプロセスは `down` と表示されます。

@@ -23,6 +23,10 @@ pub use crate::unity::transport;
 async fn main() {
     if let Err(error) = app::runner::run().await {
         eprintln!("Error: {error:#}");
-        std::process::exit(1);
+        let code = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<crate::core::editor_discovery::TargetError>())
+            .map_or(1, |target| target.exit_code());
+        std::process::exit(code);
     }
 }
