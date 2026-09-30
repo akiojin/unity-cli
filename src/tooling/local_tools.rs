@@ -815,7 +815,7 @@ fn default_runtime_config() -> RuntimeConfig {
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "localhost".to_string());
+        .unwrap_or_else(|| crate::config::DEFAULT_HOST.to_string());
     let port = env::var("UNITY_CLI_PORT")
         .ok()
         .and_then(|value| value.trim().parse::<u16>().ok())
@@ -1509,6 +1509,20 @@ mod tests {
             std::fs::create_dir_all(parent).expect("parent directory should be created");
         }
         std::fs::write(path, content).expect("file should be written");
+    }
+
+    #[test]
+    fn default_runtime_config_falls_back_to_ipv4_loopback() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let saved = std::env::var("UNITY_CLI_HOST").ok();
+        std::env::remove_var("UNITY_CLI_HOST");
+        let host = super::default_runtime_config().host;
+        if let Some(value) = saved {
+            std::env::set_var("UNITY_CLI_HOST", value);
+        }
+        assert_eq!(host, crate::config::DEFAULT_HOST);
     }
 
     #[test]

@@ -54,7 +54,7 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 | Env                             |          Default | Notes                                          |
 | ------------------------------- | ---------------: | ---------------------------------------------- |
 | `UNITY_PROJECT_ROOT`            |      auto-detect | Directory containing `Assets/` and `Packages/` |
-| `UNITY_CLI_HOST`                |      `localhost` | Unity TCP listener host                        |
+| `UNITY_CLI_HOST`                |      `127.0.0.1` | Unity TCP listener host                        |
 | `UNITY_CLI_PORT`                |           `6400` | Unity TCP listener port                        |
 | `UNITY_CLI_TIMEOUT_MS`          |          `30000` | Command timeout (ms)                           |
 | `UNITY_CLI_LSP_MODE`            |            `off` | `off`, `auto`, `required`                      |
@@ -65,7 +65,7 @@ Minimal setup:
 
 ```bash
 export UNITY_PROJECT_ROOT=./UnityCliBridge
-export UNITY_CLI_HOST=localhost
+export UNITY_CLI_HOST=127.0.0.1
 export UNITY_CLI_PORT=6400
 ```
 
@@ -678,7 +678,7 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 | 環境変数                        |  デフォルト | 補足                                        |
 | ------------------------------- | ----------: | ------------------------------------------- |
 | `UNITY_PROJECT_ROOT`            |    自動検出 | `Assets/` と `Packages/` を含むディレクトリ |
-| `UNITY_CLI_HOST`                | `localhost` | Unity TCP リスナーのホスト                  |
+| `UNITY_CLI_HOST`                | `127.0.0.1` | Unity TCP リスナーのホスト                  |
 | `UNITY_CLI_PORT`                |      `6400` | Unity TCP リスナーのポート                  |
 | `UNITY_CLI_TIMEOUT_MS`          |     `30000` | コマンドタイムアウト (ms)                   |
 | `UNITY_CLI_LSP_MODE`            |       `off` | `off`, `auto`, `required`                   |
@@ -689,7 +689,7 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 
 ```bash
 export UNITY_PROJECT_ROOT=./UnityCliBridge
-export UNITY_CLI_HOST=localhost
+export UNITY_CLI_HOST=127.0.0.1
 export UNITY_CLI_PORT=6400
 ```
 

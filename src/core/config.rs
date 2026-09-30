@@ -5,7 +5,11 @@ use anyhow::{bail, Result};
 
 use super::endpoint::{resolve_endpoint, ResolvedEndpoint};
 
-const DEFAULT_HOST: &str = "localhost";
+/// Default Unity listener host: the IPv4 loopback literal, not `localhost`.
+/// The bridge listens on IPv4 (`0.0.0.0` by default, `127.0.0.1` when set to
+/// `localhost`), but `localhost` resolves to `::1` first on Windows, so every
+/// fresh connection waited ~2s for the refused IPv6 attempt before falling back.
+pub const DEFAULT_HOST: &str = "127.0.0.1";
 const DEFAULT_PORT: u16 = 6400;
 const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 const LEGACY_ENV_PREFIX: &str = concat!("UNITY_", "M", "CP_");
@@ -202,12 +206,17 @@ mod tests {
     }
 
     #[test]
-    fn default_host_returns_localhost_without_env() {
+    fn default_host_returns_ipv4_loopback_without_env() {
         let _lock = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
         env::remove_var("UNITY_CLI_HOST");
-        assert_eq!(default_host(), "localhost");
+        let host = default_host();
+        assert_eq!(host, "127.0.0.1");
+        // A literal, so no name resolution can pick an IPv6 address the
+        // IPv4-bound bridge refuses.
+        let addr: std::net::Ipv4Addr = host.parse().expect("default host must be an IPv4 literal");
+        assert!(addr.is_loopback());
     }
 
     #[test]
@@ -247,7 +256,7 @@ mod tests {
 
         let context = ExecutionContext::from_overrides(&RuntimeOverrides::default())
             .expect("context should resolve");
-        assert_eq!(context.endpoint.host, "localhost");
+        assert_eq!(context.endpoint.host, DEFAULT_HOST);
         assert_eq!(context.endpoint.port, 6400);
 
         std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
