@@ -45,7 +45,7 @@ fn query_returns_only_matching_tools() {
 fn compact_is_name_and_description_only_and_at_most_half_of_full_catalog() {
     let (compact, compact_bytes) = run_json(&["tool", "list", "--compact"]);
     let items = compact.as_array().unwrap();
-    assert_eq!(items.len(), 148);
+    assert_eq!(items.len(), 149);
     for item in items {
         let map = item.as_object().expect("compact item should be an object");
         let mut keys: Vec<&str> = map.keys().map(String::as_str).collect();

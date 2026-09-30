@@ -4,20 +4,20 @@ Snapshot date: `2026-09-28`
 
 ## Command Groups (Typed Subcommands)
 
-| Group       | Subcommands               |
-| ----------- | ------------------------- |
-| `raw`       | (direct tool invocation)  |
-| `tool`      | `list`, `schema`, `call`  |
-| `system`    | `ping`                    |
-| `editor`    | `eval`, `eval-status`     |
-| `scene`     | `create`                  |
-| `instances` | `list`, `set-active`      |
-| `cli`       | `install`, `doctor`       |
-| `lsp`       | `install`, `doctor`       |
-| `lspd`      | `start`, `stop`, `status` |
-| `unityd`    | `start`, `stop`, `status` |
-| `doctor`    | (connection diagnosis)    |
-| `batch`     | (batch command execution) |
+| Group       | Subcommands                           |
+| ----------- | ------------------------------------- |
+| `raw`       | (direct tool invocation)              |
+| `tool`      | `list`, `schema`, `call`              |
+| `system`    | `ping`                                |
+| `editor`    | `eval`, `eval-status`, `eval-stats`   |
+| `scene`     | `create`                              |
+| `instances` | `list`, `set-active`                  |
+| `cli`       | `install`, `doctor`                   |
+| `lsp`       | `install`, `doctor`                   |
+| `lspd`      | `start`, `stop`, `status`             |
+| `unityd`    | `start`, `stop`, `status`             |
+| `doctor`    | (connection diagnosis)                |
+| `batch`     | (batch command execution)             |
 
 Use `raw` for full command coverage when no typed subcommand exists.
 
@@ -51,9 +51,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 148 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 137 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 149 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 138 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (137 tools)
+## Runtime Tool APIs (138 tools)
 
 ### Scenes
 
@@ -385,6 +385,7 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 | `execute_menu_item`       | Execute a menu item         |
 | `eval_csharp`             | Evaluate synchronous C#     |
 | `get_eval_status`         | Query evaluation result     |
+| `get_eval_stats`          | Query eval domain counters  |
 | `package_manager`         | Manage packages             |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |
@@ -395,6 +396,14 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 | `get_package_setting`     | Get a package setting       |
 | `set_package_setting`     | Set a package setting       |
 | `update_project_settings` | Update project settings     |
+
+`eval_csharp` reuses compilation references and compiled snippets inside one
+Editor domain: repeating identical `code` costs about one ordinary command
+(p50 14–25 ms with the Editor frontmost), new source adds one compile, and the
+first call after a Domain Reload is the slowest. `get_eval_stats`
+(`unity-cli editor eval-stats`) shows the domain's loaded-assembly, cache and
+memory counters. Details and the latency budget:
+[`editor-eval.md`](editor-eval.md#performance-and-caching).
 
 ### Screenshots & Video
 
