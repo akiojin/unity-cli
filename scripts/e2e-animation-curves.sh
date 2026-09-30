@@ -4,7 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-CLI="${REPO_ROOT}/target/release/unity-cli"
+CLI="${UNITY_CLI_BIN:-${REPO_ROOT}/target/release/unity-cli}"
+PROJECT_ROOT="${UNITY_PROJECT_ROOT:-${REPO_ROOT}/UnityCliBridge}"
 HOST="127.0.0.1"
 PORT="6473"
 TIMEOUT_MS="120000"
@@ -12,13 +13,15 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --host) HOST="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
+    --unity-cli) CLI="$2"; shift 2 ;;
+    --project-root) PROJECT_ROOT="$2"; shift 2 ;;
     --timeout-ms) TIMEOUT_MS="$2"; shift 2 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
 [[ -x "${CLI}" ]] || { echo "Build this checkout with cargo build --release first." >&2; exit 1; }
 command -v jq >/dev/null
-export UNITY_PROJECT_ROOT="${REPO_ROOT}/UnityCliBridge"
+export UNITY_PROJECT_ROOT="${PROJECT_ROOT}"
 RUN_ID="$(date +%Y%m%d-%H%M%S)-$$"
 LOG="/tmp/unity-cli-animation-curves-${RUN_ID}.log"
 CLIP="Assets/Scenes/Generated/E2E/AnimationCurves-${RUN_ID}.anim"
