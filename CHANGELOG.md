@@ -1,3 +1,13 @@
+## [0.15.3] - 2026-09-30
+
+### ⚡ Performance
+
+- *(cli)* Default the Unity host to the 127.0.0.1 loopback literal
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record issue 358 release start
+
 ## [0.15.2] - 2026-09-29
 
 ### 🧪 Testing
