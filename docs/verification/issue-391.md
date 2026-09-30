@@ -93,10 +93,9 @@ UNITY_CLI_NO_AUTO_UPDATE=1 scripts/e2e-input-batch-host.sh --suite eval --port 6
   （実装前は 14 件失敗。新規テストは 8 件）。`BridgeCommandRouterTests`: 6000.3.25f1 で 4 passed。
   EditMode の全件実行は行っていない。
 - `cargo fmt --all -- --check` / `cargo clippy --all-targets -- -D warnings`: 問題なし。
-- `cargo test --all-targets -- --test-threads=1`: 554 passed / 1 failed。失敗した
-  `run_with_cli_exercises_remote_command_error_paths` は、このマシンで unityd が動いていると batch が
-  項目ごとのエラーを返して成功扱いになるために失敗する。本変更の差分はこの経路に触れていない
-  （同じ差分で、この 1 件も含め全件成功した実行が 1 回ある）。最終確認は PR の CI で行う。
+- `cargo test --all-targets -- --test-threads=1`（`HOME` を一時ディレクトリに分離）: 555 passed, 0 failed。
+  `HOME` を分離しないと、このマシンで動いている共有の unityd に batch が届き、
+  `run_with_cli_exercises_remote_command_error_paths` の 1 件が失敗する（本変更の差分はこの経路に触れていない）。
 - `cargo run -- skills lint --severity error`: 16 skills checked, 0 violations。
 - `dotnet test lsp/Server.Tests.csproj`: 未実行（`lsp/` に変更なし）。
 
