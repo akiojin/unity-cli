@@ -45,7 +45,36 @@ def all_passed(results):
     return bool(results) and all(row.get("status") == "PASS" for row in results)
 
 
-DEFAULT_SUITES = ("input", "timeline", "vfx", "eval", "hot-reload", "reload", "all-tools")
+def result_status(results):
+    if all_passed(results):
+        return 'PASS'
+    if results and all(row.get('status') in ('PASS', 'UNSUPPORTED') for row in results):
+        return 'UNSUPPORTED'
+    return 'FAIL'
+
+
+def step_status(name, command, returncode, started_at=0):
+    if returncode == 0:
+        return 'PASS'
+    if name == 'player-build' and returncode == 2 and '--project-path' in command:
+        project = Path(command[command.index('--project-path') + 1])
+        for summary in project.glob('.unity/player-build-e2e/*/summary.json'):
+            if summary.stat().st_mtime < started_at:
+                continue
+            try:
+                data = json.loads(summary.read_text())
+                response = json.loads((summary.parent / 'build-status.json').read_text())
+            except (OSError, ValueError):
+                continue
+            if (data.get('status') == 'UNSUPPORTED' and data.get('failed') == 0
+                    and response.get('code') == 'BUILD_MODULE_MISSING'):
+                return 'UNSUPPORTED'
+    return 'FAIL'
+
+
+DEFAULT_SUITES = ("input", "timeline", "vfx", "eval", "hot-reload", "reload",
+                  "bake", "player-build", "video-formats", "animation-curves",
+                  "input-actions-persistence", "reference", "all-tools")
 REAL_HOT_RELOAD_SUITES = ("hot-reload-apply", "hot-reload-apply-x64")
 
 
@@ -59,6 +88,41 @@ def prepare_perf_fixture(project):
     (project / "ProjectSettings/URPProjectSettings.asset").unlink(missing_ok=True)
     (project / ".unity").mkdir(exist_ok=True)
     (project / ".unity/perf-owned-project").write_text("Created by e2e-matrix.py\n")
+
+
+def extended_suites(editor, args, project, destination):
+    cli, port = str(args.unity_cli), str(args.port)
+    script = lambda name: str(ROOT / 'scripts' / name)
+    windows_module = editor.parent.parent / 'PlaybackEngines/WindowsStandaloneSupport'
+    windows = ['python3', script('e2e-player-build.py'), '--cli', cli,
+               '--target', 'StandaloneWindows64']
+    if windows_module.is_dir():
+        windows += ['--port', str(args.port + 2), '--project-path', str(destination / 'windows/project'),
+                    '--unity', str(editor), '--launch', '--isolated-project']
+    else:
+        # Module absence is checked by a real Bridge request without another import.
+        windows += ['--port', port, '--project-path', str(project)]
+    return {
+        'bake': [['python3', script('e2e-bake.py'), '--unity-cli', cli, '--port', port,
+                  '--project-root', str(project)]],
+        'player-build': [
+            ['python3', script('e2e-player-build.py'), '--cli', cli, '--port', port,
+             '--project-path', str(project)],
+            windows],
+        'video-formats': [['bash', script('e2e-video-formats.sh'), '--unity-cli', cli,
+                          '--port', port, '--artifact-dir', str(destination / 'video')]],
+        'animation-curves': [['bash', script('e2e-animation-curves.sh'), '--unity-cli', cli,
+                             '--port', port, '--project-root', str(project)]],
+        'input-actions-persistence': [['python3', script('e2e-input-actions-persistence.py'),
+                                      '--unity-cli', cli, '--unity-path', str(editor),
+                                      '--port', str(args.port + 1), '--project-path',
+                                      str(destination / 'persistence/project')]],
+        'reference': [
+            ['bash', script('e2e-reference-fetch.sh'), '--cli', cli, '--port', port,
+             '--artifacts', str(destination / 'reference-fetch')],
+            ['bash', script('e2e-reference-resolution.sh'), '--cli', cli, '--port', port,
+             '--project-root', str(project), '--artifacts', str(destination / 'reference-resolution')]],
+    }
 
 
 def hot_reload_apply_suites(editor, version, args, destination):
@@ -228,20 +292,38 @@ def run_editor(editor, args, output, base_env):
         }
         real = hot_reload_apply_suites(editor, version, args, destination)
         suites.update(real)
+        suites = {name: [command] for name, command in suites.items()}
+        suites.update(extended_suites(editor, args, project, destination))
         selected = selected_suites(args.suites, real)
         if "perf" in selected:
             selected.insert(selected.index("perf") + 1, "perf-eval")
+        for name, folder in [('input-actions-persistence', 'persistence'), ('player-build', 'windows')]:
+            if name in selected:
+                if folder == 'windows' and '--launch' not in suites[name][1]:
+                    continue
+                isolated = destination / folder
+                isolated.mkdir()
+                prepare(editor, isolated)
         for name in selected:
             if name == "compile":
                 continue
             suite_log = destination / (name + ".log")
             print(version, name, str(suite_log), flush=True)
             result = {"name": name, "command": suites[name], "log": str(suite_log), "status": "FAIL"}
+            result['steps'] = []
             row["suites"].append(result)
             with suite_log.open("w") as stream:
-                returncode = run_suite(suites[name], env, stream, args.suite_timeout)
-            result.update(returncode=returncode, status="PASS" if returncode == 0 else "FAIL")
-            if returncode:
+                returncode = 0
+                for command in suites[name]:
+                    started_at = time.time()
+                    returncode = run_suite(command, env, stream, args.suite_timeout)
+                    status = step_status(name, command, returncode, started_at)
+                    result['steps'].append({'command': command, 'returncode': returncode,
+                                            'status': status})
+                    if status == 'FAIL':
+                        break
+            result.update(returncode=returncode, status=result_status(result['steps']))
+            if result['status'] == 'FAIL':
                 raise RuntimeError(name + " failed; see " + str(suite_log))
             # Suites mutate scenes. Persist the owned fixture before the next suite's
             # clean-scene precondition; never apply this to a user's open project.
@@ -249,7 +331,7 @@ def run_editor(editor, args, output, base_env):
                 saved = raw("save_scene", {})
                 if saved.get("error") or saved.get("success") is False:
                     raise RuntimeError("Could not save isolated suite fixture: " + json.dumps(saved))
-        row["status"] = "PASS" if all_passed(row["suites"]) else "FAIL"
+        row["status"] = result_status(row["suites"])
     except Exception as error:
         row["error"] = str(error)
         print("FAIL", str(editor), str(error), flush=True)
@@ -316,9 +398,9 @@ def main():
     finally:
         stop_owned(lsp_daemon)
         stop_owned(daemon)
-    report["status"] = "PASS" if all_passed(report["editors"]) else "FAIL"
+    report["status"] = result_status(report["editors"])
     (output / "matrix.json").write_text(json.dumps(report, indent=2) + "\n")
-    return 0 if report["status"] == "PASS" else 1
+    return 0 if report["status"] in ('PASS', 'UNSUPPORTED') else 1
 
 
 if __name__ == "__main__":

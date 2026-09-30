@@ -36,6 +36,52 @@ class MatrixTests(unittest.TestCase):
         self.assertFalse(matrix.requires_gui("input,timeline"))
         self.assertFalse(matrix.requires_gui(None))
 
+    def test_exit_two_requires_actual_missing_module_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            command = ['python3', 'e2e-player-build.py', '--project-path', str(project)]
+            self.assertEqual(matrix.step_status('player-build', command, 2), 'FAIL')
+            run = project / '.unity/player-build-e2e/fresh'
+            run.mkdir(parents=True)
+            (run / 'summary.json').write_text(json.dumps({'status': 'UNSUPPORTED', 'failed': 0}))
+            (run / 'build-status.json').write_text(json.dumps({'code': 'BUILD_TARGET_MISMATCH'}))
+            self.assertEqual(matrix.step_status('player-build', command, 2), 'FAIL')
+            (run / 'build-status.json').write_text(json.dumps({'code': 'BUILD_MODULE_MISSING'}))
+            self.assertEqual(matrix.step_status('player-build', command, 2), 'UNSUPPORTED')
+            self.assertEqual(matrix.step_status('reference', command, 2), 'FAIL')
+
+    def test_extended_suites_use_selected_editor_cli_and_isolated_projects(self):
+        from argparse import Namespace
+        args = Namespace(unity_cli=Path('/checkout/cli'), port=6532)
+        editor = Path('/hub/6000.3.25f1/Unity.app/Contents/MacOS/Unity')
+        with patch.object(Path, 'is_dir', return_value=True):
+            suites = matrix.extended_suites(editor, args, Path('/run/project'), Path('/run'))
+        expected = {'bake', 'player-build', 'video-formats', 'animation-curves',
+                    'input-actions-persistence', 'reference'}
+        self.assertEqual(set(suites), expected)
+        self.assertTrue(expected <= set(matrix.DEFAULT_SUITES))
+        for name, commands in suites.items():
+            for command in commands:
+                self.assertIn('/checkout/cli', command, name)
+        persistence = suites['input-actions-persistence'][0]
+        self.assertIn(str(editor), persistence)
+        self.assertIn('/run/persistence/project', persistence)
+        windows = suites['player-build'][1]
+        self.assertIn('StandaloneWindows64', windows)
+        self.assertIn('/run/windows/project', windows)
+        self.assertIn(str(editor), windows)
+
+    def test_missing_windows_module_is_probed_on_current_editor(self):
+        from argparse import Namespace
+        args = Namespace(unity_cli=Path('/checkout/cli'), port=6532)
+        with patch.object(Path, 'is_dir', return_value=False):
+            suites = matrix.extended_suites(Path('/hub/Unity.app/Contents/MacOS/Unity'),
+                                            args, Path('/run/project'), Path('/run'))
+        windows = suites['player-build'][1]
+        self.assertNotIn('--launch', windows)
+        self.assertIn('/run/project', windows)
+        self.assertEqual(windows[windows.index('--port') + 1], '6532')
+
     def test_packages_follow_editor_catalog_and_preserve_bridge(self):
         catalog = {"com.unity.visualeffectgraph": {"version": "14.0.12"},
                    "com.unity.render-pipelines.universal": {"version": "14.0.12"},
@@ -64,6 +110,9 @@ class MatrixTests(unittest.TestCase):
         self.assertFalse(matrix.all_passed([{"status": "PASS"}, {"status": "SKIP"}]))
         self.assertFalse(matrix.all_passed([{"status": "FAIL"}]))
         self.assertTrue(matrix.all_passed([{"status": "PASS"}]))
+        self.assertEqual(matrix.result_status([{'status': 'PASS'}, {'status': 'UNSUPPORTED'}]), 'UNSUPPORTED')
+        self.assertEqual(matrix.result_status([{'status': 'UNSUPPORTED'}, {'status': 'FAIL'}]), 'FAIL')
+        self.assertEqual(matrix.result_status([]), 'FAIL')
 
     def test_suite_timeout_terminates_the_owned_process(self):
         with tempfile.TemporaryFile(mode="w+") as log:

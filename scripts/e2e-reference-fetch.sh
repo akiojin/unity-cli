@@ -9,13 +9,16 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CLI="${UNITY_CLI_BIN:-${REPO_ROOT}/target/debug/unity-cli}"
 HOST="${UNITY_CLI_HOST:-127.0.0.1}"
 PORT="${UNITY_CLI_PORT:-6452}"
+ARTIFACT_ROOT="${REPO_ROOT}/UnityCliBridge/.unity/reference-fetch-e2e"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --host) HOST="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
+    --cli) CLI="$2"; shift 2 ;;
+    --artifacts) ARTIFACT_ROOT="$2"; shift 2 ;;
     -h|--help)
-      echo "Usage: scripts/e2e-reference-fetch.sh [--host HOST] [--port PORT]"
+      echo "Usage: scripts/e2e-reference-fetch.sh [--host HOST] [--port PORT] [--cli PATH] [--artifacts DIR]"
       echo "Requires a live Editor, python3, git, network access and UNITY_CLI_BIN (default: target/debug/unity-cli)."
       exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
@@ -28,7 +31,6 @@ if [[ ! -x "$CLI" ]]; then
 fi
 command -v python3 >/dev/null
 command -v git >/dev/null
-ARTIFACT_ROOT="${REPO_ROOT}/UnityCliBridge/.unity/reference-fetch-e2e"
 mkdir -p "$ARTIFACT_ROOT"
 RUN_DIR="$(mktemp -d "${ARTIFACT_ROOT}/run-XXXXXX")"
 

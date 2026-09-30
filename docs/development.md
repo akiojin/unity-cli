@@ -349,6 +349,20 @@ its report explicitly records `full_matrix: false`. Acceptance uses the default
 complete suite set. A missing Editor, compiler error, failed suite or timeout
 fails the run. Inspect `matrix.json` and the linked per-suite logs before claiming PASS.
 
+The default matrix also includes `bake`, `player-build`, `video-formats`,
+`animation-curves`, `input-actions-persistence`, and `reference`. To reproduce
+only this extension, pass
+`--suites bake,player-build,video-formats,animation-curves,input-actions-persistence,reference`.
+The Player suite checks macOS output and, when Windows Build Support is installed,
+starts a second isolated Editor for Windows output (port + 2); Input Actions owns another project and two sequential
+Editor starts (port + 1) to prove persistence across restart. Install Windows
+Build Support in Unity Hub to exercise actual cross-building. Without it, the
+runner asserts `BUILD_MODULE_MISSING` and records `UNSUPPORTED`, never `PASS`.
+An all-supported run reports `PASS`; an otherwise successful run containing
+explicit unsupported results reports `UNSUPPORTED` and exits zero. Unexpected
+errors still fail. Video capture keeps graphics enabled. Reference suites use
+isolated caches and download public UnityCsReference with license acceptance.
+
 Graphics stay enabled for VFX/SDF. Only processes launched by the runner are
 stopped. Project settings, generated assets and package imports remain in the
 retained temporary fixture. Editor reloads and scripts may reset the listener;
