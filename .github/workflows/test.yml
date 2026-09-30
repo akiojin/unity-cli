@@ -44,7 +44,9 @@ jobs:
 
       - name: Verify install.ps1 SHA256SUMS gate
         shell: pwsh
-        run: ./tests/scripts/install-ps1-test.ps1
+        run: |
+          ./tests/scripts/install-ps1-text-test.ps1
+          ./tests/scripts/install-ps1-test.ps1
 
   lsp-test:
     name: LSP Tests (required)

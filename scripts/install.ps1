@@ -31,7 +31,11 @@ function Get-Rid {
 }
 
 function Get-Text([string]$Url) {
-    (Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{ 'User-Agent' = 'unity-cli-installer' }).Content
+    $content = (Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{ 'User-Agent' = 'unity-cli-installer' }).Content
+    # Decode before returning: PowerShell enumerates byte[] function results
+    # into Object[], which would bypass the caller's byte[] type check.
+    if ($content -is [byte[]]) { return [System.Text.Encoding]::UTF8.GetString($content) }
+    return $content
 }
 
 function Get-OptionalText([string]$Url) {
