@@ -42,7 +42,11 @@ impl RuntimeConfig {
     pub fn from_overrides(overrides: &RuntimeOverrides) -> Result<Self> {
         fail_if_legacy_env_set()?;
 
-        let endpoint = resolve_endpoint(overrides.host.clone(), overrides.port)?;
+        let endpoint = resolve_endpoint(
+            overrides.host.clone(),
+            overrides.port,
+            overrides.project_root.clone(),
+        )?;
         let timeout_ms = overrides.timeout_ms.unwrap_or_else(default_timeout_ms);
 
         Ok(Self {
@@ -57,7 +61,11 @@ impl ExecutionContext {
     pub fn from_overrides(overrides: &RuntimeOverrides) -> Result<Self> {
         fail_if_legacy_env_set()?;
 
-        let endpoint = resolve_endpoint(overrides.host.clone(), overrides.port)?;
+        let endpoint = resolve_endpoint(
+            overrides.host.clone(),
+            overrides.port,
+            overrides.project_root.clone(),
+        )?;
         let timeout_ms = overrides.timeout_ms.unwrap_or_else(default_timeout_ms);
 
         Ok(Self {
@@ -250,6 +258,8 @@ mod tests {
             std::process::id()
         ));
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        let editors_dir = tempfile::tempdir().expect("editors dir should be created");
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", editors_dir.path());
         let _ = std::fs::remove_file(&registry_path);
         std::fs::write(&registry_path, "{\n  \"entries\": []\n}\n")
             .expect("registry fixture should be initialized");
@@ -260,6 +270,7 @@ mod tests {
         assert_eq!(context.endpoint.port, 6400);
 
         std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        std::env::remove_var("UNITY_CLI_EDITORS_DIR");
         let _ = std::fs::remove_file(&registry_path);
     }
 
