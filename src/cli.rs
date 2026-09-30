@@ -86,12 +86,21 @@ pub enum Command {
         #[command(subcommand)]
         command: ReferenceCommand,
     },
+    /// Diagnose why the Unity bridge is unreachable (Safe Mode, missing bridge, port conflict, ...).
+    Doctor(DoctorArgs),
     Batch {
         #[arg(long, value_name = "JSON")]
         json: Option<String>,
         #[arg(long)]
         stdin: bool,
     },
+}
+
+#[derive(Debug, Args)]
+pub struct DoctorArgs {
+    /// Unity project root. Defaults to UNITY_PROJECT_ROOT or the nearest Unity project above the current directory.
+    #[arg(long, value_name = "DIR")]
+    pub project_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Subcommand)]
