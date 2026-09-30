@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
-    Cli, CliCommand, Command, EditorCommand, EvalMode, InstancesCommand, LspCommand, LspdCommand,
-    OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity,
+    Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand, LspCommand,
+    LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity,
     SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
 };
 use crate::config::{RuntimeConfig, RuntimeOverrides};
@@ -277,6 +277,10 @@ async fn run_command(cli: Cli) -> Result<()> {
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
         }
+        Command::Doctor(args) => {
+            let value = run_doctor(&cli, args).await?;
+            print_value(&value, cli.output)?;
+        }
         Command::Batch { json, stdin } => {
             let value = execute_batch(&cli, json.as_deref(), *stdin).await?;
             print_value(&value, cli.output)?;
@@ -472,6 +476,43 @@ fn build_reference_call(command: &ReferenceCommand) -> (&'static str, Value) {
     (tool, Value::Object(params))
 }
 
+async fn run_doctor(cli: &Cli, args: &DoctorArgs) -> Result<Value> {
+    use crate::core::doctor;
+
+    let project_path = doctor::resolve_project_path(args.project_path.as_deref());
+    let explicit_port = cli
+        .port
+        .or_else(|| crate::config::read_env_u16("UNITY_CLI_PORT"));
+    let project_port = project_path
+        .as_deref()
+        .and_then(doctor::read_project_bridge_port);
+    let (host, port, port_source) = match (explicit_port, project_port) {
+        (Some(port), _) => {
+            let endpoint = crate::core::endpoint::resolve_endpoint(cli.host.clone(), Some(port))?;
+            (endpoint.host, port, "cli")
+        }
+        (None, Some(port)) => {
+            let endpoint = crate::core::endpoint::resolve_endpoint(cli.host.clone(), Some(port))?;
+            (endpoint.host, port, "projectSettings")
+        }
+        (None, None) => {
+            let endpoint = crate::core::endpoint::resolve_endpoint(cli.host.clone(), None)?;
+            (endpoint.host, endpoint.port, "default")
+        }
+    };
+    doctor::run(&doctor::DoctorOptions {
+        project_path,
+        host,
+        port,
+        port_source,
+        probe_timeout: cli
+            .timeout_ms
+            .map(std::time::Duration::from_millis)
+            .unwrap_or_else(doctor::default_probe_timeout),
+    })
+    .await
+}
+
 async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     let params = load_params(args)?;
     execute_tool(cli, &args.tool_name, params).await
@@ -601,12 +642,9 @@ async fn call_remote_tool_direct(
     params: Value,
 ) -> Result<(Value, Option<CliCommandTiming>)> {
     let connect_started_at = std::time::Instant::now();
-    let mut client = UnityClient::connect(config).await.with_context(|| {
-        format!(
-            "Failed to connect to Unity at {}:{}",
-            config.host, config.port
-        )
-    })?;
+    let mut client = UnityClient::connect(config)
+        .await
+        .with_context(|| crate::core::doctor::connect_failure_message(&config.host, config.port))?;
     let connect_ms = connect_started_at.elapsed().as_secs_f64() * 1000.0;
     let outcome = client.call_tool_with_timing(tool_name, params).await?;
     let unity_roundtrip_ms = outcome.timing.total_ms;
@@ -702,12 +740,9 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 
 async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) -> Result<Value> {
     let started_at = std::time::Instant::now();
-    let mut client = UnityClient::connect(config).await.with_context(|| {
-        format!(
-            "Failed to connect to Unity at {}:{}",
-            config.host, config.port
-        )
-    })?;
+    let mut client = UnityClient::connect(config)
+        .await
+        .with_context(|| crate::core::doctor::connect_failure_message(&config.host, config.port))?;
 
     let mut results = Vec::with_capacity(commands.len());
     for item in commands {

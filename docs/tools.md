@@ -16,6 +16,7 @@ Snapshot date: `2026-09-28`
 | `lsp`       | `install`, `doctor`       |
 | `lspd`      | `start`, `stop`, `status` |
 | `unityd`    | `start`, `stop`, `status` |
+| `doctor`    | (connection diagnosis)    |
 | `batch`     | (batch command execution) |
 
 Use `raw` for full command coverage when no typed subcommand exists.
@@ -25,6 +26,12 @@ Managed binary notes:
 - `cli install` downloads or refreshes the managed `unity-cli` copy under `UNITY_CLI_TOOLS_ROOT` (or the OS default tools directory).
 - `cli doctor` reports the managed `unity-cli` path, local version, latest release metadata, and whether an update is pending.
 - `unityd` and `lspd` automatically refresh managed binaries on daemon startup without an interactive confirmation step.
+
+Connection diagnosis:
+
+- `doctor [--project-path <dir>]` explains why the bridge is unreachable. It checks the Unity Editor process for the project, `Packages/manifest.json` (`com.akiojin.unity-cli-bridge` presence and version), the Editor.log (Safe Mode and `file(line,col): error CSxxxx` compile errors), the configured port (`--port` / `UNITY_CLI_PORT`, then `ProjectSettings/UnityCliBridgeSettings.asset`, then the default) and the process holding it, and socket permission errors.
+- The JSON `diagnosis` is one of `OK`, `SAFE_MODE`, `COMPILE_ERRORS`, `BRIDGE_NOT_INSTALLED`, `PORT_IN_USE` (with `port.listenerPid`), `EDITOR_NOT_RUNNING`, `SANDBOX_BLOCKED`, or `BRIDGE_NOT_RESPONDING`, plus a `recovery` hint. The command exits 0 so the report is always readable.
+- Connection failures from other commands point to `unity-cli doctor --output json`.
 
 Global options:
 

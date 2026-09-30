@@ -5,13 +5,14 @@ allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 user-invocable: false
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.4.0
   category: foundation
   triggers:
     - bootstrap
     - install
     - connect
     - ping
+    - doctor
     - instance
   siblings:
     - unity-scene-create
@@ -38,7 +39,7 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 ## Preferred Flow
 
 1. Detect the binary: prefer an installed `unity-cli` on `PATH`; fall back to `cargo run --` from the repo.
-2. Verify reachability with `unity-cli system ping`.
+2. Verify reachability with `unity-cli system ping`. If it fails, run `unity-cli doctor --output json` and follow the `diagnosis` code (`SAFE_MODE`, `BRIDGE_NOT_INSTALLED`, `PORT_IN_USE`, `EDITOR_NOT_RUNNING`, `SANDBOX_BLOCKED`) before retrying; see the Connection Recovery section of the runtime checklist.
 3. When multiple editors may run, call `unity-cli instances list` and pick the target with `unity-cli instances set-active <host:port>`.
 4. Pick the right entry point for the operation:
    - **Typed subcommand** when one exists. The bootstrap-relevant typed subcommands are `system ping`, `scene create`, `instances list`, and `instances set-active`. Other typed subcommands exist too — notably the `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`), which wrap the `reference_*` bridge tools; see the `unity-csharp-reference` skill. But most bridge tools have no typed wrapper. (Note: `instances list` / `instances set-active` are local registry operations, not bridge-tool wrappers.)
@@ -64,10 +65,11 @@ unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ## Examples
 
 - "Check whether unity-cli can reach my Unity Editor." → run `unity-cli system ping`.
+- "unity-cli cannot connect to Unity." → `unity-cli doctor --output json`; on `SAFE_MODE`, fix the files in `editorLog.compileErrors` and retry instead of assuming the Editor is closed.
 - "Switch to the Unity instance running on port 6401." → `unity-cli instances list --ports 6400,6401` then `unity-cli instances set-active 127.0.0.1:6401`.
 - "Inspect what's in the open scene." → `unity-cli raw analyze_scene_contents --json '{}'`. There is no typed `scene` subcommand for this — `scene create` is the only typed scene operation.
 - "What tools does the bridge expose?" → `unity-cli tool list`. For a specific tool's JSON payload shape: `unity-cli tool schema <tool_name> --output json`.
 
 ## References
 
-- [runtime-checklist.md](references/runtime-checklist.md): binary selection, instance selection, command routing, CI environment notes.
+- [runtime-checklist.md](references/runtime-checklist.md): binary selection, instance selection, connection recovery with `unity-cli doctor`, command routing, CI environment notes.
