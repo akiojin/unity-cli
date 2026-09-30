@@ -64,6 +64,7 @@ unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity
 unity-cli editor eval '1+2' --request-id sum --output json
 unity-cli editor eval 'var go = new GameObject("Probe"); return go;' --mode statements --request-id create-probe --output json
 unity-cli editor eval-status create-probe --output json
+unity-cli editor eval-stats --output json
 ```
 
 Inspect `state`: only `completed` means execution and value conversion succeeded.
@@ -78,8 +79,16 @@ A timeout only stops waiting; it does not stop code or undo changes. Query the s
 request ID with `eval-status`; never automatically resend with a new ID. Identical
 input under a stored ID reuses the result. Domain Reload loses results, so `unknown`
 requires inspecting actual state before deciding whether to execute again. Long-running
-synchronous code also blocks status responses. After the domain's assembly/result limit,
-reload is required; eval never reloads automatically.
+synchronous code also blocks status responses. The newest 256 request IDs are kept;
+older IDs read as `unknown`.
+
+Eval is fast when warm: identical `code` reuses its compiled assembly (the code still
+runs on every call) and costs about one ordinary command; new source adds one compile;
+the first call after a Domain Reload is the slowest. To repeat an operation, resend the
+same `code` instead of generating a new string per call. Each distinct source emits one
+assembly, and after 128 per domain new source returns `reload_required` (already
+compiled source keeps running); eval never reloads automatically. `editor eval-stats`
+shows the domain's emitted-assembly, cache and memory counters.
 
 - "Show me the latest Unity console errors."
 - "Update the company name in Project Settings."

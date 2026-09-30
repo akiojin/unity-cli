@@ -198,6 +198,12 @@ pub enum EditorCommand {
     },
     /// Retrieve a result from the current Editor domain (unknown after reload).
     EvalStatus { request_id: String },
+    /// Show eval counters of the current Editor domain: loaded assemblies, caches and memory.
+    EvalStats {
+        /// Run a managed garbage collection before reading memory.
+        #[arg(long)]
+        collect: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]

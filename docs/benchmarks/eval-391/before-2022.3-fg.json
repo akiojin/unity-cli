@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-09-30T07:33:59Z",
+  "conditions": {
+    "os": "Darwin 26.5",
+    "arch": "arm64",
+    "unity_editor_version": "2022.3.62f3",
+    "unity_cli_version": "unity-cli 0.15.3",
+    "command": "unity-cli editor eval 1+2",
+    "iterations": 100,
+    "warmup": 3,
+    "sample": "wall-clock per CLI process invocation (spawn to exit), ms",
+    "port": 6492,
+    "frontmost_app_per_sample": {
+      "Unity": 95,
+      "Google Chrome": 5
+    }
+  },
+  "first_call_ms": 536.42,
+  "eval": {
+    "n": 100,
+    "p50_ms": 126.11,
+    "p95_ms": 171.08,
+    "mean_ms": 143.23,
+    "min_ms": 105.19,
+    "max_ms": 938.53
+  },
+  "budget": null,
+  "status": "FAIL",
+  "violations": ["frontmost app was not Unity for every sample: {'Unity': 95, 'Google Chrome': 5}"]
+}

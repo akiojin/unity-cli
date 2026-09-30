@@ -105,6 +105,9 @@ async fn run_command(cli: Cli) -> Result<()> {
                 EditorCommand::EvalStatus { request_id } => {
                     ("get_eval_status", json!({"requestId": request_id}))
                 }
+                EditorCommand::EvalStats { collect } => {
+                    ("get_eval_stats", json!({"collect": collect}))
+                }
             };
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
@@ -1482,6 +1485,7 @@ mod tests {
                 .is_ok()
         );
         assert!(Cli::try_parse_from(["unity-cli", "editor", "eval-status", "sum"]).is_ok());
+        assert!(Cli::try_parse_from(["unity-cli", "editor", "eval-stats", "--collect"]).is_ok());
         assert!(
             Cli::try_parse_from(["unity-cli", "editor", "eval", "1+2", "--mode", "script"])
                 .is_err()
@@ -1505,6 +1509,10 @@ mod tests {
         );
         assert!(validate_tool_params("get_eval_status", &json!({})).is_err());
         validate_tool_params("get_eval_status", &json!({"requestId":"sum"})).unwrap();
+        assert!(!get_tool_spec("get_eval_stats").unwrap().mutating);
+        validate_tool_params("get_eval_stats", &json!({})).unwrap();
+        validate_tool_params("get_eval_stats", &json!({"collect":true})).unwrap();
+        assert!(validate_tool_params("get_eval_stats", &json!({"collect":"yes"})).is_err());
     }
 
     #[test]
