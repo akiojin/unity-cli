@@ -10,6 +10,11 @@ use crate::core::command_stats::TransportTiming;
 
 const MAX_FRAME_BYTES: i32 = 10 * 1024 * 1024;
 
+/// Unity accepted the request but did not start answering in time.
+pub const RESPONSE_TIMEOUT_MESSAGE: &str = "Timed out while waiting for Unity response header";
+/// Unity started answering but did not finish in time.
+pub const PAYLOAD_TIMEOUT_MESSAGE: &str = "Timed out while reading Unity response payload";
+
 pub struct UnityClient {
     stream: TcpStream,
     timeout: std::time::Duration,
@@ -154,14 +159,14 @@ impl UnityClient {
         let mut header = [0_u8; 4];
         timeout(self.timeout, self.stream.read_exact(&mut header))
             .await
-            .context("Timed out while waiting for Unity response header")??;
+            .context(RESPONSE_TIMEOUT_MESSAGE)??;
 
         let expected_len = i32::from_be_bytes(header);
         if (1..=MAX_FRAME_BYTES).contains(&expected_len) {
             let mut payload = vec![0_u8; expected_len as usize];
             timeout(self.timeout, self.stream.read_exact(&mut payload))
                 .await
-                .context("Timed out while reading Unity response payload")??;
+                .context(PAYLOAD_TIMEOUT_MESSAGE)??;
             return parse_json(&payload);
         }
 
