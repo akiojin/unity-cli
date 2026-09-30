@@ -553,6 +553,13 @@ Other focus changes discard the entire balanced cycle and retry; ten discarded c
 or an OS screenshot fallback fail the run. Only valid cycles supply samples. Use an idle host
 without another agent changing Editor focus or importing another project.
 
+Initial Editor budgets come from the four complete runs in
+[`issue-394-baseline.json`](verification/issue-394-baseline.json). For each operation
+and focus condition, take the larger measurement across the two Unity versions,
+multiply p50 by 1.5 and p95 by 2, and round up to 5 ms. This leaves initial host
+variance headroom while the separate history gate still rejects p50 degradation
+greater than 20%. Existing `editor_eval` and mock CLI budgets are unchanged.
+
 ### Run
 
 ```bash
@@ -1135,6 +1142,11 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
   フォーカス逸脱時は周全体を破棄して再計測し、有効な周だけを採用します。
   10 周の破棄、OS スクリーンショットへのフォールバックは失敗です。
   他 Agent の GUI 操作や重い import と同時に計測しません。
+
+Editor の初期予算は [4 条件の実測](verification/issue-394-baseline.json) に基づきます。
+操作・フォーカスごとに 2 Unity バージョンの大きい値を取り、p50 は 1.5 倍、p95 は 2 倍して
+5ms 単位に切り上げます。別途、履歴比で p50 が 20% を超えて劣化した場合も失敗とします。
+既存の `editor_eval` と mock CLI の予算は変更していません。
 
 実行コマンドは英語版の [Run](#run) に記載しています。
 `cargo build --release --bin unity-cli` 後、
