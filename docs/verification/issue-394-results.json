@@ -1,0 +1,937 @@
+{
+  "schema_version": 1,
+  "host": "Apple M5 Max, macOS 26.5, arm64",
+  "cli_version": "0.16.0",
+  "runs": [
+    {
+      "started_at": "2026-09-30T12:57:38.701783+00:00",
+      "finished_at": "2026-09-30T12:58:38.107346+00:00",
+      "focus": "frontmost",
+      "results": {
+        "editor_state": {
+          "n": 30,
+          "p50_ms": 6.50858299999868,
+          "p95_ms": 10.806999999999789,
+          "min_ms": 5.734666999998694,
+          "max_ms": 11.581541999994727
+        },
+        "hierarchy": {
+          "n": 30,
+          "p50_ms": 6.584582999998645,
+          "p95_ms": 11.244125000004601,
+          "min_ms": 6.107707999998269,
+          "max_ms": 11.877583000000413
+        },
+        "find_gameobject": {
+          "n": 30,
+          "p50_ms": 6.240208999997776,
+          "p95_ms": 12.381874999995546,
+          "min_ms": 5.651084000000139,
+          "max_ms": 13.601082999997516
+        },
+        "transform": {
+          "n": 30,
+          "p50_ms": 7.242165999997496,
+          "p95_ms": 11.154040999997505,
+          "min_ms": 6.308624999995516,
+          "max_ms": 11.170875000004798
+        },
+        "position": {
+          "n": 30,
+          "p50_ms": 6.618040999995856,
+          "p95_ms": 8.571625000000083,
+          "min_ms": 5.931459000002803,
+          "max_ms": 10.34229200000425
+        },
+        "create_cube": {
+          "n": 30,
+          "p50_ms": 6.352124999999376,
+          "p95_ms": 7.766207999999608,
+          "min_ms": 5.877208999997663,
+          "max_ms": 9.969249999997487
+        },
+        "add_component": {
+          "n": 30,
+          "p50_ms": 6.44287500000118,
+          "p95_ms": 10.552250000003482,
+          "min_ms": 5.915040999994403,
+          "max_ms": 14.36870799999923
+        },
+        "remove_component": {
+          "n": 30,
+          "p50_ms": 6.512792000002321,
+          "p95_ms": 8.607500000003654,
+          "min_ms": 6.048332999995409,
+          "max_ms": 10.993208000002141
+        },
+        "delete_gameobject": {
+          "n": 30,
+          "p50_ms": 6.210625000001357,
+          "p95_ms": 7.923790999999625,
+          "min_ms": 5.823332999998598,
+          "max_ms": 9.581208000000174
+        },
+        "scene_info": {
+          "n": 30,
+          "p50_ms": 6.322959000002015,
+          "p95_ms": 8.13541700000009,
+          "min_ms": 5.758249999999521,
+          "max_ms": 9.712208000003386
+        },
+        "scene_save": {
+          "n": 30,
+          "p50_ms": 43.33433300000422,
+          "p95_ms": 51.271125000001305,
+          "min_ms": 42.21362500000225,
+          "max_ms": 61.655375000000845
+        },
+        "console": {
+          "n": 30,
+          "p50_ms": 6.446874999998187,
+          "p95_ms": 8.294791000000856,
+          "min_ms": 6.1391249999971365,
+          "max_ms": 11.021166999995557
+        },
+        "screenshot": {
+          "n": 30,
+          "p50_ms": 25.632542000003866,
+          "p95_ms": 29.48950000000039,
+          "min_ms": 24.650125000000855,
+          "max_ms": 32.49787500000423
+        },
+        "material_search": {
+          "n": 30,
+          "p50_ms": 7.465541999998493,
+          "p95_ms": 12.338500000000252,
+          "min_ms": 6.874041999999747,
+          "max_ms": 13.851999999999975
+        },
+        "asset_copy": {
+          "n": 30,
+          "p50_ms": 27.53133299999888,
+          "p95_ms": 36.44095800000002,
+          "min_ms": 26.622375000002307,
+          "max_ms": 41.63429200000479
+        },
+        "asset_move": {
+          "n": 30,
+          "p50_ms": 26.43808400000225,
+          "p95_ms": 28.68783299999933,
+          "min_ms": 25.68041699999668,
+          "max_ms": 29.772665999999504
+        },
+        "asset_delete": {
+          "n": 30,
+          "p50_ms": 25.252249999994092,
+          "p95_ms": 27.81829199999919,
+          "min_ms": 24.297416000003125,
+          "max_ms": 29.841916000000523
+        },
+        "import_settings": {
+          "n": 30,
+          "p50_ms": 6.436333000003458,
+          "p95_ms": 8.668792000001702,
+          "min_ms": 5.759457999999995,
+          "max_ms": 13.587499999999864
+        },
+        "material_modify": {
+          "n": 30,
+          "p50_ms": 15.506750000000125,
+          "p95_ms": 17.244375000000645,
+          "min_ms": 14.375457999999952,
+          "max_ms": 29.28295799999603
+        },
+        "time_settings": {
+          "n": 30,
+          "p50_ms": 6.264542000000262,
+          "p95_ms": 7.54933400000013,
+          "min_ms": 5.570041999998665,
+          "max_ms": 7.989583000000522
+        },
+        "read_csharp": {
+          "n": 30,
+          "p50_ms": 5.766875000006166,
+          "p95_ms": 7.489624999999833,
+          "min_ms": 5.101499999994985,
+          "max_ms": 10.332292000001075
+        },
+        "play_until_ready": {
+          "n": 30,
+          "p50_ms": 537.9907499999988,
+          "p95_ms": 550.3284580000027,
+          "min_ms": 524.045000000001,
+          "max_ms": 562.6569170000017
+        },
+        "stop_until_ready": {
+          "n": 30,
+          "p50_ms": 230.61483300000063,
+          "p95_ms": 253.10570899999973,
+          "min_ms": 224.45191599999958,
+          "max_ms": 254.30845800000412
+        }
+      },
+      "status": "PASS",
+      "measurements_complete": true,
+      "discarded_focus_cycles": 0,
+      "budget_keys": {
+        "editor_state": "editor_frontmost_editor_state",
+        "hierarchy": "editor_frontmost_hierarchy",
+        "find_gameobject": "editor_frontmost_find_gameobject",
+        "transform": "editor_frontmost_transform",
+        "position": "editor_frontmost_position",
+        "create_cube": "editor_frontmost_create_cube",
+        "add_component": "editor_frontmost_add_component",
+        "remove_component": "editor_frontmost_remove_component",
+        "delete_gameobject": "editor_frontmost_delete_gameobject",
+        "scene_info": "editor_frontmost_scene_info",
+        "scene_save": "editor_frontmost_scene_save",
+        "console": "editor_frontmost_console",
+        "screenshot": "editor_frontmost_screenshot",
+        "material_search": "editor_frontmost_material_search",
+        "asset_copy": "editor_frontmost_asset_copy",
+        "asset_move": "editor_frontmost_asset_move",
+        "asset_delete": "editor_frontmost_asset_delete",
+        "import_settings": "editor_frontmost_import_settings",
+        "material_modify": "editor_frontmost_material_modify",
+        "time_settings": "editor_frontmost_time_settings",
+        "read_csharp": "editor_frontmost_read_csharp",
+        "play_until_ready": "editor_frontmost_play_until_ready",
+        "stop_until_ready": "editor_frontmost_stop_until_ready"
+      },
+      "violations": [],
+      "passed": 23,
+      "failed": 0,
+      "measured_commit": "eb46714",
+      "evidence": "/tmp/p394-verify2/6000.3.25f1-33jyk7r7/perf.json",
+      "conditions": {
+        "os": "26.5",
+        "arch": "arm64",
+        "unity": "6000.3.25f1",
+        "focus": "frontmost",
+        "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
+        "enterPlayModeOptionsEnabled": true,
+        "enterPlayModeOptions": "DisableDomainReload",
+        "gameViewEnterPlayModeBehavior": "PlayUnfocused",
+        "backgroundScreenshot": "starts background; may activate target Editor via GameView.Focus",
+        "suite_version": 3
+      }
+    },
+    {
+      "started_at": "2026-09-30T12:58:38.108145+00:00",
+      "finished_at": "2026-09-30T13:01:18.729362+00:00",
+      "focus": "background",
+      "results": {
+        "editor_state": {
+          "n": 30,
+          "p50_ms": 76.50004099997432,
+          "p95_ms": 179.08274999999207,
+          "min_ms": 63.38779100002512,
+          "max_ms": 181.83399999999494
+        },
+        "hierarchy": {
+          "n": 30,
+          "p50_ms": 162.6977919999888,
+          "p95_ms": 178.96483299999488,
+          "min_ms": 51.02850000000103,
+          "max_ms": 184.1239579999865
+        },
+        "find_gameobject": {
+          "n": 30,
+          "p50_ms": 163.0121249999945,
+          "p95_ms": 177.28762499999107,
+          "min_ms": 53.947915999998486,
+          "max_ms": 184.93912499999965
+        },
+        "transform": {
+          "n": 30,
+          "p50_ms": 172.85570799998595,
+          "p95_ms": 180.14508400000295,
+          "min_ms": 54.73995799999898,
+          "max_ms": 186.73716700000398
+        },
+        "position": {
+          "n": 30,
+          "p50_ms": 151.15291699999034,
+          "p95_ms": 177.43470900001057,
+          "min_ms": 45.36966599999914,
+          "max_ms": 231.39479200000324
+        },
+        "create_cube": {
+          "n": 30,
+          "p50_ms": 162.22095899999545,
+          "p95_ms": 177.04166600000804,
+          "min_ms": 18.27341700001739,
+          "max_ms": 180.8622500000041
+        },
+        "add_component": {
+          "n": 30,
+          "p50_ms": 160.69541600001003,
+          "p95_ms": 178.1970409999758,
+          "min_ms": 61.802582999973765,
+          "max_ms": 178.39987499999665
+        },
+        "remove_component": {
+          "n": 30,
+          "p50_ms": 168.72504100001606,
+          "p95_ms": 177.94737500000224,
+          "min_ms": 47.35391700000946,
+          "max_ms": 179.9968750000005
+        },
+        "delete_gameobject": {
+          "n": 30,
+          "p50_ms": 165.65058300000146,
+          "p95_ms": 177.5852920000034,
+          "min_ms": 63.42204100002391,
+          "max_ms": 178.53345800000398
+        },
+        "scene_info": {
+          "n": 30,
+          "p50_ms": 147.79287499999327,
+          "p95_ms": 177.51154100000122,
+          "min_ms": 47.89570799999865,
+          "max_ms": 180.65741700002036
+        },
+        "scene_save": {
+          "n": 30,
+          "p50_ms": 213.2532910000009,
+          "p95_ms": 240.01475000000028,
+          "min_ms": 82.58408300000042,
+          "max_ms": 263.0575830000055
+        },
+        "console": {
+          "n": 30,
+          "p50_ms": 124.5517080000127,
+          "p95_ms": 139.45658299999764,
+          "min_ms": 14.681666999990739,
+          "max_ms": 140.01504099999806
+        },
+        "screenshot": {
+          "n": 30,
+          "p50_ms": 193.62195799999427,
+          "p95_ms": 213.26900000002524,
+          "min_ms": 89.5742499999983,
+          "max_ms": 214.61037499997815
+        },
+        "material_search": {
+          "n": 30,
+          "p50_ms": 77.0062499999824,
+          "p95_ms": 177.73258299999384,
+          "min_ms": 29.904500000014878,
+          "max_ms": 178.2113749999894
+        },
+        "asset_copy": {
+          "n": 30,
+          "p50_ms": 185.748000000018,
+          "p95_ms": 213.87016700001027,
+          "min_ms": 91.19245799999476,
+          "max_ms": 218.69891600002234
+        },
+        "asset_move": {
+          "n": 30,
+          "p50_ms": 168.69475000000023,
+          "p95_ms": 186.36554099998648,
+          "min_ms": 58.35445799999661,
+          "max_ms": 186.5743749999922
+        },
+        "asset_delete": {
+          "n": 30,
+          "p50_ms": 154.68479199998342,
+          "p95_ms": 177.8336250000052,
+          "min_ms": 57.14879100000303,
+          "max_ms": 184.58587499998202
+        },
+        "import_settings": {
+          "n": 30,
+          "p50_ms": 58.232334000024366,
+          "p95_ms": 158.35074999999676,
+          "min_ms": 40.416708000009294,
+          "max_ms": 158.48608299999967
+        },
+        "material_modify": {
+          "n": 30,
+          "p50_ms": 183.85791700001164,
+          "p95_ms": 206.34779200000253,
+          "min_ms": 82.1665830000029,
+          "max_ms": 213.43483300000798
+        },
+        "time_settings": {
+          "n": 30,
+          "p50_ms": 140.51891600000488,
+          "p95_ms": 167.4267079999936,
+          "min_ms": 37.69395800000552,
+          "max_ms": 174.8519589999944
+        },
+        "read_csharp": {
+          "n": 30,
+          "p50_ms": 5.773250000004282,
+          "p95_ms": 6.508416000002626,
+          "min_ms": 4.995833999998922,
+          "max_ms": 6.626874999994925
+        },
+        "play_until_ready": {
+          "n": 30,
+          "p50_ms": 816.2648329999911,
+          "p95_ms": 929.7462079999974,
+          "min_ms": 627.9346670000052,
+          "max_ms": 953.189291000001
+        },
+        "stop_until_ready": {
+          "n": 30,
+          "p50_ms": 383.6530410000023,
+          "p95_ms": 496.33379099999786,
+          "min_ms": 365.9924999999902,
+          "max_ms": 500.6752090000077
+        }
+      },
+      "status": "PASS",
+      "measurements_complete": true,
+      "discarded_focus_cycles": 0,
+      "budget_keys": {
+        "editor_state": "editor_background_editor_state",
+        "hierarchy": "editor_background_hierarchy",
+        "find_gameobject": "editor_background_find_gameobject",
+        "transform": "editor_background_transform",
+        "position": "editor_background_position",
+        "create_cube": "editor_background_create_cube",
+        "add_component": "editor_background_add_component",
+        "remove_component": "editor_background_remove_component",
+        "delete_gameobject": "editor_background_delete_gameobject",
+        "scene_info": "editor_background_scene_info",
+        "scene_save": "editor_background_scene_save",
+        "console": "editor_background_console",
+        "screenshot": "editor_background_screenshot",
+        "material_search": "editor_background_material_search",
+        "asset_copy": "editor_background_asset_copy",
+        "asset_move": "editor_background_asset_move",
+        "asset_delete": "editor_background_asset_delete",
+        "import_settings": "editor_background_import_settings",
+        "material_modify": "editor_background_material_modify",
+        "time_settings": "editor_background_time_settings",
+        "read_csharp": "editor_background_read_csharp",
+        "play_until_ready": "editor_background_play_until_ready",
+        "stop_until_ready": "editor_background_stop_until_ready"
+      },
+      "violations": [],
+      "passed": 23,
+      "failed": 0,
+      "measured_commit": "eb46714",
+      "evidence": "/tmp/p394-verify2/6000.3.25f1-33jyk7r7/perf.json",
+      "conditions": {
+        "os": "26.5",
+        "arch": "arm64",
+        "unity": "6000.3.25f1",
+        "focus": "background",
+        "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
+        "enterPlayModeOptionsEnabled": true,
+        "enterPlayModeOptions": "DisableDomainReload",
+        "gameViewEnterPlayModeBehavior": "PlayUnfocused",
+        "backgroundScreenshot": "starts background; may activate target Editor via GameView.Focus",
+        "suite_version": 3
+      }
+    },
+    {
+      "started_at": "2026-09-30T12:51:04.071343+00:00",
+      "finished_at": "2026-09-30T12:52:01.225171+00:00",
+      "focus": "frontmost",
+      "results": {
+        "editor_state": {
+          "n": 30,
+          "p50_ms": 6.161791999993227,
+          "p95_ms": 7.84774999999982,
+          "min_ms": 5.697292000000687,
+          "max_ms": 7.971208000000729
+        },
+        "hierarchy": {
+          "n": 30,
+          "p50_ms": 6.42708299999839,
+          "p95_ms": 7.906291999999482,
+          "min_ms": 5.9712910000015995,
+          "max_ms": 8.287040999999107
+        },
+        "find_gameobject": {
+          "n": 30,
+          "p50_ms": 6.335583000002032,
+          "p95_ms": 7.5502910000011525,
+          "min_ms": 5.738792000002491,
+          "max_ms": 7.663292000000155
+        },
+        "transform": {
+          "n": 30,
+          "p50_ms": 6.928041999998413,
+          "p95_ms": 8.738000000001023,
+          "min_ms": 6.439333000002989,
+          "max_ms": 8.876542000001209
+        },
+        "position": {
+          "n": 30,
+          "p50_ms": 6.578499999999821,
+          "p95_ms": 9.346290999999951,
+          "min_ms": 6.139374999996505,
+          "max_ms": 9.48879199999908
+        },
+        "create_cube": {
+          "n": 30,
+          "p50_ms": 6.466999999997114,
+          "p95_ms": 7.9095840000000806,
+          "min_ms": 5.921874999998522,
+          "max_ms": 8.141041000000016
+        },
+        "add_component": {
+          "n": 30,
+          "p50_ms": 6.373500000002252,
+          "p95_ms": 8.291249999999195,
+          "min_ms": 5.739417000000913,
+          "max_ms": 8.4192500000011
+        },
+        "remove_component": {
+          "n": 30,
+          "p50_ms": 6.4525000000017485,
+          "p95_ms": 7.549875000000483,
+          "min_ms": 5.978540999997506,
+          "max_ms": 7.5944999999997265
+        },
+        "delete_gameobject": {
+          "n": 30,
+          "p50_ms": 6.353250000000088,
+          "p95_ms": 7.910625000000948,
+          "min_ms": 5.947082999995246,
+          "max_ms": 8.174000000000348
+        },
+        "scene_info": {
+          "n": 30,
+          "p50_ms": 6.111916999998357,
+          "p95_ms": 8.21629200000018,
+          "min_ms": 5.464959000001102,
+          "max_ms": 8.39562500000035
+        },
+        "scene_save": {
+          "n": 30,
+          "p50_ms": 37.081209000000115,
+          "p95_ms": 40.87875000000096,
+          "min_ms": 35.619875000001855,
+          "max_ms": 41.19258300000439
+        },
+        "console": {
+          "n": 30,
+          "p50_ms": 6.551749999999856,
+          "p95_ms": 7.978041999999519,
+          "min_ms": 6.170959000002085,
+          "max_ms": 8.290083000000337
+        },
+        "screenshot": {
+          "n": 30,
+          "p50_ms": 25.874500000000467,
+          "p95_ms": 29.2071670000027,
+          "min_ms": 24.713832999999852,
+          "max_ms": 30.02200000000066
+        },
+        "material_search": {
+          "n": 30,
+          "p50_ms": 7.234791000001906,
+          "p95_ms": 8.951582999999985,
+          "min_ms": 6.788667000002135,
+          "max_ms": 9.00745899999933
+        },
+        "asset_copy": {
+          "n": 30,
+          "p50_ms": 30.721208999999305,
+          "p95_ms": 33.57149999999898,
+          "min_ms": 29.233417000000372,
+          "max_ms": 59.95766699999905
+        },
+        "asset_move": {
+          "n": 30,
+          "p50_ms": 29.182124999998393,
+          "p95_ms": 32.228707999999884,
+          "min_ms": 28.16670800000054,
+          "max_ms": 32.93087499999814
+        },
+        "asset_delete": {
+          "n": 30,
+          "p50_ms": 27.199791999999334,
+          "p95_ms": 29.055917000000875,
+          "min_ms": 26.246709000005808,
+          "max_ms": 30.542499999995698
+        },
+        "import_settings": {
+          "n": 30,
+          "p50_ms": 6.30883400000215,
+          "p95_ms": 7.960584000000992,
+          "min_ms": 5.843042000002185,
+          "max_ms": 8.290249999999943
+        },
+        "material_modify": {
+          "n": 30,
+          "p50_ms": 22.605333000001337,
+          "p95_ms": 25.651583000000144,
+          "min_ms": 21.72108300000275,
+          "max_ms": 41.97441699999871
+        },
+        "time_settings": {
+          "n": 30,
+          "p50_ms": 6.227334000001861,
+          "p95_ms": 9.121041000000218,
+          "min_ms": 5.671292000002381,
+          "max_ms": 9.792833000000556
+        },
+        "read_csharp": {
+          "n": 30,
+          "p50_ms": 5.789999999997519,
+          "p95_ms": 8.223499999999717,
+          "min_ms": 5.253250000002652,
+          "max_ms": 8.972124999999664
+        },
+        "play_until_ready": {
+          "n": 30,
+          "p50_ms": 534.9111660000005,
+          "p95_ms": 552.8282499999975,
+          "min_ms": 523.5009579999996,
+          "max_ms": 558.0580000000026
+        },
+        "stop_until_ready": {
+          "n": 30,
+          "p50_ms": 229.8633330000044,
+          "p95_ms": 238.1184999999988,
+          "min_ms": 217.86254200000243,
+          "max_ms": 238.86145799999525
+        }
+      },
+      "status": "PASS",
+      "measurements_complete": true,
+      "discarded_focus_cycles": 0,
+      "budget_keys": {
+        "editor_state": "editor_frontmost_editor_state",
+        "hierarchy": "editor_frontmost_hierarchy",
+        "find_gameobject": "editor_frontmost_find_gameobject",
+        "transform": "editor_frontmost_transform",
+        "position": "editor_frontmost_position",
+        "create_cube": "editor_frontmost_create_cube",
+        "add_component": "editor_frontmost_add_component",
+        "remove_component": "editor_frontmost_remove_component",
+        "delete_gameobject": "editor_frontmost_delete_gameobject",
+        "scene_info": "editor_frontmost_scene_info",
+        "scene_save": "editor_frontmost_scene_save",
+        "console": "editor_frontmost_console",
+        "screenshot": "editor_frontmost_screenshot",
+        "material_search": "editor_frontmost_material_search",
+        "asset_copy": "editor_frontmost_asset_copy",
+        "asset_move": "editor_frontmost_asset_move",
+        "asset_delete": "editor_frontmost_asset_delete",
+        "import_settings": "editor_frontmost_import_settings",
+        "material_modify": "editor_frontmost_material_modify",
+        "time_settings": "editor_frontmost_time_settings",
+        "read_csharp": "editor_frontmost_read_csharp",
+        "play_until_ready": "editor_frontmost_play_until_ready",
+        "stop_until_ready": "editor_frontmost_stop_until_ready"
+      },
+      "violations": [],
+      "passed": 23,
+      "failed": 0,
+      "measured_commit": "0b453af",
+      "evidence": "/tmp/p394-verify1/2022.3.62f3-rbeo6zda/perf.json",
+      "conditions": {
+        "os": "26.5",
+        "arch": "arm64",
+        "unity": "2022.3.62f3",
+        "focus": "frontmost",
+        "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
+        "enterPlayModeOptionsEnabled": true,
+        "enterPlayModeOptions": "DisableDomainReload",
+        "gameViewEnterPlayModeBehavior": "PlayUnfocused",
+        "backgroundScreenshot": "starts background; may activate target Editor via GameView.Focus",
+        "suite_version": 3
+      }
+    },
+    {
+      "started_at": "2026-09-30T12:52:01.225461+00:00",
+      "finished_at": "2026-09-30T12:53:56.342138+00:00",
+      "focus": "background",
+      "results": {
+        "editor_state": {
+          "n": 30,
+          "p50_ms": 75.97241700000268,
+          "p95_ms": 78.2765829999903,
+          "min_ms": 69.75804199998947,
+          "max_ms": 78.87712499999111
+        },
+        "hierarchy": {
+          "n": 30,
+          "p50_ms": 78.39654199999302,
+          "p95_ms": 80.35954199999651,
+          "min_ms": 75.25425000000041,
+          "max_ms": 80.49829200000147
+        },
+        "find_gameobject": {
+          "n": 30,
+          "p50_ms": 78.49224999998228,
+          "p95_ms": 80.43612500000563,
+          "min_ms": 65.44604199999071,
+          "max_ms": 80.64399999999239
+        },
+        "transform": {
+          "n": 30,
+          "p50_ms": 78.14629099999593,
+          "p95_ms": 81.32587500000454,
+          "min_ms": 73.76779199998396,
+          "max_ms": 81.44691700000806
+        },
+        "position": {
+          "n": 30,
+          "p50_ms": 77.6863330000026,
+          "p95_ms": 79.77412500000014,
+          "min_ms": 73.22625000000471,
+          "max_ms": 80.07691699999953
+        },
+        "create_cube": {
+          "n": 30,
+          "p50_ms": 78.24100000000556,
+          "p95_ms": 80.54020800000217,
+          "min_ms": 75.79145799999765,
+          "max_ms": 81.55145800000696
+        },
+        "add_component": {
+          "n": 30,
+          "p50_ms": 77.04074999999477,
+          "p95_ms": 79.56529199999807,
+          "min_ms": 72.09045899998046,
+          "max_ms": 80.66658399999938
+        },
+        "remove_component": {
+          "n": 30,
+          "p50_ms": 78.21845800000915,
+          "p95_ms": 81.08737499998142,
+          "min_ms": 73.36562499999388,
+          "max_ms": 81.21016700000894
+        },
+        "delete_gameobject": {
+          "n": 30,
+          "p50_ms": 78.6174170000038,
+          "p95_ms": 80.71079200000497,
+          "min_ms": 73.20291700000325,
+          "max_ms": 81.03141700000549
+        },
+        "scene_info": {
+          "n": 30,
+          "p50_ms": 77.9621249999991,
+          "p95_ms": 80.65291700000898,
+          "min_ms": 71.65283400000533,
+          "max_ms": 80.77808300001266
+        },
+        "scene_save": {
+          "n": 30,
+          "p50_ms": 108.92879200000039,
+          "p95_ms": 110.30729200000167,
+          "min_ms": 102.891709000005,
+          "max_ms": 110.8440409999929
+        },
+        "console": {
+          "n": 30,
+          "p50_ms": 46.526708000016015,
+          "p95_ms": 49.191917000001695,
+          "min_ms": 38.78837499999577,
+          "max_ms": 49.346958000000996
+        },
+        "screenshot": {
+          "n": 30,
+          "p50_ms": 99.69383299998924,
+          "p95_ms": 103.24416699998551,
+          "min_ms": 95.27158400000246,
+          "max_ms": 104.27049999999838
+        },
+        "material_search": {
+          "n": 30,
+          "p50_ms": 57.988957999995705,
+          "p95_ms": 104.3594589999941,
+          "min_ms": 11.27604200000576,
+          "max_ms": 108.77354100000503
+        },
+        "asset_copy": {
+          "n": 30,
+          "p50_ms": 101.34766699999886,
+          "p95_ms": 103.30404199999066,
+          "min_ms": 94.37779199998886,
+          "max_ms": 103.70424999999273
+        },
+        "asset_move": {
+          "n": 30,
+          "p50_ms": 75.19350000001168,
+          "p95_ms": 77.77316600001427,
+          "min_ms": 69.0766249999939,
+          "max_ms": 78.31345800001088
+        },
+        "asset_delete": {
+          "n": 30,
+          "p50_ms": 75.27841700000693,
+          "p95_ms": 78.66316599999834,
+          "min_ms": 63.37770900000805,
+          "max_ms": 83.0203749999896
+        },
+        "import_settings": {
+          "n": 30,
+          "p50_ms": 56.22224999999048,
+          "p95_ms": 58.6484579999933,
+          "min_ms": 50.24024999997323,
+          "max_ms": 58.77041699997676
+        },
+        "material_modify": {
+          "n": 30,
+          "p50_ms": 95.16154099999596,
+          "p95_ms": 97.14204200000154,
+          "min_ms": 92.20625000000382,
+          "max_ms": 97.2884579999942
+        },
+        "time_settings": {
+          "n": 30,
+          "p50_ms": 59.29191699999592,
+          "p95_ms": 63.28116599999589,
+          "min_ms": 55.879416999999876,
+          "max_ms": 63.31704199999422
+        },
+        "read_csharp": {
+          "n": 30,
+          "p50_ms": 5.626250000005939,
+          "p95_ms": 6.204874999980348,
+          "min_ms": 5.128874999996924,
+          "max_ms": 6.345957999997154
+        },
+        "play_until_ready": {
+          "n": 30,
+          "p50_ms": 513.369707999999,
+          "p95_ms": 526.1730830000033,
+          "min_ms": 506.99941700000295,
+          "max_ms": 712.4652919999903
+        },
+        "stop_until_ready": {
+          "n": 30,
+          "p50_ms": 258.48483299999714,
+          "p95_ms": 271.01595799999245,
+          "min_ms": 253.66616699999156,
+          "max_ms": 273.4887499999985
+        }
+      },
+      "status": "PASS",
+      "measurements_complete": true,
+      "discarded_focus_cycles": 0,
+      "budget_keys": {
+        "editor_state": "editor_background_editor_state",
+        "hierarchy": "editor_background_hierarchy",
+        "find_gameobject": "editor_background_find_gameobject",
+        "transform": "editor_background_transform",
+        "position": "editor_background_position",
+        "create_cube": "editor_background_create_cube",
+        "add_component": "editor_background_add_component",
+        "remove_component": "editor_background_remove_component",
+        "delete_gameobject": "editor_background_delete_gameobject",
+        "scene_info": "editor_background_scene_info",
+        "scene_save": "editor_background_scene_save",
+        "console": "editor_background_console",
+        "screenshot": "editor_background_screenshot",
+        "material_search": "editor_background_material_search",
+        "asset_copy": "editor_background_asset_copy",
+        "asset_move": "editor_background_asset_move",
+        "asset_delete": "editor_background_asset_delete",
+        "import_settings": "editor_background_import_settings",
+        "material_modify": "editor_background_material_modify",
+        "time_settings": "editor_background_time_settings",
+        "read_csharp": "editor_background_read_csharp",
+        "play_until_ready": "editor_background_play_until_ready",
+        "stop_until_ready": "editor_background_stop_until_ready"
+      },
+      "violations": [],
+      "passed": 23,
+      "failed": 0,
+      "measured_commit": "0b453af",
+      "evidence": "/tmp/p394-verify1/2022.3.62f3-rbeo6zda/perf.json",
+      "conditions": {
+        "os": "26.5",
+        "arch": "arm64",
+        "unity": "2022.3.62f3",
+        "focus": "background",
+        "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
+        "enterPlayModeOptionsEnabled": true,
+        "enterPlayModeOptions": "DisableDomainReload",
+        "gameViewEnterPlayModeBehavior": "PlayUnfocused",
+        "backgroundScreenshot": "starts background; may activate target Editor via GameView.Focus",
+        "suite_version": 3
+      }
+    }
+  ],
+  "eval": [
+    {
+      "timestamp": "2026-09-30T13:01:23Z",
+      "conditions": {
+        "os": "Darwin 26.5",
+        "arch": "arm64",
+        "unity_editor_version": "6000.3.25f1",
+        "unity_cli_version": "unity-cli 0.16.0",
+        "command": "unity-cli editor eval 1+2",
+        "iterations": 100,
+        "warmup": 3,
+        "sample": "wall-clock per CLI process invocation (spawn to exit), ms",
+        "port": 6509,
+        "editor_frontmost": "required",
+        "frontmost_app_per_sample": {
+          "editor": 100,
+          "other": 0
+        },
+        "discarded_focus_lost_samples": 0
+      },
+      "first_call_ms": 10.59,
+      "eval": {
+        "n": 100,
+        "p50_ms": 6.34,
+        "p95_ms": 9.53,
+        "mean_ms": 6.73,
+        "min_ms": 5.94,
+        "max_ms": 10.37
+      },
+      "budget": {
+        "description": "unity-cli editor eval '1+2' against a real Editor, warm (after 3 warm-up calls), 100 samples",
+        "condition": "macOS, Editor is the frontmost app",
+        "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
+        "p50_ms": 50,
+        "p95_ms": 100
+      },
+      "status": "PASS",
+      "violations": []
+    },
+    {
+      "timestamp": "2026-09-30T12:54:00Z",
+      "conditions": {
+        "os": "Darwin 26.5",
+        "arch": "arm64",
+        "unity_editor_version": "2022.3.62f3",
+        "unity_cli_version": "unity-cli 0.16.0",
+        "command": "unity-cli editor eval 1+2",
+        "iterations": 100,
+        "warmup": 3,
+        "sample": "wall-clock per CLI process invocation (spawn to exit), ms",
+        "port": 6509,
+        "editor_frontmost": "required",
+        "frontmost_app_per_sample": {
+          "editor": 100,
+          "other": 0
+        },
+        "discarded_focus_lost_samples": 0
+      },
+      "first_call_ms": 9.07,
+      "eval": {
+        "n": 100,
+        "p50_ms": 6.33,
+        "p95_ms": 6.79,
+        "mean_ms": 6.38,
+        "min_ms": 5.79,
+        "max_ms": 7.74
+      },
+      "budget": {
+        "description": "unity-cli editor eval '1+2' against a real Editor, warm (after 3 warm-up calls), 100 samples",
+        "condition": "macOS, Editor is the frontmost app",
+        "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
+        "p50_ms": 50,
+        "p95_ms": 100
+      },
+      "status": "PASS",
+      "violations": []
+    }
+  ]
+}
