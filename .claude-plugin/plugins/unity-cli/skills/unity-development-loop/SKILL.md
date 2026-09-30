@@ -44,6 +44,31 @@ This skill chooses the smallest next change, the narrowest runtime check, and th
 7. Record the iteration with scenario, acceptance criteria, change made, execution, evidence, observations, result, and next action.
 8. Stop when the current evidence satisfies every acceptance check; otherwise continue with one concrete next hypothesis.
 
+## Latency regression checks
+
+For performance work in a `unity-cli` source checkout, build the release CLI and run
+`python3 scripts/e2e-matrix.py --suites perf --unity-cli target/release/unity-cli`.
+Select Editors with repeated `--editor` arguments; release acceptance requires
+6000.3.25f1 and 2022.3.62f3 with the default `--perf-focus both`.
+This launches isolated GUI projects and runs `scripts/bench-editor-ops.py` for the
+staff report's 23 operations, 30 samples after 3 warmup cycles per focus condition.
+It also runs the existing frontmost `editor_eval` budget with 100 samples and history.
+Use an idle host and coordinate Editor focus with other agents.
+
+Inspect `matrix.json`, each `perf.json` and `perf.log`. Report the command, Unity
+version, pass/fail counts and violations. `perf-budgets.json` gates p50/p95;
+`.unity/perf/editor-ops-history.jsonl` also gates p50 degradation greater than 20%
+against the last five complete matching runs. `UNITY_CLI_PERF_REGRESSION_PERCENT`
+overrides that relative threshold for investigation; releases use the default.
+Read Benchmark Policy in `docs/development.md` for baseline recovery and conditions.
+
+Timing includes each CLI process startup while Editor/unityd remain warm. C# file
+reads use the local reader; Play/Stop include state confirmation. Do not equate
+these measurements with persistent-shell timings or compare foreground and
+background as if they were the same condition. After a product/benchmark change,
+re-run the matrix; a historical PASS is insufficient. For Unity-free transport
+regressions use `python3 scripts/bench-cli-latency.py` (CI's required latency gate).
+
 ## Examples
 
 - "Implement a jump input tweak, run it in Play Mode, and keep iterating until the jump timing feels correct."

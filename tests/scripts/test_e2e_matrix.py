@@ -15,6 +15,12 @@ spec.loader.exec_module(matrix)
 
 
 class MatrixTests(unittest.TestCase):
+    def test_perf_requires_gui_without_changing_other_suites(self):
+        self.assertTrue(getattr(matrix, "requires_gui", lambda _: False)("perf"))
+        self.assertTrue(matrix.requires_gui("compile,perf"))
+        self.assertFalse(matrix.requires_gui("input,timeline"))
+        self.assertFalse(matrix.requires_gui(None))
+
     def test_packages_follow_editor_catalog_and_preserve_bridge(self):
         catalog = {"com.unity.visualeffectgraph": {"version": "14.0.12"},
                    "com.unity.render-pipelines.universal": {"version": "14.0.12"},

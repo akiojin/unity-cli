@@ -11,6 +11,50 @@ permissions:
   contents: read
 
 jobs:
+  cli-latency:
+    name: CLI Latency (required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release CLI
+        run: cargo build --release --bin unity-cli
+
+      - name: Test budget and history checks
+        run: python3 -m unittest discover -s tests/scripts -p 'test_perf*.py'
+
+      - name: Measure CLI latency (50 samples per operation and route)
+        run: python3 scripts/bench-cli-latency.py --out artifacts/cli-latency.json
+
+      - name: Prove a 30 ms transport regression is rejected
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/bench-cli-latency.py --delay-ms 30 --out artifacts/cli-latency-delayed.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('artifacts/cli-latency-delayed.json').read_text())
+          assert report['status'] == 'FAIL'
+          assert len(report['results']) == 8
+          assert all(row['n'] >= 50 for row in report['results'].values())
+          assert any('ping' in violation and 'p50_ms' in violation for violation in report['violations'])
+          PY
+
+      - name: Upload CLI latency evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: cli-latency
+          path: artifacts/cli-latency*.json
+          if-no-files-found: error
+
   rust-test:
     name: Rust Tests (required)
     runs-on: ubuntu-latest

@@ -8,6 +8,46 @@
       "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
       "p50_ms": 50,
       "p95_ms": 100
+    },
+    "cli_startup": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_tool_list": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_ping": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_state": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_unityd_ping": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_unityd_state": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_batch5": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 60,
+      "p95_ms": 100
+    },
+    "cli_unityd_batch5": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 60,
+      "p95_ms": 100
     }
   }
 }

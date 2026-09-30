@@ -49,6 +49,10 @@ DEFAULT_SUITES = ("input", "timeline", "vfx", "eval", "hot-reload", "reload", "a
 REAL_HOT_RELOAD_SUITES = ("hot-reload-apply", "hot-reload-apply-x64")
 
 
+def requires_gui(suites):
+    return bool(suites and "perf" in suites.split(","))
+
+
 def hot_reload_apply_suites(editor, version, args, destination):
     """Real method replacement, each in its own isolated Editor with the optional backend installed.
 
@@ -137,6 +141,9 @@ def run_editor(editor, args, output, base_env):
     try:
         version, project, manifest = prepare(editor, destination)
         row.update(version=version, packages=manifest["dependencies"])
+        if requires_gui(args.suites):
+            (project / ".unity").mkdir(exist_ok=True)
+            (project / ".unity/perf-owned-project").write_text("Created by e2e-matrix.py\n")
         env = dict(base_env, UNITY_PROJECT_ROOT=str(project), UNITY_CLI_PORT=str(args.port),
                    UNITY_CLI_ALLOW_BATCH_HOST="1", UNITY_CLI_PORT_OVERRIDE=str(args.port),
                    UNITY_CLI_BATCH_HOST_SHUTDOWN_FILE=str(destination / "stop"))
@@ -144,7 +151,7 @@ def run_editor(editor, args, output, base_env):
             probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind(("127.0.0.1", args.port))
         log = destination / "editor.log"
-        command = [str(editor), "-batchmode", "-projectPath", str(project),
+        command = [str(editor)] + ([] if requires_gui(args.suites) else ["-batchmode"]) + ["-projectPath", str(project),
                    "-executeMethod", "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
                    "-logFile", str(log)]
         row["launch"] = command
@@ -197,6 +204,13 @@ def run_editor(editor, args, output, base_env):
             raise RuntimeError("Could not prove Mono Editor runtime: " + json.dumps(runtime))
         row["runtime"] = "Mono"
         suites = {
+            "perf": ["python3", str(ROOT / "scripts/bench-editor-ops.py"), "--unity-cli", str(args.unity_cli),
+                     "--port", str(args.port), "--project", str(project), "--focus", args.perf_focus,
+                     "--out", str(destination / "perf.json")],
+            "perf-eval": ["python3", str(ROOT / "scripts/bench-eval.py"), "--unity-cli", str(args.unity_cli),
+                          "--port", str(args.port), "--require-frontmost", "--activate", "--budget", "editor_eval",
+                          "--history", str(ROOT / ".unity/perf/editor-ops-history.jsonl"),
+                          "--out", str(destination / "perf-eval.json")],
             "input": ["bash", str(ROOT / "scripts/e2e-input-tools.sh"), "--unity-cli", str(args.unity_cli), "--port", str(args.port)],
             "timeline": ["python3", str(ROOT / "scripts/e2e-timeline.py"), "--unity-cli", str(args.unity_cli), "--port", str(args.port)],
             "vfx": ["bash", str(ROOT / "scripts/e2e-vfx.sh"), "--unity-cli", str(args.unity_cli), "--port", str(args.port), "--project", str(project), "--artifacts", str(destination / "vfx")],
@@ -208,6 +222,8 @@ def run_editor(editor, args, output, base_env):
         real = hot_reload_apply_suites(editor, version, args, destination)
         suites.update(real)
         selected = selected_suites(args.suites, real)
+        if "perf" in selected:
+            selected.insert(selected.index("perf") + 1, "perf-eval")
         for name in selected:
             if name == "compile":
                 continue
@@ -241,7 +257,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--editor", type=Path, action="append", help="Hub Unity executable; repeat to select multiple Editors")
     parser.add_argument("--unity-cli", type=Path, default=ROOT / "target/debug/unity-cli")
-    parser.add_argument("--lsp-root", type=Path, required=True, help="Directory containing built csharp-lsp/<platform>/server")
+    parser.add_argument("--lsp-root", type=Path, help="Directory containing built csharp-lsp/<platform>/server; not needed for --suites perf")
     parser.add_argument("--output", type=Path, help="New evidence directory (must not exist)")
     parser.add_argument("--port", type=int, default=6508)
     parser.add_argument("--startup-timeout", type=int, default=900)
@@ -251,16 +267,19 @@ def main():
     parser.add_argument("--x64-editor-root", type=Path, default=os.environ.get("UNITY_CLI_X64_EDITOR_ROOT"),
                         help="Directory holding <version>/Unity.app x64 Editors; adds hot-reload-apply-x64 where present")
     parser.add_argument("--suites", help="Focused comma-separated suites; omitted runs the complete matrix")
+    parser.add_argument("--perf-focus", choices=["frontmost", "background", "both"], default="both",
+                        help="Focus conditions for the GUI perf suite; release acceptance requires both")
     args = parser.parse_args()
     args.unity_cli = args.unity_cli.resolve()
     editors = args.editor or [Path(f"/Applications/Unity/Hub/Editor/{v}/Unity.app/Contents/MacOS/Unity") for v in VERSIONS]
     if not args.unity_cli.is_file() or any(not p.is_file() for p in editors):
         parser.error("Build the CLI and install every selected Editor first")
-    if not (args.lsp_root / "csharp-lsp").is_dir():
+    needs_lsp = args.suites != "perf"
+    if needs_lsp and (args.lsp_root is None or not (args.lsp_root / "csharp-lsp").is_dir()):
         parser.error("--lsp-root must contain a built csharp-lsp directory")
     if args.fsr_path and not (args.fsr_path / "package.json").is_file():
         parser.error("--fsr-path must be the FastScriptReload Assets directory containing package.json")
-    allowed = {"compile", *DEFAULT_SUITES, *REAL_HOT_RELOAD_SUITES}
+    allowed = {"compile", "perf", *DEFAULT_SUITES, *REAL_HOT_RELOAD_SUITES}
     if args.suites and not set(args.suites.split(",")) <= allowed:
         parser.error("Unknown suite; choose from " + ",".join(sorted(allowed)))
     output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix="unity-cli-matrix-"))
@@ -268,7 +287,10 @@ def main():
         output.mkdir(parents=True, exist_ok=False)
     print("Evidence:", output, flush=True)
     tools = output / "tools"
-    shutil.copytree(args.lsp_root / "csharp-lsp", tools / "csharp-lsp")
+    if needs_lsp:
+        shutil.copytree(args.lsp_root / "csharp-lsp", tools / "csharp-lsp")
+    else:
+        tools.mkdir()
     env = dict(os.environ, UNITY_CLI_TOOLS_ROOT=str(tools), UNITY_CLI_NO_AUTO_UPDATE="1", UNITY_CLI=str(args.unity_cli))
     report = {"started_at": datetime.now(timezone.utc).isoformat(), "full_matrix": not bool(args.suites), "editors": []}
     daemon = None
@@ -276,9 +298,10 @@ def main():
     try:
         with (output / "unityd.log").open("w") as log, (output / "lspd.log").open("w") as lsp_log:
             daemon = subprocess.Popen([str(args.unity_cli), "unityd", "serve"], env=env, stdout=log, stderr=subprocess.STDOUT)
-            lsp_daemon = subprocess.Popen([str(args.unity_cli), "lspd", "serve"], env=env, stdout=lsp_log, stderr=subprocess.STDOUT)
+            if needs_lsp:
+                lsp_daemon = subprocess.Popen([str(args.unity_cli), "lspd", "serve"], env=env, stdout=lsp_log, stderr=subprocess.STDOUT)
             time.sleep(1)
-            if daemon.poll() is not None or lsp_daemon.poll() is not None:
+            if daemon.poll() is not None or (lsp_daemon is not None and lsp_daemon.poll() is not None):
                 raise RuntimeError("Owned unityd/lspd failed to start")
             for editor in editors:
                 report["editors"].append(run_editor(editor.resolve(), args, output, env))

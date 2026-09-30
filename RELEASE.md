@@ -2,7 +2,13 @@
 
 ## Quick Start
 
-Run the publish script from the repository root:
+Before preparing a release, require a fresh PASS of the real Editor performance
+matrix on macOS (6000.3.25f1 and 2022.3.62f3, frontmost and background), including
+the accompanying frontmost eval gate. Follow the commands and evidence checklist
+in [Benchmark Policy](docs/development.md#benchmark-policy). Do not substitute
+unit tests or a PASS from before the last product/benchmark change.
+
+Then run the publish script from the repository root:
 
 ```bash
 ./scripts/publish.sh patch
@@ -79,15 +85,18 @@ Release artifacts include:
 ## Step-by-Step Release Checklist
 
 1. Ensure the release changes are merged and the working tree is clean
-2. Run:
+2. Run the [performance matrix](docs/development.md#benchmark-policy) and require
+   both versions and both focus conditions to PASS. Record commands, versions,
+   pass/fail counts and log summaries in the release PR.
+3. Run:
 
    ```bash
    ./scripts/publish.sh patch
    ```
 
-3. Verify the [Release workflow](../../actions/workflows/release.yml) succeeds
-4. Verify the crate appears on crates.io
-5. Verify the [GitHub Release](../../releases) page contains the expected assets
+4. Verify the [Release workflow](../../actions/workflows/release.yml) succeeds
+5. Verify the crate appears on crates.io
+6. Verify the [GitHub Release](../../releases) page contains the expected assets
 
 ## Troubleshooting
 
