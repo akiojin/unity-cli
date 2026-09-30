@@ -1,6 +1,13 @@
 #!/bin/sh
 # Install unity-cli managed binary.
 # Usage: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+#
+# The download is verified against the release SHA256SUMS (or the release
+# manifest for older releases) and the install aborts on any mismatch.
+#
+# Environment:
+#   UNITY_CLI_VERSION           install a specific tag instead of the latest
+#   UNITY_CLI_RELEASE_BASE_URL  release download base (default: GitHub Releases)
 set -e
 
 REPO="akiojin/unity-cli"
@@ -59,65 +66,80 @@ need curl
 RID=$(detect_rid)
 echo "Detected platform: ${RID}"
 
-# 1. Fetch latest release tag
-echo "Fetching latest release..."
-TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep '"tag_name"' | head -1 | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+# 1. Resolve release tag (UNITY_CLI_VERSION pins a tag, e.g. v0.16.0)
+if [ -n "${UNITY_CLI_VERSION:-}" ]; then
+    TAG="$UNITY_CLI_VERSION"
+    case "$TAG" in v*) ;; *) TAG="v${TAG}" ;; esac
+else
+    echo "Fetching latest release..."
+    TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+        | grep '"tag_name"' | head -1 | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+fi
 
-[ -z "$TAG" ] && die "failed to determine latest release tag"
-echo "Latest release: ${TAG}"
+[ -z "$TAG" ] && die "failed to determine release tag"
+echo "Release: ${TAG}"
 
-# 2. Download manifest
-MANIFEST_URL="https://github.com/${REPO}/releases/download/${TAG}/unity-cli-manifest.json"
-MANIFEST=$(curl -fsSL "$MANIFEST_URL") || die "failed to download manifest"
+# UNITY_CLI_RELEASE_BASE_URL overrides the download host (mirrors, tests).
+BASE_URL="${UNITY_CLI_RELEASE_BASE_URL:-https://github.com/${REPO}/releases/download}"
+ASSET_NAME="unity-cli-${RID}"
 
-# 3. Extract asset URL and SHA256 for this RID
-ASSET_URL=$(echo "$MANIFEST" | grep -A2 "\"${RID}\"" | grep '"url"' | head -1 \
-    | sed 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-EXPECTED_SHA=$(echo "$MANIFEST" | grep -A2 "\"${RID}\"" | grep '"sha256"' | head -1 \
-    | sed 's/.*"sha256"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+# 2. Resolve the expected SHA-256 and asset URL.
+#    Prefer SHA256SUMS; fall back to the manifest for releases without it.
+SUMS=$(curl -fsSL "${BASE_URL}/${TAG}/SHA256SUMS" 2>/dev/null) || SUMS=""
+if [ -n "$SUMS" ]; then
+    EXPECTED_SHA=$(printf '%s\n' "$SUMS" \
+        | awk -v name="$ASSET_NAME" '{ f = $2; sub(/^\*/, "", f); if (f == name) { print tolower($1); exit } }')
+    [ -z "$EXPECTED_SHA" ] && die "SHA256SUMS has no entry for ${ASSET_NAME}"
+    ASSET_URL="${BASE_URL}/${TAG}/${ASSET_NAME}"
+else
+    MANIFEST=$(curl -fsSL "${BASE_URL}/${TAG}/unity-cli-manifest.json") \
+        || die "failed to download SHA256SUMS or manifest"
+    ASSET_URL=$(echo "$MANIFEST" | grep -A2 "\"${RID}\"" | grep '"url"' | head -1 \
+        | sed 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    EXPECTED_SHA=$(echo "$MANIFEST" | grep -A2 "\"${RID}\"" | grep '"sha256"' | head -1 \
+        | sed 's/.*"sha256"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | tr 'A-F' 'a-f')
+    [ -z "$ASSET_URL" ] && die "manifest has no asset for RID: ${RID}"
+    [ -z "$EXPECTED_SHA" ] && die "manifest has no sha256 for RID: ${RID}"
+fi
 
-[ -z "$ASSET_URL" ] && die "manifest has no asset for RID: ${RID}"
-[ -z "$EXPECTED_SHA" ] && die "manifest has no sha256 for RID: ${RID}"
-
-# 4. Download binary
+# 3. Download binary
 DEST_DIR="${INSTALL_DIR}/${RID}"
 mkdir -p "$DEST_DIR"
 TMP="${DEST_DIR}/unity-cli.download"
 
-echo "Downloading unity-cli..."
-curl -fsSL -o "$TMP" "$ASSET_URL" || die "download failed"
+echo "Downloading ${ASSET_NAME}..."
+curl -fsSL -o "$TMP" "$ASSET_URL" || { rm -f "$TMP"; die "download failed"; }
 
-# 5. Verify SHA256
+# 4. Verify SHA-256 before touching the installed binary
 ACTUAL_SHA=$(sha256_check "$TMP")
 if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
     rm -f "$TMP"
-    die "checksum mismatch: expected ${EXPECTED_SHA}, got ${ACTUAL_SHA}"
+    die "checksum mismatch for ${ASSET_NAME}: expected ${EXPECTED_SHA}, got ${ACTUAL_SHA}"
 fi
 echo "Checksum verified."
 
-# 6. Install
+# 5. Install
 BINARY="${DEST_DIR}/unity-cli"
 mv -f "$TMP" "$BINARY"
 chmod 755 "$BINARY"
 
-# 7. Write VERSION
+# 6. Write VERSION
 VERSION=$(echo "$TAG" | sed 's/^v//')
 printf '%s\n' "$VERSION" > "${DEST_DIR}/VERSION"
 
-# 8. Symlink
+# 7. Symlink
 mkdir -p "$LINK_DIR"
 ln -sf "$BINARY" "${LINK_DIR}/unity-cli"
 echo "Installed unity-cli ${VERSION} -> ${LINK_DIR}/unity-cli"
 
-# 9. Warn about cargo conflict
+# 8. Warn about cargo conflict
 if [ -f "${HOME}/.cargo/bin/unity-cli" ]; then
     echo ""
     echo "WARNING: ${HOME}/.cargo/bin/unity-cli exists and may shadow the managed binary."
     echo "  Consider running: cargo uninstall unity-cli"
 fi
 
-# 10. PATH check
+# 9. PATH check
 case ":${PATH}:" in
     *":${LINK_DIR}:"*) ;;
     *)
