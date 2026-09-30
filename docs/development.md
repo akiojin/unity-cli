@@ -474,9 +474,10 @@ CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and
 | Rust Tests (required)          | push / PR               | `cargo test`                                                                          |
 | LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                 |
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh` (full cases + history artifact)                           |
+| CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py` (p50/p95 budgets + injected-delay evidence)            |
 | Skill Routing Eval             | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
 
-Skill Contract Check, Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
+Skill Contract Check, Rust Tests, LSP Tests, LSP Performance, and CLI Latency are required checks for PR merges.
 
 ## Capability Catalog
 
@@ -527,7 +528,8 @@ a resident-shell benchmark without stating that difference.
 
 **Focus:** frontmost and background have separate budgets. macOS frontmost PID
 is checked before and after every sample; background runs activate Finder.
-A lost focus condition or OS screenshot fallback fails the run. Use an idle host
+Focus changes discard the entire balanced cycle and retry; ten discarded cycles
+or an OS screenshot fallback fail the run. Only valid cycles supply samples. Use an idle host
 without another agent changing Editor focus or importing another project.
 
 ### Run
@@ -1067,9 +1069,10 @@ CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/wo
 | Rust Tests (required)          | push / PR               | `cargo test`                                                                           |
 | LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                  |
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact）                             |
+| CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py`（p50/p95 予算 + 遅延注入の証跡）                        |
 | Skill Routing Eval             | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
 
-Skill Contract Check / Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
+Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency は PR マージの必須チェックです。
 
 ## 機能カタログ
 
@@ -1101,7 +1104,8 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
   常駐 CLI shell の計測とは区別してください。C# ファイル読取だけは現行 CLI の
   ローカル処理であり、JSON の経路に `local` と明記します。
 - 最前面 PID を各サンプルの前後で確認し、背景条件は Finder を前面にします。
-  フォーカス逸脱、OS スクリーンショットへのフォールバックは失敗です。
+  フォーカス逸脱時は周全体を破棄して再計測し、有効な周だけを採用します。
+  10 周の破棄、OS スクリーンショットへのフォールバックは失敗です。
   他 Agent の GUI 操作や重い import と同時に計測しません。
 
 実行コマンドは英語版の [Run](#run) に記載しています。

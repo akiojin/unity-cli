@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -48,11 +49,15 @@ class EditorPerfTests(unittest.TestCase):
 
     def test_noop_material_and_missing_target_are_not_success(self):
         for tool, payload in [("modify_material", {"success": True, "propertiesModified": []}),
-                              ("find_gameobject", {"count": 0, "objects": []})]:
+                              ("find_gameobject", {"count": 0, "objects": []}),
+                              ("delete_gameobject", {"deletedCount": 0, "notFoundCount": 1}),
+                              ("modify_gameobject", {"position": {"x": 0, "y": 0, "z": 0}})]:
             with self.subTest(tool=tool), self.assertRaises(ValueError):
                 self.bench.validate_result(tool, payload)
         self.bench.validate_result("modify_material", {"success": True, "propertiesModified": ["_Color"]})
         self.bench.validate_result("find_gameobject", {"count": 1, "objects": [{"name": "Perf394Target"}]})
+        self.bench.validate_result("delete_gameobject", {"deletedCount": 1, "notFoundCount": 0})
+        self.bench.validate_result("modify_gameobject", {"position": {"x": 1, "y": 2, "z": 3}})
 
     def test_background_requires_a_known_different_frontmost_pid(self):
         self.assertTrue(self.bench.focus_matches("frontmost", 123, 123))
@@ -60,6 +65,25 @@ class EditorPerfTests(unittest.TestCase):
         self.assertTrue(self.bench.focus_matches("background", 123, 321))
         self.assertFalse(self.bench.focus_matches("background", 123, None))
         self.assertFalse(self.bench.focus_matches("background", 123, 123))
+
+    def test_focus_activation_waits_for_the_requested_pid(self):
+        with patch.object(self.bench._focus, "frontmost_pid", side_effect=[321, 321, 123]), \
+             patch.object(self.bench._focus, "activate") as activate, \
+             patch.object(self.bench.time, "sleep"):
+            self.bench.ensure_focus("frontmost", 123)
+        activate.assert_called_with(123)
+
+    def test_focus_loss_discards_complete_cycle_without_repeating_mutations(self):
+        editor = Mock(last_elapsed_ms=1.0)
+        with patch.object(self.bench, "ensure_focus"), \
+             patch.object(self.bench, "transition"), \
+             patch.object(self.bench._focus, "frontmost_pid", side_effect=[123, 321] + [123] * 44):
+            self.assertIsNone(self.bench.measure_cycle(editor, "frontmost", 123))
+        self.assertEqual(editor.raw.call_count, 21)
+        with patch.object(self.bench, "ensure_focus"), \
+             patch.object(self.bench, "transition"), \
+             patch.object(self.bench._focus, "frontmost_pid", return_value=123):
+            self.assertEqual(len(self.bench.measure_cycle(editor, "frontmost", 123)), 23)
 
 
 if __name__ == "__main__":

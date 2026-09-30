@@ -23,8 +23,8 @@ jobs:
       - name: Build release CLI
         run: cargo build --release --bin unity-cli
 
-      - name: Test budget and history checks
-        run: python3 -m unittest discover -s tests/scripts -p 'test_perf*.py'
+      - name: Test performance and matrix checks
+        run: python3 -m unittest discover -s tests/scripts -p 'test_*.py'
 
       - name: Measure CLI latency (50 samples per operation and route)
         run: python3 scripts/bench-cli-latency.py --out artifacts/cli-latency.json

@@ -79,6 +79,10 @@ def validate_result(tool, result):
         raise ValueError("material color was not modified")
     if tool == "find_gameobject" and result.get("count") != 1:
         raise ValueError("fixture GameObject was not uniquely found")
+    if tool == "delete_gameobject" and (result.get("deletedCount") != 1 or result.get("notFoundCount") != 0):
+        raise ValueError("transient Cube was not deleted")
+    if tool == "modify_gameobject" and result.get("position") != {"x": 1, "y": 2, "z": 3}:
+        raise ValueError("fixture position was not modified")
 
 
 def focus_matches(focus, editor_pid, frontmost_pid):
@@ -100,15 +104,16 @@ def transition(raw, playing, timeout=60, interval=.01):
 
 
 def ensure_focus(focus, editor_pid):
-    if not focus_matches(focus, editor_pid, _focus.frontmost_pid()):
+    deadline = time.monotonic() + 10
+    while not focus_matches(focus, editor_pid, _focus.frontmost_pid()):
+        if time.monotonic() >= deadline:
+            raise RuntimeError(f"cannot establish {focus} condition for Editor PID {editor_pid}")
         if focus == "frontmost":
             _focus.activate(editor_pid)
         else:
             subprocess.run(["osascript", "-e", 'tell application "Finder" to activate'],
                            check=True, capture_output=True, timeout=15)
             time.sleep(.5)
-    if not focus_matches(focus, editor_pid, _focus.frontmost_pid()):
-        raise RuntimeError(f"cannot establish {focus} condition")
 
 
 class Editor:
@@ -126,7 +131,7 @@ class Editor:
         if result.returncode:
             raise RuntimeError(f"{command[:2]}: exit {result.returncode}: {result.stdout[:1000]} {result.stderr[:1000]}")
         if "falling back to direct TCP" in result.stderr:
-            raise RuntimeError("unityd fallback invalidated the measurement")
+            raise RuntimeError(f"{command[:2]}: unityd fallback invalidated the measurement: {result.stderr[:2000]}")
         return json.loads(result.stdout)
 
     def raw(self, tool, params):
@@ -155,11 +160,33 @@ class Editor:
         return info
 
 
+def measure_cycle(editor, focus, pid):
+    values, valid = {}, True
+    for name, tool, params in operations():
+        ensure_focus(focus, pid)
+        before = _focus.frontmost_pid()
+        started = time.perf_counter()
+        if tool in ("play_game", "stop_game"):
+            transition(editor.raw, tool == "play_game")
+            elapsed = (time.perf_counter() - started) * 1000
+        else:
+            editor.raw(tool, params)
+            elapsed = editor.last_elapsed_ms
+        after = _focus.frontmost_pid()
+        stable = all(focus_matches(focus, pid, observed) for observed in (before, after))
+        if not stable:
+            print(f"{name}: focus changed (Editor {pid}, before {before}, after {after})", flush=True)
+        valid &= stable
+        values[name] = elapsed
+    # Finish balanced mutations, then discard every sample from a disturbed cycle.
+    return values if valid else None
+
+
 def measure_focus(editor, focus, args, budgets):
     started_at = datetime.now(timezone.utc).isoformat()
     results, violations, samples = {}, [], {name: [] for name, _, _ in operations()}
     report = {"started_at": started_at, "focus": focus, "results": results, "status": "FAIL",
-              "measurements_complete": False,
+              "measurements_complete": False, "discarded_focus_cycles": 0,
               "violations": violations, "operations": [
                   {"name": name, "tool": tool, "params": params, "route": "local" if tool == "read" else "unityd"}
                   for name, tool, params in operations()]}
@@ -179,23 +206,20 @@ def measure_focus(editor, focus, args, budgets):
         report["unityd_pid"] = daemon_before["pid"]
         report["editor_pid"] = pid
         # Complete cycles keep create/delete, add/remove, copy/move/delete and Play/Stop balanced.
-        for cycle in range(args.warmup + args.iterations):
-            for name, tool, params in operations():
-                ensure_focus(focus, pid)
-                before = _focus.frontmost_pid()
-                started = time.perf_counter()
-                if tool in ("play_game", "stop_game"):
-                    transition(editor.raw, tool == "play_game")
-                    elapsed = (time.perf_counter() - started) * 1000
-                else:
-                    editor.raw(tool, params)
-                    elapsed = editor.last_elapsed_ms
-                after = _focus.frontmost_pid()
-                if not all(focus_matches(focus, pid, observed) for observed in (before, after)):
-                    raise RuntimeError(f"{name}: Editor focus changed during sample")
-                if cycle >= args.warmup:
+        cycle = 0
+        while cycle < args.warmup + args.iterations:
+            values = measure_cycle(editor, focus, pid)
+            if values is None:
+                report["discarded_focus_cycles"] += 1
+                print(f"{conditions['unity']} {focus}: discarded cycle after focus changed", flush=True)
+                if report["discarded_focus_cycles"] >= 10:
+                    raise RuntimeError("Editor focus changed in 10 cycles; use an undisturbed host")
+                continue
+            if cycle >= args.warmup:
+                for name, elapsed in values.items():
                     samples[name].append(elapsed)
-            print(f"{conditions['unity']} {focus}: cycle {cycle + 1}/{args.warmup + args.iterations}", flush=True)
+            cycle += 1
+            print(f"{conditions['unity']} {focus}: cycle {cycle}/{args.warmup + args.iterations}", flush=True)
         after = editor.command(["unityd", "status"])
         if after.get("pid") != daemon_before["pid"]:
             raise RuntimeError("unityd restarted during benchmark")
@@ -241,7 +265,7 @@ def main():
         parser.error("regression percent must be finite and non-negative")
     args.unity_cli, args.project = args.unity_cli.resolve(), args.project.resolve()
     budgets = json.loads(args.budgets.read_text())["budgets"]
-    env = dict(os.environ, UNITY_PROJECT_ROOT=str(args.project), UNITY_CLI_NO_AUTO_UPDATE="1")
+    env = dict(os.environ, UNITY_PROJECT_ROOT=str(args.project), UNITY_CLI_NO_AUTO_UPDATE="1", RUST_LOG="warn")
     editor = Editor(args, env)
     focuses = ["frontmost", "background"] if args.focus == "both" else [args.focus]
     original_frontmost = _focus.frontmost_pid()

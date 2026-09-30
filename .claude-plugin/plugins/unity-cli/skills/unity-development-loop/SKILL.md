@@ -1,6 +1,6 @@
 ---
 name: unity-development-loop
-description: Run Unity runtime development loops with gameplay-focused implementation and validation. Use when the user asks to iterate on runtime behavior, reproduce and fix a gameplay bug, or implement a Unity-side flow until acceptance criteria are met. Do not use for `.inputactions` authoring, read-only inspection, or Rust CLI-only work.
+description: Run Unity runtime development loops with gameplay-focused implementation and validation. Use when the user asks to iterate on runtime behavior, reproduce and fix a gameplay bug, measure Editor operation latency, or implement a Unity-side flow until acceptance criteria are met. Do not use for `.inputactions` authoring, read-only inspection, or Rust CLI-only work.
 compatibility: Requires unity-cli connected to a Unity Editor that supports Play Mode control, runtime input simulation, UI automation, and editor diagnostics.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
@@ -12,6 +12,8 @@ metadata:
     - gameplay
     - iterate
     - acceptance
+    - latency
+    - benchmark
 ---
 
 # Unity Development Loop
@@ -25,6 +27,7 @@ This skill chooses the smallest next change, the narrowest runtime check, and th
 - The task needs a repeatable loop of Unity-side code changes, Play Mode execution, evidence capture, and runtime confirmation.
 - The user asks to iterate on a runtime bug until acceptance criteria are satisfied.
 - The request needs screenshots, short video, console inspection, or profiler data as part of Unity runtime validation.
+- The user wants to measure Editor operation latency or check performance budgets in a unity-cli source checkout.
 
 ## Do Not Use When
 

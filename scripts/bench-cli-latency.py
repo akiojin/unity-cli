@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import platform
 import socket
 import socketserver
 import struct
@@ -74,6 +75,8 @@ def main():
     if args.iterations < 50 or args.delay_ms < 0:
         parser.error("at least 50 samples and a non-negative delay are required")
     binary = str(args.unity_cli.resolve())
+    started_at = datetime.now(timezone.utc).isoformat()
+    cli_version = None
     results, violations, routes = {}, [], {}
     with tempfile.TemporaryDirectory(prefix="cli-perf-") as temporary, Bridge(args.delay_ms) as bridge:
         thread = threading.Thread(target=bridge.serve_forever, daemon=True)
@@ -83,12 +86,13 @@ def main():
         # This avoids introducing a product flag that contradicts always-auto-managed unityd.
         disabled = runtime / "unavailable"
         disabled.touch()
-        env = dict(os.environ, UNITY_CLI_NO_AUTO_UPDATE="1", UNITY_CLI_UNITYD_IDLE_TIMEOUT="3600")
+        env = dict(os.environ, UNITY_CLI_NO_AUTO_UPDATE="1", UNITY_CLI_UNITYD_IDLE_TIMEOUT="3600", RUST_LOG="warn")
         env.pop("UNITY_CLI_UNITYD", None)
         base = [binary, "--output", "json", "--host", "127.0.0.1", "--port", str(bridge.server_address[1])]
         daemon_env = dict(env, UNITY_CLI_TOOLS_ROOT=str(runtime / "daemon"))
         daemon = None
         try:
+            cli_version = invoke([binary, "--version"], daemon_env)[1].strip()
             for name, command in [("startup", ["--help"]), ("tool_list", ["tool", "list"])]:
                 samples = []
                 for i in range(args.iterations + 3):
@@ -142,7 +146,9 @@ def main():
                     daemon.kill()
                     daemon.wait()
             bridge.shutdown()
-    report = {"timestamp": datetime.now(timezone.utc).isoformat(), "results": results, "routes": routes,
+    report = {"started_at": started_at, "timestamp": datetime.now(timezone.utc).isoformat(),
+              "conditions": {"os": platform.system(), "arch": platform.machine(), "unity_cli": cli_version},
+              "results": results, "routes": routes,
               "sample": "wall-clock CLI process spawn to exit; 3 warmup calls excluded",
               "injected_delay_ms": args.delay_ms, "violations": violations,
               "status": "FAIL" if violations else "PASS"}
