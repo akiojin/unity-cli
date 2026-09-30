@@ -105,13 +105,36 @@ pub struct DoctorArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum ToolCommand {
-    List,
+    List(ToolListArgs),
     Schema {
         tool_name: Option<String>,
     },
     Call(RawArgs),
     #[command(external_subcommand)]
     External(Vec<String>),
+}
+
+#[derive(Debug, Args, Default)]
+pub struct ToolListArgs {
+    /// Case-insensitive substring matched against tool names and one-line descriptions.
+    #[arg(long, value_name = "TEXT")]
+    pub query: Option<String>,
+
+    /// docs/tools.md category heading or slug (e.g. `scenes`, `playback-testing`).
+    #[arg(long, value_name = "NAME")]
+    pub category: Option<String>,
+
+    /// Emit `{name, description}` entries instead of bare tool names.
+    #[arg(long)]
+    pub compact: bool,
+
+    /// Maximum number of tools to return after filtering.
+    #[arg(long, value_name = "N")]
+    pub limit: Option<usize>,
+
+    /// Number of filtered tools to skip before `--limit` applies.
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub offset: usize,
 }
 
 #[derive(Debug, Args)]

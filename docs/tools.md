@@ -21,6 +21,19 @@ Snapshot date: `2026-09-28`
 
 Use `raw` for full command coverage when no typed subcommand exists.
 
+Tool discovery:
+
+- `tool list [--query <text>] [--category <name>] [--compact] [--limit N] [--offset N]`
+- `--query` matches tool names and one-line descriptions case-insensitively.
+- `--category` accepts a `### ...` heading of this catalog (plus `Reference Cache`) or its slug: `scenes`, `gameobjects`, `components`, `animator`, `timeline`, `prefabs`, `assets`, `visual-effect-graph`, `addressables`, `code-lsp`, `input-system`, `ui`, `playback-testing`, `player-builds`, `profiler`, `editor`, `screenshots-video`, `system`, `reference-cache`.
+- `--compact` returns `{name, description}` entries instead of bare names. Without it, JSON output stays an array of names.
+- Category membership is checked against this file by `tool_index_matches_docs_headings`; keep the tool tables in sync when adding tools.
+
+```bash
+unity-cli tool list --query screenshot --compact --output json
+unity-cli tool list --category scenes --output json
+```
+
 Managed binary notes:
 
 - `cli install` downloads or refreshes the managed `unity-cli` copy under `UNITY_CLI_TOOLS_ROOT` (or the OS default tools directory).
