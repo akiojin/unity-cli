@@ -38,6 +38,7 @@ sha2 = "0.11"
 ureq = { version = "3.3", features = ["json"] }
 serde_yml = "0.0.13"
 similar = "3"
+socket2 = "0.6"
 zip = "8"
 fastembed = { version = "6", default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries"] }
 # bincode 3.0.0 intentionally compile_error!s; retain the existing index format (#342).

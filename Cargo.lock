@@ -2633,6 +2633,7 @@ dependencies = [
  "serde_yml",
  "sha2",
  "similar",
+ "socket2",
  "tempfile",
  "thiserror",
  "tokio",

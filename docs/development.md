@@ -87,6 +87,10 @@ is unavailable, including after the idle timeout (600 seconds by default;
 CLI binary and serializes concurrent starts. `unityd stop` stops the current
 process; the next remote operation starts it again. `unityd status` does not
 start it. Host/port resolution is unchanged, and connections are pooled by both.
+Before reusing a pooled connection, unityd checks whether the Editor closed it
+(Editor restart or bridge reload) and reconnects before sending, so the first call
+after a restart does not fail with `early eof` / `Broken pipe`. A request that was
+already sent is never resent, so mutating calls are not executed twice.
 If startup fails, stderr explains the failure and direct TCP fallback.
 Use `-v` to inspect `route`, `startup_ms` and `operation_ms` separately on stderr;
 JSON results stay on stdout. `unityd status` reports the PID and connection count.
@@ -217,6 +221,11 @@ scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
 # Player build: relevant EditMode tests, real build/report, polling, failures,
 # restart recovery, and headless launch (isolated project copy on macOS)
 python3 scripts/e2e-player-build.py --launch --editmode
+
+# unityd reconnect after Editor restart (#384; defaults: 6000.3.25f1, port 6471, 5 cycles)
+# Kill -> restart on the same port -> ping -> reads -> create_gameobject; the mutating
+# call must succeed first time and create exactly one GameObject.
+python3 scripts/e2e-unityd-restart.py --workdir /tmp/unityd-restart
 
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
@@ -715,6 +724,10 @@ idle 終了（既定 600 秒、`UNITY_CLI_UNITYD_IDLE_TIMEOUT` で変更可能�
 自動起動には実行中の CLI と同じバイナリを使い、同時起動を排他制御します。
 `unityd stop` 後の次のリモート操作では再起動し、`unityd status` 単独では起動しません。
 host/port の解決方法は維持し、接続を両方の組み合わせごとに再利用します。
+再利用の前に Editor 側で接続が閉じられていないか（Editor の再起動や bridge の再読み込み）を確認し、
+閉じられていれば送信前に接続し直します。そのため再起動直後の最初の呼び出しが
+`early eof` / `Broken pipe` で失敗しません。送信済みの要求は再送しないため、
+変更系の呼び出しが二重に実行されることはありません。
 起動失敗の理由と直接 TCP 接続への fallback は stderr に表示します。
 `-v` で `route` / `startup_ms` / `operation_ms` を stderr に分けて記録し、
 stdout は JSON 結果用に維持します。PID と接続数は `unityd status` で確認できます。
@@ -865,6 +878,13 @@ scripts/e2e-input-batch-host.sh
 cargo build
 python3 scripts/e2e-unityd.py --port 6453
 # 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
+
+# Editor 再起動後の unityd 再接続 E2E（#384、既定 6000.3.25f1・port 6471・5 サイクル）
+# Editor を終了 → 同じポートで再起動 → ping → 読み取り → create_gameobject を繰り返し、
+# 変更系が 1 回で成功し、GameObject が 1 つだけできることを確認する
+cargo build --release
+python3 scripts/e2e-unityd-restart.py --workdir /tmp/unityd-restart
+# 結果: <workdir>/run-<timestamp>/result.json（--workdir 指定時は Library を再利用）
 
 # Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
 python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
