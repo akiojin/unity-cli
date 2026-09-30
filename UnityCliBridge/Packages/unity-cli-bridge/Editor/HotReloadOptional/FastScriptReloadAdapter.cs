@@ -89,8 +89,17 @@ namespace UnityCliBridge.HotReload
             AssemblyReloadEvents.beforeAssemblyReload += () => { generation++; FinishCompilation(); };
         }
 
-        static bool PlatformSupported => IntPtr.Size == 8 &&
-            System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.X64;
+        // Verified by real method replacement: x64 Editors and Apple Silicon macOS Editors.
+        static bool PlatformSupported
+        {
+            get
+            {
+                var architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
+                return IntPtr.Size == 8 && (architecture == System.Runtime.InteropServices.Architecture.X64 ||
+                    (architecture == System.Runtime.InteropServices.Architecture.Arm64 && Application.platform == RuntimePlatform.OSXEditor));
+            }
+        }
+        const string PlatformLimitation = "Play Mode previews are verified only on x64 Editors and Apple Silicon macOS Editors. Use an x64 Unity Editor build for this project (see docs/hot-reload.md).";
 
         public static object Status() => new
         {
@@ -99,7 +108,7 @@ namespace UnityCliBridge.HotReload
             platformSupported = PlatformSupported,
             supported = PlatformSupported,
             code = PlatformSupported ? null : "HOT_RELOAD_PLATFORM_UNSUPPORTED",
-            limitation = PlatformSupported ? null : "Only x64 Editor processes are supported; Apple Silicon ARM64 is unsupported.",
+            limitation = PlatformSupported ? null : PlatformLimitation,
             state = recoveryPending ? "recovery_pending" : busy ? "applying" : recoveryRequired ? "recovery_required" : session == null ? "idle" : "ready",
             baselineRevision = session?.BaselineRevision,
             appliedRevision = session?.AppliedRevision,
@@ -123,7 +132,7 @@ namespace UnityCliBridge.HotReload
                 string action = parameters.Value<string>("action") ?? "status";
                 if (action == "status") return Status();
                 if (action == "recover") return Recover();
-                if (!PlatformSupported) return Error("platform_unsupported", "FSR preview currently supports only x64 Editor processes.");
+                if (!PlatformSupported) return Error("platform_unsupported", PlatformLimitation);
                 if (busy) return Error("busy", "A preview transaction is already running.");
                 if (recoveryRequired) return Error("recovery_required", "Stop and fully recompile with action=recover before another preview.");
                 EnsureExclusive();
@@ -220,10 +229,14 @@ namespace UnityCliBridge.HotReload
                 targets = originals.Keys.ToDictionary(name => name, name => candidateMethods.SingleOrDefault(m => m.Name == name));
                 if (targets.Values.Any(m => m == null) || candidateMethods.Length != originals.Count)
                     throw new InvalidOperationException("FSR candidate methods could not be mapped exactly to every original method.");
+                // FSR's compiler adds its own static bookkeeping fields to the candidate type, so FSR's
+                // field-count check would skip every type. Prove the user-declared fields here instead.
+                if (!CandidateFields.Match(current.Type.GetFields(Methods).Select(f => f.Name), patchedType.GetFields(Methods).Select(f => f.Name)))
+                    throw new InvalidOperationException("FSR candidate fields differ from the compiled type.");
                 patchAttempted = true;
                 SessionState.SetBool(DirtyKey, true);
                 current.AppliedRevision = null;
-                AssemblyChangesLoader.Instance.DynamicallyUpdateMethodsForCreatedAssembly(result.CompiledAssembly, new AssemblyChangesLoaderEditorOptionsNeededInBuild(false, false));
+                AssemblyChangesLoader.Instance.DynamicallyUpdateMethodsForCreatedAssembly(result.CompiledAssembly, new AssemblyChangesLoaderEditorOptionsNeededInBuild(true, false));
                 foreach (var name in originals.Keys)
                 {
                     if (DetourMatches(originals[name], targets[name])) applied.Add(name); else failed.Add(name);

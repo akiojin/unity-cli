@@ -13,12 +13,18 @@ The Bridge neither installs nor forks this dependency. Its adapter is compiled
 only with the supported package version. Without it, ordinary Bridge tools
 continue to work and preview requests return `HOT_RELOAD_PACKAGE_MISSING`.
 
-The initial runtime is an **x64 Unity Editor / Mono**, Unity 2022.3 or later.
-Apple Silicon ARM64 Editors are rejected before compilation or native patching.
-Unity 6000.4.11f1 on ARM64 is used for package absence, package integration,
-unsupported-platform and recovery E2E. Actual x64 method replacement requires
-the supported-runtime E2E below; ARM64 error checks are not proof of replacement.
-Windows実機検証: 保留（オーナー確認待ち）。
+Add it through Package Manager ("Add package from git URL") or as the
+`com.handzlikchris.fastscriptreload` dependency in `Packages/manifest.json`,
+then let the Editor compile. `hot_reload_status` reports `supported: true` once
+the adapter is active.
+
+Supported hosts are **Mono Editors, Unity 2022.3 or later, on x64 or Apple
+Silicon (ARM64) macOS**. Real method replacement is verified on macOS with
+6000.3.25f1 and 2022.3.62f3, both as native ARM64 Editors and as x64 Editors
+under Rosetta 2. Any other host is rejected before compilation or native
+patching with `HOT_RELOAD_PLATFORM_UNSUPPORTED`; on such a host use an x64
+build of the Editor. Windows and Linux hardware verification is tracked in
+Issue #386.
 
 Disable Fast Script Reload's automatic and on-demand reload before beginning.
 The Bridge rejects concurrent ownership instead of changing those preferences.
@@ -60,19 +66,41 @@ restart. Poll `hot_reload_status` after recovery until the new domain is idle.
 
 ```bash
 cargo build --bin unity-cli
+# Error contract without the backend:
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
-scripts/e2e-hot-reload-batch-host.sh --port 6485 --expect unsupported \
+# Real method replacement on the Editor named by UNITY_PATH:
+UNITY_PATH=/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
+  scripts/e2e-hot-reload-batch-host.sh --port 6486 --expect supported \
   --fsr-path /path/to/FastScriptReload/Assets
-# On a supported x64 Editor:
-scripts/e2e-hot-reload-batch-host.sh --port 6486 --expect supported \
-  --fsr-path /path/to/FastScriptReload/Assets
+# The same run on an x64 Editor under Rosetta 2:
+UNITY_PATH=/path/to/x64-editors/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
+  scripts/e2e-hot-reload-batch-host.sh --port 6486 --expect supported \
+  --require-arch X64 --fsr-path /path/to/FastScriptReload/Assets
 ```
 
-Each batch run creates an isolated project and prints the artifact directory
-containing `editor.log` and `results.log`. Set `UNITY_PATH` for the Editor binary.
-For an existing isolated fixture listener, run `scripts/e2e-hot-reload.py` with
-`--project`, `--port`, `--unity-cli` and the explicit expected backend mode.
+Each batch run creates an isolated project for the selected Editor version and
+prints the artifact directory containing `editor.log` and `results.log`
+(`--artifacts` chooses it). Without `UNITY_PATH` the Hub Editor of the
+repository project version is used. `--require-arch X64|Arm64` fails the run
+unless the Editor process really has that architecture. `--expect unsupported`
+remains for hosts outside the supported list. For an existing isolated fixture
+listener, run `scripts/e2e-hot-reload.py` with `--project`, `--port`,
+`--unity-cli` and the explicit expected backend mode.
+
 The supported scenario checks formula changes, scene/object identity and
 position/HP/score/static/nonserialized state, invalid source, stale revisions,
-unobserved partial transactions and recovery. No mode silently treats the
-unsupported platform as a successful replacement test.
+unobserved partial transactions and recovery. No mode treats a rejected request
+as a successful replacement test.
+
+Unity Hub keeps one architecture per Editor version. To keep an x64 build next
+to the Apple Silicon one, download the Intel installer of the same version and
+expand it outside the Hub directory as `<root>/<version>/Unity.app`
+(`pkgutil --expand-full Unity-<version>.pkg <dir>` needs no administrator
+rights; the Editor is in the `Unity.pkg.tmp/Payload/Unity` directory).
+
+`scripts/e2e-matrix.py --fsr-path /path/to/FastScriptReload/Assets` adds the
+`hot-reload-apply` suite, which runs the supported scenario in a separate
+isolated Editor for every matrix version. With
+`--x64-editor-root <root>` it also adds `hot-reload-apply-x64` for each version
+that has an x64 build under that root. Without `--fsr-path` the matrix keeps
+only the `HOT_RELOAD_PACKAGE_MISSING` contract check.

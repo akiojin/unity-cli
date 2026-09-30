@@ -25,7 +25,9 @@ sweep (including LSP performance).
 Each run selects VFX/URP from the selected Editor's bundled Package Manager
 catalog and verifies the resolved VFX version. Optional hot reload is absent from
 the fixture: `HOT_RELOAD_PACKAGE_MISSING` is the expected tested result, not a
-claim that method replacement was performed. The all-tools sweep reports its
+claim that method replacement was performed. Real method replacement is a
+separate `hot-reload-apply` suite enabled by `--fsr-path` (see
+[hot-reload.md](hot-reload.md)). The all-tools sweep reports its
 documented exclusions separately; excluded tools do not count as passed.
 See the [acceptance evidence and supplemental test limitations](verification/issue-340.md).
 

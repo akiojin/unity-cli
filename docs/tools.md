@@ -258,6 +258,17 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `apply_csharp_edits`    | Apply structured C# source edits |
 | `create_class`          | Create a C# class                |
 
+`hot_reload` changes the body of existing methods while Play Mode keeps running
+(scene, objects and field values are preserved; the `.cs` file on disk is not
+modified). Prerequisites: the optional FastScriptReload 1.8.0 package installed
+in the project with its auto and on-demand reload disabled, and a Mono Editor
+(Unity 2022.3+) on x64 or Apple Silicon macOS. `hot_reload_status` returns
+`supported`, `code` (`HOT_RELOAD_PACKAGE_MISSING`,
+`HOT_RELOAD_PLATFORM_UNSUPPORTED`) and the verified `appliedRevision`. Flow:
+`begin` with the script path, `apply` with the complete candidate source and
+the last `appliedRevision`, `recover` to stop Play and recompile. See
+[hot-reload.md](hot-reload.md) for limits and recovery.
+
 ### Input System
 
 | Tool                          | Description                        |
