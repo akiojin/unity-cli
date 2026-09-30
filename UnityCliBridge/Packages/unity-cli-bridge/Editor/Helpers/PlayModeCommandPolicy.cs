@@ -46,6 +46,8 @@ namespace UnityCliBridge.Helpers
             if (commandType.Equals("create_animation_clip", StringComparison.OrdinalIgnoreCase)) return false;
             if (commandType.Equals("edit_animation_curve", StringComparison.OrdinalIgnoreCase)) return false;
             if (commandType.Equals("create_sprite_atlas", StringComparison.OrdinalIgnoreCase)) return false;
+            if (commandType.Equals("manage_prefab_overrides", StringComparison.OrdinalIgnoreCase)) return false;
+            if (commandType.Equals("unpack_prefab", StringComparison.OrdinalIgnoreCase)) return false;
 
             // Block project settings and package manager changes during Play
             if (commandType.Equals("update_project_settings", StringComparison.OrdinalIgnoreCase)) return false;

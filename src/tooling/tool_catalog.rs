@@ -25,6 +25,9 @@ pub const TOOL_NAMES: &[&str] = &[
     "create_material",
     "modify_material",
     "create_prefab",
+    "get_prefab_overrides",
+    "manage_prefab_overrides",
+    "unpack_prefab",
     "exit_prefab_mode",
     "instantiate_prefab",
     "modify_prefab",
@@ -206,6 +209,10 @@ fn to_static_name(name: &str) -> &'static str {
 
 fn tool_description(name: &str) -> &'static str {
     match name {
+        "create_prefab" => "Create a Prefab from a scene object or template; a connected Prefab instance root creates an inherited Variant",
+        "get_prefab_overrides" => "List structured property, object, added/removed component overrides and apply targets for a scene Prefab instance root",
+        "manage_prefab_overrides" => "Apply or revert all or individual Prefab overrides; apply requires assetPath (Variant or ancestor Prefab); use IDs from get_prefab_overrides",
+        "unpack_prefab" => "Unpack a scene Prefab instance: Outermost preserves nested connections, Completely removes all connections",
         "ping" => "Check Unity Editor connectivity",
         "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
         "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
@@ -323,6 +330,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_gameobject_details"
             | "get_object_references"
             | "analyze_scene_contents"
+            | "get_prefab_overrides"
             | "analyze_asset_dependencies"
             | "get_compilation_state"
             | "hot_reload_status"
@@ -1712,6 +1720,66 @@ fn tool_params_schema(name: &str) -> Value {
                 ),
             ],
         ),
+        "get_prefab_overrides" => object_schema(
+            &[("gameObjectPath", string_schema())],
+            &["gameObjectPath"],
+            false,
+        ),
+        "manage_prefab_overrides" => {
+            let scopes = [
+                "all",
+                "property",
+                "object",
+                "added_component",
+                "removed_component",
+            ];
+            let schema = object_schema(
+                &[
+                    ("gameObjectPath", string_schema()),
+                    ("action", enum_string_schema(&["apply", "revert"])),
+                    ("scope", enum_string_schema(&scopes)),
+                    ("assetPath", string_schema()),
+                    ("instanceId", integer_schema()),
+                    ("propertyPath", string_schema()),
+                    ("assetComponentId", integer_schema()),
+                ],
+                &["gameObjectPath", "action", "scope"],
+                false,
+            );
+            let mut variants = Vec::new();
+            for action in ["apply", "revert"] {
+                for scope in scopes {
+                    let mut fields = vec![
+                        ("gameObjectPath", string_schema()),
+                        ("action", enum_string_schema(&[action])),
+                        ("scope", enum_string_schema(&[scope])),
+                    ];
+                    if action == "apply" {
+                        fields.push(("assetPath", string_schema()));
+                    }
+                    if scope != "all" {
+                        fields.push(("instanceId", integer_schema()));
+                    }
+                    if scope == "property" {
+                        fields.push(("propertyPath", string_schema()));
+                    }
+                    if scope == "removed_component" {
+                        fields.push(("assetComponentId", integer_schema()));
+                    }
+                    let required: Vec<_> = fields.iter().map(|(name, _)| *name).collect();
+                    variants.push(object_schema(&fields, &required, false));
+                }
+            }
+            with_one_of(schema, variants)
+        }
+        "unpack_prefab" => object_schema(
+            &[
+                ("gameObjectPath", string_schema()),
+                ("mode", enum_string_schema(&["Outermost", "Completely"])),
+            ],
+            &["gameObjectPath", "mode"],
+            false,
+        ),
         "modify_prefab" => object_schema(
             &[
                 ("prefabPath", string_schema()),
@@ -2978,7 +3046,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 149);
+        assert_eq!(TOOL_NAMES.len(), 152);
     }
 
     #[test]
@@ -3392,6 +3460,38 @@ mod tests {
         assert_eq!(
             spec.params_schema["anyOf"].as_array().map(|v| v.len()),
             Some(2)
+        );
+    }
+
+    #[test]
+    fn prefab_override_tools_have_strict_discoverable_schemas() {
+        for name in [
+            "get_prefab_overrides",
+            "manage_prefab_overrides",
+            "unpack_prefab",
+        ] {
+            let spec = get_tool_spec(name).unwrap_or_else(|| panic!("missing {name}"));
+            assert_eq!(spec.params_schema["additionalProperties"], false);
+        }
+        let spec = get_tool_spec("manage_prefab_overrides").unwrap();
+        assert_eq!(
+            spec.params_schema["properties"]["action"]["enum"],
+            json!(["apply", "revert"])
+        );
+        assert_eq!(
+            spec.params_schema["properties"]["scope"]["enum"],
+            json!([
+                "all",
+                "property",
+                "object",
+                "added_component",
+                "removed_component"
+            ])
+        );
+        let spec = get_tool_spec("unpack_prefab").unwrap();
+        assert_eq!(
+            spec.params_schema["properties"]["mode"]["enum"],
+            json!(["Outermost", "Completely"])
         );
     }
 

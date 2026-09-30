@@ -51,9 +51,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 149 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 138 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 152 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 141 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (138 tools)
+## Runtime Tool APIs (141 tools)
 
 ### Scenes
 
@@ -191,14 +191,67 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 
 ### Prefabs
 
-| Tool                 | Description                       |
-| -------------------- | --------------------------------- |
-| `create_prefab`      | Create a new Prefab               |
-| `exit_prefab_mode`   | Exit Prefab editing mode          |
-| `instantiate_prefab` | Instantiate a Prefab in the scene |
-| `modify_prefab`      | Modify Prefab properties          |
-| `open_prefab`        | Open a Prefab for editing         |
-| `save_prefab`        | Save Prefab changes               |
+| Tool                      | Description                                 |
+| ------------------------- | ------------------------------------------- |
+| `create_prefab`           | Create a Prefab or inherited Variant        |
+| `get_prefab_overrides`    | List instance overrides and apply targets   |
+| `manage_prefab_overrides` | Apply or revert individual or all overrides |
+| `unpack_prefab`           | Unpack outermost or all Prefab connections  |
+| `exit_prefab_mode`        | Exit Prefab editing mode                    |
+| `instantiate_prefab`      | Instantiate a Prefab in the scene           |
+| `modify_prefab`           | Modify Prefab properties                    |
+| `open_prefab`             | Open a Prefab for editing                   |
+| `save_prefab`             | Save Prefab changes                         |
+
+Prefab inheritance and overrides:
+
+- Variant creation uses the existing tools: `instantiate_prefab` the base, then
+  pass that connected scene instance root to `create_prefab` with a new
+  `prefabPath`. Unity saves it as an inherited Variant and connects that scene
+  object to the Variant. Do not unpack the source first. Base asset edits
+  propagate to fields that the Variant does not override. Keep `overwrite`
+  unset to protect existing destinations.
+- `get_prefab_overrides` takes a scene instance root `gameObjectPath`, including
+  inactive objects. The JSON contains `properties` (`instanceId`, `propertyPath`,
+  `propertyType`, `isDefaultOverride`), `objects`, `addedComponents`,
+  `removedComponents` (`instanceId` of the containing object, `assetComponentId`,
+  `type`, `assetPath`), and `applyTargets` (immediate Variant through its ancestors).
+  IDs belong to the current Editor session; list again after reload or mutation.
+- `manage_prefab_overrides` requires `gameObjectPath`, `action: apply|revert`, and
+  `scope: all|property|object|added_component|removed_component`. Apply also requires
+  `assetPath` from `applyTargets`, making the destination explicit. Individual
+  scopes require `instanceId` from the listing; `property` additionally requires
+  `propertyPath`, and `removed_component` requires `assetComponentId`. Revert restores
+  the immediate source and does not accept `assetPath`. Applying to an ancestor
+  rejects objects that exist only in a derived Variant. Whole-instance operations
+  also handle added/removed GameObjects. Default root position/rotation overrides
+  are not applied; individual apply rejects them as `DEFAULT_OVERRIDE`.
+- `unpack_prefab` requires `gameObjectPath` and `mode: Outermost|Completely`.
+  Outermost removes the selected outer connection while preserving nested Prefabs
+  (and the base connection of a Variant). Completely removes every connection in
+  that hierarchy. Inspect `isPartOfPrefabInstance` and `connectedObjectCount` in the
+  response; a completely unpacked hierarchy reports `false` and `0`.
+- Override and unpack writes require Edit Mode. Instance changes mark the scene dirty; save the
+  scene to persist them. Asset apply saves the changed Prefab. Existing
+  `save_prefab` remains available for Prefab Mode and immediate-source apply.
+
+```bash
+unity-cli raw instantiate_prefab --json '{"prefabPath":"Assets/Prefabs/Player.prefab","name":"ArmoredPlayer"}'
+unity-cli raw create_prefab --json '{"gameObjectPath":"/ArmoredPlayer","prefabPath":"Assets/Prefabs/ArmoredPlayer.prefab"}'
+unity-cli raw get_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer"}'
+# Replace instanceId with the component ID returned above.
+unity-cli raw manage_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer","action":"apply","scope":"property","instanceId":1234,"propertyPath":"m_Mass","assetPath":"Assets/Prefabs/ArmoredPlayer.prefab"}'
+unity-cli raw manage_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer","action":"revert","scope":"all"}'
+unity-cli raw unpack_prefab --json '{"gameObjectPath":"/ArmoredPlayer","mode":"Completely"}'
+```
+
+Real Editor acceptance (isolated macOS projects, CLI calls, persisted values and
+connection assertions; logs and counts are saved to `results.json`):
+
+```bash
+cargo build --bin unity-cli
+python3 scripts/e2e-prefab.py --launch --editmode --versions 6000.3.25f1,2022.3.62f3 --output /tmp/prefab-e2e
+```
 
 ### Assets
 

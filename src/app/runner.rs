@@ -1904,6 +1904,31 @@ mod tests {
     }
 
     #[test]
+    fn prefab_override_validation_requires_explicit_scope_and_apply_target() {
+        for params in [
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"all"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"all", "assetPath":"Assets/Base.prefab"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"property", "instanceId":42}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"removed_component", "instanceId":42}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"invalid"}),
+        ] {
+            assert!(
+                validate_tool_params("manage_prefab_overrides", &params).is_err(),
+                "{params}"
+            );
+        }
+        for params in [
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"all", "assetPath":"Assets/Variant.prefab"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"all"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"property", "instanceId":42, "propertyPath":"m_Size.x"}),
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"removed_component", "instanceId":42, "assetComponentId":43, "assetPath":"Assets/Base.prefab"}),
+        ] {
+            validate_tool_params("manage_prefab_overrides", &params)
+                .expect("valid prefab override selection");
+        }
+    }
+
+    #[test]
     fn timeline_validation_requires_target_and_valid_action() {
         assert!(validate_tool_params("get_timeline", &json!({})).is_err());
         for params in [
