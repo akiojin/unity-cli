@@ -391,6 +391,7 @@ run_tool "manage_timeline" "$(jq -nc --arg assetPath "${GEN_DIR}/Timeline_${RUN_
 run_tool "get_timeline" "$(jq -nc --arg assetPath "${GEN_DIR}/Timeline_${RUN_ID}.playable" '{assetPath:$assetPath}')"
 run_tool "eval_csharp" "$(jq -nc --arg requestId "all-tools-${RUN_ID}" '{code:"1 + 1",requestId:$requestId}')"
 run_tool "get_eval_status" "$(jq -nc --arg requestId "all-tools-${RUN_ID}" '{requestId:$requestId}')"
+run_tool "get_eval_stats" '{}'
 run_tool "hot_reload_status" '{}'
 run_tool "add_component" '{"gameObjectPath":"/E2ECube","componentType":"Animator"}'
 run_tool "add_component" '{"gameObjectPath":"/E2ECube","componentType":"Rigidbody"}'

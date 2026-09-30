@@ -115,32 +115,133 @@ namespace UnityCliBridge.Tests
             try
             {
                 field.SetValue(null, fieldValue);
-                Assert.That((string)Call("Evaluate", new JObject { ["code"] = "1" })["state"], Is.EqualTo(state));
+                Assert.That((string)Call("Evaluate", new JObject { ["code"] = Unique("1") })["state"], Is.EqualTo(state));
+            }
+            finally { field.SetValue(null, original); }
+        }
+
+        private static string Unique(string expression) => expression + " /* " + Guid.NewGuid().ToString("N") + " */";
+
+        private static JObject Stats() => Call("GetStats", new JObject());
+
+        [Test]
+        public void IdenticalSourceReusesOneAssemblyAndStillExecutes()
+        {
+            var code = Unique("Guid.NewGuid().ToString()");
+            var before = Stats();
+            var first = Call("Evaluate", new JObject { ["code"] = code });
+            var second = Call("Evaluate", new JObject { ["code"] = code });
+            var after = Stats();
+            Assert.That((string)first["state"], Is.EqualTo("completed"), first.ToString());
+            Assert.That((string)second["state"], Is.EqualTo("completed"), second.ToString());
+            Assert.That((string)second["value"], Is.Not.EqualTo((string)first["value"]), "a cached compilation must run the code again");
+            Assert.That((int)after["emittedAssemblies"] - (int)before["emittedAssemblies"], Is.EqualTo(1));
+            Assert.That((int)after["compileCacheHits"] - (int)before["compileCacheHits"], Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ModeIsPartOfTheCompilationKey()
+        {
+            var code = Unique("1");
+            Assert.That((string)Call("Evaluate", new JObject { ["code"] = code })["state"], Is.EqualTo("completed"));
+            Assert.That((string)Call("Evaluate", new JObject { ["code"] = code, ["mode"] = "statements" })["state"], Is.EqualTo("compile_error"));
+        }
+
+        [Test]
+        public void CachedCompilationReplaysWarnings()
+        {
+            var code = "int unused = 1; /* " + Guid.NewGuid().ToString("N") + " */ return 2;";
+            var first = Call("Evaluate", new JObject { ["code"] = code, ["mode"] = "statements" });
+            var second = Call("Evaluate", new JObject { ["code"] = code, ["mode"] = "statements" });
+            Assert.That(((JArray)first["diagnostics"]).Count, Is.GreaterThan(0), first.ToString());
+            Assert.That(JToken.DeepEquals(first["diagnostics"], second["diagnostics"]), Is.True);
+        }
+
+        [Test]
+        public void DistinctSourcesShareMetadataReferences()
+        {
+            Call("Evaluate", new JObject { ["code"] = Unique("1") });
+            var before = Stats();
+            Call("Evaluate", new JObject { ["code"] = Unique("2") });
+            Call("Evaluate", new JObject { ["code"] = Unique("3") });
+            var after = Stats();
+            Assert.That((int)after["referenceBuilds"], Is.EqualTo((int)before["referenceBuilds"]));
+            Assert.That((int)after["referenceCount"], Is.GreaterThan(0));
+            Assert.That((int)after["emittedAssemblies"] - (int)before["emittedAssemblies"], Is.EqualTo(2));
+        }
+
+        [Test]
+        public void NewlyLoadedAssemblyBecomesResolvable()
+        {
+            var name = "EvalProbe" + Guid.NewGuid().ToString("N");
+            var probe = name + ".Value";
+            Assert.That((string)Call("Evaluate", new JObject { ["code"] = probe })["state"], Is.EqualTo("compile_error"));
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), name + ".dll");
+            try
+            {
+                var build = Call("Evaluate", new JObject { ["mode"] = "statements", ["code"] =
+                    "var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(\"public static class " + name + " { public static int Value => 42; }\");" +
+                    "var refs = new[] { Microsoft.CodeAnalysis.MetadataReference.CreateFromFile(typeof(object).Assembly.Location) };" +
+                    "var options = new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary);" +
+                    "using (var file = System.IO.File.Create(@\"" + path + "\")) {" +
+                    "var emit = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(\"" + name + "\", new[] { tree }, refs, options).Emit(file);" +
+                    "if (!emit.Success) throw new Exception(string.Join(\";\", emit.Diagnostics)); }" +
+                    "System.Reflection.Assembly.LoadFrom(@\"" + path + "\"); return 1;" });
+                Assert.That((string)build["state"], Is.EqualTo("completed"), build.ToString());
+                var resolved = Call("Evaluate", new JObject { ["code"] = probe });
+                Assert.That((string)resolved["state"], Is.EqualTo("completed"), resolved.ToString());
+                Assert.That((int)resolved["value"], Is.EqualTo(42));
+            }
+            finally { System.IO.File.Delete(path); }
+        }
+
+        [Test]
+        public void CachedSourceStillRunsAtTheAssemblyLimit()
+        {
+            var code = Unique("7");
+            Call("Evaluate", new JObject { ["code"] = code });
+            var type = typeof(CompilationHandler).Assembly.GetType("UnityCliBridge.Handlers.EvalHandler");
+            var field = type.GetField("emittedAssemblies", BindingFlags.Static | BindingFlags.NonPublic);
+            var original = field.GetValue(null);
+            try
+            {
+                field.SetValue(null, 128);
+                var cached = Call("Evaluate", new JObject { ["code"] = code });
+                Assert.That((string)cached["state"], Is.EqualTo("completed"), cached.ToString());
+                Assert.That((int)cached["value"], Is.EqualTo(7));
             }
             finally { field.SetValue(null, original); }
         }
 
         [Test]
-        public void FullCachePreservesExecutedRequestsAndRejectsNewOnes()
+        public void FullResultCacheEvictsTheOldestRequest()
         {
-            var args = new JObject { ["requestId"] = Guid.NewGuid().ToString("N"), ["code"] = "Guid.NewGuid().ToString()" };
-            var first = Call("Evaluate", args);
-            var type = typeof(CompilationHandler).Assembly.GetType("UnityCliBridge.Handlers.EvalHandler");
-            var cache = (System.Collections.IDictionary)type.GetField("Results", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
-            var inserted = new System.Collections.Generic.List<string>();
-            try
+            var oldest = Guid.NewGuid().ToString("N");
+            var first = Call("Evaluate", new JObject { ["requestId"] = oldest, ["code"] = "1" });
+            Assert.That(JToken.DeepEquals(first, Call("GetStatus", new JObject { ["requestId"] = oldest })), Is.True);
+            string newest = null;
+            for (var i = 0; i < 256; i++)
             {
-                while (cache.Count < 256)
-                {
-                    var id = Guid.NewGuid().ToString("N");
-                    cache.Add(id, cache[(string)args["requestId"]]);
-                    inserted.Add(id);
-                }
-                Assert.That((string)Call("Evaluate", new JObject { ["code"] = "1" })["state"], Is.EqualTo("reload_required"));
-                Assert.That(JToken.DeepEquals(first, Call("Evaluate", args)), Is.True);
-                Assert.That(JToken.DeepEquals(first, Call("GetStatus", new JObject { ["requestId"] = args["requestId"] })), Is.True);
+                newest = Guid.NewGuid().ToString("N");
+                Assert.That((string)Call("Evaluate", new JObject { ["requestId"] = newest, ["code"] = "1" })["state"], Is.EqualTo("completed"));
             }
-            finally { foreach (var id in inserted) cache.Remove(id); }
+            Assert.That((string)Call("GetStatus", new JObject { ["requestId"] = oldest })["state"], Is.EqualTo("unknown"));
+            Assert.That((string)Call("GetStatus", new JObject { ["requestId"] = newest })["state"], Is.EqualTo("completed"));
+            Assert.That((int)Stats()["storedResults"], Is.EqualTo(256));
+        }
+
+        [Test]
+        public void StatsExposeDomainCountersAndMemory()
+        {
+            Call("Evaluate", new JObject { ["code"] = "1" });
+            var stats = Call("GetStats", new JObject { ["collect"] = true });
+            foreach (var key in new[] { "evaluations", "emittedAssemblies", "maxEmittedAssemblies", "cachedCompilations", "compileCacheHits",
+                         "referenceCount", "referenceBuilds", "storedResults", "maxStoredResults", "loadedAssemblies", "managedMemoryBytes", "managedMemoryGrowthBytes" })
+                Assert.That(stats[key]?.Type, Is.EqualTo(JTokenType.Integer), key + ": " + stats);
+            Assert.That((int)stats["maxEmittedAssemblies"], Is.EqualTo(128));
+            Assert.That((int)stats["maxStoredResults"], Is.EqualTo(256));
+            Assert.That((int)stats["loadedAssemblies"], Is.GreaterThan((int)stats["emittedAssemblies"]));
+            Assert.That(stats["warmedUp"].Type, Is.EqualTo(JTokenType.Boolean));
         }
     }
 }

@@ -14,6 +14,8 @@ namespace UnityCliBridge.Handlers
         private const int MaxResults = 256;
         private const int MaxCodeLength = 65536;
         private static int emittedAssemblies;
+        private static int evaluations;
+        private static long? memoryAtFirstEvaluation;
         private static bool evaluating;
         private sealed class Entry
         {
@@ -22,6 +24,30 @@ namespace UnityCliBridge.Handlers
             public JObject Result;
         }
         private static readonly Dictionary<string, Entry> Results = new Dictionary<string, Entry>();
+        private static readonly Queue<string> ResultOrder = new Queue<string>();
+
+        /// <summary>Counters of this Editor domain; they reset on Domain Reload.</summary>
+        public static JObject GetStats(JObject args)
+        {
+            if (args?["collect"]?.Type == JTokenType.Boolean && (bool)args["collect"]) GC.Collect();
+            var memory = GC.GetTotalMemory(false);
+            return new JObject
+            {
+                ["evaluations"] = evaluations,
+                ["emittedAssemblies"] = emittedAssemblies,
+                ["maxEmittedAssemblies"] = MaxAssemblies,
+                ["cachedCompilations"] = EvalCompiler.CachedCompilations,
+                ["compileCacheHits"] = EvalCompiler.CacheHits,
+                ["referenceCount"] = EvalCompiler.ReferenceCount,
+                ["referenceBuilds"] = EvalCompiler.ReferenceBuilds,
+                ["warmedUp"] = EvalCompiler.WarmedUp,
+                ["storedResults"] = Results.Count,
+                ["maxStoredResults"] = MaxResults,
+                ["loadedAssemblies"] = AppDomain.CurrentDomain.GetAssemblies().Length,
+                ["managedMemoryBytes"] = memory,
+                ["managedMemoryGrowthBytes"] = memoryAtFirstEvaluation.HasValue ? memory - memoryAtFirstEvaluation.Value : 0
+            };
+        }
 
         public static JObject GetStatus(JObject args)
         {
@@ -41,13 +67,17 @@ namespace UnityCliBridge.Handlers
                 return previous.Code == code && previous.Mode == mode ? (JObject)previous.Result.DeepClone() : EvalResult.Create(id, "request_conflict", "requestId was already used with different input.");
             if (evaluating || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlaying != EditorApplication.isPlayingOrWillChangePlaymode)
                 return EvalResult.Create(id, "busy", "Editor is evaluating, compiling, refreshing or changing Play Mode.");
-            if (Results.Count >= MaxResults)
-                return EvalResult.Create(id, "reload_required", "256 request results are retained. Reload the Editor domain before another evaluation.");
-            if (emittedAssemblies >= MaxAssemblies)
-                return EvalResult.Create(id, "reload_required", "128 evaluation assemblies have been emitted. Reload the Editor domain before another evaluation.");
+            // Identical source reuses its assembly, so only source not compiled in this domain counts against the limit.
+            if (emittedAssemblies >= MaxAssemblies && !EvalCompiler.IsCached(code, mode))
+                return EvalResult.Create(id, "reload_required", "128 evaluation assemblies have been emitted. Reload the Editor domain before evaluating new source.");
 
+            if (!memoryAtFirstEvaluation.HasValue) memoryAtFirstEvaluation = GC.GetTotalMemory(false);
+            evaluations++;
+            // Keep the newest results; the oldest request becomes unknown.
+            while (Results.Count >= MaxResults) Results.Remove(ResultOrder.Dequeue());
             var result = EvalResult.Create(id, "running");
             Results.Add(id, new Entry { Code = code, Mode = mode, Result = result });
+            ResultOrder.Enqueue(id);
             evaluating = true;
             var logs = (JArray)result["logs"];
             Application.LogCallback capture = (message, stack, type) =>

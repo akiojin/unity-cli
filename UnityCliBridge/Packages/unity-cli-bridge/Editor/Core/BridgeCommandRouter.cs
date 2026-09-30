@@ -137,6 +137,7 @@ namespace UnityCliBridge.Core
                 ["get_compilation_state"] = command => Success(command, CompilationHandler.GetCompilationState(command.Parameters)),
                 ["eval_csharp"] = command => Success(command, EvalHandler.Evaluate(command.Parameters)),
                 ["get_eval_status"] = command => Success(command, EvalHandler.GetStatus(command.Parameters)),
+                ["get_eval_stats"] = command => Success(command, EvalHandler.GetStats(command.Parameters)),
                 ["hot_reload_status"] = command => Success(command, HotReloadHandler.Status()),
                 ["hot_reload"] = HandleHotReload,
                 ["run_tests"] = command => Success(command, TestExecutionHandler.RunTests(command.Parameters)),

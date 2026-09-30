@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-09-30T07:59:18Z",
+  "conditions": {
+    "os": "Darwin 26.5",
+    "arch": "arm64",
+    "unity_editor_version": "2022.3.62f3",
+    "unity_cli_version": "unity-cli 0.15.3",
+    "command": "unity-cli editor eval 1+2",
+    "iterations": 100,
+    "warmup": 3,
+    "sample": "wall-clock per CLI process invocation (spawn to exit), ms",
+    "port": 6492,
+    "editor_frontmost": "required",
+    "frontmost_app_per_sample": {
+      "editor": 100,
+      "other": 0
+    },
+    "discarded_focus_lost_samples": 0
+  },
+  "first_call_ms": 54.26,
+  "eval": {
+    "n": 100,
+    "p50_ms": 18.36,
+    "p95_ms": 53.87,
+    "mean_ms": 25.0,
+    "min_ms": 12.94,
+    "max_ms": 255.74
+  },
+  "budget": {
+    "description": "unity-cli editor eval '1+2' against a real Editor, warm (after 3 warm-up calls), 100 samples",
+    "condition": "macOS, Editor is the frontmost app",
+    "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
+    "p50_ms": 50,
+    "p95_ms": 100
+  },
+  "status": "PASS",
+  "violations": []
+}
