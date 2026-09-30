@@ -94,6 +94,7 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 ```bash
 unity-cli system ping
+unity-cli doctor --output json   # ping 失敗時: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE など
 ```
 
 managed バイナリの確認と更新:

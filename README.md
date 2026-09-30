@@ -114,6 +114,7 @@ Connection check:
 
 ```bash
 unity-cli system ping
+unity-cli doctor --output json   # when ping fails: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE / ...
 ```
 
 Managed binary maintenance:
