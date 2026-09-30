@@ -39,6 +39,48 @@ pub fn resolve_endpoint(
     )
 }
 
+/// Resolves the Editor for one known project (`setup`, `doctor`). When no
+/// Editor has that project open yet, the default endpoint is used instead of
+/// `EDITOR_NOT_FOUND`: those commands launch or diagnose that Editor.
+pub fn resolve_endpoint_for_project(
+    host_override: Option<String>,
+    port_override: Option<u16>,
+    project_path: &Path,
+) -> Result<ResolvedEndpoint> {
+    if let Some(endpoint) = explicit_endpoint(host_override.clone(), port_override) {
+        return Ok(endpoint);
+    }
+    resolve_endpoint_for_project_with(
+        host_override,
+        port_override,
+        project_path,
+        &editor_discovery::discover(),
+    )
+}
+
+fn resolve_endpoint_for_project_with(
+    host_override: Option<String>,
+    port_override: Option<u16>,
+    project_path: &Path,
+    editors: &[DiscoveredEditor],
+) -> Result<ResolvedEndpoint> {
+    match resolve_endpoint_with(
+        host_override,
+        port_override,
+        Some(project_path.to_path_buf()),
+        editors,
+        None,
+    ) {
+        Err(error) if matches!(error.downcast_ref(), Some(TargetError::NotFound { .. })) => {
+            Ok(ResolvedEndpoint {
+                host: default_host(),
+                port: default_port(),
+            })
+        }
+        result => result,
+    }
+}
+
 fn resolve_endpoint_with(
     host_override: Option<String>,
     port_override: Option<u16>,
@@ -150,7 +192,7 @@ fn ambiguous(target: &str, matches: &[&DiscoveredEditor]) -> anyhow::Error {
 
 #[cfg(test)]
 mod tests {
-    use super::{resolve_endpoint, resolve_endpoint_with};
+    use super::{resolve_endpoint, resolve_endpoint_for_project_with, resolve_endpoint_with};
     use crate::core::editor_discovery::tests::{dead_pid, live_pid, write_lock};
     use crate::core::editor_discovery::{discover, DiscoveredEditor, TargetError};
     use std::path::{Path, PathBuf};
@@ -285,6 +327,31 @@ mod tests {
             resolve_endpoint_with(None, None, None, &env.editors(), Some(env.dir.path())).unwrap();
 
         assert_eq!(value.port, 6401);
+    }
+
+    #[test]
+    fn project_command_targets_its_own_editor_among_several() {
+        let env = Isolated::new();
+        let (a, b) = (env.project("A"), env.project("B"));
+        env.lock(&a, 6400);
+        env.lock(&b, 6401);
+
+        let value = resolve_endpoint_for_project_with(None, None, &b, &env.editors()).unwrap();
+
+        assert_eq!(value.port, 6401);
+    }
+
+    #[test]
+    fn project_command_without_its_editor_uses_default_endpoint() {
+        let env = Isolated::new();
+        let (a, b, c) = (env.project("A"), env.project("B"), env.project("C"));
+        env.lock(&a, 6401);
+        env.lock(&b, 6402);
+
+        let value = resolve_endpoint_for_project_with(None, None, &c, &env.editors()).unwrap();
+
+        assert_eq!(value.host, crate::core::config::default_host());
+        assert_eq!(value.port, crate::core::config::default_port());
     }
 
     #[test]

@@ -844,10 +844,7 @@ fn call_remote_tool_sync(tool_name: &str, params: Value) -> Result<Value> {
             Ok(value) => Ok(value),
             Err(error) if error.is_transport() => {
                 let mut client = UnityClient::connect(&config).await.with_context(|| {
-                    format!(
-                        "Failed to connect to Unity at {}:{}",
-                        config.host, config.port
-                    )
+                    crate::core::doctor::connect_failure_message(&config.host, config.port)
                 })?;
                 client.call_tool(tool_name, params).await
             }

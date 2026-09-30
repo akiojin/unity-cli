@@ -41,8 +41,10 @@ Claude Code Marketplace から `unity-cli` プラグインをインストール�
 /plugin marketplace add akiojin/unity-cli
 ```
 
-Marketplace プラグインがインストールするのはスキルのみです。
-`unity-cli` バイナリ自体は、以下の手動手順のいずれかで別途導入してください。
+プラグインが提供するのはスキルで、バイナリと Unity ブリッジは必要時に導入されます。
+Unity 操作が必要なのに `unity-cli` が未導入の場合、`unity-cli-usage` スキルに従って
+エージェントがインストールスクリプト（`scripts/install.sh`）を実行し、Unity プロジェクトで
+`unity-cli setup` を実行します（`Packages/manifest.json` を変更する前にユーザーへ明示します）。
 
 ### Codex スキル
 
@@ -61,9 +63,25 @@ cd unity-cli
 cargo install --path .
 ```
 
-Unity 側ブリッジパッケージ（いずれかを選択）:
+プロジェクトのセットアップを 1 コマンドで行う（binary 検証 → bridge 導入 → Editor 接続確認）:
 
-**OpenUPM**（推奨）:
+```bash
+cd /path/to/YourUnityProject
+unity-cli --output json setup --launch-editor
+```
+
+`setup` は `Packages/manifest.json` に OpenUPM の scoped registry と
+`com.akiojin.unity-cli-bridge`（CLI と同一バージョン）を追加し、必要なら Unity Hub の
+Editor を起動してブリッジの応答を待ち、結果を 1 つの JSON で返します。
+`unity-cli bridge install | upgrade | status` で個別にも管理でき、`install` は冪等です。
+CLI とブリッジのバージョンが異なる場合は `setup` / `system ping` が `versionCheck` で報告します。
+旧 Input Manager のみのプロジェクトでは、Editor が閉じていれば `install` が
+`ProjectSettings/ProjectSettings.asset` の `activeInputHandler` を Both に設定し、
+Input System 依存の導入時に Editor をブロックする再起動ダイアログを回避します。
+
+Unity 側ブリッジパッケージを手動で導入する場合（いずれかを選択）:
+
+**OpenUPM**:
 
 ```bash
 openupm add com.akiojin.unity-cli-bridge
@@ -79,6 +97,7 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 ```bash
 unity-cli system ping
+unity-cli doctor --output json   # ping 失敗時: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE など
 ```
 
 managed バイナリの確認と更新:

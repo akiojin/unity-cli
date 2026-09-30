@@ -42,6 +42,7 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 2. Enter Play Mode or start tests, then wait until the runtime is ready before sending input.
 3. Capture screenshots or short video only after the target state is visible.
 4. Stop Play Mode or recording cleanly and report the final status.
+5. If `capture_screenshot` returns `"fallback": "os"`, the Editor did not respond (often a modal dialog). Inspect the desktop image, resolve the dialog, then retry. Pass `"osFallback": false` to get the timeout error instead.
 
 ```bash
 unity-cli raw play_game --json '{}'

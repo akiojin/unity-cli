@@ -101,7 +101,12 @@ impl ConnectionPool {
                 port,
                 timeout,
             };
-            let client = UnityClient::connect(&config).await?;
+            let client = UnityClient::connect(&config).await.map_err(|error| {
+                anyhow::anyhow!(
+                    "Failed to connect to Unity at {host}:{port}: {error:#}. {}",
+                    crate::core::doctor::DOCTOR_HINT
+                )
+            })?;
             self.connections.insert(key.clone(), client);
         }
         let client = self.connections.get_mut(&key).unwrap();
