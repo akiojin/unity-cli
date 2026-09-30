@@ -7,6 +7,7 @@
       { "context": "Rust Format & Lint" },
       { "context": "Markdown & Commitlint" },
       { "context": "Rust Tests (required)" },
+      { "context": "CLI Latency (required)" },
       { "context": "LSP Tests (required)" },
       { "context": "Rust Coverage >= 90% (required)" },
       { "context": "LSP Coverage >= 90% (required)" }

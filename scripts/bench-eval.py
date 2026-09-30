@@ -34,7 +34,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from perf_gate import append_history, read_history, regressions
+
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def history_conditions(conditions: dict) -> dict:
+    """Compare builds on the same host without partitioning by transient ports/version."""
+    keys = ("os", "arch", "unity_editor_version", "sample", "command", "editor_frontmost")
+    return {"suite": "editor_eval", "host": platform.node(),
+            **{key: conditions[key] for key in keys}}
 
 
 def percentile(samples: list[float], pct: float) -> float:
@@ -117,6 +126,7 @@ def main() -> int:
                         help="with --require-frontmost: bring the Editor back to the front when another app took "
                              "focus, and re-measure samples during which focus changed")
     parser.add_argument("--out", help="write JSON here (default: stdout only)")
+    parser.add_argument("--history", type=Path, help="append and check the shared Editor perf JSONL history")
     args = parser.parse_args()
     if args.activate and not args.require_frontmost:
         parser.error("--activate requires --require-frontmost")
@@ -190,6 +200,15 @@ def main() -> int:
         "status": "FAIL" if violations else "PASS",
         "violations": violations,
     }
+    if args.history:
+        conditions = history_conditions(report["conditions"])
+        results = {"editor_eval": summary}
+        violations += regressions(results, conditions, read_history(args.history),
+                                  float(os.environ.get("UNITY_CLI_PERF_REGRESSION_PERCENT", "20")))
+        report["status"] = "FAIL" if violations else "PASS"
+        append_history(args.history, {"timestamp": report["timestamp"], "conditions": conditions,
+                                      "measurements_complete": True,
+                                      "results": results, "status": report["status"], "violations": violations})
     text = json.dumps(report, indent=2)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:

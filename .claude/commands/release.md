@@ -61,6 +61,30 @@ git pull --ff-only origin develop
 
 これは **branch 切替ではなく、現在の branch の HEAD を origin/develop tip まで前進させる操作** であり、branch / worktree の作成・切替・削除には当たらない。HEAD が既に origin/develop と一致している場合は no-op で成功する。
 
+### 2.1 実 Editor の性能ゲート（必須）
+
+リリース対象のコードで release CLI をビルドし、macOS の専用 GUI プロジェクトで
+2 Editor × 最前面/背景の perf スイートを実行する。ほかの Agent の GUI 操作や
+重いビルド/import と時間を分ける。次の出力先は毎回未使用のパスにする。
+
+```bash
+cargo build --release --bin unity-cli
+UNITY_CLI_PERF_REGRESSION_PERCENT=20 python3 scripts/e2e-matrix.py --suites perf --perf-focus both \
+  --unity-cli "$PWD/target/release/unity-cli" \
+  --editor /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
+  --editor /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity \
+  --output /tmp/unity-cli-release-perf
+```
+
+終了コード 0、`matrix.json` 全体の PASS、各 `perf.json` の 2 条件それぞれで
+23 操作 × 30 サンプル以上の PASS が必須。予算は `perf-budgets.json`、履歴は
+`.unity/perf/editor-ops-history.jsonl`、相対回帰しきい値は既定の 20% を使う。
+同じスイートで実行する `perf-eval.json`（最前面の eval 100 回）も PASS を確認する。
+しきい値の緩和・単体テスト・過去の別コードの PASS で代用しない。
+FAIL または実機未実行ならここで中断し、原因を直して再計測する。
+リリース PR 本文に実行コマンド・Unity 版・pass/fail 件数・ログ要約を記録する。
+詳細は `docs/development.md` の Benchmark Policy を参照。
+
 ### 3. リリース対象コミット確認
 
 ```bash

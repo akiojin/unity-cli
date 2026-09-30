@@ -47,11 +47,12 @@ gh api repos/akiojin/unity-cli/branches/develop/protection -X PUT \
 ## チェック名とワークフローの対応
 
 | ブランチ | 必須チェック名 | ワークフロー |
-|---------|--------------|-------------|
+| --------- | -------------- | ------------- |
 | main | `Main PR Policy` | `main-pr-policy.yml` |
 | develop | `Rust Format & Lint` | `lint.yml` |
 | develop | `Markdown & Commitlint` | `lint.yml` |
 | develop | `Rust Tests (required)` | `test.yml` |
+| develop | `CLI Latency (required)` | `test.yml` |
 | develop | `LSP Tests (required)` | `test.yml` |
 
 ## 適用確認

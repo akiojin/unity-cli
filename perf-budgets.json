@@ -8,6 +8,322 @@
       "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
       "p50_ms": 50,
       "p95_ms": 100
+    },
+    "cli_startup": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_tool_list": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_ping": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_state": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_unityd_ping": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_unityd_state": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 25,
+      "p95_ms": 50
+    },
+    "cli_direct_batch5": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 60,
+      "p95_ms": 100
+    },
+    "cli_unityd_batch5": {
+      "condition": "release CLI, deterministic loopback mock Bridge, 50 samples after 3 warmups",
+      "p50_ms": 60,
+      "p95_ms": 100
+    },
+    "editor_frontmost_editor_state": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_hierarchy": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 30
+    },
+    "editor_frontmost_find_gameobject": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_transform": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 30
+    },
+    "editor_frontmost_position": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_create_cube": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_add_component": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_remove_component": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_delete_gameobject": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_scene_info": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_scene_save": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 70,
+      "p95_ms": 130
+    },
+    "editor_frontmost_console": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 20
+    },
+    "editor_frontmost_screenshot": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 45,
+      "p95_ms": 70
+    },
+    "editor_frontmost_material_search": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 25
+    },
+    "editor_frontmost_asset_copy": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 50,
+      "p95_ms": 70
+    },
+    "editor_frontmost_asset_move": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 45,
+      "p95_ms": 65
+    },
+    "editor_frontmost_asset_delete": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 45,
+      "p95_ms": 65
+    },
+    "editor_frontmost_import_settings": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 15,
+      "p95_ms": 20
+    },
+    "editor_frontmost_material_modify": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 35,
+      "p95_ms": 55
+    },
+    "editor_frontmost_time_settings": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 10,
+      "p95_ms": 25
+    },
+    "editor_frontmost_read_csharp": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 10,
+      "p95_ms": 25
+    },
+    "editor_frontmost_play_until_ready": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 815,
+      "p95_ms": 1125
+    },
+    "editor_frontmost_stop_until_ready": {
+      "condition": "macOS GUI, frontmost, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 390,
+      "p95_ms": 575
+    },
+    "editor_background_editor_state": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 175,
+      "p95_ms": 350
+    },
+    "editor_background_hierarchy": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 255,
+      "p95_ms": 380
+    },
+    "editor_background_find_gameobject": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 180,
+      "p95_ms": 355
+    },
+    "editor_background_transform": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 250,
+      "p95_ms": 365
+    },
+    "editor_background_position": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 245,
+      "p95_ms": 355
+    },
+    "editor_background_create_cube": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 250,
+      "p95_ms": 355
+    },
+    "editor_background_add_component": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 250,
+      "p95_ms": 360
+    },
+    "editor_background_remove_component": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 220,
+      "p95_ms": 360
+    },
+    "editor_background_delete_gameobject": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 245,
+      "p95_ms": 355
+    },
+    "editor_background_scene_info": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 245,
+      "p95_ms": 355
+    },
+    "editor_background_scene_save": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 315,
+      "p95_ms": 480
+    },
+    "editor_background_console": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 165,
+      "p95_ms": 275
+    },
+    "editor_background_screenshot": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 290,
+      "p95_ms": 425
+    },
+    "editor_background_material_search": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 185,
+      "p95_ms": 365
+    },
+    "editor_background_asset_copy": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 290,
+      "p95_ms": 420
+    },
+    "editor_background_asset_move": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 250,
+      "p95_ms": 360
+    },
+    "editor_background_asset_delete": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 240,
+      "p95_ms": 350
+    },
+    "editor_background_import_settings": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 170,
+      "p95_ms": 310
+    },
+    "editor_background_material_modify": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 275,
+      "p95_ms": 390
+    },
+    "editor_background_time_settings": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 240,
+      "p95_ms": 335
+    },
+    "editor_background_read_csharp": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 10,
+      "p95_ms": 15
+    },
+    "editor_background_play_until_ready": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 1220,
+      "p95_ms": 1780
+    },
+    "editor_background_stop_until_ready": {
+      "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
+      "baseline": "docs/verification/issue-394-baseline.json",
+      "p50_ms": 740,
+      "p95_ms": 1025
     }
   }
 }
