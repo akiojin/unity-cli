@@ -389,6 +389,27 @@ unrelated commands.
 | `capture_video_status` | Get video capture status |
 | `capture_video_stop`   | Stop video capture       |
 
+When the Editor accepts `capture_screenshot` but does not answer before
+`--timeout-ms` (for example, its main thread is blocked by a modal dialog such
+as a save prompt or the API Updater), the CLI captures the whole desktop
+instead and saves it to `<project>/.unity/capture/image_os_<millis>.png`
+(the temp directory outside a Unity project). The result carries
+`"fallback": "os"`, `fallbackTool`, and a `note` explaining why.
+
+- macOS: `screencapture` (grant Screen Recording to the terminal, otherwise
+  only the wallpaper is captured)
+- Windows: PowerShell + GDI (`Graphics.CopyFromScreen`)
+- Linux: `grim` / `gnome-screenshot` / `spectacle` on Wayland, `import` /
+  `scrot` / `maim` on X11 (first available wins)
+
+Pass `"osFallback": false` to receive the timeout error instead. The flag is
+handled by the CLI and never sent to the bridge.
+
+```bash
+unity-cli --timeout-ms 5000 raw capture_screenshot --json '{"captureMode":"game"}'
+unity-cli raw capture_screenshot --json '{"captureMode":"game","osFallback":false}'
+```
+
 ### System
 
 | Tool                | Description                                                                         |

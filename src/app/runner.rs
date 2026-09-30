@@ -15,6 +15,7 @@ use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
+use crate::tooling::os_capture;
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
 
@@ -554,7 +555,17 @@ async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<V
     } else {
         None
     };
-    let call = call_remote_tool_with_timing(&config, tool_name, params).await;
+    let os_fallback =
+        tool_name == "capture_screenshot" && os_capture::take_fallback_flag(&mut params);
+    let capture_mode = params["captureMode"].as_str().unwrap_or("game").to_string();
+    let call = match call_remote_tool_with_timing(&config, tool_name, params).await {
+        Err(error) if os_fallback => {
+            return os_capture::recover_from_timeout(error, true, || {
+                os_capture::capture_desktop(&capture_mode)
+            });
+        }
+        call => call,
+    };
     let (mut value, timing) = match eval_id {
         Some(id) => call.with_context(|| format!(
             "Evaluation may still be running (requestId={id}). Query `unity-cli editor eval-status {id}` on the same endpoint; do not automatically rerun"
@@ -1210,6 +1221,50 @@ mod tests {
         assert!(message.contains(id), "{message}");
         assert!(message.contains("eval-status"), "{message}");
     }
+    #[tokio::test]
+    async fn capture_screenshot_timeout_respects_os_fallback_flag() {
+        // Bridge accepts and reads the request but never answers, like an Editor
+        // whose main thread is blocked by a modal dialog.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut held = Vec::new();
+            for _ in 0..2 {
+                let (stream, _) = listener.accept().await.unwrap();
+                held.push(stream);
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        });
+        let config = super::RuntimeConfig {
+            host: "127.0.0.1".to_string(),
+            port,
+            timeout: std::time::Duration::from_millis(200),
+        };
+
+        let mut params = serde_json::json!({"captureMode": "game", "osFallback": false});
+        let enabled = super::os_capture::take_fallback_flag(&mut params);
+        let error = super::call_remote_tool_direct(&config, "capture_screenshot", params)
+            .await
+            .unwrap_err();
+        let error = super::os_capture::recover_from_timeout(error, enabled, || {
+            panic!("disabled fallback must not capture")
+        })
+        .unwrap_err();
+        assert!(format!("{error:#}").contains("Timed out"), "{error:#}");
+
+        let mut params = serde_json::json!({"captureMode": "game"});
+        let enabled = super::os_capture::take_fallback_flag(&mut params);
+        let error = super::call_remote_tool_direct(&config, "capture_screenshot", params)
+            .await
+            .unwrap_err();
+        let value = super::os_capture::recover_from_timeout(error, enabled, || {
+            Ok(serde_json::json!({"path": "desktop.png"}))
+        })
+        .unwrap();
+        assert_eq!(value["fallback"], "os");
+        server.abort();
+    }
+
     #[cfg(unix)]
     #[test]
     fn eval_bypasses_daemon_in_single_and_batch_calls() {
