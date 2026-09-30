@@ -59,6 +59,20 @@ impl UnityClient {
         self.timeout = timeout;
     }
 
+    /// Reports whether the peer has already closed or reset this idle connection.
+    ///
+    /// Uses a non-blocking `MSG_PEEK` so nothing is consumed and nothing is sent;
+    /// a pooled connection that fails this check can be replaced without any risk
+    /// of delivering a request twice. Unexpected unread bytes also mark the
+    /// connection unusable, because they would desynchronize response framing.
+    pub(crate) fn is_peer_closed(&self) -> bool {
+        let mut probe = [std::mem::MaybeUninit::<u8>::uninit(); 1];
+        match socket2::SockRef::from(&self.stream).peek(&mut probe) {
+            Err(error) => error.kind() != std::io::ErrorKind::WouldBlock,
+            Ok(_) => true,
+        }
+    }
+
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
         let stream = timeout(
             config.timeout,
