@@ -93,6 +93,15 @@ namespace UnityCliBridge.HotReload
 }
 namespace UnityCliBridge.HotReload
 {
+    internal static class CandidateFields
+    {
+        // Same value as FSR's AssemblyChangesLoader.ClassnamePatchedPostfix; kept here so tests need no FSR reference.
+        public const string GeneratedPrefix = "__Patched_";
+        public static bool Match(IEnumerable<string> compiled, IEnumerable<string> candidate) =>
+            new HashSet<string>(compiled, StringComparer.Ordinal).SetEquals(
+                candidate.Where(name => !name.StartsWith(GeneratedPrefix, StringComparison.Ordinal)));
+    }
+
     internal static class CompilationProof
     {
         public static bool CanCommit(bool explicitCleanBuild, ISet<string> successfulAssemblies, string assemblyName) =>

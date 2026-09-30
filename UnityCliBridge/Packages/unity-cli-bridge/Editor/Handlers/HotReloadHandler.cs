@@ -49,7 +49,7 @@ namespace UnityCliBridge.Handlers
                 ["reason"] = reason,
                 ["backend"] = "FastScriptReload",
                 ["requiredVersion"] = "1.8.0",
-                ["requiredRuntime"] = "Unity Editor 2022.3+ / Mono / x64; Apple Silicon Editor is unsupported",
+                ["requiredRuntime"] = "Unity Editor 2022.3+ / Mono / x64 or Apple Silicon macOS",
                 ["appliedRevision"] = null,
                 ["recoveryRequired"] = false
             };

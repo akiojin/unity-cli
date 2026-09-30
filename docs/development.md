@@ -267,7 +267,7 @@ scripts/e2e-bake-batch-host.sh --port 6477
 
 # Isolated optional hot reload backend / real Editor checks
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
-# See docs/hot-reload.md for installed-backend and supported x64 runs.
+# See docs/hot-reload.md for real method replacement runs (ARM64 / x64 under Rosetta).
 
 # PlayMode result collection with Domain Reload enabled and disabled
 python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450

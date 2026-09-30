@@ -45,6 +45,42 @@ def all_passed(results):
     return bool(results) and all(row.get("status") == "PASS" for row in results)
 
 
+DEFAULT_SUITES = ("input", "timeline", "vfx", "eval", "hot-reload", "reload", "all-tools")
+REAL_HOT_RELOAD_SUITES = ("hot-reload-apply", "hot-reload-apply-x64")
+
+
+def hot_reload_apply_suites(editor, version, args, destination):
+    """Real method replacement, each in its own isolated Editor with the optional backend installed.
+
+    Empty without --fsr-path. The x64 suite exists only when an x64 build of this version is
+    available, so an absent Editor is never recorded as a skipped or passing suite."""
+    if not args.fsr_path:
+        return {}
+
+    def command(name, unity, arch=None):
+        result = ["env", "UNITY_PATH=" + str(unity), "bash", str(ROOT / "scripts/e2e-hot-reload-batch-host.sh"),
+                  "--port", str(args.port + 1), "--expect", "supported", "--fsr-path", str(args.fsr_path),
+                  "--artifacts", str(destination / name)]
+        return result + (["--require-arch", arch] if arch else [])
+
+    suites = {"hot-reload-apply": command("hot-reload-apply", editor)}
+    if args.x64_editor_root:
+        x64 = Path(args.x64_editor_root) / version / "Unity.app/Contents/MacOS/Unity"
+        if x64.is_file():
+            suites["hot-reload-apply-x64"] = command("hot-reload-apply-x64", x64, "X64")
+    return suites
+
+
+def selected_suites(requested, real):
+    if not requested:
+        return list(DEFAULT_SUITES) + list(real)
+    names = requested.split(",")
+    for name in names:
+        if name in REAL_HOT_RELOAD_SUITES and name not in real:
+            raise ValueError(name + " needs --fsr-path" + (" and an x64 Editor under --x64-editor-root" if name.endswith("x64") else ""))
+    return names
+
+
 def prepare(editor, destination):
     resources = editor.parent.parent / "Resources/PackageManager"
     catalog = json.loads((resources / "Editor/manifest.json").read_text())["packages"]
@@ -169,7 +205,9 @@ def run_editor(editor, args, output, base_env):
             "hot-reload": ["python3", str(ROOT / "scripts/e2e-hot-reload.py"), "--unity-cli", str(args.unity_cli), "--port", str(args.port), "--project", str(project), "--expect", "missing"],
             "all-tools": ["bash", str(ROOT / "scripts/e2e-all-tools.sh"), "--unity-cli", str(args.unity_cli), "--port", str(args.port), "--skip-quit"],
         }
-        selected = args.suites.split(",") if args.suites else ["input", "timeline", "vfx", "eval", "hot-reload", "reload", "all-tools"]
+        real = hot_reload_apply_suites(editor, version, args, destination)
+        suites.update(real)
+        selected = selected_suites(args.suites, real)
         for name in selected:
             if name == "compile":
                 continue
@@ -208,6 +246,10 @@ def main():
     parser.add_argument("--port", type=int, default=6508)
     parser.add_argument("--startup-timeout", type=int, default=900)
     parser.add_argument("--suite-timeout", type=int, default=1800)
+    parser.add_argument("--fsr-path", type=Path, default=os.environ.get("UNITY_CLI_FSR_PATH"),
+                        help="Unmodified FastScriptReload 1.8.0 Assets directory; adds the real hot-reload-apply suites")
+    parser.add_argument("--x64-editor-root", type=Path, default=os.environ.get("UNITY_CLI_X64_EDITOR_ROOT"),
+                        help="Directory holding <version>/Unity.app x64 Editors; adds hot-reload-apply-x64 where present")
     parser.add_argument("--suites", help="Focused comma-separated suites; omitted runs the complete matrix")
     args = parser.parse_args()
     args.unity_cli = args.unity_cli.resolve()
@@ -216,7 +258,9 @@ def main():
         parser.error("Build the CLI and install every selected Editor first")
     if not (args.lsp_root / "csharp-lsp").is_dir():
         parser.error("--lsp-root must contain a built csharp-lsp directory")
-    allowed = {"compile", "input", "timeline", "vfx", "eval", "reload", "hot-reload", "all-tools"}
+    if args.fsr_path and not (args.fsr_path / "package.json").is_file():
+        parser.error("--fsr-path must be the FastScriptReload Assets directory containing package.json")
+    allowed = {"compile", *DEFAULT_SUITES, *REAL_HOT_RELOAD_SUITES}
     if args.suites and not set(args.suites.split(",")) <= allowed:
         parser.error("Unknown suite; choose from " + ",".join(sorted(allowed)))
     output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix="unity-cli-matrix-"))
