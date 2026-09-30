@@ -66,7 +66,8 @@ impl Diagnosis {
                 "Start the Unity Editor for this project, wait for import to finish, then retry."
             }
             Diagnosis::BridgeNotInstalled => {
-                "Add com.akiojin.unity-cli-bridge to Packages/manifest.json and let Unity resolve \
+                "Run `unity-cli bridge install` (or `unity-cli setup`) to add \
+                 com.akiojin.unity-cli-bridge to Packages/manifest.json, then let Unity resolve \
                  packages."
             }
             Diagnosis::SafeMode => {

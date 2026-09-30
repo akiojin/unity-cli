@@ -6,15 +6,16 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
-    Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand, LspCommand,
-    LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity,
-    SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
+    BridgeCommand, Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand,
+    LspCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat,
+    SkillSeverity, SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
 };
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::instances::{list_instances, set_active_instance};
-use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
+use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs};
+use crate::tool_index::{filter_tools, ToolListFilter};
 use crate::tooling::os_capture;
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
@@ -85,12 +86,30 @@ async fn run_command(cli: Cli) -> Result<()> {
             print_value(&value, cli.output)?;
         }
         Command::Tool { command } => match command {
-            ToolCommand::List => {
+            ToolCommand::List(args) => {
+                let tools = filter_tools(&ToolListFilter {
+                    query: args.query.as_deref(),
+                    category: args.category.as_deref(),
+                    offset: args.offset,
+                    limit: args.limit,
+                })
+                .map_err(|message| anyhow!(message))?;
                 if matches!(cli.output, OutputFormat::Json) {
-                    print_value(&serde_json::to_value(TOOL_NAMES)?, cli.output)?;
+                    let value = if args.compact {
+                        serde_json::to_value(&tools)?
+                    } else {
+                        serde_json::to_value(
+                            tools.iter().map(|tool| tool.name).collect::<Vec<_>>(),
+                        )?
+                    };
+                    print_value(&value, cli.output)?;
                 } else {
-                    for name in TOOL_NAMES {
-                        println!("{name}");
+                    for tool in &tools {
+                        if args.compact {
+                            println!("{}\t{}", tool.name, tool.description);
+                        } else {
+                            println!("{}", tool.name);
+                        }
                     }
                 }
             }
@@ -132,7 +151,8 @@ async fn run_command(cli: Cli) -> Result<()> {
                 if let Some(msg) = message {
                     params.insert("message".to_string(), Value::String(msg.clone()));
                 }
-                let value = execute_tool(&cli, "ping", Value::Object(params)).await?;
+                let mut value = execute_tool(&cli, "ping", Value::Object(params)).await?;
+                attach_ping_version_check(&mut value);
                 print_value(&value, cli.output)?;
             }
         },
@@ -278,6 +298,31 @@ async fn run_command(cli: Cli) -> Result<()> {
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
         }
+        Command::Setup {
+            project_path,
+            launch_editor,
+            wait_secs,
+        } => {
+            let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(&cli))?;
+            let options = super::setup::SetupOptions {
+                project_path: project_path.clone(),
+                launch_editor: *launch_editor,
+                wait_secs: *wait_secs,
+                dry_run: cli.dry_run,
+            };
+            let cwd = std::env::current_dir()?;
+            let value = super::setup::run(&options, &config, &cwd).await?;
+            print_value(&value, cli.output)?;
+            if value["ok"] != json!(true) {
+                return Err(anyhow!(
+                    "setup incomplete: the Unity Editor bridge is not ready for this project"
+                ));
+            }
+        }
+        Command::Bridge { command } => {
+            let value = run_bridge_command(command, cli.dry_run)?;
+            print_value(&value, cli.output)?;
+        }
         Command::Doctor(args) => {
             let value = run_doctor(&cli, args).await?;
             print_value(&value, cli.output)?;
@@ -296,6 +341,42 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn run_bridge_command(command: &BridgeCommand, dry_run: bool) -> Result<Value> {
+    use crate::core::bridge::{self, BridgeAction};
+    let cwd = std::env::current_dir()?;
+    match command {
+        BridgeCommand::Install { project_path } => bridge::apply(
+            &bridge::resolve_project_root(project_path.as_deref(), &cwd)?,
+            BridgeAction::Install,
+            dry_run,
+        ),
+        BridgeCommand::Upgrade { project_path } => bridge::apply(
+            &bridge::resolve_project_root(project_path.as_deref(), &cwd)?,
+            BridgeAction::Upgrade,
+            dry_run,
+        ),
+        BridgeCommand::Status { project_path } => bridge::status(&bridge::resolve_project_root(
+            project_path.as_deref(),
+            &cwd,
+        )?),
+    }
+}
+
+/// Add the CLI ↔ bridge `versionCheck` to a ping result and warn on mismatch.
+fn attach_ping_version_check(value: &mut Value) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    let check =
+        crate::core::bridge::version_check(object.get("bridgeVersion").and_then(Value::as_str));
+    if check["status"] == "mismatch" {
+        if let Some(message) = check["message"].as_str() {
+            eprintln!("Warning: {message}");
+        }
+    }
+    object.insert("versionCheck".to_string(), check);
 }
 
 fn build_reference_call(command: &ReferenceCommand) -> (&'static str, Value) {
@@ -1388,13 +1469,14 @@ mod tests {
         assert_eq!(result["reason"], "mutating_tool_blocked_by_dry_run");
     }
     use super::{
-        build_reference_call, execute_tool, init_tracing, load_params, parse_external_tool_command,
-        parse_json_object, parse_ports, parse_ports_with_diagnostics, print_value, run_with_cli,
-        runtime_overrides_from_cli, validate_tool_params,
+        attach_ping_version_check, build_reference_call, execute_tool, init_tracing, load_params,
+        parse_external_tool_command, parse_json_object, parse_ports, parse_ports_with_diagnostics,
+        print_value, run_bridge_command, run_with_cli, runtime_overrides_from_cli,
+        validate_tool_params,
     };
     use crate::cli::{
-        Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand,
-        SceneCommand, SystemCommand, ToolCommand, UnitydCommand,
+        BridgeCommand, Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs,
+        ReferenceCommand, SceneCommand, SystemCommand, ToolCommand, UnitydCommand,
     };
     use serde_json::json;
     use tempfile::tempdir;
@@ -1490,6 +1572,92 @@ mod tests {
     }
 
     #[test]
+    fn ping_version_check_reports_mismatch_and_unknown() {
+        let mut mismatch = json!({"message": "pong", "bridgeVersion": "0.0.1"});
+        attach_ping_version_check(&mut mismatch);
+        assert_eq!(mismatch["versionCheck"]["status"], "mismatch");
+        assert_eq!(mismatch["versionCheck"]["bridgeVersion"], "0.0.1");
+        assert_eq!(
+            mismatch["versionCheck"]["cliVersion"],
+            env!("CARGO_PKG_VERSION")
+        );
+
+        let mut matching = json!({"bridgeVersion": env!("CARGO_PKG_VERSION")});
+        attach_ping_version_check(&mut matching);
+        assert_eq!(matching["versionCheck"]["status"], "match");
+
+        let mut legacy = json!({"message": "pong"});
+        attach_ping_version_check(&mut legacy);
+        assert_eq!(legacy["versionCheck"]["status"], "unknown");
+
+        let mut scalar = json!("pong");
+        attach_ping_version_check(&mut scalar);
+        assert_eq!(scalar, json!("pong"));
+    }
+
+    #[test]
+    fn bridge_commands_resolve_explicit_project_path() {
+        let dir = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join("Packages")).unwrap();
+        std::fs::write(dir.path().join("Packages/manifest.json"), "{}").unwrap();
+        let project_path = Some(dir.path().to_path_buf());
+
+        let status = run_bridge_command(
+            &BridgeCommand::Status {
+                project_path: project_path.clone(),
+            },
+            false,
+        )
+        .unwrap();
+        assert_eq!(status["installed"], false);
+
+        let dry = run_bridge_command(
+            &BridgeCommand::Install {
+                project_path: project_path.clone(),
+            },
+            true,
+        )
+        .unwrap();
+        assert_eq!(dry["manifestChanged"], true);
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("Packages/manifest.json")).unwrap(),
+            "{}"
+        );
+
+        let upgrade = run_bridge_command(&BridgeCommand::Upgrade { project_path }, false).unwrap();
+        assert_eq!(upgrade["declared"], env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
+    fn setup_and_bridge_cli_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "unity-cli",
+            "setup",
+            "--project-path",
+            "/tmp/p",
+            "--launch-editor",
+            "--wait-secs",
+            "5",
+        ])
+        .unwrap();
+        assert!(matches!(
+            cli.command,
+            Command::Setup {
+                launch_editor: true,
+                wait_secs: Some(5),
+                ..
+            }
+        ));
+        let cli = Cli::try_parse_from(["unity-cli", "bridge", "install"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Command::Bridge {
+                command: BridgeCommand::Install { project_path: None }
+            }
+        ));
+    }
+
+    #[test]
     fn env_var_guard_restores_previous_value() {
         std::env::set_var("UNITY_CLI_TEST_GUARD", "before");
         {
@@ -1509,7 +1677,7 @@ mod tests {
     #[test]
     fn runtime_overrides_are_derived_from_cli_at_app_boundary() {
         let cli = cli_for_dry_run(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         });
 
         let overrides = runtime_overrides_from_cli(&cli);
@@ -1610,7 +1778,7 @@ mod tests {
     async fn timeline_manage_is_skipped_in_dry_run() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "manage_timeline",
             json!({"action": "create_asset", "assetPath": "Assets/Sequence.playable"}),
@@ -2516,7 +2684,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_handles_local_tool_and_batch_paths() {
         run_with_cli(cli_for(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         }))
         .await
         .expect("tool list should succeed");
@@ -2548,7 +2716,7 @@ mod tests {
 
         run_with_cli(cli_for_with_output(
             Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             },
             OutputFormat::Text,
         ))
@@ -2577,7 +2745,7 @@ mod tests {
     async fn execute_tool_skips_mutating_tool_in_dry_run_mode() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "create_scene",
             json!({
