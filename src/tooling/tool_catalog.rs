@@ -1160,6 +1160,10 @@ fn tool_params_schema(name: &str) -> Value {
                 ("windowName", string_schema()),
                 ("encodeAsBase64", boolean_schema()),
                 ("explorerSettings", any_object_schema()),
+                (
+                    crate::tooling::os_capture::OS_FALLBACK_PARAM,
+                    boolean_schema(),
+                ),
             ],
             &[],
             false,

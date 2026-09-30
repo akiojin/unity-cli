@@ -19,6 +19,11 @@ namespace UnityCliBridge.Helpers
         private static bool _packageVersionResolved;
 
         /// <summary>
+        /// Installed unity-cli-bridge package version ("unknown" when unresolved).
+        /// </summary>
+        internal static string PackageVersion => GetPackageVersion();
+
+        /// <summary>
         /// Gets the package version from package.json
         /// </summary>
         /// <returns>Package version string</returns>
