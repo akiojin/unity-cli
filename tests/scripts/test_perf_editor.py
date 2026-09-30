@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -84,6 +86,27 @@ class EditorPerfTests(unittest.TestCase):
              patch.object(self.bench, "transition"), \
              patch.object(self.bench._focus, "frontmost_pid", return_value=123):
             self.assertEqual(len(self.bench.measure_cycle(editor, "frontmost", 123)), 23)
+
+    def test_interrupt_records_incomplete_measurement(self):
+        editor = Mock()
+        editor.setup.return_value = {"unity": {"unityVersion": "6000.3.25f1"}}
+        editor.raw.return_value = {"editor": {"enterPlayModeOptionsEnabled": True,
+                                              "enterPlayModeOptions": "DisableDomainReload"}}
+        editor.command.return_value = {"running": True, "connections": 1, "pid": 456}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(self.bench._focus, "listener_pid", return_value=123), \
+             patch.object(self.bench, "measure_cycle", side_effect=KeyboardInterrupt):
+            args = SimpleNamespace(port=6509, warmup=3, iterations=30,
+                                   history=Path(directory) / "history.jsonl", regression_percent=20)
+            try:
+                report = self.bench.measure_focus(editor, "frontmost", args, {})
+            except KeyboardInterrupt:
+                self.fail("interrupt must be recorded before stopping further focus conditions")
+            self.assertEqual(report["status"], "FAIL")
+            self.assertTrue(report["interrupted"])
+            self.assertFalse(report["measurements_complete"])
+            self.assertEqual(report["passed"], 0)
+            self.assertTrue(args.history.is_file())
 
 
 if __name__ == "__main__":

@@ -230,6 +230,10 @@ def measure_focus(editor, focus, args, budgets):
         violations += check(results, {name: budgets.get(key, {}) for name, key in keys.items()})
         violations += regressions(results, conditions, read_history(args.history), args.regression_percent)
         report["status"] = "FAIL" if violations else "PASS"
+    except KeyboardInterrupt:
+        report["interrupted"] = True
+        violations.append("measurement interrupted")
+        results.update({name: summarize(values) for name, values in samples.items() if values})
     except Exception as error:
         violations.append(str(error))
         results.update({name: summarize(values) for name, values in samples.items() if values})
@@ -272,7 +276,10 @@ def main():
     runs = []
     try:
         for focus in focuses:
-            runs.append(measure_focus(editor, focus, args, budgets))
+            run = measure_focus(editor, focus, args, budgets)
+            runs.append(run)
+            if run.get("interrupted"):
+                break
     finally:
         # The project is explicitly owned. Stop Play Mode after an interrupted cycle.
         if (args.project / ".unity/perf-owned-project").is_file():
