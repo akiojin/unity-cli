@@ -8,7 +8,7 @@ multi-instance workflows.
 | Variable                  |       Default | Use                                                          |
 | ------------------------- | ------------: | ------------------------------------------------------------ |
 | `UNITY_PROJECT_ROOT`      |   auto-detect | Unity project directory containing `Assets/` and `Packages/` |
-| `UNITY_CLI_HOST`          |   `localhost` | Hostname used by the CLI to reach the Unity TCP listener     |
+| `UNITY_CLI_HOST`          |   `127.0.0.1` | Hostname used by the CLI to reach the Unity TCP listener     |
 | `UNITY_CLI_PORT`          |        `6400` | Unity TCP listener port                                      |
 | `UNITY_CLI_TIMEOUT_MS`    |       `30000` | Command timeout in milliseconds                              |
 | `UNITY_CLI_REGISTRY_PATH` | OS config dir | Optional path for the instance registry                      |
@@ -16,10 +16,15 @@ multi-instance workflows.
 Unity-side listener settings live at `Edit -> Project Settings -> Unity CLI Bridge`.
 The Unity-side `Port` must match `UNITY_CLI_PORT`.
 
+The default host is the IPv4 loopback literal `127.0.0.1`, not `localhost`. The
+Unity listener binds IPv4, while `localhost` resolves to `::1` first on Windows,
+which adds about 2 seconds to every new connection. If you set the Unity-side
+host to `::1` or `::`, set `UNITY_CLI_HOST=::1`.
+
 ## Docker To Host Unity
 
-When `unity-cli` runs inside Docker and Unity Editor runs on the host, `localhost`
-inside the container is the container itself. Point `UNITY_CLI_HOST` at the host:
+When `unity-cli` runs inside Docker and Unity Editor runs on the host, the default
+`127.0.0.1` inside the container is the container itself. Point `UNITY_CLI_HOST` at the host:
 
 ```bash
 docker run --rm \
@@ -43,7 +48,7 @@ docker run --rm \
   unity-cli-dev unity-cli system ping
 ```
 
-If Unity is bound only to loopback, keep `UNITY_CLI_HOST=localhost` for local CLI
+If Unity is bound only to loopback, keep the default `UNITY_CLI_HOST` for local CLI
 calls and use `host.docker.internal` only from containers. If your network policy
 allows external container access, set the Unity-side host to `0.0.0.0` or a
 specific LAN address, then restart the listener with `Apply & Restart`.
@@ -84,7 +89,7 @@ only keep a TCP socket open are reported as `down`.
 | 環境変数                  |          デフォルト | 用途                                               |
 | ------------------------- | ------------------: | -------------------------------------------------- |
 | `UNITY_PROJECT_ROOT`      |            自動検出 | `Assets/` と `Packages/` を含む Unity プロジェクト |
-| `UNITY_CLI_HOST`          |         `localhost` | CLI から Unity TCP リスナーへ接続するホスト名      |
+| `UNITY_CLI_HOST`          |         `127.0.0.1` | CLI から Unity TCP リスナーへ接続するホスト名      |
 | `UNITY_CLI_PORT`          |              `6400` | Unity TCP リスナーのポート                         |
 | `UNITY_CLI_TIMEOUT_MS`    |             `30000` | コマンドタイムアウト（ミリ秒）                     |
 | `UNITY_CLI_REGISTRY_PATH` | OS 設定ディレクトリ | インスタンスレジストリの任意パス                   |
@@ -92,9 +97,14 @@ only keep a TCP socket open are reported as `down`.
 Unity 側の待受設定は `Edit -> Project Settings -> Unity CLI Bridge` にあります。
 Unity 側の `Port` は `UNITY_CLI_PORT` と一致させてください。
 
+デフォルトのホストは `localhost` ではなく IPv4 ループバックのリテラル `127.0.0.1`
+です。Unity 側リスナーは IPv4 で待ち受けますが、Windows では `localhost` が先に
+`::1` へ解決され、新しい接続ごとに約2秒の遅延が発生するためです。Unity 側ホストを
+`::1` または `::` に設定した場合は `UNITY_CLI_HOST=::1` を指定してください。
+
 ### Docker からホスト Unity へ接続する
 
-Docker コンテナ内の `localhost` はコンテナ自身です。Unity Editor がホスト側で
+Docker コンテナ内のデフォルト `127.0.0.1` はコンテナ自身です。Unity Editor がホスト側で
 起動している場合は、CLI 側の接続先をホストへ向けます。
 
 ```bash
@@ -119,7 +129,7 @@ docker run --rm \
 ```
 
 Unity 側が loopback のみに bind している場合、ローカルCLIでは
-`UNITY_CLI_HOST=localhost` を使い、コンテナ内だけ `host.docker.internal` を使います。
+デフォルトの `UNITY_CLI_HOST` を使い、コンテナ内だけ `host.docker.internal` を使います。
 外部コンテナからの接続を許可する場合は、Unity 側ホストを `0.0.0.0` または
 特定のLANアドレスに設定し、`Apply & Restart` でリスナーを再起動してください。
 

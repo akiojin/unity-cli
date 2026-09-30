@@ -168,7 +168,7 @@ pub enum InstancesCommand {
         #[arg(long, value_name = "CSV")]
         ports: Option<String>,
 
-        #[arg(long, default_value = "localhost")]
+        #[arg(long, default_value = crate::config::DEFAULT_HOST)]
         host: String,
 
         #[arg(long, value_name = "MS", default_value_t = 1000)]

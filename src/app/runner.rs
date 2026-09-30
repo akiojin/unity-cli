@@ -1277,6 +1277,18 @@ mod tests {
         validate_tool_params("get_eval_status", &json!({"requestId":"sum"})).unwrap();
     }
 
+    #[test]
+    fn instances_list_defaults_host_to_ipv4_loopback() {
+        let cli = Cli::try_parse_from(["unity-cli", "instances", "list"]).unwrap();
+        let Command::Instances {
+            command: InstancesCommand::List { host, .. },
+        } = cli.command
+        else {
+            panic!("expected instances list");
+        };
+        assert_eq!(host, crate::config::DEFAULT_HOST);
+    }
+
     #[tokio::test]
     async fn eval_dry_run_does_not_execute_arbitrary_code() {
         let cli = Cli::try_parse_from(["unity-cli", "--dry-run", "editor", "eval", "1+2"]).unwrap();
