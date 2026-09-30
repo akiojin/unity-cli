@@ -108,6 +108,26 @@ class EditorPerfTests(unittest.TestCase):
             self.assertEqual(report["passed"], 0)
             self.assertTrue(args.history.is_file())
 
+    def test_background_screenshot_accepts_only_its_own_editor_activation(self):
+        editor = Mock(last_elapsed_ms=1.0)
+        screenshot_index = [op[0] for op in self.bench.operations()].index("screenshot")
+        for after, accepted in [(123, True), (321, True), (456, False), (None, False)]:
+            observations = [321, 321] * 23
+            observations[screenshot_index * 2 + 1] = after
+            with self.subTest(after=after), patch.object(self.bench, "ensure_focus"), \
+                 patch.object(self.bench, "transition"), \
+                 patch.object(self.bench._focus, "frontmost_pid", side_effect=observations):
+                result = self.bench.measure_cycle(editor, "background", 123)
+                self.assertEqual(result is not None, accepted)
+
+    def test_background_other_operations_reject_any_frontmost_pid_change(self):
+        editor = Mock(last_elapsed_ms=1.0)
+        for after in (123, 456, None):
+            with self.subTest(after=after), patch.object(self.bench, "ensure_focus"), \
+                 patch.object(self.bench, "transition"), \
+                 patch.object(self.bench._focus, "frontmost_pid", side_effect=[321, after] + [321] * 44):
+                self.assertIsNone(self.bench.measure_cycle(editor, "background", 123))
+
     def test_game_view_focus_mode_is_scoped_and_restored(self):
         editor = self.bench.Editor(SimpleNamespace(unity_cli=Path("unused"), port=6509), {})
         original = {"123": "PlayFocused"}

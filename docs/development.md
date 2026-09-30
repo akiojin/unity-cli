@@ -545,7 +545,11 @@ is checked before and after every sample; background runs activate Finder.
 The owned Game View windows use `PlayUnfocused` during both conditions so entering
 Play Mode does not bring a background Editor forward. Their previous settings are
 restored afterwards; this window setting is also recorded in the history conditions.
-Focus changes discard the entire balanced cycle and retry; ten discarded cycles
+The background screenshot starts with Finder frontmost and may activate the target
+Editor: the existing capture handler calls `GameView.Focus()`. This exception is
+recorded as `backgroundScreenshot` in JSON conditions. Its post-call PID must remain
+Finder or become the target Editor; third-party activation is never accepted.
+Other focus changes discard the entire balanced cycle and retry; ten discarded cycles
 or an OS screenshot fallback fail the run. Only valid cycles supply samples. Use an idle host
 without another agent changing Editor focus or importing another project.
 
@@ -1125,6 +1129,9 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 - 最前面 PID を各サンプルの前後で確認し、背景条件は Finder を前面にします。
   専用 Game View は両条件とも `PlayUnfocused` にし、Play 開始時の自動前面化を防ぎます。
   終了時に元のウィンドウ設定へ戻し、この設定も履歴の比較条件に含めます。
+  背景スクリーンショットだけは、既存撮影処理の `GameView.Focus()` により対象 Editor が前面化する
+  動作を含めます。開始時は Finder が前面、終了時は同じ Finder または対象 Editor に限定し、
+  第三者 PID への移動は許可しません。この例外を JSON 条件の `backgroundScreenshot` に記録します。
   フォーカス逸脱時は周全体を破棄して再計測し、有効な周だけを採用します。
   10 周の破棄、OS スクリーンショットへのフォールバックは失敗です。
   他 Agent の GUI 操作や重い import と同時に計測しません。

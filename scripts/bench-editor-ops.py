@@ -216,7 +216,10 @@ def measure_cycle(editor, focus, pid):
             editor.raw(tool, params)
             elapsed = editor.last_elapsed_ms
         after = _focus.frontmost_pid()
-        stable = all(focus_matches(focus, pid, observed) for observed in (before, after))
+        # ScreenshotHandler intentionally focuses Game View. Measure its existing
+        # background-start behavior without accepting unrelated app activation.
+        expected_capture_focus = focus == "background" and tool == "capture_screenshot" and after == pid
+        stable = focus_matches(focus, pid, before) and (after == before or expected_capture_focus)
         if not stable:
             print(f"{name}: focus changed (Editor {pid}, before {before}, after {after})", flush=True)
         valid &= stable
@@ -242,7 +245,9 @@ def measure_focus(editor, focus, args, budgets):
                       "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
                       "enterPlayModeOptionsEnabled": settings["enterPlayModeOptionsEnabled"],
                       "enterPlayModeOptions": settings["enterPlayModeOptions"],
-                      "gameViewEnterPlayModeBehavior": "PlayUnfocused", "suite_version": 2}
+                      "gameViewEnterPlayModeBehavior": "PlayUnfocused",
+                      "backgroundScreenshot": "starts background; may activate target Editor via GameView.Focus",
+                      "suite_version": 3}
         report["conditions"] = conditions
         daemon_before = editor.command(["unityd", "status"])
         if not daemon_before.get("running") or daemon_before.get("connections", 0) < 1:

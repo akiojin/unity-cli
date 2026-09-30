@@ -59,6 +59,9 @@ It also runs the existing frontmost `editor_eval` budget with 100 samples and hi
 Use an idle host and coordinate Editor focus with other agents.
 The owned Game Views temporarily use `PlayUnfocused`; the benchmark restores their
 previous window settings after measurement so Play does not invalidate background samples.
+Background screenshots start with Finder frontmost but may activate the target Editor
+through the existing `GameView.Focus()` call. JSON records this exception; a third-party
+PID change or any other operation's focus change invalidates the cycle.
 
 Inspect `matrix.json`, each `perf.json` and `perf.log`. Report the command, Unity
 version, pass/fail counts and violations. `perf-budgets.json` gates p50/p95;
