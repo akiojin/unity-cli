@@ -51,6 +51,40 @@ Unity 操作が必要なのに `unity-cli` が未導入の場合、`unity-cli-us
 Codex でこのリポジトリを利用する場合、`.codex/skills/` にスキルのシンボリックリンクが配置済みです。
 リポジトリをクローンするだけで追加セットアップは不要です。
 
+### クイックインストール（推奨）
+
+macOS（Apple silicon / Intel）と Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+```
+
+Windows（PowerShell）:
+
+```powershell
+irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
+```
+
+どちらのインストーラもリリースバイナリを managed レイアウト
+`~/.unity/tools/unity-cli/{rid}/` に取得し、導入前にリリースの `SHA256SUMS` で検証します。
+ハッシュが一致しない場合は導入を中止し、既存のバイナリには触れません。
+`install.sh` は `~/.local/bin/unity-cli` にシンボリックリンクを作り、`install.ps1` は
+managed ディレクトリをユーザーの `PATH` に追加します。`UNITY_CLI_VERSION=v0.16.0` で
+リリースを固定できます。導入後の自動更新も同じチェックサムで検証されます。
+自動更新を止めるには `UNITY_CLI_NO_AUTO_UPDATE=1` を設定してください。
+
+### パッケージマネージャ
+
+```bash
+brew install akiojin/tap/unity-cli     # macOS / Linux（Homebrew）
+winget install akiojin.unity-cli       # Windows（winget）
+```
+
+パッケージマネージャで導入した場合は `brew upgrade` / `winget upgrade` で更新します。
+Intel Mac の reference 埋め込み（`unity-cli reference embed-build` / `embed-search`）は ONNX Runtime を動的に読み込みます。
+Homebrew formula は `onnxruntime` を依存として導入します。それ以外の導入方法では
+`brew install onnxruntime` を実行するか、`ORT_DYLIB_PATH` を設定してください。
+
 ### 手動インストール
 
 最新バイナリは [GitHub

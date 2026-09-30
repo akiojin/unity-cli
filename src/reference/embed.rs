@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
@@ -46,6 +46,19 @@ impl FastEmbedder {
     }
 
     pub fn with_model(model: fastembed::EmbeddingModel) -> Result<Self> {
+        // Intel macOS loads ONNX Runtime dynamically and `ort` panics when the
+        // dylib is missing, so resolve it up front and fail with guidance.
+        #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+        {
+            let dylib = resolve_onnxruntime_dylib(
+                std::env::var("ORT_DYLIB_PATH").ok(),
+                &[
+                    Path::new("/usr/local/opt/onnxruntime/lib/libonnxruntime.dylib"),
+                    Path::new("/usr/local/lib/libonnxruntime.dylib"),
+                ],
+            )?;
+            std::env::set_var("ORT_DYLIB_PATH", dylib);
+        }
         let model_id = format!("{model:?}");
         let options = fastembed::InitOptions::new(model);
         let inner = fastembed::TextEmbedding::try_new(options)
@@ -55,6 +68,36 @@ impl FastEmbedder {
             model_id,
         })
     }
+}
+
+/// Resolves the ONNX Runtime dylib for builds that load it dynamically: an
+/// explicit `ORT_DYLIB_PATH` must exist, otherwise the first existing
+/// candidate (Homebrew locations) is used.
+#[cfg_attr(
+    not(all(target_os = "macos", target_arch = "x86_64")),
+    allow(dead_code)
+)]
+fn resolve_onnxruntime_dylib(env_path: Option<String>, candidates: &[&Path]) -> Result<PathBuf> {
+    if let Some(path) = env_path.filter(|value| !value.trim().is_empty()) {
+        let path = PathBuf::from(path.trim());
+        if path.is_file() {
+            return Ok(path);
+        }
+        return Err(anyhow!(
+            "ORT_DYLIB_PATH points to a missing ONNX Runtime library: {}",
+            path.display()
+        ));
+    }
+    candidates
+        .iter()
+        .find(|candidate| candidate.is_file())
+        .map(|candidate| candidate.to_path_buf())
+        .ok_or_else(|| {
+            anyhow!(
+                "ONNX Runtime is required for embeddings on this platform: \
+                 run `brew install onnxruntime` or set ORT_DYLIB_PATH to libonnxruntime.dylib"
+            )
+        })
 }
 
 impl Embedder for FastEmbedder {
@@ -262,6 +305,61 @@ mod tests {
             generated_at_epoch_ms: 0,
             files,
         }
+    }
+
+    #[test]
+    fn resolve_onnxruntime_dylib_prefers_existing_env_path() {
+        let tmp = TempDir::new().unwrap();
+        let env_lib = tmp.path().join("custom.dylib");
+        let brew_lib = tmp.path().join("brew.dylib");
+        fs::write(&env_lib, b"").unwrap();
+        fs::write(&brew_lib, b"").unwrap();
+
+        let resolved = resolve_onnxruntime_dylib(
+            Some(env_lib.to_string_lossy().to_string()),
+            &[brew_lib.as_path()],
+        )
+        .unwrap();
+        assert_eq!(resolved, env_lib);
+    }
+
+    #[test]
+    fn resolve_onnxruntime_dylib_rejects_missing_env_path() {
+        let tmp = TempDir::new().unwrap();
+        let brew_lib = tmp.path().join("brew.dylib");
+        fs::write(&brew_lib, b"").unwrap();
+        let missing = tmp.path().join("missing.dylib");
+
+        let error = resolve_onnxruntime_dylib(
+            Some(missing.to_string_lossy().to_string()),
+            &[brew_lib.as_path()],
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("ORT_DYLIB_PATH"));
+    }
+
+    #[test]
+    fn resolve_onnxruntime_dylib_falls_back_to_first_existing_candidate() {
+        let tmp = TempDir::new().unwrap();
+        let absent = tmp.path().join("absent.dylib");
+        let present = tmp.path().join("present.dylib");
+        fs::write(&present, b"").unwrap();
+
+        let resolved =
+            resolve_onnxruntime_dylib(Some(String::new()), &[absent.as_path(), present.as_path()])
+                .unwrap();
+        assert_eq!(resolved, present);
+    }
+
+    #[test]
+    fn resolve_onnxruntime_dylib_explains_how_to_install_when_missing() {
+        let tmp = TempDir::new().unwrap();
+        let absent = tmp.path().join("absent.dylib");
+
+        let error = resolve_onnxruntime_dylib(None, &[absent.as_path()]).unwrap_err();
+        let message = error.to_string();
+        assert!(message.contains("brew install onnxruntime"), "{message}");
+        assert!(message.contains("ORT_DYLIB_PATH"), "{message}");
     }
 
     #[test]

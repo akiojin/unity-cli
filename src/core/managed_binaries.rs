@@ -16,6 +16,7 @@ const HTTP_MAX_ATTEMPTS: usize = 3;
 const HTTP_RETRY_BASE_DELAY_MILLIS: u64 = 250;
 const USER_AGENT_VALUE: &str = "unity-cli";
 const GITHUB_TOKEN_ENV_VARS: &[&str] = &["GITHUB_TOKEN", "GH_TOKEN"];
+const CHECKSUMS_NAME: &str = "SHA256SUMS";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ManagedBinary {
@@ -435,12 +436,51 @@ fn fetch_latest_release_for_repo(
         .cloned()
         .ok_or_else(|| anyhow!("manifest missing asset for RID: {}", detect_rid()))?;
 
+    // Releases that publish SHA256SUMS must agree with the manifest; older
+    // releases without it still rely on the manifest checksum alone.
+    let checksums_url =
+        format!("https://github.com/{repo}/releases/download/{tag}/{CHECKSUMS_NAME}");
+    if let Some(checksums) = get_optional_text(&checksums_url)? {
+        let asset_name = format!("{}-{}", managed_binary.spec().key, detect_rid());
+        verify_manifest_against_checksums(&asset_name, &asset.sha256, &checksums)?;
+    }
+
     Ok(LatestRelease {
         repo: repo.to_string(),
         tag,
         version,
         asset,
     })
+}
+
+fn parse_sha256sums(text: &str) -> HashMap<String, String> {
+    text.lines()
+        .filter_map(|line| {
+            let (hash, name) = line.trim().split_once(char::is_whitespace)?;
+            let name = name.trim_start().trim_start_matches('*');
+            if hash.is_empty() || name.is_empty() {
+                return None;
+            }
+            Some((name.to_string(), hash.to_ascii_lowercase()))
+        })
+        .collect()
+}
+
+fn verify_manifest_against_checksums(
+    asset_name: &str,
+    manifest_sha256: &str,
+    checksums: &str,
+) -> Result<()> {
+    let sums = parse_sha256sums(checksums);
+    let expected = sums
+        .get(asset_name)
+        .ok_or_else(|| anyhow!("{CHECKSUMS_NAME} has no entry for {asset_name}"))?;
+    if !expected.eq_ignore_ascii_case(manifest_sha256.trim()) {
+        return Err(anyhow!(
+            "{CHECKSUMS_NAME} checksum for {asset_name} does not match the release manifest"
+        ));
+    }
+    Ok(())
 }
 
 fn download_to(url: &str, dest: &Path) -> Result<()> {
@@ -600,6 +640,27 @@ fn should_skip_remote_checks_for_tests() -> bool {
                 .as_deref(),
             Some("1") | Some("true") | Some("yes")
         )
+}
+
+fn get_optional_text(url: &str) -> Result<Option<String>> {
+    let client = http_client()?;
+    let mut request = client.get(url).header("User-Agent", USER_AGENT_VALUE);
+    if let Some(token) = github_token_from_env() {
+        request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    match request.call() {
+        Ok(mut response) => response
+            .body_mut()
+            .read_to_string()
+            .map(Some)
+            .with_context(|| format!("Failed to read response body: {url}")),
+        Err(ureq::Error::StatusCode(404)) => Ok(None),
+        Err(_) => get_response(url)?
+            .body_mut()
+            .read_to_string()
+            .map(Some)
+            .with_context(|| format!("Failed to read response body: {url}")),
+    }
 }
 
 fn get_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T> {
@@ -1009,6 +1070,154 @@ mod tests {
         let error = get_json::<ReleaseInfo>(&url).expect_err("HTTP 403 should fail");
         handle.join().expect("server thread should complete");
         assert!(error.to_string().contains("403"));
+    }
+
+    fn run_binary_server_once(body: &'static [u8]) -> (String, thread::JoinHandle<()>) {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("listener should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should expose local addr")
+            .port();
+        let handle = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept should succeed");
+            let mut buf = [0_u8; 1024];
+            let _ = stream.read(&mut buf);
+            let header = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream
+                .write_all(header.as_bytes())
+                .expect("header write should succeed");
+            stream.write_all(body).expect("body write should succeed");
+            stream.flush().expect("response flush should succeed");
+        });
+        (
+            format!("http://127.0.0.1:{port}/unity-cli-osx-arm64"),
+            handle,
+        )
+    }
+
+    fn sha256_hex(bytes: &[u8]) -> String {
+        Sha256::digest(bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect()
+    }
+
+    #[test]
+    fn download_latest_binary_rejects_checksum_mismatch_and_keeps_existing_install() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let root = tempdir().expect("tempdir should be created");
+        let _env = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", &root.path().to_string_lossy());
+        let dest = binary_path_for(ManagedBinary::UnityCli).expect("binary path");
+        fs::create_dir_all(dest.parent().expect("parent")).expect("install dir");
+        fs::write(&dest, b"current binary").expect("existing binary");
+        write_local_version_for(ManagedBinary::UnityCli, "1.0.0").expect("VERSION");
+
+        let (url, handle) = run_binary_server_once(b"tampered binary");
+        let latest = LatestRelease {
+            repo: "akiojin/unity-cli".to_string(),
+            tag: "v2.0.0".to_string(),
+            version: "2.0.0".to_string(),
+            asset: ReleaseAsset {
+                url,
+                sha256: sha256_hex(b"genuine binary"),
+            },
+        };
+
+        let error = download_latest_binary(ManagedBinary::UnityCli, &latest, &dest)
+            .expect_err("tampered download must not be applied");
+        handle.join().expect("server thread should complete");
+
+        assert!(error.to_string().contains("checksum mismatch"));
+        assert_eq!(fs::read(&dest).expect("binary"), b"current binary");
+        assert_eq!(
+            read_local_version_for(ManagedBinary::UnityCli).as_deref(),
+            Some("1.0.0")
+        );
+        assert!(!dest.with_extension("download").exists());
+    }
+
+    #[test]
+    fn download_latest_binary_applies_matching_checksum() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let root = tempdir().expect("tempdir should be created");
+        let _env = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", &root.path().to_string_lossy());
+        let dest = binary_path_for(ManagedBinary::UnityCli).expect("binary path");
+
+        let (url, handle) = run_binary_server_once(b"genuine binary");
+        let latest = LatestRelease {
+            repo: "akiojin/unity-cli".to_string(),
+            tag: "v2.0.0".to_string(),
+            version: "2.0.0".to_string(),
+            asset: ReleaseAsset {
+                url,
+                sha256: sha256_hex(b"genuine binary").to_uppercase(),
+            },
+        };
+
+        download_latest_binary(ManagedBinary::UnityCli, &latest, &dest)
+            .expect("matching download should be applied");
+        handle.join().expect("server thread should complete");
+
+        assert_eq!(fs::read(&dest).expect("binary"), b"genuine binary");
+        assert_eq!(
+            read_local_version_for(ManagedBinary::UnityCli).as_deref(),
+            Some("2.0.0")
+        );
+    }
+
+    #[test]
+    fn parse_sha256sums_reads_text_and_binary_mode_entries() {
+        let sums = parse_sha256sums(
+            "ABCDEF01  unity-cli-osx-arm64\n\n0123abcd *unity-cli-win-x64\nmalformed-line\n",
+        );
+        assert_eq!(
+            sums.get("unity-cli-osx-arm64").map(String::as_str),
+            Some("abcdef01")
+        );
+        assert_eq!(
+            sums.get("unity-cli-win-x64").map(String::as_str),
+            Some("0123abcd")
+        );
+        assert_eq!(sums.len(), 2);
+    }
+
+    #[test]
+    fn verify_manifest_against_checksums_requires_matching_entry() {
+        let sums = "aaaa  unity-cli-osx-arm64\nbbbb  unity-cli-linux-x64\n";
+
+        verify_manifest_against_checksums("unity-cli-osx-arm64", "AAAA", sums)
+            .expect("matching entry should pass");
+
+        let mismatch = verify_manifest_against_checksums("unity-cli-linux-x64", "cccc", sums)
+            .expect_err("manifest/SHA256SUMS disagreement must fail");
+        assert!(mismatch.to_string().contains("SHA256SUMS"));
+
+        let missing = verify_manifest_against_checksums("unity-cli-osx-x64", "aaaa", sums)
+            .expect_err("missing SHA256SUMS entry must fail");
+        assert!(missing.to_string().contains("unity-cli-osx-x64"));
+    }
+
+    #[test]
+    fn get_optional_text_returns_none_for_not_found() {
+        let (url, handle) = run_http_server_once("404 Not Found", "missing");
+        let text = get_optional_text(&url).expect("404 should not be an error");
+        handle.join().expect("server thread should complete");
+        assert!(text.is_none());
+    }
+
+    #[test]
+    fn get_optional_text_returns_body_for_success() {
+        let (url, handle) = run_http_server_once("200 OK", "aaaa  unity-cli-osx-arm64\n");
+        let text = get_optional_text(&url).expect("200 should succeed");
+        handle.join().expect("server thread should complete");
+        assert_eq!(text.as_deref(), Some("aaaa  unity-cli-osx-arm64\n"));
     }
 
     #[test]
