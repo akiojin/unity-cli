@@ -2626,6 +2626,7 @@ dependencies = [
  "clap",
  "dirs 7.0.0",
  "fastembed",
+ "libc",
  "regex",
  "serde",
  "serde_json",

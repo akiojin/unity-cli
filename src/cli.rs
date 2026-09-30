@@ -26,6 +26,11 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub port: Option<u16>,
 
+    /// Target the Unity Editor that has this project open (default: the
+    /// project containing the current directory). Also read from UNITY_PROJECT_ROOT.
+    #[arg(long, global = true, value_name = "PATH")]
+    pub project_path: Option<PathBuf>,
+
     #[arg(long, global = true, value_name = "MS")]
     pub timeout_ms: Option<u64>,
 
