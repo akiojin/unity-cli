@@ -4,7 +4,7 @@
   "host": "Apple M5 Max, macOS 26.5, arm64",
   "command": "python3 scripts/e2e-matrix.py --suites perf --unity-cli target/release/unity-cli --editor /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity --editor /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity --output /tmp/p394-cal3 --port 6509",
   "calibration_status": "Complete measurements; original runs FAIL only because Editor budgets were not initialized",
-  "budget_policy": "For each focus/operation, max across both Unity versions; p50 x 1.5, p95 x 2; round up to 5 ms. Relative history gate remains 20%.",
+  "budget_policy": "Max across both Unity versions per focus/operation. Frontmost p50 = max measured p50 x 1.5; background p50 = max(max measured p50 x 1.5, max calibration p95). All p95 budgets = max measured p95 x 2. Round up to 5 ms. Relative history gate remains 20%.",
   "runs": [
     {
       "started_at": "2026-09-30T12:35:07.996318+00:00",
@@ -730,5 +730,52 @@
         }
       }
     }
-  ]
+  ],
+  "background_p50_calibration": {
+    "reason": "Background Editor update scheduling changes the phase of CLI requests: repeated runs with the same binary moved p50 in both directions while p95 stayed stable. Use the original calibration p95 as the background p50 budget floor.",
+    "approved": "2026-09-30 PM decision e553203b-73e9-4caa-99ab-4c2708df74dd; background p50 only",
+    "original_failure_preserved": "/tmp/p394-verify1/6000.3.25f1-ob0tabeq/perf.json",
+    "examples": {
+      "material_search": {
+        "cal3": {
+          "p50_ms": 74.584,
+          "p95_ms": 181.95
+        },
+        "verify1": {
+          "p50_ms": 154.288,
+          "p95_ms": 180.544
+        }
+      },
+      "scene_info": {
+        "cal3": {
+          "p50_ms": 163.226,
+          "p95_ms": 176.627
+        },
+        "verify1": {
+          "p50_ms": 76.856,
+          "p95_ms": 176.708
+        }
+      },
+      "console": {
+        "cal3": {
+          "p50_ms": 109.528,
+          "p95_ms": 137.292
+        },
+        "verify1": {
+          "p50_ms": 38.825,
+          "p95_ms": 138.746
+        }
+      },
+      "material_modify": {
+        "cal3": {
+          "p50_ms": 181.309,
+          "p95_ms": 192.907
+        },
+        "verify1": {
+          "p50_ms": 87.509,
+          "p95_ms": 194.818
+        }
+      }
+    }
+  }
 }

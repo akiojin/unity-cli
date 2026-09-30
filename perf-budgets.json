@@ -190,7 +190,7 @@
     "editor_background_editor_state": {
       "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
       "baseline": "docs/verification/issue-394-baseline.json",
-      "p50_ms": 135,
+      "p50_ms": 175,
       "p95_ms": 350
     },
     "editor_background_hierarchy": {
@@ -202,7 +202,7 @@
     "editor_background_find_gameobject": {
       "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
       "baseline": "docs/verification/issue-394-baseline.json",
-      "p50_ms": 120,
+      "p50_ms": 180,
       "p95_ms": 355
     },
     "editor_background_transform": {
@@ -268,7 +268,7 @@
     "editor_background_material_search": {
       "condition": "macOS GUI, background, warm unityd (C# read local), 30 samples after 3 warmups; suite_version 3",
       "baseline": "docs/verification/issue-394-baseline.json",
-      "p50_ms": 115,
+      "p50_ms": 185,
       "p95_ms": 365
     },
     "editor_background_asset_copy": {

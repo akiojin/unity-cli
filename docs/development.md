@@ -556,8 +556,13 @@ without another agent changing Editor focus or importing another project.
 Initial Editor budgets come from the four complete runs in
 [`issue-394-baseline.json`](verification/issue-394-baseline.json). For each operation
 and focus condition, take the larger measurement across the two Unity versions,
-multiply p50 by 1.5 and p95 by 2, and round up to 5 ms. This leaves initial host
-variance headroom while the separate history gate still rejects p50 degradation
+multiply p50 by 1.5 and p95 by 2, and round up to 5 ms. For background p50 only,
+use the calibration p95 as a floor before rounding. Background update scheduling
+can move request timing between fast and slow phases: the same Unity 6 binary's
+material-search p50 changed from 74.6 to 154.3 ms while p95 stayed at 182.0/180.5 ms.
+The original failing verification is preserved; the baseline JSON records the
+observations and calibration rationale. Frontmost and all p95 budgets are unchanged.
+This leaves initial host variance headroom while the separate history gate still rejects p50 degradation
 greater than 20%. Existing `editor_eval` and mock CLI budgets are unchanged.
 
 ### Run
@@ -1145,7 +1150,11 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 Editor の初期予算は [4 条件の実測](verification/issue-394-baseline.json) に基づきます。
 操作・フォーカスごとに 2 Unity バージョンの大きい値を取り、p50 は 1.5 倍、p95 は 2 倍して
-5ms 単位に切り上げます。別途、履歴比で p50 が 20% を超えて劣化した場合も失敗とします。
+5ms 単位に切り上げます。背景の p50 のみ、切り上げ前に校正時の p95 を下限とします。
+背景 Editor の更新待ちによる位相差で、同一 Unity6 バイナリの material search は p50 が
+74.6→154.3ms に動く一方、p95 は 182.0→180.5ms と安定していました。元の FAIL 記録を保持し、
+ベースライン JSON に比較値と校正理由を記録します。最前面と全 p95 予算は変更しません。
+別途、履歴比で p50 が 20% を超えて劣化した場合も失敗とします。
 既存の `editor_eval` と mock CLI の予算は変更していません。
 
 実行コマンドは英語版の [Run](#run) に記載しています。
