@@ -182,14 +182,15 @@ fn spawn_daemon(exe: &std::path::Path) -> Result<std::process::Child> {
         .append(true)
         .open(tools_dir()?.join("unityd.log"))
         .context("Failed to open unityd startup log")?;
-    Command::new(exe)
-        .args(["unityd", "serve"])
-        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::from(log))
-        .spawn()
-        .context("Failed to spawn unityd background process")
+    super::spawn::spawn_detached(
+        Command::new(exe)
+            .args(["unityd", "serve"])
+            .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::from(log)),
+    )
+    .context("Failed to spawn unityd background process")
 }
 
 #[cfg(not(test))]
