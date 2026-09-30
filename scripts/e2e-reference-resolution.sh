@@ -9,10 +9,11 @@ CLI="${UNITY_CLI_BIN:-${REPO_ROOT}/target/debug/unity-cli}"
 HOST="${UNITY_CLI_HOST:-127.0.0.1}"
 PORT="${UNITY_CLI_PORT:-6400}"
 PROJECT_ROOT="${REPO_ROOT}/UnityCliBridge"
+ARTIFACT_ROOT="${REPO_ROOT}/UnityCliBridge/.unity/reference-resolution-e2e"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host|--port|--cli|--project-root)
+    --host|--port|--cli|--project-root|--artifacts)
       if [[ $# -lt 2 || -z "$2" ]]; then
         echo "Missing value for $1" >&2
         exit 1
@@ -22,10 +23,11 @@ while [[ $# -gt 0 ]]; do
         --port) PORT="$2" ;;
         --cli) CLI="$2" ;;
         --project-root) PROJECT_ROOT="$2" ;;
+        --artifacts) ARTIFACT_ROOT="$2" ;;
       esac
       shift 2 ;;
     -h|--help)
-      echo "Usage: scripts/e2e-reference-resolution.sh [--host HOST] [--port PORT] [--cli PATH] [--project-root PATH]"
+      echo "Usage: scripts/e2e-reference-resolution.sh [--host HOST] [--port PORT] [--cli PATH] [--project-root PATH] [--artifacts DIR]"
       echo "Requires a live Editor, python3, git, and network access. Downloads UnityCsReference under its Unity Companion License."
       exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
@@ -38,7 +40,6 @@ if [[ ! -x "$CLI" ]]; then
 fi
 command -v python3 >/dev/null
 command -v git >/dev/null
-ARTIFACT_ROOT="${REPO_ROOT}/UnityCliBridge/.unity/reference-resolution-e2e"
 mkdir -p "$ARTIFACT_ROOT"
 RUN_DIR="$(mktemp -d "${ARTIFACT_ROOT}/run-XXXXXX")"
 

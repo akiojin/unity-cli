@@ -18,18 +18,55 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "UnityCliBridge"
 
 
-def main():
-    global PROJECT
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=6428)
     parser.add_argument("--launch", action="store_true")
     parser.add_argument("--cli", default=str(ROOT / "target/debug/unity-cli"))
     parser.add_argument("--unity")
+    parser.add_argument("--project-path", type=Path, default=PROJECT)
+    parser.add_argument("--target", choices=("StandaloneOSX", "StandaloneWindows64"), default="StandaloneOSX")
+    parser.add_argument("--isolated-project", action="store_true", help="Launch directly in an already isolated --project-path")
     parser.add_argument("--editmode", action="store_true", help="Run relevant EditMode tests before launching the isolated host")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.editmode and not args.launch:
         parser.error("--editmode requires --launch")
-    if args.launch:
+    return args
+
+
+def preflight_status(response):
+    code = response.get("code")
+    if code == "BUILD_MODULE_MISSING":
+        return "UNSUPPORTED"
+    assert code == "INVALID_OUTPUT_PATH", response
+    return "SUPPORTED"
+
+
+def launch_target_args(unity, target):
+    module = Path(unity).resolve().parent.parent / "PlaybackEngines/WindowsStandaloneSupport"
+    if target == "StandaloneWindows64" and module.is_dir():
+        return ["-buildTarget", "Win64"]
+    return []
+
+
+def valid_artifacts(target, output, report):
+    artifacts = [Path(path).resolve() for path in report.get("artifacts", [])]
+    if Path(report.get("outputPath", "")).resolve() != output.resolve():
+        return False
+    if not artifacts or not all(path.is_file() for path in artifacts):
+        return False
+    if target == "StandaloneWindows64":
+        data = output.with_name(output.stem + "_Data")
+        return (output.is_file() and data.is_dir() and output.resolve() in artifacts
+                and any(data.resolve() in path.parents for path in artifacts))
+    return output.is_dir() and (output / "Contents/Resources/Data").is_dir()
+
+
+def main(argv=None):
+    global PROJECT
+    args = parse_args(argv)
+    PROJECT = args.project_path.resolve()
+    if args.launch and not args.isolated_project:
         import fcntl
         (ROOT / ".unity").mkdir(exist_ok=True)
         project_lock = (ROOT / ".unity/player-build-project.lock").open("w")
@@ -50,6 +87,7 @@ def main():
     stop = run / "stop"
     host = None
     checks = []
+    status = "FAIL"
     fixture = PROJECT / "Assets/Scenes/Generated/E2E/Editor/PlayerBuildFailure.cs"
     failure_marker = run / "fail-build"
     compile_error = fixture.parent / "PlayerBuildCompileError.cs"
@@ -81,7 +119,8 @@ def main():
         proc = subprocess.run([args.cli, "raw", tool, "--json", json.dumps(params),
                                "--host", "127.0.0.1", "--port", str(args.port),
                                "--timeout-ms", "10000", "--output", "json"],
-                              capture_output=True, text=True, timeout=20)
+                              capture_output=True, text=True, timeout=20,
+                              env=dict(os.environ, UNITY_PROJECT_ROOT=str(PROJECT)))
         (run / f"{len(checks)}-{tool}.json").write_text(proc.stdout + proc.stderr)
         assert (proc.returncode == 0) == success, proc.stdout + proc.stderr
         return json.loads(proc.stdout) if proc.stdout.strip() else None
@@ -122,12 +161,14 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
 }
 ''')
             env = dict(os.environ, UNITY_CLI_ALLOW_BATCH_HOST="1",
+                       UNITY_PROJECT_ROOT=str(PROJECT),
                        UNITY_CLI_PORT_OVERRIDE=str(args.port),
                        UNITY_CLI_PLAYER_BUILD_FAILURE_MARKER=str(failure_marker),
                        UNITY_CLI_BATCH_HOST_SHUTDOWN_FILE=str(stop))
             host_command = [unity, "-batchmode", "-nographics", "-projectPath", str(PROJECT),
                             "-executeMethod", "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
                             "-logFile", str(run / "editor.log")]
+            host_command[1:1] = launch_target_args(unity, args.target)
             host = subprocess.Popen(host_command, env=env,
                                     stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         deadline = time.monotonic() + 600
@@ -169,15 +210,23 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
         cli("create_scene", {"sceneName": scene_name, "path": "Assets/Scenes/Generated/E2E/"})
         cli("save_scene", {"scenePath": scene})
         before = settings()
-        output = run / "player/Player.app"
-        params = {"target": "StandaloneOSX", "scenes": [scene], "outputPath": str(output)}
+        player_name = "Player.exe" if args.target == "StandaloneWindows64" else "Player.app"
+        output = run / "player" / player_name
+        params = {"target": args.target, "scenes": [scene], "outputPath": str(output)}
         check("unknown build rejected", tcp("get_build_status", {"buildId": "missing"})["code"] == "BUILD_NOT_FOUND")
         cli("get_build_status", {"buildId": "missing"}, success=False)
         check("unknown build CLI exits nonzero", True)
         check("missing parameters rejected", tcp("build_player", {})["code"] == "INVALID_BUILD_PARAMETERS")
-        check("invalid output rejected", tcp("build_player", dict(params, outputPath=str(run / "bad.exe")))["code"] == "INVALID_OUTPUT_PATH")
-        windows = tcp("build_player", dict(params, target="StandaloneWindows64", outputPath=str(run / "windows/Player.exe")))
-        check("unsupported Windows module or target rejected", windows.get("code") in ("BUILD_MODULE_MISSING", "BUILD_TARGET_MISMATCH"))
+        preflight = tcp("build_player", dict(params, outputPath=str(run / "bad.invalid")))
+        (run / "build-preflight.json").write_text(json.dumps(preflight, indent=2))
+        if preflight_status(preflight) == "UNSUPPORTED":
+            unsupported = tcp("build_player", params)
+            (run / "build-status.json").write_text(json.dumps(unsupported, indent=2))
+            check("missing module returns BUILD_MODULE_MISSING", unsupported.get("code") == "BUILD_MODULE_MISSING")
+            status = "UNSUPPORTED"
+            print(f"UNSUPPORTED {args.target}: BUILD_MODULE_MISSING; real build remains unverified", flush=True)
+            return 2
+        check("invalid output rejected", True)
         started = tcp("build_player", params)
         check("accepted is queued, not succeeded", started.get("result", {}).get("state") == "queued")
         build_id = started["result"]["buildId"]
@@ -201,7 +250,7 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
         check("BuildReport succeeded", state == "succeeded" and result["reportResult"] == "Succeeded")
         check("report has no errors", result["totalErrors"] == 0)
         check("artifacts exist", bool(result["artifacts"]) and all(Path(p).exists() for p in result["artifacts"]))
-        check("output app and required data exist", output.is_dir() and (output / "Contents/Resources/Data").is_dir())
+        check("requested output and required data agree with BuildReport", valid_artifacts(args.target, output, result))
         success_cli = cli("get_build_status", {"buildId": build_id})
         report_fields = ("buildId", "state", "reportResult", "totalErrors", "totalWarnings",
                          "errors", "warnings", "outputPath", "artifacts",
@@ -215,7 +264,7 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
         check("existing output rejected", tcp("build_player", params)["code"] == "INVALID_OUTPUT_PATH")
         if args.launch:
             failure_marker.touch()
-            failed_start = tcp("build_player", dict(params, outputPath=str(run / "failed/Player.app")))
+            failed_start = tcp("build_player", dict(params, outputPath=str(run / "failed" / player_name)))
             failed_id = failed_start["result"]["buildId"]
             deadline = time.monotonic() + 180
             while True:
@@ -231,18 +280,19 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
                   all(failed_cli["details"][key] == failed["details"][key] for key in report_fields) and
                   math.isclose(failed_cli["details"]["durationSeconds"], failed["details"]["durationSeconds"], abs_tol=1e-6))
             failure_marker.unlink()
-        executable = next((output / "Contents/MacOS").iterdir())
-        player = subprocess.Popen([str(executable), "-batchmode", "-nographics", "-logFile", str(run / "player.log")],
-                                  stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        try:
-            time.sleep(5)
-            check("Mac headless process starts", player.poll() is None and (run / "player.log").exists())
-        finally:
-            if player.poll() is None:
-                player.terminate()
-            player.wait(timeout=20)
+        if args.target == "StandaloneOSX":
+            executable = next((output / "Contents/MacOS").iterdir())
+            player = subprocess.Popen([str(executable), "-batchmode", "-nographics", "-logFile", str(run / "player.log")],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            try:
+                time.sleep(5)
+                check("Mac headless process starts", player.poll() is None and (run / "player.log").exists())
+            finally:
+                if player.poll() is None:
+                    player.terminate()
+                player.wait(timeout=20)
         if args.launch:
-            interrupted_start = tcp("build_player", dict(params, outputPath=str(run / "interrupted/Player.app")))
+            interrupted_start = tcp("build_player", dict(params, outputPath=str(run / "interrupted" / player_name)))
             interrupted_id = interrupted_start["result"]["buildId"]
             # Kill only this test's own Editor after acceptance; the durable queued record
             # must become interrupted rather than being reported as successful on restart.
@@ -274,7 +324,7 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
                     time.sleep(2)
             while True:
                 try:
-                    compilation = tcp("build_player", dict(params, outputPath=str(run / "compile/Player.app")))
+                    compilation = tcp("build_player", dict(params, outputPath=str(run / "compile" / player_name)))
                 except (OSError, EOFError):
                     assert time.monotonic() < deadline, "Compilation failure not observed"
                     time.sleep(2)
@@ -286,6 +336,7 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
                 time.sleep(1)
             check("compilation error is not success", compilation["status"] == "error")
         print("Windows hardware: pending owner verification. Graphics/input: not tested.", flush=True)
+        status = "PASS"
     except BaseException as exc:
         checks.append({"name": "suite completion", "pass": False, "error": str(exc)})
         raise
@@ -300,14 +351,15 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
         if args.launch and fixture.exists():
             fixture.unlink()
             fixture.with_suffix(".cs.meta").unlink(missing_ok=True)
-        if compile_error.exists():
+        if args.launch and compile_error.exists():
             compile_error.unlink()
             compile_error.with_suffix(".cs.meta").unlink(missing_ok=True)
-        summary = {"unityVersion": version, "checks": checks,
+        summary = {"unityVersion": version, "target": args.target, "projectPath": str(PROJECT),
+                   "status": status, "checks": checks,
                    "passed": sum(c["pass"] for c in checks), "failed": sum(not c["pass"] for c in checks)}
         (run / "summary.json").write_text(json.dumps(summary, indent=2))
         print(f"Evidence: {run}", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

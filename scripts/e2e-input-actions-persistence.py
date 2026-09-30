@@ -17,6 +17,15 @@ import uuid
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def check_port_available(port):
+    with socket.socket() as probe:
+        # A stopped Editor may still have connections in TIME_WAIT. Match the
+        # listener's Unix rebind behavior while still rejecting a live listener.
+        if os.name != "nt":
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind(("127.0.0.1", port))
+
+
 class Runner:
     def __init__(self, args):
         self.args = args
@@ -54,8 +63,7 @@ class Runner:
         return response
 
     def start(self):
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", self.args.port))
+        check_port_available(self.args.port)
         self.stop_file.unlink(missing_ok=True)
         self.generation += 1
         log = self.artifacts / f"unity-{self.generation}.log"

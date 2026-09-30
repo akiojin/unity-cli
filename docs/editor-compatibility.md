@@ -7,11 +7,11 @@ must be added to `scripts/e2e-matrix.py` and verified before claiming support.
 ## macOS verification matrix
 
 Verified on 2026-09-30 (macOS, Apple Silicon) against the final Bridge source.
-The complete run includes package compilation, input, Timeline, VFX, C# eval,
+The baseline run below includes package compilation, input, Timeline, VFX, C# eval,
 hot-reload error contracts, PlayMode/domain-reload results and the all-tools
 sweep (including LSP performance).
 
-| Editor | Runtime | VFX Graph | Complete matrix | VFX E2E | All-tools |
+| Editor | Runtime | VFX Graph | Baseline suites | VFX E2E | All-tools |
 | --- | --- | --- | --- | --- | --- |
 | 2022.3.62f3 | Mono | 14.0.12 | PASS | 73/73 | 121/121, 133 calls |
 | 6000.0.84f1 | Mono | 17.0.4 | PASS | 64/64 | 121/121, 133 calls |
@@ -40,6 +40,33 @@ an SDF bake while two matrix groups shared the machine. Neither involves Bridge
 code; both are recorded rather than counted as passes.
 
 Windows hardware verification remains deferred under Issue #340 AC-6.
+
+### Extended acceptance suites
+
+Issue [#392](https://github.com/akiojin/unity-cli/issues/392) adds the following
+suites to the default runner. A dash means not measured in this extension;
+the baseline results above do not imply these additional suites passed.
+`UNSUPPORTED` is a verified error contract and is not counted as a successful build.
+
+| Editor | Bake | Player build (macOS / Windows) | Video formats | Animation curves | Input Actions persistence | Reference |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2022.3.62f3 | PASS (4 types) | PASS / UNSUPPORTED | PASS | PASS | PASS | PASS |
+| 6000.0.84f1 | — | — | — | — | — | — |
+| 6000.3.25f1 | PASS (4 types) | PASS / UNSUPPORTED | PASS | PASS | PASS | PASS |
+| 6000.4.11f1 | — | — | — | — | — | — |
+| 6000.5.3f1 | — | — | — | — | — | — |
+| 6000.6.3f1 | — | — | — | — | — | — |
+| 6000.7.0a2 | — | — | — | — | — | — |
+| 6000.7.0b2 | — | — | — | — | — | — |
+
+See the [commands, assertion counts and retry evidence](verification/issue-392.md).
+The Windows result asserts `BUILD_MODULE_MISSING`; no successful Windows build
+is claimed for these installations.
+
+Tool examples and skill discovery are tracked by
+[#393](https://github.com/akiojin/unity-cli/issues/393), as permitted by #392 AC-6.
+Windows hardware execution remains outside this matrix under
+[#386](https://github.com/akiojin/unity-cli/issues/386).
 
 ## VFX Graph contract per package version
 
