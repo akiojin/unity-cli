@@ -20,6 +20,7 @@
 
 - Use `unity-cli system ping` when a single active target is expected.
 - Use `unity-cli instances list` when multiple editors may be running.
+- Prefer `--project-path <project>` (or running inside the project) to target one Editor; `AMBIGUOUS_EDITOR` lists candidates in `data.candidates`.
 - Use `unity-cli instances set-active <host:port>` only after confirming the target is `up`.
 
 ## Command Routing

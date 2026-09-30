@@ -52,7 +52,12 @@ namespace UnityCliBridge.Core
         }
         
         public const int DEFAULT_PORT = 6400;
+        /// <summary>How many ports after the configured one are tried when it is in use.</summary>
+        internal const int PortFallbackRange = 20;
+        private const string BoundPortSessionKey = "UnityCliBridge.BoundPort";
+        private const string BoundForConfiguredPortSessionKey = "UnityCliBridge.BoundForConfiguredPort";
         private static int currentPort = DEFAULT_PORT;
+        private static int boundPort;
         // For logging only (what we bind/listen on)
         private static string currentHost = "localhost";
         private static IPAddress bindAddress = IPAddress.Any; // default: 0.0.0.0
@@ -65,8 +70,8 @@ namespace UnityCliBridge.Core
             global::UnityCliBridge.Handlers.PlayerBuildHandler.Initialize();
             BridgeLogger.Log("Initializing...");
             EditorApplication.update += ProcessCommandQueue;
-            EditorApplication.quitting += Shutdown;
-            AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+            EditorApplication.quitting += OnQuitting;
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             
             // Load Project Settings and start the TCP listener
             TryLoadProjectSettingsAndApply();
@@ -217,7 +222,38 @@ namespace UnityCliBridge.Core
                 return;
             }
 
-            StartTcpListenerOnCurrentEndpoint();
+            StartTcpListenerOnCurrentEndpoint(publishLockfile: true);
+        }
+
+        /// <summary>
+        /// Ports to try, in order: the port bound before the last domain reload (so clients keep
+        /// their endpoint), the configured port, then the next <see cref="PortFallbackRange"/> ports.
+        /// </summary>
+        internal static List<int> BuildPortCandidates(int configuredPort, int previousBoundPort, int previousConfiguredPort)
+        {
+            var candidates = new List<int>();
+            if (configuredPort == 0)
+            {
+                candidates.Add(0);
+                return candidates;
+            }
+            if (previousBoundPort > 0 && previousConfiguredPort == configuredPort)
+            {
+                candidates.Add(previousBoundPort);
+            }
+            for (var offset = 0; offset <= PortFallbackRange; offset++)
+            {
+                var port = configuredPort + offset;
+                if (port > 65535)
+                {
+                    break;
+                }
+                if (!candidates.Contains(port))
+                {
+                    candidates.Add(port);
+                }
+            }
+            return candidates;
         }
 
         /// <summary>
@@ -230,7 +266,7 @@ namespace UnityCliBridge.Core
             currentHost = "127.0.0.1";
             bindAddress = IPAddress.Loopback;
             currentPort = 0;
-            StartTcpListenerOnCurrentEndpoint();
+            StartTcpListenerOnCurrentEndpoint(publishLockfile: false);
             if (tcpListener == null)
             {
                 throw new InvalidOperationException("TCP listener failed to start; see the Unity CLI Bridge log.");
@@ -238,7 +274,7 @@ namespace UnityCliBridge.Core
             return ((IPEndPoint)tcpListener.LocalEndpoint).Port;
         }
 
-        private static void StartTcpListenerOnCurrentEndpoint()
+        private static void StartTcpListenerOnCurrentEndpoint(bool publishLockfile)
         {
             try
             {
@@ -246,15 +282,67 @@ namespace UnityCliBridge.Core
                 {
                     StopTcpListener();
                 }
-                
+
+                var configuredPort = currentPort;
+                var candidates = publishLockfile
+                    ? BuildPortCandidates(
+                        configuredPort,
+                        SessionState.GetInt(BoundPortSessionKey, 0),
+                        SessionState.GetInt(BoundForConfiguredPortSessionKey, 0))
+                    : new List<int> { configuredPort };
+
+                TcpListener listener = null;
+                SocketException lastError = null;
+                foreach (var port in candidates)
+                {
+                    var attempt = new TcpListener(bindAddress, port);
+                    if (Application.platform == RuntimePlatform.WindowsEditor)
+                    {
+                        // Windows lets a second socket share a port unless it is exclusive. Unix
+                        // already refuses a second listener, and exclusivity there would block
+                        // re-binding our own port after a domain reload while old connections linger.
+                        attempt.ExclusiveAddressUse = true;
+                    }
+                    try
+                    {
+                        attempt.Start();
+                        listener = attempt;
+                        break;
+                    }
+                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+                    {
+                        lastError = ex;
+                        BridgeLogger.LogWarning($"Port {port} is already in use; trying the next port.");
+                    }
+                }
+
+                if (listener == null)
+                {
+                    Status = BridgeStatus.Error;
+                    BridgeLogger.LogError(
+                        $"Failed to start TCP listener: ports {configuredPort}-{configuredPort + PortFallbackRange} are in use ({lastError?.Message}).");
+                    return;
+                }
+
                 cancellationTokenSource = new CancellationTokenSource();
-                tcpListener = new TcpListener(bindAddress, currentPort);
-                tcpListener.Start();
+                tcpListener = listener;
+                boundPort = ((IPEndPoint)listener.LocalEndpoint).Port;
                 Interlocked.Exchange(ref activeClientCount, 0);
-                
+
                 Status = BridgeStatus.Disconnected;
-                BridgeLogger.Log($"TCP listener binding on {bindAddress}:{currentPort} (host={currentHost})");
-                
+                if (boundPort != configuredPort && configuredPort != 0)
+                {
+                    BridgeLogger.LogWarning($"Configured port {configuredPort} is in use; listening on {boundPort} instead.");
+                }
+                BridgeLogger.Log($"TCP listener binding on {bindAddress}:{boundPort} (host={currentHost})");
+
+                if (publishLockfile)
+                {
+                    SessionState.SetInt(BoundPortSessionKey, boundPort);
+                    SessionState.SetInt(BoundForConfiguredPortSessionKey, configuredPort);
+                    EditorLockfile.Publish(EditorLockfile.ConnectHostFor(bindAddress), boundPort, configuredPort);
+                }
+
                 // Start accepting connections asynchronously
                 listenerTask = Task.Run(() => AcceptConnectionsAsync(cancellationTokenSource.Token));
             }
@@ -262,11 +350,6 @@ namespace UnityCliBridge.Core
             {
                 Status = BridgeStatus.Error;
                 BridgeLogger.LogError($"Failed to start TCP listener on port {currentPort}: {ex.Message}");
-                
-                if (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
-                {
-                    BridgeLogger.LogError($"Port {currentPort} is already in use. Please ensure no other instance is running.");
-                }
             }
             catch (Exception ex)
             {
@@ -274,7 +357,10 @@ namespace UnityCliBridge.Core
                 BridgeLogger.LogError($"Unexpected error starting TCP listener: {ex}");
             }
         }
-        
+
+        /// <summary>The port actually listened on (differs from the configured port after a fallback).</summary>
+        public static int BoundPort => boundPort;
+
         /// <summary>
         /// Stops the TCP listener
         /// </summary>
@@ -913,7 +999,20 @@ namespace UnityCliBridge.Core
             BridgeLogger.Log("Shutting down...");
             StopTcpListener();
             EditorApplication.update -= ProcessCommandQueue;
-            EditorApplication.quitting -= Shutdown;
+            EditorApplication.quitting -= OnQuitting;
+            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+        }
+
+        private static void OnBeforeAssemblyReload()
+        {
+            EditorLockfile.MarkReloading();
+            Shutdown();
+        }
+
+        private static void OnQuitting()
+        {
+            EditorLockfile.Delete();
+            Shutdown();
         }
 
         /// <summary>
@@ -932,6 +1031,7 @@ namespace UnityCliBridge.Core
         public static void Stop()
         {
             BridgeLogger.Log("Stopping...");
+            EditorLockfile.Delete();
             StopTcpListener();
             Status = BridgeStatus.NotConfigured;
         }
