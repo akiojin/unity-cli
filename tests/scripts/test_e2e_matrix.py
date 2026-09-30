@@ -85,6 +85,38 @@ class MatrixTests(unittest.TestCase):
             self.assertTrue((project / "Assets/HotReloadProbe.cs").is_file())
             self.assertTrue((project / "Assets/Editor/HotReloadE2EFixture.cs").is_file())
 
+    def test_real_hot_reload_suites_need_backend_and_add_x64_editor_when_present(self):
+        from argparse import Namespace
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            editor = root / "hub/6000.3.25f1/Unity.app/Contents/MacOS/Unity"
+            x64 = root / "x64/6000.3.25f1/Unity.app/Contents/MacOS/Unity"
+            x64.parent.mkdir(parents=True)
+            x64.touch()
+            args = Namespace(fsr_path=None, x64_editor_root=root / "x64", port=6508)
+            self.assertEqual(matrix.hot_reload_apply_suites(editor, "6000.3.25f1", args, root), {})
+            args.fsr_path = root / "fsr"
+            suites = matrix.hot_reload_apply_suites(editor, "6000.3.25f1", args, root)
+            self.assertEqual(list(suites), ["hot-reload-apply", "hot-reload-apply-x64"])
+            native, rosetta = suites.values()
+            self.assertIn("UNITY_PATH=" + str(editor), native)
+            self.assertIn("UNITY_PATH=" + str(x64), rosetta)
+            self.assertEqual(rosetta[rosetta.index("--require-arch") + 1], "X64")
+            for command in (native, rosetta):
+                self.assertEqual(command[command.index("--expect") + 1], "supported")
+                self.assertEqual(command[command.index("--port") + 1], "6509")
+            # No x64 build of this version: only the native Editor runs, nothing is reported as skipped.
+            self.assertEqual(list(matrix.hot_reload_apply_suites(editor, "2022.3.62f3", args, root)), ["hot-reload-apply"])
+
+    def test_default_selection_appends_real_hot_reload_suites(self):
+        self.assertEqual(matrix.selected_suites(None, [])[-1], "all-tools")
+        self.assertNotIn("hot-reload-apply", matrix.selected_suites(None, []))
+        chosen = matrix.selected_suites(None, ["hot-reload-apply", "hot-reload-apply-x64"])
+        self.assertEqual(chosen[-2:], ["hot-reload-apply", "hot-reload-apply-x64"])
+        self.assertEqual(matrix.selected_suites("eval,hot-reload-apply", ["hot-reload-apply"]), ["eval", "hot-reload-apply"])
+        with self.assertRaisesRegex(ValueError, "hot-reload-apply-x64"):
+            matrix.selected_suites("hot-reload-apply-x64", ["hot-reload-apply"])
+
 
 if __name__ == "__main__":
     unittest.main()

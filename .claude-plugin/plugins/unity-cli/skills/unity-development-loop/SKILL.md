@@ -5,7 +5,7 @@ compatibility: Requires unity-cli connected to a Unity Editor that supports Play
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.2.0
+  version: 0.3.0
   category: testing
   triggers:
     - runtime
@@ -38,10 +38,11 @@ This skill chooses the smallest next change, the narrowest runtime check, and th
 1. Confirm the bridge answers `unity-cli system ping`. If it does not, run `unity-cli doctor --output json` and recover from its `diagnosis` first; on `SAFE_MODE`, fix the reported compile errors (`file`, `line`) before any runtime check.
 2. Lock the scenario as observable runtime behavior and define 1-3 acceptance checks before editing or running anything.
 3. Choose the smallest next Unity-side change and delegate implementation to `unity-csharp-edit` when code must change.
-4. Run the narrowest runtime check through `unity-playmode-testing`, `unity-ui-automation`, or `unity-editor-tools`, depending on whether the loop is gameplay, UI, or diagnostics driven.
-5. Capture only the evidence needed for the current hypothesis: state reads or logs for non-visual behavior, a screenshot for visible end state, short video for timing, and profiler data only for performance questions.
-6. Record the iteration with scenario, acceptance criteria, change made, execution, evidence, observations, result, and next action.
-7. Stop when the current evidence satisfies every acceptance check; otherwise continue with one concrete next hypothesis.
+4. When only the body of an existing method changes and the Play session state is worth keeping, preview it without leaving Play Mode: check `unity-cli raw hot_reload_status --json '{}'` and, if `supported` is true, follow the Hot Reload Preview Loop in the playbook. Otherwise edit the file and re-enter Play Mode.
+5. Run the narrowest runtime check through `unity-playmode-testing`, `unity-ui-automation`, or `unity-editor-tools`, depending on whether the loop is gameplay, UI, or diagnostics driven.
+6. Capture only the evidence needed for the current hypothesis: state reads or logs for non-visual behavior, a screenshot for visible end state, short video for timing, and profiler data only for performance questions.
+7. Record the iteration with scenario, acceptance criteria, change made, execution, evidence, observations, result, and next action.
+8. Stop when the current evidence satisfies every acceptance check; otherwise continue with one concrete next hypothesis.
 
 ## Examples
 
@@ -52,4 +53,4 @@ This skill chooses the smallest next change, the narrowest runtime check, and th
 ## References
 
 - [runtime-checklist.md](references/runtime-checklist.md): connection, instance, `unity-cli doctor` recovery, and evidence-capture baseline before starting a loop.
-- [development-loop-playbook.md](references/development-loop-playbook.md): scenario-specific loop recipes, evidence selection rules, and exit criteria.
+- [development-loop-playbook.md](references/development-loop-playbook.md): scenario-specific loop recipes (including the Play Mode hot reload preview), evidence selection rules, and exit criteria.

@@ -236,6 +236,9 @@ scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
 # C# eval with an isolated batch host (build the debug CLI first)
 scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
 
+# C# eval latency budget (perf-budgets.json: editor_eval; GUI Editor frontmost, release CLI)
+python3 scripts/bench-eval.py --port 6400 --require-frontmost --activate --budget editor_eval
+
 # Timeline editing, persistence and Animator evaluation (real Editor)
 cargo build --bin unity-cli
 scripts/e2e-timeline-batch-host.sh --port 6474
@@ -264,7 +267,7 @@ scripts/e2e-bake-batch-host.sh --port 6477
 
 # Isolated optional hot reload backend / real Editor checks
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
-# See docs/hot-reload.md for installed-backend and supported x64 runs.
+# See docs/hot-reload.md for real method replacement runs (ARM64 / x64 under Rosetta).
 
 # PlayMode result collection with Domain Reload enabled and disabled
 python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
@@ -501,6 +504,10 @@ These are guidance values and vary by host:
 | `unity-cli system ping`              | ~10-50 ms     | Requires running Unity Editor    |
 | `unity-cli system ping` (via unityd) | ~5-20 ms      | Daemon keeps TCP connection open |
 | `unity-cli batch` (5 commands)       | ~25-100 ms    | Single IPC round-trip via daemon |
+
+Budgets that fail a run when exceeded live in `perf-budgets.json`. The first
+entry is `editor_eval` (warm `unity-cli editor eval '1+2'`, Editor frontmost:
+p50 ≤ 50 ms, p95 ≤ 100 ms), enforced by `scripts/bench-eval.py --budget editor_eval`.
 
 ### Run
 
@@ -1034,6 +1041,10 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 | `unity-cli system ping`              | ~10-50 ms    | Unity Editor 起動時のみ               |
 | `unity-cli system ping` (unityd経由) | ~5-20 ms     | デーモンがTCP接続を保持               |
 | `unity-cli batch` (5コマンド)        | ~25-100 ms   | デーモン経由の単一IPCラウンドトリップ |
+
+超過すると失敗になる予算は `perf-budgets.json` に置きます。最初の項目は `editor_eval`
+（ウォーム状態の `unity-cli editor eval '1+2'`、Editor 最前面で p50 ≤ 50 ms、p95 ≤ 100 ms）で、
+`scripts/bench-eval.py --budget editor_eval` が検査します。
 
 ### 実行
 

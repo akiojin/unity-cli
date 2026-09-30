@@ -12,6 +12,8 @@ parser.add_argument("--project", type=Path, required=True)
 parser.add_argument("--port", default="6484")
 parser.add_argument("--unity-cli", required=True)
 parser.add_argument("--expect", choices=["missing", "unsupported", "supported"], required=True)
+parser.add_argument("--require-arch", choices=["X64", "Arm64"],
+                    help="Fail unless the Editor process has this architecture (e.g. X64 under Rosetta)")
 args = parser.parse_args()
 passed = 0
 
@@ -57,7 +59,8 @@ def same_state(before, expected_value):
 
 def recover_and_verify():
     call("hot_reload", {"action": "recover"})
-    deadline = time.monotonic() + 90
+    # Clean compilation of every assembly; an x64 Editor under Rosetta needs well over a minute.
+    deadline = time.monotonic() + 300
     while time.monotonic() < deadline:
         time.sleep(1)
         try:
@@ -127,7 +130,13 @@ def failed_compilation_cannot_certify_baseline():
 
 def run():
     info = call("get_editor_info", {})
-    print("Unity:", info["unity"]["unityVersion"], "mode:", args.expect, flush=True)
+    probe = call("eval_csharp", {"mode": "expression", "code":
+                 "System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString()"})
+    assert probe.get("state") == "completed", probe
+    architecture = probe["value"]
+    print("Unity:", info["unity"]["unityVersion"], "architecture:", architecture, "mode:", args.expect, flush=True)
+    if args.require_arch:
+        check(architecture == args.require_arch, "Editor process architecture is " + args.require_arch)
     status = call("hot_reload_status", {})
     print("Backend:", json.dumps(status), flush=True)
     menu("Create E2E Fixture")

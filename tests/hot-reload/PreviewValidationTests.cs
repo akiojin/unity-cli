@@ -13,6 +13,12 @@ public class PreviewValidationTests
         if (assemblySucceeded) completed.Add("Assembly-CSharp");
         Assert.Equal(expected, CompilationProof.CanCommit(cleanBuild, completed, "Assembly-CSharp"));
     }
+    [Theory]
+    [InlineData(new[] { "hp", "score" }, new[] { "score", "hp", "__Patched_NewFieldNameToInitialValueFn" }, true)]
+    [InlineData(new[] { "hp" }, new[] { "hp", "added" }, false)]
+    [InlineData(new[] { "hp", "score" }, new[] { "hp" }, false)]
+    public void CandidateFieldsIgnoreOnlyBackendGeneratedFields(string[] compiled, string[] candidate, bool expected) =>
+        Assert.Equal(expected, CandidateFields.Match(compiled, candidate));
     const string Baseline = "class Probe { int value; void Update() { value = 1; } int Read() { return value; } }";
     [Fact] public void BodyChangeIsIdentifiedAndInstrumented()
     {

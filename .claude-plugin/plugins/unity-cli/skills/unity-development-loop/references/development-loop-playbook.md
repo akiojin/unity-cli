@@ -1,11 +1,11 @@
 # Development Loop Playbook
 
-## Contents
+## Table of Contents
 
 - Scenario framing
 - Verification path selection
 - Evidence selection
-- Loop recipes
+- Loop recipes (gameplay, UI, regression, performance, hot reload preview)
 - Exit rules
 
 ## Scenario Framing
@@ -76,6 +76,25 @@
 4. Read only the metrics needed for the current hypothesis.
 5. Make one focused change.
 6. Rerun the same capture path and compare.
+
+### Hot Reload Preview Loop
+
+Use it to try a new method body (for example a changed formula) while Play Mode keeps its scene, objects and field values.
+
+Prerequisites, reported by `unity-cli raw hot_reload_status --json '{}'`:
+
+- `supported: true`. `HOT_RELOAD_PACKAGE_MISSING` means the optional FastScriptReload 1.8.0 package is not installed in the project; `HOT_RELOAD_PLATFORM_UNSUPPORTED` means the Editor is neither x64 nor Apple Silicon macOS. Installing the package is the user's decision; without it, edit the file and re-enter Play Mode.
+- Fast Script Reload's own auto reload and on-demand reload are disabled.
+- The target is one `Assets/*.cs` file with a single non-generic, non-partial class; only bodies of existing synchronous methods change (no new fields, methods, properties or signatures).
+
+Steps:
+
+1. Enter Play Mode and run `unity-cli raw hot_reload --json '{"action":"begin","path":"Assets/Player.cs"}'`. Keep the returned `appliedRevision`. On `HOT_RELOAD_BASELINE_UNPROVEN`, run the `recover` action, wait for compilation, enter Play Mode and begin again.
+2. Send the complete candidate source: `unity-cli --timeout-ms 120000 raw hot_reload --json '{"action":"apply","source":"<full file text>","expectedRevision":"<appliedRevision>","timeoutSeconds":10}'`.
+3. Success returns a new `appliedRevision` only after every changed method was replaced and executed by the running game. A method the game does not call within `timeoutSeconds` fails with `HOT_RELOAD_VERIFICATION_FAILED`; trigger it through normal input or choose a longer timeout (1-60).
+4. Verify the behavior with the usual evidence, then repeat `apply` with the latest `appliedRevision` for the next variant.
+5. The preview never writes the `.cs` file. To keep the change, run `unity-cli raw hot_reload --json '{"action":"recover"}'` (stops Play and recompiles cleanly), wait until `hot_reload_status` reports `state: idle`, then apply the same edit to the file through `unity-csharp-edit`.
+6. Any failure with `recoveryRequired: true` needs the `recover` action before another preview; never treat it as applied.
 
 ## Exit Rules
 
