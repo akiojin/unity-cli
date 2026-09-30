@@ -50,7 +50,7 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 3. When multiple editors may run, call `unity-cli instances list` and pick the target with `unity-cli instances set-active <host:port>`.
 4. Pick the right entry point for the operation:
    - **Typed subcommand** when one exists. The bootstrap-relevant typed subcommands are `setup`, `bridge install|upgrade|status`, `system ping`, `scene create`, `instances list`, and `instances set-active`. Other typed subcommands exist too — notably the `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`), which wrap the `reference_*` bridge tools; see the `unity-csharp-reference` skill. But most bridge tools have no typed wrapper. (Note: `setup`, `bridge *`, `instances list`, and `instances set-active` are local operations, not bridge-tool wrappers.)
-   - **`raw <tool_name> --json '{...}'`** (equivalent alias: `tool call <tool_name> --json '{...}'`) for every tool without a typed wrapper. This is the primary way to invoke the bridge, not a fallback. Discover tools with `unity-cli tool list`; inspect a tool's expected payload with `unity-cli tool schema <tool_name> --output json`.
+   - **`raw <tool_name> --json '{...}'`** (equivalent alias: `tool call <tool_name> --json '{...}'`) for every tool without a typed wrapper. This is the primary way to invoke the bridge, not a fallback. Discover tools by keyword with `unity-cli tool list --query <term> --compact` (narrow further with `--category <name>` such as `scenes`, and `--limit N`) instead of listing all tools; inspect a tool's expected payload with `unity-cli tool schema <tool_name> --output json`.
 5. Use `--output json` for chained automation.
 
 ```bash
@@ -62,7 +62,7 @@ unity-cli --version
 unity-cli --output json setup --launch-editor   # bridge install + Editor connection check
 unity-cli bridge status                        # declared / resolved bridge version
 unity-cli system ping
-unity-cli tool list                            # discover available tools
+unity-cli tool list --query scene --compact    # discover tools by keyword
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
 unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ```
@@ -74,7 +74,7 @@ unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 - "unity-cli cannot connect to Unity." → `unity-cli doctor --output json`; on `SAFE_MODE`, fix the files in `editorLog.compileErrors` and retry instead of assuming the Editor is closed.
 - "Switch to the Unity instance running on port 6401." → `unity-cli instances list --ports 6400,6401` then `unity-cli instances set-active 127.0.0.1:6401`.
 - "Inspect what's in the open scene." → `unity-cli raw analyze_scene_contents --json '{}'`. There is no typed `scene` subcommand for this — `scene create` is the only typed scene operation.
-- "What tools does the bridge expose?" → `unity-cli tool list`. For a specific tool's JSON payload shape: `unity-cli tool schema <tool_name> --output json`.
+- "What tools does the bridge expose?" → `unity-cli tool list --query <term> --compact` (or `--category <name>`); plain `unity-cli tool list` prints all names. For a specific tool's JSON payload shape: `unity-cli tool schema <tool_name> --output json`.
 
 ## References
 

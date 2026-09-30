@@ -14,7 +14,8 @@ use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::instances::{list_instances, set_active_instance};
-use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
+use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs};
+use crate::tool_index::{filter_tools, ToolListFilter};
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
 
@@ -84,12 +85,30 @@ async fn run_command(cli: Cli) -> Result<()> {
             print_value(&value, cli.output)?;
         }
         Command::Tool { command } => match command {
-            ToolCommand::List => {
+            ToolCommand::List(args) => {
+                let tools = filter_tools(&ToolListFilter {
+                    query: args.query.as_deref(),
+                    category: args.category.as_deref(),
+                    offset: args.offset,
+                    limit: args.limit,
+                })
+                .map_err(|message| anyhow!(message))?;
                 if matches!(cli.output, OutputFormat::Json) {
-                    print_value(&serde_json::to_value(TOOL_NAMES)?, cli.output)?;
+                    let value = if args.compact {
+                        serde_json::to_value(&tools)?
+                    } else {
+                        serde_json::to_value(
+                            tools.iter().map(|tool| tool.name).collect::<Vec<_>>(),
+                        )?
+                    };
+                    print_value(&value, cli.output)?;
                 } else {
-                    for name in TOOL_NAMES {
-                        println!("{name}");
+                    for tool in &tools {
+                        if args.compact {
+                            println!("{}\t{}", tool.name, tool.description);
+                        } else {
+                            println!("{}", tool.name);
+                        }
                     }
                 }
             }
@@ -1603,7 +1622,7 @@ mod tests {
     #[test]
     fn runtime_overrides_are_derived_from_cli_at_app_boundary() {
         let cli = cli_for_dry_run(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         });
 
         let overrides = runtime_overrides_from_cli(&cli);
@@ -1704,7 +1723,7 @@ mod tests {
     async fn timeline_manage_is_skipped_in_dry_run() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "manage_timeline",
             json!({"action": "create_asset", "assetPath": "Assets/Sequence.playable"}),
@@ -2610,7 +2629,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_handles_local_tool_and_batch_paths() {
         run_with_cli(cli_for(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         }))
         .await
         .expect("tool list should succeed");
@@ -2642,7 +2661,7 @@ mod tests {
 
         run_with_cli(cli_for_with_output(
             Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             },
             OutputFormat::Text,
         ))
@@ -2671,7 +2690,7 @@ mod tests {
     async fn execute_tool_skips_mutating_tool_in_dry_run_mode() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "create_scene",
             json!({
