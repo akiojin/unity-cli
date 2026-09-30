@@ -75,6 +75,9 @@ unity-cli --output json setup --launch-editor
 Editor を起動してブリッジの応答を待ち、結果を 1 つの JSON で返します。
 `unity-cli bridge install | upgrade | status` で個別にも管理でき、`install` は冪等です。
 CLI とブリッジのバージョンが異なる場合は `setup` / `system ping` が `versionCheck` で報告します。
+旧 Input Manager のみのプロジェクトでは、Editor が閉じていれば `install` が
+`ProjectSettings/ProjectSettings.asset` の `activeInputHandler` を Both に設定し、
+Input System 依存の導入時に Editor をブロックする再起動ダイアログを回避します。
 
 Unity 側ブリッジパッケージを手動で導入する場合（いずれかを選択）:
 

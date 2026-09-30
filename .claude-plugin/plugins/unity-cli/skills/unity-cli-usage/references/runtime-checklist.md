@@ -9,7 +9,8 @@
 ## Project Setup
 
 - `unity-cli setup` = binary check → `bridge install` → Editor `ping`; it prints one JSON report and exits non-zero until the Editor answers for this project.
-- Tell the user before running it: it edits `Packages/manifest.json`. `bridge install` is idempotent (a second run leaves the file byte-identical).
+- Tell the user before running it: it edits `Packages/manifest.json` and, when the project uses only the legacy Input Manager and the Editor is closed, sets `activeInputHandler: 2` (Both) in `ProjectSettings/ProjectSettings.asset` so the Input System dependency does not block the Editor with a restart dialog. `bridge install` is idempotent (a second run leaves both files byte-identical).
+- If the Editor was already open, it may show "enable the Input System backends? (restart)"; bridge commands time out until someone answers it. Close the Editor and rerun `setup --launch-editor` instead.
 - `--launch-editor` starts the Unity Hub Editor recorded in `ProjectSettings/ProjectVersion.txt` (`UNITY_EDITOR_PATH` overrides) and waits up to 900 s (`--wait-secs`).
 - `editor.projectMatches: false` means another project's Editor owns the port; pass `--port`.
 - `versionCheck.status: mismatch` (from `setup` or `system ping`) → `unity-cli bridge upgrade`, or update the CLI.
@@ -34,7 +35,7 @@
 - A failed `system ping` does not prove the Editor is closed. Run `unity-cli doctor --output json` (add `--project-path <dir>` outside the project) before any fallback such as hand-editing YAML.
 - Act on the `diagnosis` code:
   - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) by editing the file directly, then let Unity recompile or restart the Editor.
-  - `BRIDGE_NOT_INSTALLED`: add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.
+  - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.
   - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.
   - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.
   - `SANDBOX_BLOCKED`: the local socket was denied. Re-run outside the sandbox; do not conclude the Editor is missing.

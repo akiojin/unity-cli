@@ -108,6 +108,12 @@ pub fn apply(root: &Path, action: BridgeAction, dry_run: bool) -> Result<Value> 
         }
     }
 
+    let input_backends = if dependency_spec(&manifest).is_some() || embedded.is_some() {
+        ensure_input_backends(root, dry_run, &mut notes)?
+    } else {
+        Value::Null
+    };
+
     let changed = manifest != before;
     if changed && !dry_run {
         let path = manifest_path(root);
@@ -127,7 +133,60 @@ pub fn apply(root: &Path, action: BridgeAction, dry_run: bool) -> Result<Value> 
     report["manifestChanged"] = json!(changed);
     report["dryRun"] = json!(dry_run);
     report["notes"] = json!(notes);
+    report["inputBackends"] = input_backends;
     Ok(report)
+}
+
+const INPUT_HANDLER_KEY: &str = "  activeInputHandler: ";
+
+/// The bridge depends on com.unity.inputsystem. When a project still uses only
+/// the legacy Input Manager (`activeInputHandler: 0`), the Input System shows a
+/// modal "enable the backends and restart?" dialog on first import, which
+/// blocks the Editor main thread and every bridge command. Switch to "Both"
+/// (2) while the Editor is closed so legacy input keeps working and no prompt
+/// appears. Returns `null` when the setting is not present in text form.
+fn ensure_input_backends(root: &Path, dry_run: bool, notes: &mut Vec<String>) -> Result<Value> {
+    let path = root.join("ProjectSettings").join("ProjectSettings.asset");
+    let Ok(text) = fs::read_to_string(&path) else {
+        return Ok(Value::Null);
+    };
+    let Some(previous) = text
+        .lines()
+        .find_map(|line| line.strip_prefix(INPUT_HANDLER_KEY))
+        .and_then(|value| value.trim().parse::<u8>().ok())
+    else {
+        return Ok(Value::Null);
+    };
+    if previous != 0 {
+        return Ok(json!({ "previous": previous, "changed": false }));
+    }
+    if editor_is_open(root) {
+        notes.push(
+            "The open Editor will ask to enable the Input System backends and restart; answer Yes, \
+             or close the Editor and rerun so activeInputHandler is set to Both beforehand"
+                .to_string(),
+        );
+        return Ok(json!({ "previous": previous, "changed": false }));
+    }
+    if !dry_run {
+        let updated = text.replacen(
+            &format!("{INPUT_HANDLER_KEY}0"),
+            &format!("{INPUT_HANDLER_KEY}2"),
+            1,
+        );
+        fs::write(&path, updated).with_context(|| format!("Failed to write {}", path.display()))?;
+    }
+    notes.push(
+        "Set PlayerSettings activeInputHandler to Both (2) so the Input System dependency imports \
+         without a restart prompt"
+            .to_string(),
+    );
+    Ok(json!({ "previous": previous, "changed": true }))
+}
+
+/// Unity holds `Temp/UnityLockfile` while the project is open in an Editor.
+pub fn editor_is_open(root: &Path) -> bool {
+    root.join("Temp").join("UnityLockfile").exists()
 }
 
 /// Read-only view of the bridge declaration, lock resolution, and version check.
@@ -496,6 +555,74 @@ mod tests {
         assert_eq!(version_check(Some("0.0.1"))["status"], "mismatch");
         assert_eq!(version_check(Some("unknown"))["status"], "unknown");
         assert_eq!(version_check(None)["status"], "unknown");
+    }
+
+    const PLAYER_SETTINGS: &str =
+        "PlayerSettings:\n  m_ObjectHideFlags: 0\n  activeInputHandler: 0\n  swizzle: 50462976\n";
+
+    fn write_player_settings(dir: &TempDir, text: &str) {
+        fs::write(
+            dir.path().join("ProjectSettings/ProjectSettings.asset"),
+            text,
+        )
+        .unwrap();
+    }
+
+    fn player_settings(dir: &TempDir) -> String {
+        fs::read_to_string(dir.path().join("ProjectSettings/ProjectSettings.asset")).unwrap()
+    }
+
+    #[test]
+    fn install_enables_input_system_backends_while_editor_is_closed() {
+        let dir = project(NEW_PROJECT_MANIFEST);
+        write_player_settings(&dir, PLAYER_SETTINGS);
+
+        let report = apply(dir.path(), BridgeAction::Install, false).unwrap();
+
+        assert_eq!(
+            player_settings(&dir),
+            PLAYER_SETTINGS.replace("activeInputHandler: 0", "activeInputHandler: 2")
+        );
+        assert_eq!(report["inputBackends"]["previous"], 0);
+        assert_eq!(report["inputBackends"]["changed"], true);
+
+        let second = apply(dir.path(), BridgeAction::Install, false).unwrap();
+        assert_eq!(second["inputBackends"]["changed"], false);
+        assert_eq!(second["inputBackends"]["previous"], 2);
+    }
+
+    #[test]
+    fn install_leaves_input_backends_when_editor_is_open_or_dry_run() {
+        let dir = project(NEW_PROJECT_MANIFEST);
+        write_player_settings(&dir, PLAYER_SETTINGS);
+
+        let dry = apply(dir.path(), BridgeAction::Install, true).unwrap();
+        assert_eq!(player_settings(&dir), PLAYER_SETTINGS);
+        assert_eq!(dry["inputBackends"]["changed"], true);
+
+        fs::create_dir_all(dir.path().join("Temp")).unwrap();
+        fs::write(dir.path().join("Temp/UnityLockfile"), "").unwrap();
+        let open = apply(dir.path(), BridgeAction::Install, false).unwrap();
+        assert_eq!(player_settings(&dir), PLAYER_SETTINGS);
+        assert_eq!(open["inputBackends"]["changed"], false);
+        assert!(open["notes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|n| n.as_str().unwrap().contains("Input System")));
+    }
+
+    #[test]
+    fn input_backends_untouched_when_setting_absent_or_already_enabled() {
+        let dir = project(NEW_PROJECT_MANIFEST);
+        let report = apply(dir.path(), BridgeAction::Install, false).unwrap();
+        assert_eq!(report["inputBackends"], Value::Null);
+
+        let enabled = PLAYER_SETTINGS.replace("activeInputHandler: 0", "activeInputHandler: 1");
+        write_player_settings(&dir, &enabled);
+        let report = apply(dir.path(), BridgeAction::Install, false).unwrap();
+        assert_eq!(player_settings(&dir), enabled);
+        assert_eq!(report["inputBackends"]["changed"], false);
     }
 
     #[test]

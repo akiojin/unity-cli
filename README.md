@@ -94,7 +94,10 @@ unity-cli --output json setup --launch-editor
 the project's Unity Hub Editor, waits for the bridge, and returns one JSON
 report. `unity-cli bridge install | upgrade | status` manage the package on
 their own; `install` is idempotent, and `setup` / `system ping` report a
-`versionCheck` when the CLI and bridge versions differ.
+`versionCheck` when the CLI and bridge versions differ. When the project still
+uses only the legacy Input Manager and the Editor is closed, `install` also sets
+`activeInputHandler` to Both in `ProjectSettings/ProjectSettings.asset`, so the
+Input System dependency imports without a blocking restart prompt.
 
 Unity-side bridge package, manual alternatives (choose one):
 

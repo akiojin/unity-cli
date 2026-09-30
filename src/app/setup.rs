@@ -157,7 +157,7 @@ pub fn hub_editor_path(version: &str) -> PathBuf {
 }
 
 fn launch_editor(root: &Path, port: u16) -> Result<Value> {
-    if root.join("Temp").join("UnityLockfile").exists() {
+    if bridge::editor_is_open(root) {
         return Ok(json!({
             "launched": false,
             "reason": "Editor appears to be open already (Temp/UnityLockfile); waiting for the bridge",
