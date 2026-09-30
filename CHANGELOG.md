@@ -7,6 +7,9 @@
 - *(capture)* Fall back to an OS screenshot when the Editor does not respond
 - *(setup)* Add unity-cli setup and bridge install/upgrade/status (#363)
 - *(connection)* Discover Editors via lockfiles and target them by project path
+- *(dist)* Add Intel macOS CLI and LSP binaries and a PowerShell installer
+- *(dist)* Verify installer and self-update downloads against SHA256SUMS
+- *(dist)* Add Homebrew formula and winget publication jobs, enabled when their credentials are configured
 
 ### 🐛 Bug Fixes
 
