@@ -234,6 +234,11 @@ scripts/e2e-timeline-batch-host.sh --port 6474
 # Isolated project without com.unity.timeline: compile/start and error contract
 scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
 
+# Fresh project with / without com.unity.ugui: compile/start and uGUI UI tools
+# (run for each Unity version to verify, e.g. 6000.3.25f1 and 2022.3.62f3)
+scripts/e2e-ugui-batch-host.sh --unity-version 6000.3.25f1 --port 6476 --without-ugui
+scripts/e2e-ugui-batch-host.sh --unity-version 6000.3.25f1 --port 6477
+
 # Test-result counting regression (7 EditMode + 2 PlayMode tests)
 # Requires the project's default DisableDomainReload setting and a running listener.
 scripts/e2e-test-results.sh
@@ -866,6 +871,11 @@ python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
+
+# com.unity.ugui 有無の新規プロジェクトでコンパイル・起動・uGUI UI ツールを検証
+# （検証対象の Unity バージョンごとに実行。例: 6000.3.25f1 と 2022.3.62f3）
+scripts/e2e-ugui-batch-host.sh --unity-version 2022.3.62f3 --port 6476 --without-ugui
+scripts/e2e-ugui-batch-host.sh --unity-version 2022.3.62f3 --port 6477
 
 # 既定では ProjectVersion.txt の Unity を使う。
 # その editor が未インストールのときだけ UNITY_PATH を上書きする。
