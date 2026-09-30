@@ -10,6 +10,11 @@ use crate::core::command_stats::TransportTiming;
 
 const MAX_FRAME_BYTES: i32 = 10 * 1024 * 1024;
 
+/// Unity accepted the request but did not start answering in time.
+pub const RESPONSE_TIMEOUT_MESSAGE: &str = "Timed out while waiting for Unity response header";
+/// Unity started answering but did not finish in time.
+pub const PAYLOAD_TIMEOUT_MESSAGE: &str = "Timed out while reading Unity response payload";
+
 pub struct UnityClient {
     stream: TcpStream,
     timeout: std::time::Duration,
@@ -57,6 +62,20 @@ impl UnityCommandError {
 impl UnityClient {
     pub(crate) fn set_timeout(&mut self, timeout: std::time::Duration) {
         self.timeout = timeout;
+    }
+
+    /// Reports whether the peer has already closed or reset this idle connection.
+    ///
+    /// Uses a non-blocking `MSG_PEEK` so nothing is consumed and nothing is sent;
+    /// a pooled connection that fails this check can be replaced without any risk
+    /// of delivering a request twice. Unexpected unread bytes also mark the
+    /// connection unusable, because they would desynchronize response framing.
+    pub(crate) fn is_peer_closed(&self) -> bool {
+        let mut probe = [std::mem::MaybeUninit::<u8>::uninit(); 1];
+        match socket2::SockRef::from(&self.stream).peek(&mut probe) {
+            Err(error) => error.kind() != std::io::ErrorKind::WouldBlock,
+            Ok(_) => true,
+        }
     }
 
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
@@ -109,7 +128,20 @@ impl UnityClient {
         let read_ms = read_started_at.elapsed().as_secs_f64() * 1000.0;
 
         let normalize_started_at = Instant::now();
-        let value = normalize_response(response)?;
+        let bridge_version = response
+            .pointer("/editorState/version")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        let mut value = normalize_response(response)?;
+        // Bridges older than the ping `bridgeVersion` field still report their
+        // package version in the envelope; surface it for version checks.
+        if tool_name == "ping" {
+            if let (Some(object), Some(version)) = (value.as_object_mut(), bridge_version) {
+                object
+                    .entry("bridgeVersion")
+                    .or_insert(Value::String(version));
+            }
+        }
         let normalize_ms = normalize_started_at.elapsed().as_secs_f64() * 1000.0;
 
         Ok(ToolCallResult {
@@ -141,14 +173,14 @@ impl UnityClient {
         let mut header = [0_u8; 4];
         timeout(self.timeout, self.stream.read_exact(&mut header))
             .await
-            .context("Timed out while waiting for Unity response header")??;
+            .context(RESPONSE_TIMEOUT_MESSAGE)??;
 
         let expected_len = i32::from_be_bytes(header);
         if (1..=MAX_FRAME_BYTES).contains(&expected_len) {
             let mut payload = vec![0_u8; expected_len as usize];
             timeout(self.timeout, self.stream.read_exact(&mut payload))
                 .await
-                .context("Timed out while reading Unity response payload")??;
+                .context(PAYLOAD_TIMEOUT_MESSAGE)??;
             return parse_json(&payload);
         }
 
@@ -334,6 +366,35 @@ mod tests {
 
         assert_eq!(result["ok"], true);
         assert_eq!(result["echo"], "hello");
+        server.await.expect("server task should complete");
+    }
+
+    #[tokio::test]
+    async fn ping_backfills_bridge_version_from_editor_state_envelope() {
+        let (port, server) = spawn_mock_server(|request| {
+            json!({
+                "id": request["id"],
+                "status": "success",
+                "result": { "message": "pong" },
+                "editorState": { "version": "0.15.3" }
+            })
+        })
+        .await;
+
+        let config = RuntimeConfig {
+            host: "127.0.0.1".to_string(),
+            port,
+            timeout: Duration::from_millis(500),
+        };
+        let mut client = UnityClient::connect(&config)
+            .await
+            .expect("client should connect");
+        let result = client
+            .call_tool("ping", json!({}))
+            .await
+            .expect("ping should succeed");
+
+        assert_eq!(result["bridgeVersion"], "0.15.3");
         server.await.expect("server task should complete");
     }
 

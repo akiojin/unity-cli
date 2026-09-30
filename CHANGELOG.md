@@ -1,3 +1,36 @@
+## [0.16.0] - 2026-09-30
+
+### 🚀 Features
+
+- *(diagnostics)* Add unity-cli doctor for unreachable-bridge diagnosis
+- *(tool)* Add query/category/compact/limit/offset filters to tool list
+- *(capture)* Fall back to an OS screenshot when the Editor does not respond
+- *(setup)* Add unity-cli setup and bridge install/upgrade/status (#363)
+- *(connection)* Discover Editors via lockfiles and target them by project path
+- *(dist)* Add Intel macOS CLI and LSP binaries and a PowerShell installer
+- *(dist)* Verify installer and self-update downloads against SHA256SUMS
+- *(dist)* Add Homebrew formula and winget publication jobs, enabled when their credentials are configured
+
+### 🐛 Bug Fixes
+
+- *(bridge)* Declare com.unity.ugui so projects without uGUI compile
+- *(unityd)* Reconnect pooled Unity connections closed by an Editor restart
+- *(setup)* Avoid the Input System restart dialog when installing the bridge (#363)
+- *(hot-reload)* Replace methods for real on macOS ARM64 and x64 Editors
+
+### 📚 Documentation
+
+- *(hot-reload)* Record real Editor evidence for issue 390
+- *(eval)* Record the isolated-HOME test run for #391
+
+### ⚡ Performance
+
+- *(eval)* Cache compilation references and compiled snippets
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record issue 396 release scope
+
 ## [0.15.3] - 2026-09-30
 
 ### ⚡ Performance

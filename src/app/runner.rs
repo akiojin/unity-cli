@@ -6,15 +6,18 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 use crate::cli::{
-    Cli, CliCommand, Command, EditorCommand, EvalMode, InstancesCommand, LspCommand, LspdCommand,
-    OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat, SkillSeverity,
-    SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
+    BridgeCommand, Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand,
+    LspCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat,
+    SkillSeverity, SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
 };
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
+use crate::core::editor_discovery::TargetError;
 use crate::instances::{list_instances, set_active_instance};
-use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs, TOOL_NAMES};
+use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs};
+use crate::tool_index::{filter_tools, ToolListFilter};
+use crate::tooling::os_capture;
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
 
@@ -27,7 +30,28 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
     let output = cli.output;
     let result = run_command(cli).await;
     if let Err(error) = &result {
-        if matches!(output, OutputFormat::Json) {
+        if let Some(target) = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<TargetError>())
+        {
+            if matches!(output, OutputFormat::Json) {
+                print_value(&target.to_json(), output)?;
+            } else {
+                for candidate in target.to_json()["data"]["candidates"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                {
+                    eprintln!(
+                        "  candidate: {} (pid {}, {}:{})",
+                        candidate["projectPath"].as_str().unwrap_or("?"),
+                        candidate["pid"],
+                        candidate["host"].as_str().unwrap_or("?"),
+                        candidate["port"]
+                    );
+                }
+            }
+        } else if matches!(output, OutputFormat::Json) {
             if let Some(failure) = error
                 .chain()
                 .find_map(|cause| cause.downcast_ref::<UnityCommandError>())
@@ -41,6 +65,12 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
 
 async fn run_command(cli: Cli) -> Result<()> {
     init_tracing(cli.verbose)?;
+
+    // `--project-path` and UNITY_PROJECT_ROOT are the same setting; local
+    // tools (script read/search, index) read the project root from the env.
+    if let Some(project_path) = &cli.project_path {
+        std::env::set_var("UNITY_PROJECT_ROOT", project_path);
+    }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
     // which manage the binary themselves.
@@ -75,6 +105,9 @@ async fn run_command(cli: Cli) -> Result<()> {
                 EditorCommand::EvalStatus { request_id } => {
                     ("get_eval_status", json!({"requestId": request_id}))
                 }
+                EditorCommand::EvalStats { collect } => {
+                    ("get_eval_stats", json!({"collect": collect}))
+                }
             };
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
@@ -84,12 +117,30 @@ async fn run_command(cli: Cli) -> Result<()> {
             print_value(&value, cli.output)?;
         }
         Command::Tool { command } => match command {
-            ToolCommand::List => {
+            ToolCommand::List(args) => {
+                let tools = filter_tools(&ToolListFilter {
+                    query: args.query.as_deref(),
+                    category: args.category.as_deref(),
+                    offset: args.offset,
+                    limit: args.limit,
+                })
+                .map_err(|message| anyhow!(message))?;
                 if matches!(cli.output, OutputFormat::Json) {
-                    print_value(&serde_json::to_value(TOOL_NAMES)?, cli.output)?;
+                    let value = if args.compact {
+                        serde_json::to_value(&tools)?
+                    } else {
+                        serde_json::to_value(
+                            tools.iter().map(|tool| tool.name).collect::<Vec<_>>(),
+                        )?
+                    };
+                    print_value(&value, cli.output)?;
                 } else {
-                    for name in TOOL_NAMES {
-                        println!("{name}");
+                    for tool in &tools {
+                        if args.compact {
+                            println!("{}\t{}", tool.name, tool.description);
+                        } else {
+                            println!("{}", tool.name);
+                        }
                     }
                 }
             }
@@ -131,7 +182,8 @@ async fn run_command(cli: Cli) -> Result<()> {
                 if let Some(msg) = message {
                     params.insert("message".to_string(), Value::String(msg.clone()));
                 }
-                let value = execute_tool(&cli, "ping", Value::Object(params)).await?;
+                let mut value = execute_tool(&cli, "ping", Value::Object(params)).await?;
+                attach_ping_version_check(&mut value);
                 print_value(&value, cli.output)?;
             }
         },
@@ -183,9 +235,16 @@ async fn run_command(cli: Cli) -> Result<()> {
                 } else {
                     for status in statuses {
                         let marker = if status.active { "*" } else { " " };
+                        let project = status
+                            .project_path
+                            .as_deref()
+                            .map(|path| {
+                                format!(" pid={} project={path}", status.pid.unwrap_or_default())
+                            })
+                            .unwrap_or_default();
                         println!(
-                            "{} {:<21} {:<5} checked_at={}",
-                            marker, status.id, status.status, status.last_checked_at
+                            "{} {:<21} {:<11} checked_at={}{}",
+                            marker, status.id, status.status, status.last_checked_at, project
                         );
                     }
                 }
@@ -277,6 +336,50 @@ async fn run_command(cli: Cli) -> Result<()> {
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
         }
+        Command::Setup {
+            project_path,
+            launch_editor,
+            wait_secs,
+        } => {
+            let cwd = std::env::current_dir()?;
+            let overrides = runtime_overrides_from_cli(&cli);
+            let root = crate::core::bridge::resolve_project_root(project_path.as_deref(), &cwd)?;
+            let endpoint = crate::core::endpoint::resolve_endpoint_for_project(
+                overrides.host.clone(),
+                overrides.port,
+                &root,
+            )?;
+            let config = RuntimeConfig {
+                host: endpoint.host,
+                port: endpoint.port,
+                timeout: std::time::Duration::from_millis(
+                    overrides
+                        .timeout_ms
+                        .unwrap_or_else(crate::core::config::default_timeout_ms),
+                ),
+            };
+            let options = super::setup::SetupOptions {
+                project_path: project_path.clone(),
+                launch_editor: *launch_editor,
+                wait_secs: *wait_secs,
+                dry_run: cli.dry_run,
+            };
+            let value = super::setup::run(&options, &config, &cwd).await?;
+            print_value(&value, cli.output)?;
+            if value["ok"] != json!(true) {
+                return Err(anyhow!(
+                    "setup incomplete: the Unity Editor bridge is not ready for this project"
+                ));
+            }
+        }
+        Command::Bridge { command } => {
+            let value = run_bridge_command(command, cli.dry_run)?;
+            print_value(&value, cli.output)?;
+        }
+        Command::Doctor(args) => {
+            let value = run_doctor(&cli, args).await?;
+            print_value(&value, cli.output)?;
+        }
         Command::Batch { json, stdin } => {
             let value = execute_batch(&cli, json.as_deref(), *stdin).await?;
             print_value(&value, cli.output)?;
@@ -291,6 +394,42 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn run_bridge_command(command: &BridgeCommand, dry_run: bool) -> Result<Value> {
+    use crate::core::bridge::{self, BridgeAction};
+    let cwd = std::env::current_dir()?;
+    match command {
+        BridgeCommand::Install { project_path } => bridge::apply(
+            &bridge::resolve_project_root(project_path.as_deref(), &cwd)?,
+            BridgeAction::Install,
+            dry_run,
+        ),
+        BridgeCommand::Upgrade { project_path } => bridge::apply(
+            &bridge::resolve_project_root(project_path.as_deref(), &cwd)?,
+            BridgeAction::Upgrade,
+            dry_run,
+        ),
+        BridgeCommand::Status { project_path } => bridge::status(&bridge::resolve_project_root(
+            project_path.as_deref(),
+            &cwd,
+        )?),
+    }
+}
+
+/// Add the CLI ↔ bridge `versionCheck` to a ping result and warn on mismatch.
+fn attach_ping_version_check(value: &mut Value) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    let check =
+        crate::core::bridge::version_check(object.get("bridgeVersion").and_then(Value::as_str));
+    if check["status"] == "mismatch" {
+        if let Some(message) = check["message"].as_str() {
+            eprintln!("Warning: {message}");
+        }
+    }
+    object.insert("versionCheck".to_string(), check);
 }
 
 fn build_reference_call(command: &ReferenceCommand) -> (&'static str, Value) {
@@ -472,6 +611,52 @@ fn build_reference_call(command: &ReferenceCommand) -> (&'static str, Value) {
     (tool, Value::Object(params))
 }
 
+async fn run_doctor(cli: &Cli, args: &DoctorArgs) -> Result<Value> {
+    use crate::core::doctor;
+
+    let project_path = doctor::resolve_project_path(args.project_path.as_deref());
+    let explicit_port = cli
+        .port
+        .or_else(|| crate::config::read_env_u16("UNITY_CLI_PORT"));
+    let project_port = project_path
+        .as_deref()
+        .and_then(doctor::read_project_bridge_port);
+    let (host, port, port_source) = match (explicit_port, project_port) {
+        (Some(port), _) => {
+            let endpoint =
+                crate::core::endpoint::resolve_endpoint(cli.host.clone(), Some(port), None)?;
+            (endpoint.host, port, "cli")
+        }
+        (None, Some(port)) => {
+            let endpoint =
+                crate::core::endpoint::resolve_endpoint(cli.host.clone(), Some(port), None)?;
+            (endpoint.host, port, "projectSettings")
+        }
+        (None, None) => {
+            let endpoint = match project_path.as_deref() {
+                Some(project) => crate::core::endpoint::resolve_endpoint_for_project(
+                    cli.host.clone(),
+                    None,
+                    project,
+                )?,
+                None => crate::core::endpoint::resolve_endpoint(cli.host.clone(), None, None)?,
+            };
+            (endpoint.host, endpoint.port, "default")
+        }
+    };
+    doctor::run(&doctor::DoctorOptions {
+        project_path,
+        host,
+        port,
+        port_source,
+        probe_timeout: cli
+            .timeout_ms
+            .map(std::time::Duration::from_millis)
+            .unwrap_or_else(doctor::default_probe_timeout),
+    })
+    .await
+}
+
 async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     let params = load_params(args)?;
     execute_tool(cli, &args.tool_name, params).await
@@ -513,7 +698,17 @@ async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<V
     } else {
         None
     };
-    let call = call_remote_tool_with_timing(&config, tool_name, params).await;
+    let os_fallback =
+        tool_name == "capture_screenshot" && os_capture::take_fallback_flag(&mut params);
+    let capture_mode = params["captureMode"].as_str().unwrap_or("game").to_string();
+    let call = match call_remote_tool_with_timing(&config, tool_name, params).await {
+        Err(error) if os_fallback => {
+            return os_capture::recover_from_timeout(error, true, || {
+                os_capture::capture_desktop(&capture_mode)
+            });
+        }
+        call => call,
+    };
     let (mut value, timing) = match eval_id {
         Some(id) => call.with_context(|| format!(
             "Evaluation may still be running (requestId={id}). Query `unity-cli editor eval-status {id}` on the same endpoint; do not automatically rerun"
@@ -601,12 +796,9 @@ async fn call_remote_tool_direct(
     params: Value,
 ) -> Result<(Value, Option<CliCommandTiming>)> {
     let connect_started_at = std::time::Instant::now();
-    let mut client = UnityClient::connect(config).await.with_context(|| {
-        format!(
-            "Failed to connect to Unity at {}:{}",
-            config.host, config.port
-        )
-    })?;
+    let mut client = UnityClient::connect(config)
+        .await
+        .with_context(|| crate::core::doctor::connect_failure_message(&config.host, config.port))?;
     let connect_ms = connect_started_at.elapsed().as_secs_f64() * 1000.0;
     let outcome = client.call_tool_with_timing(tool_name, params).await?;
     let unity_roundtrip_ms = outcome.timing.total_ms;
@@ -702,12 +894,9 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
 
 async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) -> Result<Value> {
     let started_at = std::time::Instant::now();
-    let mut client = UnityClient::connect(config).await.with_context(|| {
-        format!(
-            "Failed to connect to Unity at {}:{}",
-            config.host, config.port
-        )
-    })?;
+    let mut client = UnityClient::connect(config)
+        .await
+        .with_context(|| crate::core::doctor::connect_failure_message(&config.host, config.port))?;
 
     let mut results = Vec::with_capacity(commands.len());
     for item in commands {
@@ -740,7 +929,7 @@ fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
         port: cli.port,
         timeout_ms: cli.timeout_ms,
         dry_run: cli.dry_run,
-        project_root: None,
+        project_root: cli.project_path.clone(),
     }
 }
 
@@ -1175,6 +1364,50 @@ mod tests {
         assert!(message.contains(id), "{message}");
         assert!(message.contains("eval-status"), "{message}");
     }
+    #[tokio::test]
+    async fn capture_screenshot_timeout_respects_os_fallback_flag() {
+        // Bridge accepts and reads the request but never answers, like an Editor
+        // whose main thread is blocked by a modal dialog.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut held = Vec::new();
+            for _ in 0..2 {
+                let (stream, _) = listener.accept().await.unwrap();
+                held.push(stream);
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        });
+        let config = super::RuntimeConfig {
+            host: "127.0.0.1".to_string(),
+            port,
+            timeout: std::time::Duration::from_millis(200),
+        };
+
+        let mut params = serde_json::json!({"captureMode": "game", "osFallback": false});
+        let enabled = super::os_capture::take_fallback_flag(&mut params);
+        let error = super::call_remote_tool_direct(&config, "capture_screenshot", params)
+            .await
+            .unwrap_err();
+        let error = super::os_capture::recover_from_timeout(error, enabled, || {
+            panic!("disabled fallback must not capture")
+        })
+        .unwrap_err();
+        assert!(format!("{error:#}").contains("Timed out"), "{error:#}");
+
+        let mut params = serde_json::json!({"captureMode": "game"});
+        let enabled = super::os_capture::take_fallback_flag(&mut params);
+        let error = super::call_remote_tool_direct(&config, "capture_screenshot", params)
+            .await
+            .unwrap_err();
+        let value = super::os_capture::recover_from_timeout(error, enabled, || {
+            Ok(serde_json::json!({"path": "desktop.png"}))
+        })
+        .unwrap();
+        assert_eq!(value["fallback"], "os");
+        server.abort();
+    }
+
     #[cfg(unix)]
     #[test]
     fn eval_bypasses_daemon_in_single_and_batch_calls() {
@@ -1252,6 +1485,7 @@ mod tests {
                 .is_ok()
         );
         assert!(Cli::try_parse_from(["unity-cli", "editor", "eval-status", "sum"]).is_ok());
+        assert!(Cli::try_parse_from(["unity-cli", "editor", "eval-stats", "--collect"]).is_ok());
         assert!(
             Cli::try_parse_from(["unity-cli", "editor", "eval", "1+2", "--mode", "script"])
                 .is_err()
@@ -1275,6 +1509,10 @@ mod tests {
         );
         assert!(validate_tool_params("get_eval_status", &json!({})).is_err());
         validate_tool_params("get_eval_status", &json!({"requestId":"sum"})).unwrap();
+        assert!(!get_tool_spec("get_eval_stats").unwrap().mutating);
+        validate_tool_params("get_eval_stats", &json!({})).unwrap();
+        validate_tool_params("get_eval_stats", &json!({"collect":true})).unwrap();
+        assert!(validate_tool_params("get_eval_stats", &json!({"collect":"yes"})).is_err());
     }
 
     #[test]
@@ -1298,13 +1536,14 @@ mod tests {
         assert_eq!(result["reason"], "mutating_tool_blocked_by_dry_run");
     }
     use super::{
-        build_reference_call, execute_tool, init_tracing, load_params, parse_external_tool_command,
-        parse_json_object, parse_ports, parse_ports_with_diagnostics, print_value, run_with_cli,
-        runtime_overrides_from_cli, validate_tool_params,
+        attach_ping_version_check, build_reference_call, execute_tool, init_tracing, load_params,
+        parse_external_tool_command, parse_json_object, parse_ports, parse_ports_with_diagnostics,
+        print_value, run_bridge_command, run_with_cli, runtime_overrides_from_cli,
+        validate_tool_params,
     };
     use crate::cli::{
-        Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand,
-        SceneCommand, SystemCommand, ToolCommand, UnitydCommand,
+        BridgeCommand, Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs,
+        ReferenceCommand, SceneCommand, SystemCommand, ToolCommand, UnitydCommand,
     };
     use serde_json::json;
     use tempfile::tempdir;
@@ -1319,6 +1558,7 @@ mod tests {
             output,
             host: Some("127.0.0.1".to_string()),
             port: Some(9),
+            project_path: None,
             timeout_ms: Some(20),
             verbose: 0,
             dry_run: false,
@@ -1400,6 +1640,92 @@ mod tests {
     }
 
     #[test]
+    fn ping_version_check_reports_mismatch_and_unknown() {
+        let mut mismatch = json!({"message": "pong", "bridgeVersion": "0.0.1"});
+        attach_ping_version_check(&mut mismatch);
+        assert_eq!(mismatch["versionCheck"]["status"], "mismatch");
+        assert_eq!(mismatch["versionCheck"]["bridgeVersion"], "0.0.1");
+        assert_eq!(
+            mismatch["versionCheck"]["cliVersion"],
+            env!("CARGO_PKG_VERSION")
+        );
+
+        let mut matching = json!({"bridgeVersion": env!("CARGO_PKG_VERSION")});
+        attach_ping_version_check(&mut matching);
+        assert_eq!(matching["versionCheck"]["status"], "match");
+
+        let mut legacy = json!({"message": "pong"});
+        attach_ping_version_check(&mut legacy);
+        assert_eq!(legacy["versionCheck"]["status"], "unknown");
+
+        let mut scalar = json!("pong");
+        attach_ping_version_check(&mut scalar);
+        assert_eq!(scalar, json!("pong"));
+    }
+
+    #[test]
+    fn bridge_commands_resolve_explicit_project_path() {
+        let dir = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(dir.path().join("Packages")).unwrap();
+        std::fs::write(dir.path().join("Packages/manifest.json"), "{}").unwrap();
+        let project_path = Some(dir.path().to_path_buf());
+
+        let status = run_bridge_command(
+            &BridgeCommand::Status {
+                project_path: project_path.clone(),
+            },
+            false,
+        )
+        .unwrap();
+        assert_eq!(status["installed"], false);
+
+        let dry = run_bridge_command(
+            &BridgeCommand::Install {
+                project_path: project_path.clone(),
+            },
+            true,
+        )
+        .unwrap();
+        assert_eq!(dry["manifestChanged"], true);
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("Packages/manifest.json")).unwrap(),
+            "{}"
+        );
+
+        let upgrade = run_bridge_command(&BridgeCommand::Upgrade { project_path }, false).unwrap();
+        assert_eq!(upgrade["declared"], env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
+    fn setup_and_bridge_cli_arguments_parse() {
+        let cli = Cli::try_parse_from([
+            "unity-cli",
+            "setup",
+            "--project-path",
+            "/tmp/p",
+            "--launch-editor",
+            "--wait-secs",
+            "5",
+        ])
+        .unwrap();
+        assert!(matches!(
+            cli.command,
+            Command::Setup {
+                launch_editor: true,
+                wait_secs: Some(5),
+                ..
+            }
+        ));
+        let cli = Cli::try_parse_from(["unity-cli", "bridge", "install"]).unwrap();
+        assert!(matches!(
+            cli.command,
+            Command::Bridge {
+                command: BridgeCommand::Install { project_path: None }
+            }
+        ));
+    }
+
+    #[test]
     fn env_var_guard_restores_previous_value() {
         std::env::set_var("UNITY_CLI_TEST_GUARD", "before");
         {
@@ -1419,7 +1745,7 @@ mod tests {
     #[test]
     fn runtime_overrides_are_derived_from_cli_at_app_boundary() {
         let cli = cli_for_dry_run(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         });
 
         let overrides = runtime_overrides_from_cli(&cli);
@@ -1429,6 +1755,84 @@ mod tests {
         assert_eq!(overrides.timeout_ms, Some(20));
         assert!(overrides.dry_run);
         assert!(overrides.project_root.is_none());
+    }
+
+    #[test]
+    fn project_path_flag_is_global_and_feeds_runtime_overrides() {
+        let cli = Cli::try_parse_from([
+            "unity-cli",
+            "raw",
+            "get_hierarchy",
+            "--project-path",
+            "/work/ProjectA",
+        ])
+        .unwrap();
+
+        let overrides = runtime_overrides_from_cli(&cli);
+
+        assert_eq!(
+            overrides.project_root.as_deref(),
+            Some(std::path::Path::new("/work/ProjectA"))
+        );
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn ambiguous_editor_fails_before_contacting_any_editor() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempfile::tempdir().unwrap();
+        for key in ["UNITY_CLI_HOST", "UNITY_CLI_PORT", "UNITY_PROJECT_ROOT"] {
+            std::env::remove_var(key);
+        }
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));
+        let a = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
+        let b = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        for (name, listener) in [("A", &a), ("B", &b)] {
+            crate::core::editor_discovery::tests::write_lock(
+                &dir.path().join("editors"),
+                std::process::id(),
+                &dir.path().join(name),
+                listener.local_addr().unwrap().port(),
+                now,
+            );
+        }
+        let mut cli = cli_for(Command::Raw(RawArgs {
+            tool_name: "get_hierarchy".to_string(),
+            json: Some("{}".to_string()),
+            params_file: None,
+        }));
+        cli.host = None;
+        cli.port = None;
+
+        let error = super::run_command(cli)
+            .await
+            .expect_err("target is ambiguous");
+
+        let target = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<super::TargetError>())
+            .expect("TargetError expected");
+        assert_eq!(target.code(), "AMBIGUOUS_EDITOR");
+        assert_eq!(target.exit_code(), 6);
+        for listener in [&a, &b] {
+            let accepted =
+                tokio::time::timeout(std::time::Duration::from_millis(200), listener.accept())
+                    .await;
+            assert!(accepted.is_err(), "no Editor may be contacted");
+        }
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        std::env::remove_var("UNITY_CLI_EDITORS_DIR");
     }
 
     #[test]
@@ -1520,7 +1924,7 @@ mod tests {
     async fn timeline_manage_is_skipped_in_dry_run() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "manage_timeline",
             json!({"action": "create_asset", "assetPath": "Assets/Sequence.playable"}),
@@ -2426,7 +2830,7 @@ mod tests {
     #[tokio::test(flavor = "current_thread")]
     async fn run_with_cli_handles_local_tool_and_batch_paths() {
         run_with_cli(cli_for(Command::Tool {
-            command: ToolCommand::List,
+            command: ToolCommand::List(Default::default()),
         }))
         .await
         .expect("tool list should succeed");
@@ -2458,7 +2862,7 @@ mod tests {
 
         run_with_cli(cli_for_with_output(
             Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             },
             OutputFormat::Text,
         ))
@@ -2487,7 +2891,7 @@ mod tests {
     async fn execute_tool_skips_mutating_tool_in_dry_run_mode() {
         let value = execute_tool(
             &cli_for_dry_run(Command::Tool {
-                command: ToolCommand::List,
+                command: ToolCommand::List(Default::default()),
             }),
             "create_scene",
             json!({

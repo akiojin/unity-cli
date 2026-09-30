@@ -41,13 +41,49 @@ Claude Code Marketplace から `unity-cli` プラグインをインストール�
 /plugin marketplace add akiojin/unity-cli
 ```
 
-Marketplace プラグインがインストールするのはスキルのみです。
-`unity-cli` バイナリ自体は、以下の手動手順のいずれかで別途導入してください。
+プラグインが提供するのはスキルで、バイナリと Unity ブリッジは必要時に導入されます。
+Unity 操作が必要なのに `unity-cli` が未導入の場合、`unity-cli-usage` スキルに従って
+エージェントがインストールスクリプト（`scripts/install.sh`）を実行し、Unity プロジェクトで
+`unity-cli setup` を実行します（`Packages/manifest.json` を変更する前にユーザーへ明示します）。
 
 ### Codex スキル
 
 Codex でこのリポジトリを利用する場合、`.codex/skills/` にスキルのシンボリックリンクが配置済みです。
 リポジトリをクローンするだけで追加セットアップは不要です。
+
+### クイックインストール（推奨）
+
+macOS（Apple silicon / Intel）と Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+```
+
+Windows（PowerShell）:
+
+```powershell
+irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
+```
+
+どちらのインストーラもリリースバイナリを managed レイアウト
+`~/.unity/tools/unity-cli/{rid}/` に取得し、導入前にリリースの `SHA256SUMS` で検証します。
+ハッシュが一致しない場合は導入を中止し、既存のバイナリには触れません。
+`install.sh` は `~/.local/bin/unity-cli` にシンボリックリンクを作り、`install.ps1` は
+managed ディレクトリをユーザーの `PATH` に追加します。`UNITY_CLI_VERSION=v0.16.0` で
+リリースを固定できます。導入後の自動更新も同じチェックサムで検証されます。
+自動更新を止めるには `UNITY_CLI_NO_AUTO_UPDATE=1` を設定してください。
+
+### パッケージマネージャ
+
+```bash
+brew install akiojin/tap/unity-cli     # macOS / Linux（Homebrew）
+winget install akiojin.unity-cli       # Windows（winget）
+```
+
+パッケージマネージャで導入した場合は `brew upgrade` / `winget upgrade` で更新します。
+Intel Mac の reference 埋め込み（`unity-cli reference embed-build` / `embed-search`）は ONNX Runtime を動的に読み込みます。
+Homebrew formula は `onnxruntime` を依存として導入します。それ以外の導入方法では
+`brew install onnxruntime` を実行するか、`ORT_DYLIB_PATH` を設定してください。
 
 ### 手動インストール
 
@@ -61,9 +97,25 @@ cd unity-cli
 cargo install --path .
 ```
 
-Unity 側ブリッジパッケージ（いずれかを選択）:
+プロジェクトのセットアップを 1 コマンドで行う（binary 検証 → bridge 導入 → Editor 接続確認）:
 
-**OpenUPM**（推奨）:
+```bash
+cd /path/to/YourUnityProject
+unity-cli --output json setup --launch-editor
+```
+
+`setup` は `Packages/manifest.json` に OpenUPM の scoped registry と
+`com.akiojin.unity-cli-bridge`（CLI と同一バージョン）を追加し、必要なら Unity Hub の
+Editor を起動してブリッジの応答を待ち、結果を 1 つの JSON で返します。
+`unity-cli bridge install | upgrade | status` で個別にも管理でき、`install` は冪等です。
+CLI とブリッジのバージョンが異なる場合は `setup` / `system ping` が `versionCheck` で報告します。
+旧 Input Manager のみのプロジェクトでは、Editor が閉じていれば `install` が
+`ProjectSettings/ProjectSettings.asset` の `activeInputHandler` を Both に設定し、
+Input System 依存の導入時に Editor をブロックする再起動ダイアログを回避します。
+
+Unity 側ブリッジパッケージを手動で導入する場合（いずれかを選択）:
+
+**OpenUPM**:
 
 ```bash
 openupm add com.akiojin.unity-cli-bridge
@@ -79,6 +131,7 @@ https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-
 
 ```bash
 unity-cli system ping
+unity-cli doctor --output json   # ping 失敗時: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE など
 ```
 
 managed バイナリの確認と更新:

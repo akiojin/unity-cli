@@ -76,6 +76,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "execute_menu_item",
     "eval_csharp",
     "get_eval_status",
+    "get_eval_stats",
     "package_manager",
     "registry_config",
     "get_editor_info",
@@ -208,6 +209,9 @@ fn tool_description(name: &str) -> &'static str {
         "ping" => "Check Unity Editor connectivity",
         "eval_csharp" => "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
         "get_eval_status" => "Get a C# evaluation result by requestId in the current Editor domain",
+        "get_eval_stats" => {
+            "Get C# evaluation counters of the current Editor domain: loaded assemblies, caches and memory"
+        }
         "create_scene" => "Create a new scene",
         "start_scene_bake" => {
             "Start a scene bake job for Lighting, legacy NavMesh, NavMeshSurface, or Occlusion"
@@ -333,6 +337,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "get_editor_info"
             | "get_editor_state"
             | "get_eval_status"
+            | "get_eval_stats"
             | "profiler_get_metrics"
             | "profiler_status"
             | "get_scene_info"
@@ -386,6 +391,7 @@ fn tool_params_schema(name: &str) -> Value {
         "get_eval_status" => {
             object_schema(&[("requestId", string_schema())], &["requestId"], false)
         }
+        "get_eval_stats" => object_schema(&[("collect", json!({"type":"boolean"}))], &[], false),
         "start_scene_bake" => {
             let mut schema = object_schema(
                 &[
@@ -1160,6 +1166,10 @@ fn tool_params_schema(name: &str) -> Value {
                 ("windowName", string_schema()),
                 ("encodeAsBase64", boolean_schema()),
                 ("explorerSettings", any_object_schema()),
+                (
+                    crate::tooling::os_capture::OS_FALLBACK_PARAM,
+                    boolean_schema(),
+                ),
             ],
             &[],
             false,
@@ -2968,7 +2978,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 148);
+        assert_eq!(TOOL_NAMES.len(), 149);
     }
 
     #[test]

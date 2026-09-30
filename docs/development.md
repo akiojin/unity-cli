@@ -87,6 +87,10 @@ is unavailable, including after the idle timeout (600 seconds by default;
 CLI binary and serializes concurrent starts. `unityd stop` stops the current
 process; the next remote operation starts it again. `unityd status` does not
 start it. Host/port resolution is unchanged, and connections are pooled by both.
+Before reusing a pooled connection, unityd checks whether the Editor closed it
+(Editor restart or bridge reload) and reconnects before sending, so the first call
+after a restart does not fail with `early eof` / `Broken pipe`. A request that was
+already sent is never resent, so mutating calls are not executed twice.
 If startup fails, stderr explains the failure and direct TCP fallback.
 Use `-v` to inspect `route`, `startup_ms` and `operation_ms` separately on stderr;
 JSON results stay on stdout. `unityd status` reports the PID and connection count.
@@ -218,6 +222,11 @@ scripts/e2e-reference-resolution.sh --port 6400 --project-root UnityCliBridge
 # restart recovery, and headless launch (isolated project copy on macOS)
 python3 scripts/e2e-player-build.py --launch --editmode
 
+# unityd reconnect after Editor restart (#384; defaults: 6000.3.25f1, port 6471, 5 cycles)
+# Kill -> restart on the same port -> ping -> reads -> create_gameobject; the mutating
+# call must succeed first time and create exactly one GameObject.
+python3 scripts/e2e-unityd-restart.py --workdir /tmp/unityd-restart
+
 # Deterministic input simulation E2E
 scripts/e2e-input-tools.sh
 
@@ -227,12 +236,20 @@ scripts/e2e-eval.sh --unity-cli "$PWD/target/debug/unity-cli"
 # C# eval with an isolated batch host (build the debug CLI first)
 scripts/e2e-input-batch-host.sh --suite eval --port 6402 --unity-cli "$PWD/target/debug/unity-cli"
 
+# C# eval latency budget (perf-budgets.json: editor_eval; GUI Editor frontmost, release CLI)
+python3 scripts/bench-eval.py --port 6400 --require-frontmost --activate --budget editor_eval
+
 # Timeline editing, persistence and Animator evaluation (real Editor)
 cargo build --bin unity-cli
 scripts/e2e-timeline-batch-host.sh --port 6474
 
 # Isolated project without com.unity.timeline: compile/start and error contract
 scripts/e2e-timeline-batch-host.sh --port 6475 --without-timeline
+
+# Fresh project with / without com.unity.ugui: compile/start and uGUI UI tools
+# (run for each Unity version to verify, e.g. 6000.3.25f1 and 2022.3.62f3)
+scripts/e2e-ugui-batch-host.sh --unity-version 6000.3.25f1 --port 6476 --without-ugui
+scripts/e2e-ugui-batch-host.sh --unity-version 6000.3.25f1 --port 6477
 
 # Test-result counting regression (7 EditMode + 2 PlayMode tests)
 # Requires the project's default DisableDomainReload setting and a running listener.
@@ -250,7 +267,7 @@ scripts/e2e-bake-batch-host.sh --port 6477
 
 # Isolated optional hot reload backend / real Editor checks
 scripts/e2e-hot-reload-batch-host.sh --port 6484 --expect missing
-# See docs/hot-reload.md for installed-backend and supported x64 runs.
+# See docs/hot-reload.md for real method replacement runs (ARM64 / x64 under Rosetta).
 
 # PlayMode result collection with Domain Reload enabled and disabled
 python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
@@ -488,6 +505,10 @@ These are guidance values and vary by host:
 | `unity-cli system ping` (via unityd) | ~5-20 ms      | Daemon keeps TCP connection open |
 | `unity-cli batch` (5 commands)       | ~25-100 ms    | Single IPC round-trip via daemon |
 
+Budgets that fail a run when exceeded live in `perf-budgets.json`. The first
+entry is `editor_eval` (warm `unity-cli editor eval '1+2'`, Editor frontmost:
+p50 ≤ 50 ms, p95 ≤ 100 ms), enforced by `scripts/bench-eval.py --budget editor_eval`.
+
 ### Run
 
 ```bash
@@ -710,6 +731,10 @@ idle 終了（既定 600 秒、`UNITY_CLI_UNITYD_IDLE_TIMEOUT` で変更可能�
 自動起動には実行中の CLI と同じバイナリを使い、同時起動を排他制御します。
 `unityd stop` 後の次のリモート操作では再起動し、`unityd status` 単独では起動しません。
 host/port の解決方法は維持し、接続を両方の組み合わせごとに再利用します。
+再利用の前に Editor 側で接続が閉じられていないか（Editor の再起動や bridge の再読み込み）を確認し、
+閉じられていれば送信前に接続し直します。そのため再起動直後の最初の呼び出しが
+`early eof` / `Broken pipe` で失敗しません。送信済みの要求は再送しないため、
+変更系の呼び出しが二重に実行されることはありません。
 起動失敗の理由と直接 TCP 接続への fallback は stderr に表示します。
 `-v` で `route` / `startup_ms` / `operation_ms` を stderr に分けて記録し、
 stdout は JSON 結果用に維持します。PID と接続数は `unityd status` で確認できます。
@@ -861,11 +886,23 @@ cargo build
 python3 scripts/e2e-unityd.py --port 6453
 # 結果・cold/warm 時間・Editor log: UnityCliBridge/.unity/unityd-<timestamp>/
 
+# Editor 再起動後の unityd 再接続 E2E（#384、既定 6000.3.25f1・port 6471・5 サイクル）
+# Editor を終了 → 同じポートで再起動 → ping → 読み取り → create_gameobject を繰り返し、
+# 変更系が 1 回で成功し、GameObject が 1 つだけできることを確認する
+cargo build --release
+python3 scripts/e2e-unityd-restart.py --workdir /tmp/unityd-restart
+# 結果: <workdir>/run-<timestamp>/result.json（--workdir 指定時は Library を再利用）
+
 # Domain Reload 有効／無効で PlayMode の完了・結果・export・設定復元を検証
 python3 scripts/e2e-test-domain-reload.py --batch-host --port 6450
 
 # Unity GUI listener が無い場合の推奨経路
 scripts/e2e-input-batch-host.sh --port 6402
+
+# com.unity.ugui 有無の新規プロジェクトでコンパイル・起動・uGUI UI ツールを検証
+# （検証対象の Unity バージョンごとに実行。例: 6000.3.25f1 と 2022.3.62f3）
+scripts/e2e-ugui-batch-host.sh --unity-version 2022.3.62f3 --port 6476 --without-ugui
+scripts/e2e-ugui-batch-host.sh --unity-version 2022.3.62f3 --port 6477
 
 # 既定では ProjectVersion.txt の Unity を使う。
 # その editor が未インストールのときだけ UNITY_PATH を上書きする。
@@ -1004,6 +1041,10 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 | `unity-cli system ping`              | ~10-50 ms    | Unity Editor 起動時のみ               |
 | `unity-cli system ping` (unityd経由) | ~5-20 ms     | デーモンがTCP接続を保持               |
 | `unity-cli batch` (5コマンド)        | ~25-100 ms   | デーモン経由の単一IPCラウンドトリップ |
+
+超過すると失敗になる予算は `perf-budgets.json` に置きます。最初の項目は `editor_eval`
+（ウォーム状態の `unity-cli editor eval '1+2'`、Editor 最前面で p50 ≤ 50 ms、p95 ≤ 100 ms）で、
+`scripts/bench-eval.py --budget editor_eval` が検査します。
 
 ### 実行
 

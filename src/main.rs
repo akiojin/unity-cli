@@ -17,12 +17,17 @@ pub use crate::daemon::unityd;
 pub use crate::lsp::daemon as lspd;
 pub use crate::tooling::local_tools;
 pub use crate::tooling::tool_catalog;
+pub use crate::tooling::tool_index;
 pub use crate::unity::transport;
 
 #[tokio::main]
 async fn main() {
     if let Err(error) = app::runner::run().await {
         eprintln!("Error: {error:#}");
-        std::process::exit(1);
+        let code = error
+            .chain()
+            .find_map(|cause| cause.downcast_ref::<crate::core::editor_discovery::TargetError>())
+            .map_or(1, |target| target.exit_code());
+        std::process::exit(code);
     }
 }

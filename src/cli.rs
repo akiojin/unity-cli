@@ -26,6 +26,11 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub port: Option<u16>,
 
+    /// Target the Unity Editor that has this project open (default: the
+    /// project containing the current directory). Also read from UNITY_PROJECT_ROOT.
+    #[arg(long, global = true, value_name = "PATH")]
+    pub project_path: Option<PathBuf>,
+
     #[arg(long, global = true, value_name = "MS")]
     pub timeout_ms: Option<u64>,
 
@@ -86,6 +91,25 @@ pub enum Command {
         #[command(subcommand)]
         command: ReferenceCommand,
     },
+    /// Install the bridge into a Unity project and confirm the Editor connection.
+    Setup {
+        /// Unity project root (default: nearest ancestor with Packages/manifest.json).
+        #[arg(long, value_name = "PATH")]
+        project_path: Option<PathBuf>,
+        /// Launch the project's Unity Editor (Unity Hub install path) when it is not reachable.
+        #[arg(long, default_value_t = false)]
+        launch_editor: bool,
+        /// Seconds to wait for the Editor bridge (default: 0, or 900 with --launch-editor).
+        #[arg(long, value_name = "SECS")]
+        wait_secs: Option<u64>,
+    },
+    /// Manage the com.akiojin.unity-cli-bridge package in a Unity project.
+    Bridge {
+        #[command(subcommand)]
+        command: BridgeCommand,
+    },
+    /// Diagnose why the Unity bridge is unreachable (Safe Mode, missing bridge, port conflict, ...).
+    Doctor(DoctorArgs),
     Batch {
         #[arg(long, value_name = "JSON")]
         json: Option<String>,
@@ -94,15 +118,45 @@ pub enum Command {
     },
 }
 
+#[derive(Debug, Args)]
+pub struct DoctorArgs {
+    /// Unity project root. Defaults to UNITY_PROJECT_ROOT or the nearest Unity project above the current directory.
+    #[arg(long, value_name = "DIR")]
+    pub project_path: Option<PathBuf>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum ToolCommand {
-    List,
+    List(ToolListArgs),
     Schema {
         tool_name: Option<String>,
     },
     Call(RawArgs),
     #[command(external_subcommand)]
     External(Vec<String>),
+}
+
+#[derive(Debug, Args, Default)]
+pub struct ToolListArgs {
+    /// Case-insensitive substring matched against tool names and one-line descriptions.
+    #[arg(long, value_name = "TEXT")]
+    pub query: Option<String>,
+
+    /// docs/tools.md category heading or slug (e.g. `scenes`, `playback-testing`).
+    #[arg(long, value_name = "NAME")]
+    pub category: Option<String>,
+
+    /// Emit `{name, description}` entries instead of bare tool names.
+    #[arg(long)]
+    pub compact: bool,
+
+    /// Maximum number of tools to return after filtering.
+    #[arg(long, value_name = "N")]
+    pub limit: Option<usize>,
+
+    /// Number of filtered tools to skip before `--limit` applies.
+    #[arg(long, value_name = "N", default_value_t = 0)]
+    pub offset: usize,
 }
 
 #[derive(Debug, Args)]
@@ -144,6 +198,12 @@ pub enum EditorCommand {
     },
     /// Retrieve a result from the current Editor domain (unknown after reload).
     EvalStatus { request_id: String },
+    /// Show eval counters of the current Editor domain: loaded assemblies, caches and memory.
+    EvalStats {
+        /// Run a managed garbage collection before reading memory.
+        #[arg(long)]
+        collect: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -179,6 +239,25 @@ pub enum InstancesCommand {
 
         #[arg(long, value_name = "MS", default_value_t = 1000)]
         timeout_ms: u64,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum BridgeCommand {
+    /// Add the OpenUPM registry and the bridge (CLI version) to Packages/manifest.json. Idempotent.
+    Install {
+        #[arg(long, value_name = "PATH")]
+        project_path: Option<PathBuf>,
+    },
+    /// Pin the bridge dependency to the CLI version.
+    Upgrade {
+        #[arg(long, value_name = "PATH")]
+        project_path: Option<PathBuf>,
+    },
+    /// Show the declared / resolved bridge version and the CLI version check.
+    Status {
+        #[arg(long, value_name = "PATH")]
+        project_path: Option<PathBuf>,
     },
 }
 

@@ -1,6 +1,9 @@
+pub mod bridge;
 pub mod command_stats;
 pub mod config;
 pub mod contracts;
+pub mod doctor;
+pub mod editor_discovery;
 pub mod endpoint;
 pub mod instances;
 pub mod managed_binaries;

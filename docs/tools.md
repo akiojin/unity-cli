@@ -4,21 +4,35 @@ Snapshot date: `2026-09-28`
 
 ## Command Groups (Typed Subcommands)
 
-| Group       | Subcommands               |
-| ----------- | ------------------------- |
-| `raw`       | (direct tool invocation)  |
-| `tool`      | `list`, `schema`, `call`  |
-| `system`    | `ping`                    |
-| `editor`    | `eval`, `eval-status`     |
-| `scene`     | `create`                  |
-| `instances` | `list`, `set-active`      |
-| `cli`       | `install`, `doctor`       |
-| `lsp`       | `install`, `doctor`       |
-| `lspd`      | `start`, `stop`, `status` |
-| `unityd`    | `start`, `stop`, `status` |
-| `batch`     | (batch command execution) |
+| Group       | Subcommands                           |
+| ----------- | ------------------------------------- |
+| `raw`       | (direct tool invocation)              |
+| `tool`      | `list`, `schema`, `call`              |
+| `system`    | `ping`                                |
+| `editor`    | `eval`, `eval-status`, `eval-stats`   |
+| `scene`     | `create`                              |
+| `instances` | `list`, `set-active`                  |
+| `cli`       | `install`, `doctor`                   |
+| `lsp`       | `install`, `doctor`                   |
+| `lspd`      | `start`, `stop`, `status`             |
+| `unityd`    | `start`, `stop`, `status`             |
+| `doctor`    | (connection diagnosis)                |
+| `batch`     | (batch command execution)             |
 
 Use `raw` for full command coverage when no typed subcommand exists.
+
+Tool discovery:
+
+- `tool list [--query <text>] [--category <name>] [--compact] [--limit N] [--offset N]`
+- `--query` matches tool names and one-line descriptions case-insensitively.
+- `--category` accepts a `### ...` heading of this catalog (plus `Reference Cache`) or its slug: `scenes`, `gameobjects`, `components`, `animator`, `timeline`, `prefabs`, `assets`, `visual-effect-graph`, `addressables`, `code-lsp`, `input-system`, `ui`, `playback-testing`, `player-builds`, `profiler`, `editor`, `screenshots-video`, `system`, `reference-cache`.
+- `--compact` returns `{name, description}` entries instead of bare names. Without it, JSON output stays an array of names.
+- Category membership is checked against this file by `tool_index_matches_docs_headings`; keep the tool tables in sync when adding tools.
+
+```bash
+unity-cli tool list --query screenshot --compact --output json
+unity-cli tool list --category scenes --output json
+```
 
 Managed binary notes:
 
@@ -26,14 +40,20 @@ Managed binary notes:
 - `cli doctor` reports the managed `unity-cli` path, local version, latest release metadata, and whether an update is pending.
 - `unityd` and `lspd` automatically refresh managed binaries on daemon startup without an interactive confirmation step.
 
+Connection diagnosis:
+
+- `doctor [--project-path <dir>]` explains why the bridge is unreachable. It checks the Unity Editor process for the project, `Packages/manifest.json` (`com.akiojin.unity-cli-bridge` presence and version), the Editor.log (Safe Mode and `file(line,col): error CSxxxx` compile errors), the configured port (`--port` / `UNITY_CLI_PORT`, then `ProjectSettings/UnityCliBridgeSettings.asset`, then the default) and the process holding it, and socket permission errors.
+- The JSON `diagnosis` is one of `OK`, `SAFE_MODE`, `COMPILE_ERRORS`, `BRIDGE_NOT_INSTALLED`, `PORT_IN_USE` (with `port.listenerPid`), `EDITOR_NOT_RUNNING`, `SANDBOX_BLOCKED`, or `BRIDGE_NOT_RESPONDING`, plus a `recovery` hint. The command exits 0 so the report is always readable.
+- Connection failures from other commands point to `unity-cli doctor --output json`.
+
 Global options:
 
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 148 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 137 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 149 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 138 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (137 tools)
+## Runtime Tool APIs (138 tools)
 
 ### Scenes
 
@@ -238,6 +258,17 @@ unity-cli tool call manage_timeline --json '{"action":"evaluate","directorPath":
 | `apply_csharp_edits`    | Apply structured C# source edits |
 | `create_class`          | Create a C# class                |
 
+`hot_reload` changes the body of existing methods while Play Mode keeps running
+(scene, objects and field values are preserved; the `.cs` file on disk is not
+modified). Prerequisites: the optional FastScriptReload 1.8.0 package installed
+in the project with its auto and on-demand reload disabled, and a Mono Editor
+(Unity 2022.3+) on x64 or Apple Silicon macOS. `hot_reload_status` returns
+`supported`, `code` (`HOT_RELOAD_PACKAGE_MISSING`,
+`HOT_RELOAD_PLATFORM_UNSUPPORTED`) and the verified `appliedRevision`. Flow:
+`begin` with the script path, `apply` with the complete candidate source and
+the last `appliedRevision`, `recover` to stop Play and recompile. See
+[hot-reload.md](hot-reload.md) for limits and recovery.
+
 ### Input System
 
 | Tool                          | Description                        |
@@ -354,6 +385,7 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 | `execute_menu_item`       | Execute a menu item         |
 | `eval_csharp`             | Evaluate synchronous C#     |
 | `get_eval_status`         | Query evaluation result     |
+| `get_eval_stats`          | Query eval domain counters  |
 | `package_manager`         | Manage packages             |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |
@@ -364,6 +396,14 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 | `get_package_setting`     | Get a package setting       |
 | `set_package_setting`     | Set a package setting       |
 | `update_project_settings` | Update project settings     |
+
+`eval_csharp` reuses compilation references and compiled snippets inside one
+Editor domain: repeating identical `code` costs about one ordinary command
+(p50 14–25 ms with the Editor frontmost), new source adds one compile, and the
+first call after a Domain Reload is the slowest. `get_eval_stats`
+(`unity-cli editor eval-stats`) shows the domain's loaded-assembly, cache and
+memory counters. Details and the latency budget:
+[`editor-eval.md`](editor-eval.md#performance-and-caching).
 
 ### Screenshots & Video
 
@@ -381,6 +421,27 @@ unrelated commands.
 | `capture_video_start`  | Start video capture      |
 | `capture_video_status` | Get video capture status |
 | `capture_video_stop`   | Stop video capture       |
+
+When the Editor accepts `capture_screenshot` but does not answer before
+`--timeout-ms` (for example, its main thread is blocked by a modal dialog such
+as a save prompt or the API Updater), the CLI captures the whole desktop
+instead and saves it to `<project>/.unity/capture/image_os_<millis>.png`
+(the temp directory outside a Unity project). The result carries
+`"fallback": "os"`, `fallbackTool`, and a `note` explaining why.
+
+- macOS: `screencapture` (grant Screen Recording to the terminal, otherwise
+  only the wallpaper is captured)
+- Windows: PowerShell + GDI (`Graphics.CopyFromScreen`)
+- Linux: `grim` / `gnome-screenshot` / `spectacle` on Wayland, `import` /
+  `scrot` / `maim` on X11 (first available wins)
+
+Pass `"osFallback": false` to receive the timeout error instead. The flag is
+handled by the CLI and never sent to the bridge.
+
+```bash
+unity-cli --timeout-ms 5000 raw capture_screenshot --json '{"captureMode":"game"}'
+unity-cli raw capture_screenshot --json '{"captureMode":"game","osFallback":false}'
+```
 
 ### System
 

@@ -8,10 +8,12 @@ unity-cli editor eval '1+2' --request-id sum --output json
 unity-cli editor eval 'GameObject.Find("Player").name' --output json
 unity-cli editor eval 'var go = new GameObject("Probe"); return go;' --mode statements --request-id create-probe --output json
 unity-cli editor eval-status create-probe --output json
+unity-cli editor eval-stats --output json
 ```
 
 The equivalent raw tools are `eval_csharp` with `code`, optional `mode` and
-optional `requestId`, and `get_eval_status` with required `requestId`.
+optional `requestId`, `get_eval_status` with required `requestId`, and
+`get_eval_stats` with optional boolean `collect`.
 The CLI treats evaluation as mutating, including expressions: `--dry-run`
 skips execution. Eval calls, including calls inside a batch, use direct TCP
 without automatically resending through the daemon fallback path.
@@ -42,18 +44,18 @@ Each result has `requestId`, `state`, `value`, `logs`, `diagnostics`, and
 `exception`. A successful expression `1+2` returns numeric `value: 3` and
 `state: "completed"`.
 
-| State | Meaning |
-| --- | --- |
-| `completed` | Synchronous execution and result conversion finished |
-| `compile_error` | Compiler rejected the source; inspect diagnostics |
-| `runtime_error` | Execution threw; inspect exception type/message/stackTrace |
-| `serialization_error` | Code ran, but its return value could not be represented |
-| `unsupported` | An unsupported asynchronous construct or result was detected |
-| `invalid_request` | Invalid code, mode, or request ID |
-| `request_conflict` | The same ID was used with different code or mode |
-| `busy` | Editor cannot start this evaluation now |
-| `reload_required` | The domain's evaluation assembly limit was reached |
-| `unknown` | No stored result exists in the current domain |
+| State                 | Meaning                                                                           |
+| --------------------- | --------------------------------------------------------------------------------- |
+| `completed`           | Synchronous execution and result conversion finished                              |
+| `compile_error`       | Compiler rejected the source; inspect diagnostics                                 |
+| `runtime_error`       | Execution threw; inspect exception type/message/stackTrace                        |
+| `serialization_error` | Code ran, but its return value could not be represented                           |
+| `unsupported`         | An unsupported asynchronous construct or result was detected                      |
+| `invalid_request`     | Invalid code, mode, or request ID                                                 |
+| `request_conflict`    | The same ID was used with different code or mode                                  |
+| `busy`                | Editor cannot start this evaluation now                                           |
+| `reload_required`     | New source cannot be compiled: the domain's evaluation assembly limit was reached |
+| `unknown`             | No stored result exists in the current domain                                     |
 
 The command transport can succeed while `state` is a failure. Always inspect
 `state`; a successful CLI exit alone does not prove the snippet succeeded.
@@ -94,11 +96,72 @@ Results and IDs are local to the current Editor domain. A Domain Reload loses
 them; `unknown` never means that a prior operation had no effects. Inspect the
 actual scene/asset state before deciding whether to issue new work. Loaded eval
 assemblies cannot be individually unloaded; after 128 emitted assemblies,
-new execution returns `reload_required`. The tool never triggers reload itself.
-The result cache also stops accepting new IDs at 256 entries. Stored results
-remain available at either limit; IDs are never evicted to make room for new work.
+source that was not compiled in this domain returns `reload_required`, while
+source that was already compiled keeps running. The tool never triggers reload itself.
+The result cache keeps the newest 256 request IDs. When it is full, the oldest
+stored ID is dropped and later reads as `unknown`, so query a timed-out ID
+before issuing hundreds of other evaluations.
 Code is limited to 65,536 characters, IDs to 128, return JSON to 65,536 UTF-8
 bytes, strings to 16,384 characters, and return graphs to 1,024 nodes/depth 8.
+
+## Performance and caching
+
+Eval is fast when it is warm. Three things are reused inside one Editor domain:
+
+- **Compilation references.** The set of loaded, file-backed assemblies is
+  collected once and reused. Loading another file-backed assembly into the
+  domain refreshes the set, so its types resolve in the next call.
+- **Compiled snippets.** Identical `code` + `mode` reuses the assembly that was
+  compiled the first time and runs it again. The code is executed on every
+  call; only compilation is skipped. This cache is separate from `requestId`
+  replay, which returns a stored result without executing anything.
+- **Roslyn warm-up.** After each domain load the Bridge compiles a throwaway
+  snippet on a background thread, so the first real call does not pay the
+  compiler's start-up cost.
+
+A Domain Reload (script compilation, entering Play Mode with reload enabled)
+clears all three, and the warm-up runs again.
+
+| Call                                         | What it costs                            | Measured wall-clock per CLI call |
+| -------------------------------------------- | ---------------------------------------- | -------------------------------- |
+| First call in a domain, warm-up not finished | Compiler start-up + references + compile | about 0.5–2.4 s                  |
+| First call after warm-up                     | One compile                              | about 30–130 ms                  |
+| New source, warm                             | One compile                              | p50 about 20–25 ms               |
+| Source already compiled in this domain       | No compile                               | p50 14–25 ms, p95 17–81 ms       |
+
+Measured on macOS (Apple M5 Max) with Unity `6000.3.25f1` and `2022.3.62f3`,
+the Editor as the frontmost app, one CLI process per call, on a machine that
+was running other Editors. With the Editor in the background, macOS throttles
+the Editor loop and every command, including eval, takes about 100–200 ms.
+Raw results: [`docs/benchmarks/eval-391/`](benchmarks/eval-391).
+
+For agents: to repeat an operation, resend the same `code` and vary nothing
+inside it; generating a new string per call (for example, embedding a counter
+in the source) compiles a new assembly every time and eventually hits the
+128-assembly limit.
+
+`editor eval-stats` (`get_eval_stats`) reports the counters of the current
+domain: `evaluations`, `emittedAssemblies` / `maxEmittedAssemblies`,
+`cachedCompilations`, `compileCacheHits`, `referenceCount`, `referenceBuilds`,
+`warmedUp`, `storedResults` / `maxStoredResults`, `loadedAssemblies` (all
+assemblies in the domain), `managedMemoryBytes`, and
+`managedMemoryGrowthBytes` (since the first evaluation in the domain).
+`--collect` runs a managed garbage collection first, for comparable memory
+numbers. It is read-only and does not execute user code.
+
+Benchmark and budget gate (Editor open, Bridge listening):
+
+```bash
+cargo build --release
+python3 scripts/bench-eval.py --port 6400 --require-frontmost --activate --budget editor_eval
+```
+
+The script measures 100 warm `editor eval '1+2'` calls after 3 warm-up calls
+and exits 1 when p50/p95 exceed the `editor_eval` entry of
+[`perf-budgets.json`](../perf-budgets.json) (p50 ≤ 50 ms, p95 ≤ 100 ms, Editor
+frontmost). `--activate` brings the Editor back to the front and re-measures
+samples during which another app took focus; it needs macOS Automation
+permission for System Events.
 
 ## Local verification
 
@@ -118,5 +181,10 @@ UNITY_CLI_NO_AUTO_UPDATE=1 scripts/e2e-input-batch-host.sh --suite eval --port 6
 
 The suite checks expressions, scene object creation/read/change, descriptors,
 compile/runtime errors, replay/status, logs, arrays, no persistent source files,
-and Play Mode. It creates scenes only under
+and Play Mode. It also checks that identical source reuses its compilation,
+that a newly loaded assembly and a Domain Reload both leave type resolution
+correct, and that 1,000 consecutive evaluations (`--soak-iterations`) of 4
+snippets emit at most 8 eval assemblies, add at most 16 assemblies to the
+domain, and grow managed memory by at most 64 MiB (measured: 4 assemblies and
+3.7–10.8 MB). It creates scenes only under
 `Assets/Scenes/Generated/E2E/` and removes its temporary GameObject.

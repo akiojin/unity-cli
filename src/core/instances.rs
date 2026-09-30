@@ -9,6 +9,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
+use crate::core::editor_discovery;
+
 const MAX_HEALTH_RESPONSE_BYTES: i32 = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +36,21 @@ pub struct InstanceStatus {
     pub status: String,
     pub last_checked_at: String,
     pub active: bool,
+    /// `lockfile` for Editors discovered through Bridge lockfiles, `registry`
+    /// for entries added with `--ports` / `set-active`.
+    pub source: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pid: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unity_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stale_reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lockfile: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -61,6 +78,7 @@ pub async fn list_instances(
     ports: &[u16],
     timeout_ms: u64,
 ) -> Result<Vec<InstanceStatus>> {
+    let editors = editor_discovery::discover();
     let mut registry = load_registry()?;
 
     for port in ports {
@@ -74,7 +92,7 @@ pub async fn list_instances(
         }
     }
 
-    if registry.entries.is_empty() {
+    if registry.entries.is_empty() && editors.is_empty() {
         registry.entries.push(InstanceRecord {
             id: format!("{}:{}", host, 6400),
             host: host.to_string(),
@@ -84,28 +102,67 @@ pub async fn list_instances(
 
     registry.entries.sort_by(|a, b| a.id.cmp(&b.id));
 
-    let mut statuses = Vec::with_capacity(registry.entries.len());
+    let mut statuses = Vec::with_capacity(editors.len() + registry.entries.len());
     let timeout = Duration::from_millis(timeout_ms);
     let checked_at = unix_timestamp();
+    let active_id = registry.active_id.as_deref();
+
+    for editor in &editors {
+        let lock = &editor.lock;
+        let id = format!("{}:{}", lock.host, lock.port);
+        let status = if editor.is_live() {
+            up_or_down(can_connect(&lock.host, lock.port, timeout).await)
+        } else {
+            "unreachable".to_string()
+        };
+        statuses.push(InstanceStatus {
+            active: editor.is_live() && active_id == Some(id.as_str()),
+            id,
+            host: lock.host.clone(),
+            port: lock.port,
+            status,
+            last_checked_at: checked_at.clone(),
+            source: "lockfile",
+            project_path: Some(lock.project_path.clone()),
+            pid: Some(lock.pid),
+            unity_version: lock.unity_version.clone(),
+            state: lock.state.clone(),
+            stale_reason: editor.stale_reason.clone(),
+            lockfile: Some(editor.lockfile.display().to_string()),
+        });
+    }
 
     for entry in &registry.entries {
+        let covered_by_live_lockfile = editors.iter().any(|editor| {
+            editor.is_live() && editor.lock.host == entry.host && editor.lock.port == entry.port
+        });
+        if covered_by_live_lockfile {
+            continue;
+        }
         let up = can_connect(&entry.host, entry.port, timeout).await;
         statuses.push(InstanceStatus {
             id: entry.id.clone(),
             host: entry.host.clone(),
             port: entry.port,
-            status: if up {
-                "up".to_string()
-            } else {
-                "down".to_string()
-            },
+            status: up_or_down(up),
             last_checked_at: checked_at.clone(),
-            active: registry.active_id.as_deref() == Some(&entry.id),
+            active: active_id == Some(entry.id.as_str()),
+            source: "registry",
+            project_path: None,
+            pid: None,
+            unity_version: None,
+            state: None,
+            stale_reason: None,
+            lockfile: None,
         });
     }
 
     save_registry(&registry)?;
     Ok(statuses)
+}
+
+fn up_or_down(up: bool) -> String {
+    if up { "up" } else { "down" }.to_string()
 }
 
 pub async fn set_active_instance(id: &str, timeout_ms: u64) -> Result<SetActiveResult> {
@@ -271,6 +328,7 @@ mod tests {
         list_instances, load_registry, parse_id, registry_path, set_active_instance,
         InstanceRecord, Registry,
     };
+    use crate::core::editor_discovery::tests::{dead_pid, live_pid, write_lock};
     use serde_json::json;
     use std::path::PathBuf;
     use std::sync::Mutex;
@@ -280,6 +338,14 @@ mod tests {
 
     fn env_lock() -> &'static Mutex<()> {
         crate::test_env::env_lock()
+    }
+
+    /// Keeps lockfiles of Editors running on the developer machine out of tests.
+    fn isolate_editors_dir() {
+        std::env::set_var(
+            "UNITY_CLI_EDITORS_DIR",
+            temp_registry_path("no-editors").with_extension("d"),
+        );
     }
 
     fn temp_registry_path(label: &str) -> PathBuf {
@@ -381,6 +447,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-load");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
         std::fs::write(
             &registry_path,
             r#"{"active_id":null,"entries":[{"id":"","host":"127.0.0.1","port":6400}]}"#,
@@ -403,6 +470,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-up");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
 
         let (port, accept_task) = spawn_mock_bridge(1).await;
 
@@ -428,6 +496,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-zombie");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
 
         let listener = TcpListener::bind(("127.0.0.1", 0))
             .await
@@ -462,6 +531,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-default");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
 
         let statuses = list_instances("127.0.0.1", &[], 50)
             .await
@@ -482,6 +552,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-down");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
 
         let listener = TcpListener::bind(("127.0.0.1", 0))
             .await
@@ -510,6 +581,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let registry_path = temp_registry_path("instances-active");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
+        isolate_editors_dir();
 
         let (port, accept_task) = spawn_mock_bridge(2).await;
 
@@ -547,5 +619,92 @@ mod tests {
         let parsed: Registry = serde_json::from_str(&raw).expect("registry should deserialize");
         assert_eq!(parsed.active_id.as_deref(), Some("127.0.0.1:6400"));
         assert_eq!(parsed.entries[0].host, "127.0.0.1");
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn list_instances_enumerates_lockfiles_without_ports() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));
+        let editors = dir.path().join("editors");
+        let (port, accept_task) = spawn_mock_bridge(1).await;
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        write_lock(&editors, live_pid(), &dir.path().join("Alive"), port, now);
+        write_lock(&editors, dead_pid(), &dir.path().join("Killed"), 6499, now);
+
+        let statuses = list_instances("127.0.0.1", &[], 300)
+            .await
+            .expect("list should succeed");
+
+        assert_eq!(
+            statuses.len(),
+            2,
+            "no default 6400 row when lockfiles exist"
+        );
+        let alive = &statuses[0];
+        assert_eq!(alive.status, "up");
+        assert_eq!(alive.source, "lockfile");
+        assert!(alive.project_path.as_deref().unwrap().ends_with("Alive"));
+        assert_eq!(alive.pid, Some(live_pid()));
+        let killed = &statuses[1];
+        assert_eq!(killed.status, "unreachable");
+        assert!(killed.project_path.as_deref().unwrap().ends_with("Killed"));
+        assert!(killed.stale_reason.is_some());
+
+        tokio::time::timeout(Duration::from_secs(1), accept_task)
+            .await
+            .expect("bridge task should finish")
+            .expect("bridge task should succeed");
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        std::env::remove_var("UNITY_CLI_EDITORS_DIR");
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn list_instances_keeps_explicit_ports_next_to_lockfiles() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs_f64();
+        write_lock(
+            &dir.path().join("editors"),
+            dead_pid(),
+            &dir.path().join("P"),
+            6499,
+            now,
+        );
+        let (port, accept_task) = spawn_mock_bridge(1).await;
+
+        let statuses = list_instances("127.0.0.1", &[port], 300)
+            .await
+            .expect("list should succeed");
+
+        let explicit = statuses
+            .iter()
+            .find(|status| status.port == port)
+            .expect("explicit --ports entry should be listed");
+        assert_eq!(explicit.source, "registry");
+        assert_eq!(explicit.status, "up");
+        assert_eq!(statuses.len(), 2);
+
+        tokio::time::timeout(Duration::from_secs(1), accept_task)
+            .await
+            .expect("bridge task should finish")
+            .expect("bridge task should succeed");
+        std::env::remove_var("UNITY_CLI_REGISTRY_PATH");
+        std::env::remove_var("UNITY_CLI_EDITORS_DIR");
     }
 }

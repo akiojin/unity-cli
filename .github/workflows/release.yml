@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build every release asset (binaries, manifests, SHA256SUMS, Homebrew formula) without tagging, publishing, or releasing
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -20,6 +25,8 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.check-tag.outputs.created }}
+      dry_run: ${{ steps.mode.outputs.dry_run }}
+      build: ${{ steps.mode.outputs.build }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -47,12 +54,31 @@ jobs:
 
       - name: Check if tag already exists
         id: check-tag
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
-          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: no tag is created."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          elif git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
             echo "Tag ${{ steps.version.outputs.tag }} already exists, skipping."
             echo "created=false" >> "$GITHUB_OUTPUT"
           else
             echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve release mode
+        id: mode
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          CREATED: ${{ steps.check-tag.outputs.created }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "dry_run=true" >> "$GITHUB_OUTPUT"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+            echo "build=${CREATED}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create and push tag
@@ -87,7 +113,7 @@ jobs:
   publish-crate:
     name: Publish to crates.io
     needs: create-tag
-    if: needs.create-tag.outputs.created == 'true'
+    if: needs.create-tag.outputs.created == 'true' && needs.create-tag.outputs.dry_run != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -105,7 +131,7 @@ jobs:
   build:
     name: Build (${{ matrix.target }})
     needs: create-tag
-    if: needs.create-tag.outputs.created == 'true'
+    if: needs.create-tag.outputs.build == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -123,6 +149,10 @@ jobs:
             os: macos-latest
             artifact: unity-cli-osx-arm64
             binary: unity-cli
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact: unity-cli-osx-x64
+            binary: unity-cli
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact: unity-cli-win-x64
@@ -130,7 +160,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.create-tag.outputs.tag }}
+          ref: ${{ needs.create-tag.outputs.dry_run == 'true' && github.sha || needs.create-tag.outputs.tag }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -170,7 +200,7 @@ jobs:
   build-lsp:
     name: Build LSP (${{ matrix.rid }})
     needs: create-tag
-    if: needs.create-tag.outputs.created == 'true'
+    if: needs.create-tag.outputs.build == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -185,13 +215,16 @@ jobs:
           - rid: osx-arm64
             os: macos-latest
             artifact: csharp-lsp-osx-arm64
+          - rid: osx-x64
+            os: macos-latest
+            artifact: csharp-lsp-osx-x64
           - rid: win-x64
             os: windows-latest
             artifact: csharp-lsp-win-x64
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.create-tag.outputs.tag }}
+          ref: ${{ needs.create-tag.outputs.dry_run == 'true' && github.sha || needs.create-tag.outputs.tag }}
 
       - name: Setup .NET SDK 10
         uses: actions/setup-dotnet@v6
@@ -224,9 +257,13 @@ jobs:
   upload-release:
     name: Upload Release Assets
     needs: [create-tag, build, build-lsp]
-    if: needs.create-tag.outputs.created == 'true'
+    if: needs.create-tag.outputs.build == 'true'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.create-tag.outputs.dry_run == 'true' && github.sha || needs.create-tag.outputs.tag }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@v8
         with:
@@ -260,18 +297,109 @@ jobs:
           generate_manifest "unity-cli" "unity-cli-manifest.json"
           generate_manifest "csharp-lsp" "csharp-lsp-manifest.json"
 
+      - name: Stage release assets and SHA256SUMS
+        run: |
+          mkdir -p release-assets
+          for file in artifacts/unity-cli-*/unity-cli-* artifacts/csharp-lsp-*/csharp-lsp-*; do
+            cp "$file" release-assets/
+          done
+          # winget portable installers need an .exe URL; same bytes as unity-cli-win-x64.
+          cp release-assets/unity-cli-win-x64 release-assets/unity-cli-win-x64.exe
+          cp artifacts/unity-cli-manifest.json artifacts/csharp-lsp-manifest.json release-assets/
+          (cd release-assets && sha256sum -- * > SHA256SUMS)
+          cat release-assets/SHA256SUMS
+          for required in unity-cli-osx-arm64 unity-cli-osx-x64 unity-cli-linux-x64 unity-cli-linux-arm64 unity-cli-win-x64 unity-cli-win-x64.exe; do
+            grep -q "  ${required}\$" release-assets/SHA256SUMS || { echo "missing ${required} in SHA256SUMS" >&2; exit 1; }
+          done
+
+      - name: Render Homebrew formula
+        run: |
+          scripts/release/render-homebrew-formula.sh \
+            "${{ needs.create-tag.outputs.version }}" \
+            release-assets/SHA256SUMS > unity-cli.rb
+          ruby -c unity-cli.rb
+          cat unity-cli.rb
+
+      - name: Upload dry-run assets
+        if: needs.create-tag.outputs.dry_run == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-dry-run
+          path: |
+            release-assets/
+            unity-cli.rb
+          retention-days: 7
+
       - name: Upload assets to GitHub Release
+        if: needs.create-tag.outputs.dry_run != 'true'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.create-tag.outputs.tag }}
-          files: |
-            artifacts/unity-cli-linux-x64/unity-cli-linux-x64
-            artifacts/unity-cli-linux-arm64/unity-cli-linux-arm64
-            artifacts/unity-cli-osx-arm64/unity-cli-osx-arm64
-            artifacts/unity-cli-win-x64/unity-cli-win-x64
-            artifacts/unity-cli-manifest.json
-            artifacts/csharp-lsp-linux-x64/csharp-lsp-linux-x64
-            artifacts/csharp-lsp-linux-arm64/csharp-lsp-linux-arm64
-            artifacts/csharp-lsp-osx-arm64/csharp-lsp-osx-arm64
-            artifacts/csharp-lsp-win-x64/csharp-lsp-win-x64
-            artifacts/csharp-lsp-manifest.json
+          files: release-assets/*
+
+      - name: Upload Homebrew formula for tap update
+        if: needs.create-tag.outputs.dry_run != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: homebrew-formula
+          path: unity-cli.rb
+          retention-days: 1
+
+  update-homebrew-tap:
+    name: Update Homebrew tap (akiojin/tap)
+    needs: [create-tag, upload-release]
+    if: needs.create-tag.outputs.created == 'true' && needs.create-tag.outputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    env:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Skip when tap token is not configured
+        if: env.HOMEBREW_TAP_TOKEN == ''
+        run: echo "::notice::HOMEBREW_TAP_TOKEN is not set; skipping akiojin/homebrew-tap update."
+
+      - name: Download Homebrew formula
+        if: env.HOMEBREW_TAP_TOKEN != ''
+        uses: actions/download-artifact@v8
+        with:
+          name: homebrew-formula
+
+      - name: Push formula to akiojin/homebrew-tap
+        if: env.HOMEBREW_TAP_TOKEN != ''
+        env:
+          VERSION: ${{ needs.create-tag.outputs.version }}
+        run: |
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/akiojin/homebrew-tap.git" tap
+          mkdir -p tap/Formula
+          cp unity-cli.rb tap/Formula/unity-cli.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/unity-cli.rb
+          if git diff --cached --quiet; then
+            echo "Formula already up to date."
+            exit 0
+          fi
+          git commit -m "unity-cli ${VERSION}"
+          git push origin HEAD
+
+  update-winget:
+    name: Submit winget manifest (akiojin.unity-cli)
+    needs: [create-tag, upload-release]
+    if: needs.create-tag.outputs.created == 'true' && needs.create-tag.outputs.dry_run != 'true'
+    runs-on: windows-latest
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - name: Skip when winget token is not configured
+        if: env.WINGET_TOKEN == ''
+        run: echo "::notice::WINGET_TOKEN is not set; skipping winget-pkgs submission."
+
+      - name: Submit update to microsoft/winget-pkgs
+        if: env.WINGET_TOKEN != ''
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: akiojin.unity-cli
+          version: ${{ needs.create-tag.outputs.version }}
+          release-tag: ${{ needs.create-tag.outputs.tag }}
+          installers-regex: 'unity-cli-win-x64\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}

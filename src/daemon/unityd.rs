@@ -95,13 +95,33 @@ impl ConnectionPool {
         timeout: Duration,
     ) -> Result<&mut UnityClient> {
         let key = (host.to_string(), port);
+        // An Editor restart or bridge reload closes pooled sockets while the daemon
+        // is idle. Detect that before sending so the request goes out exactly once
+        // on a fresh connection instead of failing with early eof / broken pipe.
+        if self
+            .connections
+            .get(&key)
+            .is_some_and(UnityClient::is_peer_closed)
+        {
+            tracing::debug!(
+                host,
+                port,
+                "pooled Unity connection was closed by peer; reconnecting"
+            );
+            self.connections.remove(&key);
+        }
         if !self.connections.contains_key(&key) {
             let config = RuntimeConfig {
                 host: host.to_string(),
                 port,
                 timeout,
             };
-            let client = UnityClient::connect(&config).await?;
+            let client = UnityClient::connect(&config).await.map_err(|error| {
+                anyhow::anyhow!(
+                    "Failed to connect to Unity at {host}:{port}: {error:#}. {}",
+                    crate::core::doctor::DOCTOR_HINT
+                )
+            })?;
             self.connections.insert(key.clone(), client);
         }
         let client = self.connections.get_mut(&key).unwrap();
@@ -833,6 +853,114 @@ mod tests {
             "warm request inherited the short startup timeout: {result:?}"
         );
         assert_eq!(pool.connections.len(), 1);
+    }
+
+    async fn read_mock_request(stream: &mut tokio::net::TcpStream) -> Option<Value> {
+        use tokio::io::AsyncReadExt;
+        let length = stream.read_u32().await.ok()?;
+        let mut bytes = vec![0; length as usize];
+        stream.read_exact(&mut bytes).await.ok()?;
+        serde_json::from_slice(&bytes).ok()
+    }
+
+    async fn write_mock_response(stream: &mut tokio::net::TcpStream, request: &Value) {
+        use tokio::io::AsyncWriteExt;
+        let response = serde_json::to_vec(&json!({
+            "id": request["id"], "status": "success", "result": {"type": request["type"]}
+        }))
+        .unwrap();
+        stream.write_u32(response.len() as u32).await.unwrap();
+        stream.write_all(&response).await.unwrap();
+    }
+
+    fn tool_request(tool_name: &str, port: u16) -> DaemonRequest {
+        DaemonRequest::Tool {
+            tool_name: tool_name.to_string(),
+            params: json!({}),
+            host: "127.0.0.1".to_string(),
+            port,
+            timeout_ms: 2_000,
+        }
+    }
+
+    #[tokio::test]
+    async fn pooled_connection_closed_by_editor_restart_is_reconnected_before_sending() {
+        // Issue #384: the Editor restarted (or reloaded its bridge) after the
+        // daemon pooled a connection, so the pooled socket was closed by the peer.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut received = Vec::new();
+            let (mut first, _) = listener.accept().await.unwrap();
+            let request = read_mock_request(&mut first).await.unwrap();
+            write_mock_response(&mut first, &request).await;
+            received.push(request["type"].as_str().unwrap().to_string());
+            drop(first);
+
+            let (mut second, _) = listener.accept().await.unwrap();
+            while let Some(request) = read_mock_request(&mut second).await {
+                write_mock_response(&mut second, &request).await;
+                received.push(request["type"].as_str().unwrap().to_string());
+            }
+            received
+        });
+
+        let mut pool = ConnectionPool::new();
+        let (response, _) = handle_request(tool_request("get_hierarchy", port), &mut pool)
+            .await
+            .unwrap();
+        assert!(response.ok, "{:?}", response.error);
+        // Let the peer's close reach the daemon side of the pooled socket.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        let (response, _) = handle_request(tool_request("create_gameobject", port), &mut pool)
+            .await
+            .unwrap();
+        assert!(
+            response.ok,
+            "first mutating call after restart failed: {:?}",
+            response.error
+        );
+        assert_eq!(response.result.unwrap()["type"], "create_gameobject");
+
+        pool.remove("127.0.0.1", port);
+        let received = server.await.unwrap();
+        assert_eq!(
+            received,
+            vec!["get_hierarchy", "create_gameobject"],
+            "each request must reach Unity exactly once"
+        );
+    }
+
+    #[tokio::test]
+    async fn request_lost_after_sending_is_reported_and_not_resent() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let request = read_mock_request(&mut stream).await.unwrap();
+            drop(stream);
+            let mut received = vec![request["type"].as_str().unwrap().to_string()];
+            if let Ok(Ok((mut retry, _))) =
+                tokio::time::timeout(Duration::from_millis(300), listener.accept()).await
+            {
+                if let Some(request) = read_mock_request(&mut retry).await {
+                    received.push(request["type"].as_str().unwrap().to_string());
+                }
+            }
+            received
+        });
+
+        let mut pool = ConnectionPool::new();
+        let (response, _) = handle_request(tool_request("create_gameobject", port), &mut pool)
+            .await
+            .unwrap();
+        assert!(!response.ok, "a lost response must surface as an error");
+        assert_eq!(
+            server.await.unwrap(),
+            vec!["create_gameobject"],
+            "a request that already reached Unity must not be resent"
+        );
     }
 
     fn env_lock() -> &'static std::sync::Mutex<()> {

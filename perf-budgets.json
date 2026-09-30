@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "sample": "wall-clock per CLI process invocation (spawn to exit), ms; nearest-rank percentiles",
+  "budgets": {
+    "editor_eval": {
+      "description": "unity-cli editor eval '1+2' against a real Editor, warm (after 3 warm-up calls), 100 samples",
+      "condition": "macOS, Editor is the frontmost app",
+      "measured_by": "python3 scripts/bench-eval.py --require-frontmost --activate --budget editor_eval",
+      "p50_ms": 50,
+      "p95_ms": 100
+    }
+  }
+}
