@@ -28,6 +28,10 @@ namespace UnityCliBridge.Tests.Editor.Core
             Assert.AreEqual("success", json["status"]?.Value<string>());
             Assert.AreEqual("pong", json["result"]?["message"]?.Value<string>());
             Assert.AreEqual("hello", json["result"]?["echo"]?.Value<string>());
+            Assert.IsFalse(string.IsNullOrEmpty(json["result"]?["bridgeVersion"]?.Value<string>()));
+            Assert.AreEqual(
+                System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath),
+                json["result"]?["projectPath"]?.Value<string>());
         });
 
         [UnityTest]
