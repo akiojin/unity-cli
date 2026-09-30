@@ -1,6 +1,6 @@
 ---
 name: unity-editor-tools
-description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to evaluate a short C# snippet, ping the editor, read console output, inspect or update a project setting, run a menu item, inspect windows or selection, manage packages, or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`.
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows, manage packages or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -27,6 +27,7 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 ## Use When
 
 - The user asks for editor health checks, console logs, or profiler data.
+- The user wants a standalone Player build or lighting, NavMesh, NavMeshSurface, or occlusion bake and its job status.
 - The user wants to inspect or change a project setting.
 - The user wants to run a menu item, inspect windows, or manipulate the current selection.
 - The user wants package manager or registry operations from the editor side.
@@ -34,7 +35,7 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 
 ## Do Not Use When
 
-- The task is primarily about a specific scene or prefab; use `unity-scene-create` or `unity-prefab-workflow`.
+- The task is scene creation or prefab editing (rather than a bake job); use `unity-scene-create` or `unity-prefab-workflow`.
 - The work is asset import or material edits; use `unity-asset-management`.
 - The work is a C# refactor; use `unity-csharp-edit`.
 - The user only needs Play Mode or test execution; use `unity-playmode-testing`.
@@ -57,6 +58,34 @@ unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity
 ```
 
 ## Examples
+
+### Player build and scene bake jobs
+
+Run from Edit Mode after compilation/import finishes. Save the target scene first.
+The build target must already be active with its support module installed. Paths
+refer to the Editor host; use a new/empty output parent outside the project assets.
+Replace scene/output paths and the returned IDs below with values for your project.
+
+```bash
+unity-cli raw build_player --json '{"target":"StandaloneOSX","scenes":["Assets/Scenes/Generated/E2E/Level.unity"],"outputPath":"/private/tmp/unity-cli-skill-build/Player.app","development":true}'
+unity-cli raw get_build_status --json '{"buildId":"<returned-build-id>"}'
+unity-cli raw start_scene_bake --json '{"target":"navmesh-surface","scenePath":"Assets/Scenes/Generated/E2E/Level.unity","surfacePath":"/BakeSurface"}'
+unity-cli raw get_scene_bake_status --json '{"jobId":"<returned-job-id>"}'
+```
+
+For Windows use `StandaloneWindows64` and an `.exe` output. Poll `get_build_status`
+until `state` is `succeeded`, `failed`, or `interrupted`; only `succeeded` is a pass.
+Inspect the report, artifacts and `changedProjectSettings` on completion.
+Output ancestors must not be symbolic links; on macOS use `/private/tmp`, not `/tmp`.
+
+Bake targets are `lighting`, `navmesh-legacy`, `navmesh-surface`, and `occlusion`.
+Load only the target scene and close prefab/asset previews before baking (a preview
+scene also triggers `MULTIPLE_SCENES`). Use its saved path and contributing geometry.
+Lighting needs lightmap static geometry and a baked light; occlusion needs occluder
+geometry. `navmesh-surface` additionally needs AI Navigation and a NavMeshSurface at
+`surfacePath`. Omit `surfacePath` for other targets. Poll `get_scene_bake_status`
+until `status` is `succeeded` or `failed`, then check saved artifacts and verification.
+An accepted start is not completion; never start duplicate jobs while polling.
 
 ### Evaluate a short C# snippet
 

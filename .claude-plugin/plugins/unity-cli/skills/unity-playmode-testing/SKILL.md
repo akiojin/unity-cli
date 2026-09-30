@@ -1,6 +1,6 @@
 ---
 name: unity-playmode-testing
-description: Drive Unity runtime verification with unity-cli. Use when the user asks to enter or exit play-mode, run an editmode or playmode test, simulate keyboard, mouse, gamepad, or touch input, capture a screenshot or video, or inspect current test status. Do not use for authoring input action assets; use `unity-input-system` instead.
+description: Drive Unity runtime verification with unity-cli. Use when the user asks to run PlayMode tests with Domain Reload, simulate keyboard, mouse, gamepad or touch input, inspect InputAction notifications in Play, record video or PNG frames, or preview method hot reload. Do not use for authoring input action assets; use `unity-input-system` instead.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -54,6 +54,78 @@ unity-cli raw stop_game --json '{}'
 ```
 
 ## Examples
+
+### Input simulation and InputAction notifications
+
+Requires Input System enabled and a running Play session. Replace the asset path
+with an existing input asset. Enable the intended action map in the game's runtime
+code and observe its `performed`/`canceled` callback (for example, log a counter).
+`get_input_actions_state` inspects asset maps/actions/bindings; it does **not** prove
+that callbacks fired, and a PlayerInput runtime copy can differ from the asset.
+
+```bash
+unity-cli raw input_keyboard --json '{"key":"space","action":"press","holdSeconds":0.2}'
+unity-cli raw input_gamepad --json '{"action":"button","button":"a","buttonAction":"press","holdSeconds":0.2}'
+unity-cli raw input_mouse --json '{"action":"move","x":100,"y":200,"absolute":true}'
+unity-cli raw input_touch --json '{"action":"tap","x":100,"y":200,"touchId":0}'
+unity-cli raw create_input_sequence --json '{"sequence":[{"type":"keyboard","params":{"action":"press","key":"space","holdSeconds":0.1}},{"type":"mouse","params":{"action":"move","x":100,"y":200,"absolute":true}}],"delayBetween":80}'
+unity-cli raw get_input_actions_state --json '{"assetPath":"Assets/Input/Player.inputactions","includeBindings":true}'
+unity-cli raw read_console --json '{"count":20}'
+```
+
+Check the callback evidence after sending input. `holdSeconds` holds a press across
+frames before release; sequence `delayBetween` is milliseconds. Device state alone
+is not evidence of a gameplay notification. For gamepad sticks, x/y specify
+individual processed axes; a diagonally processed Vector2 can differ.
+
+### Video and PNG sequences
+
+Requires a graphics-enabled Editor with Recorder installed and a visible Game View.
+Start one session, allow frames to render, inspect status, then stop before starting
+another. `format` accepts `mp4`, `webm`, or `png_sequence` (run the same flow for each).
+
+```bash
+unity-cli raw capture_video_start --json '{"captureMode":"game","format":"png_sequence","width":320,"height":180,"fps":10,"maxDurationSec":0}'
+unity-cli raw capture_video_status --json '{}'
+unity-cli raw capture_video_stop --json '{}'
+```
+
+Check `isRecording` and the final `outputPath`. For PNG sequences it names the first
+frame in a unique session directory; verify subsequent PNG files exist too.
+
+### Tests with Domain Reload enabled
+
+Domain Reload may remain enabled in Enter Play Mode Settings. Start tests from
+Edit Mode; the bridge persists and recovers the result across the reload. Poll
+status until complete, including results, and inspect passed/failed counts. A
+temporary disconnect during reload is not a failed test; reconnect and query status
+instead of submitting a duplicate test run.
+
+```bash
+unity-cli raw run_tests --json '{"testMode":"PlayMode"}'
+unity-cli raw get_test_status --json '{"includeTestResults":true}'
+```
+
+### Method hot reload preview
+
+Requires optional FastScriptReload 1.8.0, a supported macOS Editor, a compiled
+baseline and Play Mode. Replace the path with an existing eligible script.
+Disable Fast Script Reload's automatic and on-demand reload in its settings first;
+the bridge rejects concurrent patchers rather than changing those preferences.
+Inspect `supported` before beginning; do not report an unsupported preview as a pass.
+
+```bash
+unity-cli raw hot_reload_status --json '{}'
+unity-cli raw hot_reload --json '{"action":"begin","path":"Assets/HotReloadProbe.cs"}'
+unity-cli raw hot_reload --json '{"action":"recover"}'
+```
+
+`begin` returns `appliedRevision`; to apply complete candidate source and verify the
+actual method change, follow the [Hot Reload Preview Loop](../unity-development-loop/references/development-loop-playbook.md#hot-reload-preview-loop).
+`recover` stops Play and recompiles; poll `hot_reload_status` until idle. Preview
+does not save source. Persist a verified edit through `unity-csharp-edit` afterwards.
+If `begin` returns `HOT_RELOAD_BASELINE_UNPROVEN`, run `recover`, wait for idle,
+then re-enter Play Mode and begin again against the freshly compiled baseline.
 
 - "Run PlayMode tests for the player flow and report the result."
 - "Enter Play Mode, press space, and capture a screenshot."

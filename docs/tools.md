@@ -278,7 +278,7 @@ the last `appliedRevision`, `recover` to stop Play and recompile. See
 | `remove_action_map`           | Remove an Action Map               |
 | `remove_input_action`         | Remove an Input Action             |
 | `analyze_input_actions_asset` | Analyze Input Actions asset        |
-| `get_input_actions_state`     | Get Input Actions runtime state    |
+| `get_input_actions_state`     | Inspect Input Actions structure    |
 | `add_input_binding`           | Add an Input Binding               |
 | `create_composite_binding`    | Create a composite binding         |
 | `remove_input_binding`        | Remove an Input Binding            |
@@ -350,7 +350,7 @@ Paths refer to
 the **Unity Editor host**, including when the CLI runs on another machine.
 
 The initial response returns a `buildId`. Poll `get_build_status` with the required
-`buildId` string for `result.state`: `queued`, `running`, `succeeded`, `failed`,
+`buildId` string for `state` in the CLI response: `queued`, `running`, `succeeded`, `failed`,
 or `interrupted` (failure snapshots are in `details` on the error envelope).
 The completed report includes `reportResult`, `totalErrors`,
 `totalWarnings`, `errors`, `warnings`, `durationSeconds`, `outputPath`, and
@@ -585,3 +585,125 @@ unity-cli --help
 unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 unity-cli tool schema create_scene --output json
 ```
+
+## v0.13–v0.15 executable examples
+
+These examples are also discoverable in the domain skills: [runtime testing](../.claude-plugin/plugins/unity-cli/skills/unity-playmode-testing/SKILL.md), [Editor jobs](../.claude-plugin/plugins/unity-cli/skills/unity-editor-tools/SKILL.md), and [Timeline assets](../.claude-plugin/plugins/unity-cli/skills/unity-asset-management/SKILL.md). Select the intended Editor with host/port or project-path first.
+
+### Input simulation and InputAction notifications
+
+Requires Input System enabled and a running Play session. Replace the asset path
+with an existing input asset. Enable the intended action map in the game's runtime
+code and observe its `performed`/`canceled` callback (for example, log a counter).
+`get_input_actions_state` inspects asset maps/actions/bindings; it does **not** prove
+that callbacks fired, and a PlayerInput runtime copy can differ from the asset.
+
+```bash
+unity-cli raw input_keyboard --json '{"key":"space","action":"press","holdSeconds":0.2}'
+unity-cli raw input_gamepad --json '{"action":"button","button":"a","buttonAction":"press","holdSeconds":0.2}'
+unity-cli raw input_mouse --json '{"action":"move","x":100,"y":200,"absolute":true}'
+unity-cli raw input_touch --json '{"action":"tap","x":100,"y":200,"touchId":0}'
+unity-cli raw create_input_sequence --json '{"sequence":[{"type":"keyboard","params":{"action":"press","key":"space","holdSeconds":0.1}},{"type":"mouse","params":{"action":"move","x":100,"y":200,"absolute":true}}],"delayBetween":80}'
+unity-cli raw get_input_actions_state --json '{"assetPath":"Assets/Input/Player.inputactions","includeBindings":true}'
+unity-cli raw read_console --json '{"count":20}'
+```
+
+Check the callback evidence after sending input. `holdSeconds` holds a press across
+frames before release; sequence `delayBetween` is milliseconds. Device state alone
+is not evidence of a gameplay notification. For gamepad sticks, x/y specify
+individual processed axes; a diagonally processed Vector2 can differ.
+
+### Video and PNG sequences
+
+Requires a graphics-enabled Editor with Recorder installed and a visible Game View.
+Start one session, allow frames to render, inspect status, then stop before starting
+another. `format` accepts `mp4`, `webm`, or `png_sequence` (run the same flow for each).
+
+```bash
+unity-cli raw capture_video_start --json '{"captureMode":"game","format":"png_sequence","width":320,"height":180,"fps":10,"maxDurationSec":0}'
+unity-cli raw capture_video_status --json '{}'
+unity-cli raw capture_video_stop --json '{}'
+```
+
+Check `isRecording` and the final `outputPath`. For PNG sequences it names the first
+frame in a unique session directory; verify subsequent PNG files exist too.
+
+### Tests with Domain Reload enabled
+
+Domain Reload may remain enabled in Enter Play Mode Settings. Start tests from
+Edit Mode; the bridge persists and recovers the result across the reload. Poll
+status until complete, including results, and inspect passed/failed counts. A
+temporary disconnect during reload is not a failed test; reconnect and query status
+instead of submitting a duplicate test run.
+
+```bash
+unity-cli raw run_tests --json '{"testMode":"PlayMode"}'
+unity-cli raw get_test_status --json '{"includeTestResults":true}'
+```
+
+### Method hot reload preview
+
+Requires optional FastScriptReload 1.8.0, a supported macOS Editor, a compiled
+baseline and Play Mode. Replace the path with an existing eligible script.
+Disable Fast Script Reload's automatic and on-demand reload in its settings first;
+the bridge rejects concurrent patchers rather than changing those preferences.
+Inspect `supported` before beginning; do not report an unsupported preview as a pass.
+
+```bash
+unity-cli raw hot_reload_status --json '{}'
+unity-cli raw hot_reload --json '{"action":"begin","path":"Assets/HotReloadProbe.cs"}'
+unity-cli raw hot_reload --json '{"action":"recover"}'
+```
+
+`begin` returns `appliedRevision`; to apply complete candidate source and verify the
+actual method change, follow the [Hot Reload Preview Loop](../.claude-plugin/plugins/unity-cli/skills/unity-development-loop/references/development-loop-playbook.md#hot-reload-preview-loop).
+`recover` stops Play and recompiles; poll `hot_reload_status` until idle. Preview
+does not save source. Persist a verified edit through `unity-csharp-edit` afterwards.
+If `begin` returns `HOT_RELOAD_BASELINE_UNPROVEN`, run `recover`, wait for idle,
+then re-enter Play Mode and begin again against the freshly compiled baseline.
+
+### Player build and scene bake jobs
+
+Run from Edit Mode after compilation/import finishes. Save the target scene first.
+The build target must already be active with its support module installed. Paths
+refer to the Editor host; use a new/empty output parent outside the project assets.
+Replace scene/output paths and the returned IDs below with values for your project.
+
+```bash
+unity-cli raw build_player --json '{"target":"StandaloneOSX","scenes":["Assets/Scenes/Generated/E2E/Level.unity"],"outputPath":"/private/tmp/unity-cli-skill-build/Player.app","development":true}'
+unity-cli raw get_build_status --json '{"buildId":"<returned-build-id>"}'
+unity-cli raw start_scene_bake --json '{"target":"navmesh-surface","scenePath":"Assets/Scenes/Generated/E2E/Level.unity","surfacePath":"/BakeSurface"}'
+unity-cli raw get_scene_bake_status --json '{"jobId":"<returned-job-id>"}'
+```
+
+For Windows use `StandaloneWindows64` and an `.exe` output. Poll `get_build_status`
+until `state` is `succeeded`, `failed`, or `interrupted`; only `succeeded` is a pass.
+Inspect the report, artifacts and `changedProjectSettings` on completion.
+Output ancestors must not be symbolic links; on macOS use `/private/tmp`, not `/tmp`.
+
+Bake targets are `lighting`, `navmesh-legacy`, `navmesh-surface`, and `occlusion`.
+Load only the target scene and close prefab/asset previews before baking (a preview
+scene also triggers `MULTIPLE_SCENES`). Use its saved path and contributing geometry.
+Lighting needs lightmap static geometry and a baked light; occlusion needs occluder
+geometry. `navmesh-surface` additionally needs AI Navigation and a NavMeshSurface at
+`surfacePath`. Omit `surfacePath` for other targets. Poll `get_scene_bake_status`
+until `status` is `succeeded` or `failed`, then check saved artifacts and verification.
+An accepted start is not completion; never start duplicate jobs while polling.
+
+### Timeline assets, tracks, clips and bindings
+
+Requires Timeline installed, Edit Mode, and an existing writable parent folder.
+Use a new asset path for creation, then inspect before subsequent edits.
+
+```bash
+unity-cli raw manage_timeline --json '{"action":"create_asset","assetPath":"Assets/Timelines/Intro.playable"}'
+unity-cli raw manage_timeline --json '{"action":"create_track","assetPath":"Assets/Timelines/Intro.playable","trackName":"Movement","trackType":"AnimationTrack"}'
+unity-cli raw get_timeline --json '{"assetPath":"Assets/Timelines/Intro.playable"}'
+```
+
+Use inspected stable `trackId` values (GUID:localID), not track names. Only top-level
+AnimationTrack editing is supported. For `add_clip`, supply `animationClipPath`,
+`start`, and positive `duration`; re-inspect before `update_clip`/`remove_clip` and
+include `clipIndex` plus `expectedClip` from that snapshot. To bind or evaluate a
+PlayableDirector, use full hierarchy paths for `directorPath`/`animatorPath`.
+Inspect `unity-cli tool schema manage_timeline` for action-specific required fields.
