@@ -123,6 +123,7 @@ class Editor:
                      "--port", str(args.port), "--timeout-ms", "60000"]
         self.calls = 0
         self.last_elapsed_ms = None
+        self.original_play_focus = None
 
     def command(self, command):
         started = time.perf_counter()
@@ -139,6 +140,47 @@ class Editor:
         self.calls += 1
         validate_result(tool, result)
         return result
+
+    def game_view_modes(self, settings=None):
+        # Window-scoped API shared by UnityCsReference 2022.3 and 6000.3:
+        # Editor/Mono/PlayModeView/PlayModeView.cs (no global EditorPrefs changes).
+        entries = ",".join("{" + str(int(key)) + "," + json.dumps(value) + "}"
+                           for key, value in (settings or {}).items())
+        code = """
+var assembly = typeof(UnityEditor.EditorWindow).Assembly;
+var game = assembly.GetType("UnityEditor.GameView", true);
+UnityEditor.EditorWindow.GetWindow(game, false, "Game", false);
+var type = assembly.GetType("UnityEditor.PlayModeView", true);
+var property = type.GetProperty("enterPlayModeBehavior");
+var settings = new System.Collections.Generic.Dictionary<int, string> { SETTINGS };
+var values = new System.Collections.Generic.Dictionary<string, string>();
+foreach (var view in UnityEngine.Resources.FindObjectsOfTypeAll(type)) {
+    string mode;
+    if (settings.TryGetValue(view.GetInstanceID(), out mode))
+        property.SetValue(view, System.Enum.Parse(property.PropertyType, mode));
+    values[view.GetInstanceID().ToString()] = property.GetValue(view).ToString();
+}
+return values;
+""".replace("SETTINGS", entries)
+        result = self.command(["editor", "eval", code, "--mode", "statements"])
+        values = result.get("value")
+        if result.get("state") != "completed" or not isinstance(values, dict) or not values:
+            raise RuntimeError(f"cannot inspect Game View play focus: {result}")
+        if any(mode not in ("PlayFocused", "PlayMaximized", "PlayUnfocused") for mode in values.values()):
+            raise RuntimeError(f"unknown Game View play focus: {values}")
+        if settings is not None and values != settings:
+            raise RuntimeError(f"Game View play focus was not applied: {values} != {settings}")
+        return values
+
+    def configure_play_focus(self):
+        if self.original_play_focus is None:
+            self.original_play_focus = self.game_view_modes()
+            self.game_view_modes({key: "PlayUnfocused" for key in self.original_play_focus})
+
+    def restore_play_focus(self):
+        if self.original_play_focus is not None:
+            self.game_view_modes(self.original_play_focus)
+            self.original_play_focus = None
 
     def setup(self):
         # Marker is written only by the isolated matrix host; never replace a user's scene.
@@ -157,6 +199,7 @@ class Editor:
                 self.raw("manage_asset_database", {"action": "delete_asset", "assetPath": asset})
         self.raw("create_material", {"materialPath": SOURCE, "shader": "Unlit/Color", "overwrite": True})
         self.raw("save_scene", {})
+        self.configure_play_focus()
         return info
 
 
@@ -198,7 +241,8 @@ def measure_focus(editor, focus, args, budgets):
                       "unity": info["unity"]["unityVersion"], "focus": focus,
                       "sample": "CLI spawn-to-exit; warm unityd; transitions include state polling",
                       "enterPlayModeOptionsEnabled": settings["enterPlayModeOptionsEnabled"],
-                      "enterPlayModeOptions": settings["enterPlayModeOptions"], "suite_version": 1}
+                      "enterPlayModeOptions": settings["enterPlayModeOptions"],
+                      "gameViewEnterPlayModeBehavior": "PlayUnfocused", "suite_version": 2}
         report["conditions"] = conditions
         daemon_before = editor.command(["unityd", "status"])
         if not daemon_before.get("running") or daemon_before.get("connections", 0) < 1:
@@ -274,6 +318,7 @@ def main():
     focuses = ["frontmost", "background"] if args.focus == "both" else [args.focus]
     original_frontmost = _focus.frontmost_pid()
     runs = []
+    cleanup_errors = []
     try:
         for focus in focuses:
             run = measure_focus(editor, focus, args, budgets)
@@ -287,17 +332,26 @@ def main():
                 if editor.raw("get_editor_state", {})["state"]["isPlaying"]:
                     transition(editor.raw, False)
             except Exception as error:
+                cleanup_errors.append(str(error))
                 print(f"cleanup: {error}", file=sys.stderr)
+            try:
+                editor.restore_play_focus()
+            except Exception as error:
+                cleanup_errors.append(str(error))
+                print(f"play focus restoration: {error}", file=sys.stderr)
         if original_frontmost is not None:
             try:
                 _focus.activate(original_frontmost)
             except Exception as error:
                 print(f"focus restoration: {error}", file=sys.stderr)
     report = {"runs": runs, "command": sys.argv, "unity_cli": str(args.unity_cli),
-              "status": "PASS" if len(runs) == len(focuses) and all(r["status"] == "PASS" for r in runs) else "FAIL"}
+              "cleanup_errors": cleanup_errors,
+              "status": "PASS" if not cleanup_errors and len(runs) == len(focuses)
+              and all(r["status"] == "PASS" for r in runs) else "FAIL"}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"status": report["status"], "out": str(args.out),
+                      "cleanup_errors": cleanup_errors,
                       "runs": [{"focus": r["focus"], "passed": r["passed"], "failed": r["failed"],
                                 "violations": r["violations"]} for r in runs]}, indent=2))
     return 0 if report["status"] == "PASS" else 1

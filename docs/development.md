@@ -516,7 +516,7 @@ The real Editor suite measures the staff report's 23 operations (Issue #371 AC-6
 state, hierarchy, object search, Transform, position, Cube creation, component
 add/remove, object deletion, scene info/save, console, screenshot, material search,
 asset copy/move/delete, import settings, material edit, Time settings, C# read,
-Play-until-ready and Stop-until-ready. Remote tools use warm unityd; C# `read`
+Play-until-ready and Stop-until-ready. The 22 remote operations use warm unityd; C# `read`
 uses the current CLI's local reader and is explicitly labelled `local` in JSON.
 Play/Stop include polling until the requested state is observed.
 
@@ -528,6 +528,9 @@ a resident-shell benchmark without stating that difference.
 
 **Focus:** frontmost and background have separate budgets. macOS frontmost PID
 is checked before and after every sample; background runs activate Finder.
+The owned Game View windows use `PlayUnfocused` during both conditions so entering
+Play Mode does not bring a background Editor forward. Their previous settings are
+restored afterwards; this window setting is also recorded in the history conditions.
 Focus changes discard the entire balanced cycle and retry; ten discarded cycles
 or an OS screenshot fallback fail the run. Only valid cycles supply samples. Use an idle host
 without another agent changing Editor focus or importing another project.
@@ -544,7 +547,7 @@ python3 scripts/bench-cli-latency.py --out /tmp/cli-latency.json
 python3 scripts/bench-cli-latency.py --delay-ms 30 --out /tmp/cli-latency-delayed.json
 
 # Release prerequisite: both Editors, frontmost AND background, isolated GUI projects
-python3 scripts/e2e-matrix.py --suites perf \
+UNITY_CLI_PERF_REGRESSION_PERCENT=20 python3 scripts/e2e-matrix.py --suites perf \
   --unity-cli "$PWD/target/release/unity-cli" \
   --editor /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
   --editor /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity \
@@ -564,6 +567,8 @@ GUI Editors; its isolated-project ownership marker prevents the standalone
 benchmark from replacing a user's scene. Fixtures live only under
 `Assets/Scenes/Generated/E2E/Performance/`. The LSP binary is not needed for
 `--suites perf`.
+The copied URP material-upgrade cache is regenerated for the selected Editor;
+render pipeline settings are retained while avoiding a cross-version startup dialog.
 The suite also runs the existing `editor_eval` gate for 100 frontmost samples,
 saves `perf-eval.json`/`perf-eval.log`, and appends its results to the same history
 under separate eval conditions. Eval uses its existing direct TCP route.
@@ -573,7 +578,7 @@ under separate eval conditions. Eval uses its existing direct TCP route.
 `scripts/bench-editor-ops.py` appends all results to
 `.unity/perf/editor-ops-history.jsonl`. Compare p50 against the median of the
 last five complete measurement runs with the same host, OS, architecture, Unity version,
-focus, Play Mode options and sampling method. Fail when degradation is strictly
+focus, Play Mode options, Game View focus mode and sampling method. Fail when degradation is strictly
 greater than 20%. Fewer than five matching runs means absolute budgets still
 apply and the relative baseline is not yet established. Completed measurements
 count even when a budget failed; incomplete/error runs remain in the log but do
@@ -1101,9 +1106,11 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
   最前面・背景の両条件で動かし、条件別予算を適用します。
 - Editor と unityd は常駐・warm ですが、CLI は操作ごとに起動します。
   計測はプロセス起動から終了までで、Play/Stop は状態確認までを含みます。
-  常駐 CLI shell の計測とは区別してください。C# ファイル読取だけは現行 CLI の
+  常駐 CLI shell の計測とは区別してください。22 操作は warm unityd を使い、C# ファイル読取だけは現行 CLI の
   ローカル処理であり、JSON の経路に `local` と明記します。
 - 最前面 PID を各サンプルの前後で確認し、背景条件は Finder を前面にします。
+  専用 Game View は両条件とも `PlayUnfocused` にし、Play 開始時の自動前面化を防ぎます。
+  終了時に元のウィンドウ設定へ戻し、この設定も履歴の比較条件に含めます。
   フォーカス逸脱時は周全体を破棄して再計測し、有効な周だけを採用します。
   10 周の破棄、OS スクリーンショットへのフォールバックは失敗です。
   他 Agent の GUI 操作や重い import と同時に計測しません。

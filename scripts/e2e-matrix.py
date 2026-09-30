@@ -53,6 +53,14 @@ def requires_gui(suites):
     return bool(suites and "perf" in suites.split(","))
 
 
+def prepare_perf_fixture(project):
+    # This copied cache belongs to the source Editor's URP version. Let the target
+    # Editor regenerate it as a new project, without its existing-project upgrade dialog.
+    (project / "ProjectSettings/URPProjectSettings.asset").unlink(missing_ok=True)
+    (project / ".unity").mkdir(exist_ok=True)
+    (project / ".unity/perf-owned-project").write_text("Created by e2e-matrix.py\n")
+
+
 def hot_reload_apply_suites(editor, version, args, destination):
     """Real method replacement, each in its own isolated Editor with the optional backend installed.
 
@@ -142,8 +150,7 @@ def run_editor(editor, args, output, base_env):
         version, project, manifest = prepare(editor, destination)
         row.update(version=version, packages=manifest["dependencies"])
         if requires_gui(args.suites):
-            (project / ".unity").mkdir(exist_ok=True)
-            (project / ".unity/perf-owned-project").write_text("Created by e2e-matrix.py\n")
+            prepare_perf_fixture(project)
         env = dict(base_env, UNITY_PROJECT_ROOT=str(project), UNITY_CLI_PORT=str(args.port),
                    UNITY_CLI_ALLOW_BATCH_HOST="1", UNITY_CLI_PORT_OVERRIDE=str(args.port),
                    UNITY_CLI_BATCH_HOST_SHUTDOWN_FILE=str(destination / "stop"))

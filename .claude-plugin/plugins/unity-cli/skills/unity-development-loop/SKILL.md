@@ -57,6 +57,8 @@ This launches isolated GUI projects and runs `scripts/bench-editor-ops.py` for t
 staff report's 23 operations, 30 samples after 3 warmup cycles per focus condition.
 It also runs the existing frontmost `editor_eval` budget with 100 samples and history.
 Use an idle host and coordinate Editor focus with other agents.
+The owned Game Views temporarily use `PlayUnfocused`; the benchmark restores their
+previous window settings after measurement so Play does not invalidate background samples.
 
 Inspect `matrix.json`, each `perf.json` and `perf.log`. Report the command, Unity
 version, pass/fail counts and violations. `perf-budgets.json` gates p50/p95;
@@ -65,7 +67,8 @@ against the last five complete matching runs. `UNITY_CLI_PERF_REGRESSION_PERCENT
 overrides that relative threshold for investigation; releases use the default.
 Read Benchmark Policy in `docs/development.md` for baseline recovery and conditions.
 
-Timing includes each CLI process startup while Editor/unityd remain warm. C# file
+Timing includes each CLI process startup while Editor/unityd remain warm. The 22
+remote operations use unityd. C# file
 reads use the local reader; Play/Stop include state confirmation. Do not equate
 these measurements with persistent-shell timings or compare foreground and
 background as if they were the same condition. After a product/benchmark change,

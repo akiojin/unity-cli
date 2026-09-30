@@ -86,7 +86,7 @@ Release artifacts include:
 
 1. Ensure the release changes are merged and the working tree is clean
 2. Run the [performance matrix](docs/development.md#benchmark-policy) and require
-   both versions and both focus conditions to PASS. Record commands, versions,
+   both versions and both focus conditions to PASS with the 20% regression threshold. Record commands, versions,
    pass/fail counts and log summaries in the release PR.
 3. Run:
 

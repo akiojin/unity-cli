@@ -15,6 +15,21 @@ spec.loader.exec_module(matrix)
 
 
 class MatrixTests(unittest.TestCase):
+    def test_gui_fixture_regenerates_only_urp_upgrade_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            settings = project / "ProjectSettings"
+            settings.mkdir()
+            cache = settings / "URPProjectSettings.asset"
+            cache.write_text("m_LastMaterialVersion: 10\n")
+            rendering = settings / "GraphicsSettings.asset"
+            rendering.write_text("keep render pipeline\n")
+            matrix.prepare_perf_fixture(project)
+            self.assertFalse(cache.exists())
+            self.assertEqual(rendering.read_text(), "keep render pipeline\n")
+            self.assertTrue((project / ".unity/perf-owned-project").is_file())
+            matrix.prepare_perf_fixture(project)
+
     def test_perf_requires_gui_without_changing_other_suites(self):
         self.assertTrue(getattr(matrix, "requires_gui", lambda _: False)("perf"))
         self.assertTrue(matrix.requires_gui("compile,perf"))

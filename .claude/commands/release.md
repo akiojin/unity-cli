@@ -69,7 +69,7 @@ git pull --ff-only origin develop
 
 ```bash
 cargo build --release --bin unity-cli
-python3 scripts/e2e-matrix.py --suites perf --perf-focus both \
+UNITY_CLI_PERF_REGRESSION_PERCENT=20 python3 scripts/e2e-matrix.py --suites perf --perf-focus both \
   --unity-cli "$PWD/target/release/unity-cli" \
   --editor /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
   --editor /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity \

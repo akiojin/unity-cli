@@ -108,6 +108,23 @@ class EditorPerfTests(unittest.TestCase):
             self.assertEqual(report["passed"], 0)
             self.assertTrue(args.history.is_file())
 
+    def test_game_view_focus_mode_is_scoped_and_restored(self):
+        editor = self.bench.Editor(SimpleNamespace(unity_cli=Path("unused"), port=6509), {})
+        original = {"123": "PlayFocused"}
+        unfocused = {"123": "PlayUnfocused"}
+        editor.game_view_modes = Mock(side_effect=[original, unfocused, original])
+        editor.configure_play_focus()
+        editor.configure_play_focus()
+        editor.restore_play_focus()
+        self.assertEqual(editor.game_view_modes.call_args_list,
+                         [unittest.mock.call(), unittest.mock.call(unfocused), unittest.mock.call(original)])
+
+    def test_game_view_mode_update_must_be_observed(self):
+        editor = self.bench.Editor(SimpleNamespace(unity_cli=Path("unused"), port=6509), {})
+        editor.command = Mock(return_value={"state": "completed", "value": {"123": "PlayFocused"}})
+        with self.assertRaises(RuntimeError):
+            editor.game_view_modes({"123": "PlayUnfocused"})
+
 
 if __name__ == "__main__":
     unittest.main()
