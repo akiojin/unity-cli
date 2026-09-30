@@ -107,6 +107,9 @@ namespace UnityCliBridge.Core
                 ["edit_animation_curve"] = command => Success(command, AnimationCurveHandler.EditAnimationCurve(command.Parameters)),
                 ["create_sprite_atlas"] = command => Success(command, AssetManagementHandler.CreateSpriteAtlas(command.Parameters)),
                 ["create_prefab"] = command => Success(command, AssetManagementHandler.CreatePrefab(command.Parameters)),
+                ["get_prefab_overrides"] = command => PrefabResult(command, PrefabWorkflowHandler.GetOverrides(command.Parameters)),
+                ["manage_prefab_overrides"] = command => PrefabResult(command, PrefabWorkflowHandler.ManageOverrides(command.Parameters)),
+                ["unpack_prefab"] = command => PrefabResult(command, PrefabWorkflowHandler.Unpack(command.Parameters)),
                 ["modify_prefab"] = command => Success(command, AssetManagementHandler.ModifyPrefab(command.Parameters)),
                 ["instantiate_prefab"] = command => Success(command, AssetManagementHandler.InstantiatePrefab(command.Parameters)),
                 ["create_material"] = command => Success(command, AssetManagementHandler.CreateMaterial(command.Parameters)),
@@ -196,6 +199,15 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+        private static Task<string> PrefabResult(Command command, object result)
+        {
+            var value = Newtonsoft.Json.Linq.JObject.FromObject(result);
+            if (value.Value<bool?>("success") == false)
+                return Task.FromResult(Response.ErrorResult(command.Id,
+                    value.Value<string>("error"), value.Value<string>("code"), value));
+            return Success(command, result);
+        }
 
         private static async Task<string> HandleHotReload(Command command)
         {
