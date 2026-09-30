@@ -40,8 +40,11 @@ Install the `unity-cli` plugin from Claude Code Marketplace:
 /plugin marketplace add akiojin/unity-cli
 ```
 
-The marketplace plugin installs skills only. Install the `unity-cli` binary
-separately using one of the manual options below.
+The plugin ships skills; the binary and the Unity bridge are bootstrapped on
+demand. When a task needs Unity and `unity-cli` is missing, the
+`unity-cli-usage` skill has the agent run the Quick Install script below and then
+`unity-cli setup` in your Unity project (it tells you before editing
+`Packages/manifest.json`).
 
 ### Codex Skills
 
@@ -79,9 +82,23 @@ cd unity-cli
 cargo install --path .
 ```
 
-Unity-side bridge package (choose one):
+One-command project setup (binary check → bridge install → Editor connection):
 
-**OpenUPM** (recommended):
+```bash
+cd /path/to/YourUnityProject
+unity-cli --output json setup --launch-editor
+```
+
+`setup` adds the OpenUPM scoped registry and `com.akiojin.unity-cli-bridge`
+(pinned to the CLI version) to `Packages/manifest.json`, optionally launches
+the project's Unity Hub Editor, waits for the bridge, and returns one JSON
+report. `unity-cli bridge install | upgrade | status` manage the package on
+their own; `install` is idempotent, and `setup` / `system ping` report a
+`versionCheck` when the CLI and bridge versions differ.
+
+Unity-side bridge package, manual alternatives (choose one):
+
+**OpenUPM**:
 
 ```bash
 openupm add com.akiojin.unity-cli-bridge

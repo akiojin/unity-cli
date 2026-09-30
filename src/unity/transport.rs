@@ -109,7 +109,20 @@ impl UnityClient {
         let read_ms = read_started_at.elapsed().as_secs_f64() * 1000.0;
 
         let normalize_started_at = Instant::now();
-        let value = normalize_response(response)?;
+        let bridge_version = response
+            .pointer("/editorState/version")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+        let mut value = normalize_response(response)?;
+        // Bridges older than the ping `bridgeVersion` field still report their
+        // package version in the envelope; surface it for version checks.
+        if tool_name == "ping" {
+            if let (Some(object), Some(version)) = (value.as_object_mut(), bridge_version) {
+                object
+                    .entry("bridgeVersion")
+                    .or_insert(Value::String(version));
+            }
+        }
         let normalize_ms = normalize_started_at.elapsed().as_secs_f64() * 1000.0;
 
         Ok(ToolCallResult {
@@ -334,6 +347,35 @@ mod tests {
 
         assert_eq!(result["ok"], true);
         assert_eq!(result["echo"], "hello");
+        server.await.expect("server task should complete");
+    }
+
+    #[tokio::test]
+    async fn ping_backfills_bridge_version_from_editor_state_envelope() {
+        let (port, server) = spawn_mock_server(|request| {
+            json!({
+                "id": request["id"],
+                "status": "success",
+                "result": { "message": "pong" },
+                "editorState": { "version": "0.15.3" }
+            })
+        })
+        .await;
+
+        let config = RuntimeConfig {
+            host: "127.0.0.1".to_string(),
+            port,
+            timeout: Duration::from_millis(500),
+        };
+        let mut client = UnityClient::connect(&config)
+            .await
+            .expect("client should connect");
+        let result = client
+            .call_tool("ping", json!({}))
+            .await
+            .expect("ping should succeed");
+
+        assert_eq!(result["bridgeVersion"], "0.15.3");
         server.await.expect("server task should complete");
     }
 

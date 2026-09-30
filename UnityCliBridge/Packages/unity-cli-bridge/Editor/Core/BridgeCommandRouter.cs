@@ -29,7 +29,9 @@ namespace UnityCliBridge.Core
                 {
                     message = "pong",
                     echo = command.Parameters?["message"]?.ToString(),
-                    timestamp = DateTime.UtcNow.ToString("o")
+                    timestamp = DateTime.UtcNow.ToString("o"),
+                    bridgeVersion = Response.PackageVersion,
+                    projectPath = Path.GetDirectoryName(Application.dataPath)
                 }),
                 ["clear_logs"] = command =>
                 {

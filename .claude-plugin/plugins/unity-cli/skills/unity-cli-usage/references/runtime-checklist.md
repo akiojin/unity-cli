@@ -2,8 +2,17 @@
 
 ## Binary Selection
 
-- Prefer an installed `unity-cli` binary when it exists on `PATH`.
-- If the repo is the current workspace and no global binary is installed, use `cargo run -- <args>`.
+- Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).
+- If no binary is installed, run `scripts/install.sh` (macOS / Linux) or `scripts/install.ps1` (Windows, when published) instead of asking the user.
+- Only inside a unity-cli source checkout, `cargo run -- <args>` is a development alternative.
+
+## Project Setup
+
+- `unity-cli setup` = binary check → `bridge install` → Editor `ping`; it prints one JSON report and exits non-zero until the Editor answers for this project.
+- Tell the user before running it: it edits `Packages/manifest.json`. `bridge install` is idempotent (a second run leaves the file byte-identical).
+- `--launch-editor` starts the Unity Hub Editor recorded in `ProjectSettings/ProjectVersion.txt` (`UNITY_EDITOR_PATH` overrides) and waits up to 900 s (`--wait-secs`).
+- `editor.projectMatches: false` means another project's Editor owns the port; pass `--port`.
+- `versionCheck.status: mismatch` (from `setup` or `system ping`) → `unity-cli bridge upgrade`, or update the CLI.
 - Verify the binary with `unity-cli --version` before debugging higher-level workflows.
 
 ## Instance Selection
