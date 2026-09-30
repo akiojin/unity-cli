@@ -126,7 +126,7 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
 | `UNITY_PROJECT_ROOT` | `Assets/` と `Packages/` を含むディレクトリ | 自動検出 |
-| `UNITY_CLI_HOST` | Unity Editor ホスト | `localhost` |
+| `UNITY_CLI_HOST` | Unity Editor ホスト | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor ポート | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ms) | `30000` |
 | `UNITY_CLI_LSP_MODE` | LSP モード (`off` / `auto` / `required`) | `off` |

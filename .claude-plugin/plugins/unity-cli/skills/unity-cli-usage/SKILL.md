@@ -64,7 +64,7 @@ unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ## Examples
 
 - "Check whether unity-cli can reach my Unity Editor." → run `unity-cli system ping`.
-- "Switch to the Unity instance running on port 6401." → `unity-cli instances list --ports 6400,6401` then `unity-cli instances set-active localhost:6401`.
+- "Switch to the Unity instance running on port 6401." → `unity-cli instances list --ports 6400,6401` then `unity-cli instances set-active 127.0.0.1:6401`.
 - "Inspect what's in the open scene." → `unity-cli raw analyze_scene_contents --json '{}'`. There is no typed `scene` subcommand for this — `scene create` is the only typed scene operation.
 - "What tools does the bridge expose?" → `unity-cli tool list`. For a specific tool's JSON payload shape: `unity-cli tool schema <tool_name> --output json`.
 

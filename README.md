@@ -164,7 +164,7 @@ policy, required CI, and skill documentation changes.
 | Variable | Description | Default |
 | --- | --- | --- |
 | `UNITY_PROJECT_ROOT` | Directory containing `Assets/` and `Packages/` | auto-detect |
-| `UNITY_CLI_HOST` | Unity Editor host | `localhost` |
+| `UNITY_CLI_HOST` | Unity Editor host | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
 | `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`) | `off` |

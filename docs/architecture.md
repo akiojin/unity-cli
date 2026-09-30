@@ -77,7 +77,7 @@ C# ソースコードの静的解析を行う Language Server Protocol 実装で
 
 ### CLI → Unity Editor (TCP)
 
-- **プロトコル**: TCP (デフォルト `localhost:6400`)
+- **プロトコル**: TCP (デフォルト `127.0.0.1:6400`)
 - **フォーマット**: JSON（改行区切り）
 - **認証**: なし（ローカル通信前提）
 
@@ -106,7 +106,7 @@ CLI 側                        Unity Editor 側
 
 | 変数名 | 用途 | デフォルト |
 | -------- | ---- | --------- |
-| `UNITY_CLI_HOST` | Unity Editor の接続先ホスト | `localhost` |
+| `UNITY_CLI_HOST` | Unity Editor の接続先ホスト | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor の接続先ポート | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ミリ秒) | ― |
 | `UNITY_CLI_LSP_MODE` | LSP 起動モード | `off` |
