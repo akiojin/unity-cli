@@ -46,6 +46,7 @@ SCHEMA = {
 class ToolSummary:
     name: str
     keys: set[str] = field(default_factory=set)
+    examples: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass
@@ -118,6 +119,9 @@ def parse_tool_summaries(text: str) -> dict[str, ToolSummary]:
             return
         if isinstance(parsed, dict):
             add(tool_name, parsed.keys())
+            examples = tools[tool_name].examples
+            if parsed not in examples and len(examples) < 2:
+                examples.append(parsed)
 
     for match in re.finditer(r"unity-cli raw ([a-z0-9_]+) --json '([^']*)'", text):
         add_from_json(match.group(1), match.group(2))
@@ -203,6 +207,13 @@ def format_skill_catalog(skills: list[SkillSummary]) -> str:
                     tool_parts.append(f"{tool_name} | keys: {', '.join(keys)}")
                 else:
                     tool_parts.append(f"{tool_name}")
+                if skill.tools[tool_name].examples:
+                    examples = json.dumps(
+                        skill.tools[tool_name].examples,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    )
+                    tool_parts[-1] += f" | example payloads: {examples}"
             lines.append(f"  Tool hints: {'; '.join(tool_parts)}")
     return "\n".join(lines)
 
@@ -294,7 +305,11 @@ def route_by_keywords(user_prompt: str) -> dict[str, object] | None:
             "remove_input_binding",
             ["assetPath", "mapName", "actionName", "bindingIndex"],
         )
-    if has_any("入力アセット", ".inputactions", "action map", "binding") and has_any("play", "キー入力", "検証"):
+    if (
+        has_any("入力アセット", ".inputactions", "action map", "binding")
+        and has_any("play", "キー入力", "検証")
+        and has_any("更新", "追加", "作成", "update", "add", "create", "bind ")
+    ):
         return make_prediction(
             ["unity-input-system", "unity-playmode-testing"],
             "add_input_binding",

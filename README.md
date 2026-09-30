@@ -11,6 +11,20 @@ It is the successor to [`unity-mcp-server`](https://github.com/akiojin/unity-mcp
 - Access `101` Unity Tool APIs across scene, asset, code, test, UI, and editor domains.
 - Run as a single binary with fast startup and low overhead.
 
+## Features added since v0.13
+
+The [executable tool examples](docs/tools.md#v013v015-executable-examples) cover:
+
+- PlayMode test results across Domain Reload; keyboard/gamepad holds, mouse/touch
+  simulation, input sequences and InputAction notification checks.
+- MP4, WebM and PNG frame-sequence recording, plus method hot reload previews.
+- Timeline asset/track/clip editing, Lighting/NavMesh/NavMeshSurface/Occlusion bake
+  jobs, and standalone Player builds with status polling.
+
+Start with `unity-playmode-testing` for runtime/input/capture/hot reload,
+`unity-asset-management` for Timeline, and `unity-editor-tools` for build/bake jobs.
+Package and scene prerequisites are listed with each example.
+
 ## How It Works
 
 ```text
@@ -48,7 +62,7 @@ demand. When a task needs Unity and `unity-cli` is missing, the
 
 ### Codex Skills
 
-When using this repository with Codex, skills are available via `.codex/skills/` (symlinks to the plugin source).
+When using this repository with Codex, skills are available via `.agents/skills/` (symlinks to the plugin source, also exposed through `.claude/skills/`).
 No additional setup is required - just clone the repository.
 
 ### Quick Install (recommended)

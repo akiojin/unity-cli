@@ -1,6 +1,6 @@
 ---
 name: unity-asset-management
-description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to refresh the asset database, inspect asset info, create or modify a material, create an animation clip or sprite atlas, update import settings, or analyze asset dependencies before moving or deleting files. Do not use for Addressables groups or content builds; use `unity-addressables`. Do not use for scene object edits; use `unity-gameobject-edit`.
+description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to inspect or edit Timeline tracks/clips/bindings, create materials, animation clips or sprite atlases, refresh assets, update imports, or analyze dependencies. Do not use for Addressables builds; use `unity-addressables`. For Player builds or scene baking, use `unity-editor-tools`. For scene object edits, use `unity-gameobject-edit`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -29,7 +29,7 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 
 - The user wants to inspect, refresh, move, or otherwise manage project assets.
 - The user wants to create or update materials.
-- The user wants to author AnimationClip or SpriteAtlas assets, or inspect and edit numeric animation curves.
+- The user wants to author Timeline, AnimationClip or SpriteAtlas assets, inspect Timeline tracks/clips/bindings, or edit numeric animation curves.
 - The user needs import settings or dependency analysis before file changes.
 
 ## Do Not Use When
@@ -58,6 +58,24 @@ unity-cli raw analyze_asset_dependencies --json '{"action":"get_dependencies","a
 For numeric curves, replace `12345` with the actual animation root GameObject instance ID from scene inspection. `path` is relative to that root; `component` is fully qualified and `property` is the serialized binding name (Transform `localPosition.x` aliases `m_LocalPosition.x`). Only writable standalone `Assets/*.anim` clips are editable, outside Play Mode. Use `set` to replace one curve, `upsert_keys` to add/update exact times, `remove_keys` with `times`, or `remove_curve`. Other bindings remain intact. New keys default to Linear; omitted tangent settings on existing keys are retained. Use `leftTangentMode`/`rightTangentMode` and finite `inTangent`/`outTangent` for Free tangents. Inspect with `get_animation_curves` after editing; object-reference bindings are listed separately and cannot be numerically edited.
 
 ## Examples
+
+### Timeline assets, tracks, clips and bindings
+
+Requires Timeline installed, Edit Mode, and an existing writable parent folder.
+Use a new asset path for creation, then inspect before subsequent edits.
+
+```bash
+unity-cli raw manage_timeline --json '{"action":"create_asset","assetPath":"Assets/Timelines/Intro.playable"}'
+unity-cli raw manage_timeline --json '{"action":"create_track","assetPath":"Assets/Timelines/Intro.playable","trackName":"Movement","trackType":"AnimationTrack"}'
+unity-cli raw get_timeline --json '{"assetPath":"Assets/Timelines/Intro.playable"}'
+```
+
+Use inspected stable `trackId` values (GUID:localID), not track names. Only top-level
+AnimationTrack editing is supported. For `add_clip`, supply `animationClipPath`,
+`start`, and positive `duration`; re-inspect before `update_clip`/`remove_clip` and
+include `clipIndex` plus `expectedClip` from that snapshot. To bind or evaluate a
+PlayableDirector, use full hierarchy paths for `directorPath`/`animatorPath`.
+Inspect `unity-cli tool schema manage_timeline` for action-specific required fields.
 
 - "Refresh the asset database and inspect `Assets/Textures/hero.png`."
 - "Create a material for the player and tint it red."
