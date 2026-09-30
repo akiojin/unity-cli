@@ -36,6 +36,16 @@ jobs:
         # to avoid flakiness. The coverage job already uses --test-threads=1.
         run: cargo test -- --test-threads=1
 
+  windows-installer-test:
+    name: Windows Installer Checksum Test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify install.ps1 SHA256SUMS gate
+        shell: pwsh
+        run: ./tests/scripts/install-ps1-test.ps1
+
   lsp-test:
     name: LSP Tests (required)
     runs-on: ubuntu-latest
