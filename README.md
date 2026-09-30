@@ -67,13 +67,26 @@ No additional setup is required - just clone the repository.
 
 ### Quick Install (recommended)
 
+macOS (Apple silicon / Intel) and Linux:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
 ```
 
-This downloads the latest release binary to `~/.unity/tools/unity-cli/{rid}/`
-and symlinks it to `~/.local/bin/unity-cli`. After the initial install the CLI
-checks for updates automatically in the background — no manual upgrades needed.
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
+```
+
+Both installers download the release binary into the managed layout
+`~/.unity/tools/unity-cli/{rid}/` and verify it against the release
+`SHA256SUMS` before installing; a checksum mismatch aborts the install and
+leaves the existing binary untouched. `install.sh` symlinks it to
+`~/.local/bin/unity-cli`; `install.ps1` adds the managed directory to the user
+`PATH`. Set `UNITY_CLI_VERSION=v0.16.0` to pin a release. After the initial
+install the CLI checks for updates automatically in the background, and every
+update is verified against the same checksums.
 
 If `~/.local/bin` is not in your PATH, add the following to your shell profile
 (e.g. `~/.zshrc` or `~/.bashrc`):
@@ -83,6 +96,18 @@ export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Set `UNITY_CLI_NO_AUTO_UPDATE=1` to disable auto-update.
+
+### Package Managers
+
+```bash
+brew install akiojin/tap/unity-cli     # macOS / Linux (Homebrew)
+winget install akiojin.unity-cli       # Windows (winget)
+```
+
+Package-manager installs are updated by `brew upgrade` / `winget upgrade`.
+On Intel macOS, reference embeddings (`unity-cli reference embed-build` / `embed-search`) load ONNX Runtime
+dynamically; the Homebrew formula installs `onnxruntime`, otherwise run
+`brew install onnxruntime` or set `ORT_DYLIB_PATH`.
 
 ### Manual Install
 
