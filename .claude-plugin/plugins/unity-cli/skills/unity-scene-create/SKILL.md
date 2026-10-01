@@ -4,7 +4,7 @@ description: Create and bootstrap Unity scenes with unity-cli. Use when the user
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: scenes
   triggers:
     - scene
@@ -13,6 +13,7 @@ metadata:
     - gameobject
     - level
   siblings:
+    - unity-project-bootstrap
     - unity-gameobject-edit
     - unity-prefab-workflow
     - unity-scene-inspect
@@ -32,6 +33,7 @@ Create scenes, add starter GameObjects, and attach initial components via `unity
 
 ## Do Not Use When
 
+- The project itself does not exist yet and the request includes bridge setup; use `unity-project-bootstrap`.
 - The request mainly mutates existing objects in an already-prepared scene; use `unity-gameobject-edit`.
 - The work happens inside prefab edit mode; use `unity-prefab-workflow`.
 - The user only wants to read or analyse a scene; use `unity-scene-inspect`.
@@ -53,7 +55,7 @@ Create scenes, add starter GameObjects, and attach initial components via `unity
 
 ```bash
 unity-cli scene create MainMenu --path Assets/Scenes/
-unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"Cube"}'
+unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"cube"}'
 unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'
 unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/MainMenu.unity"}'
 ```

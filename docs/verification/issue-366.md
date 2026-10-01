@@ -16,9 +16,9 @@
 | --- | --- | --- |
 | AC-1 | Existing `unity-cli-usage` already documents install.sh, setup and bridge installation; preserved without rewriting its bootstrap flow. | PASS |
 | AC-2 | Four editing skills now require target ping, prohibit reachable-Editor YAML edits, explain sandbox uncertainty and require a fallback declaration. | PASS |
-| AC-3 | `cargo run --quiet -- skills lint --severity error`: 16 skills, 0 violations. | PASS |
+| AC-3 | `cargo run --quiet -- skills lint --severity error`: 17 skills after merging #375, 0 violations. | PASS |
 | AC-4 | Both real Editor transcripts select `unity-gameobject-edit` and call `add_component`; no direct file-edit tools or YAML-writing shell commands occur. Reload confirms persistence. | PASS |
-| AC-5 | SR-158–SR-164: 7/7 correct for top-1, top-2, tool and payload keys using the existing scorer. | PASS |
+| AC-5 | SR-164–SR-170: 7/7 correct for top-1, top-2, tool and payload keys using the existing scorer. | PASS |
 | AC-6 | Requirements, plan and tasks recorded in [parent SPEC #160](https://github.com/akiojin/unity-cli/issues/160#issuecomment-5924900973). | PASS |
 
 Before editing, Claude Code's retrieval check marked the YAML prohibition,
@@ -79,13 +79,19 @@ cargo fmt --all -- --check
 git diff --check
 ```
 
-- SR-158/159: add Rigidbody to an existing Player (Japanese / English).
-- SR-160: new-scene authoring remains owned by scene-create.
-- SR-161/162: Prefab and material mutations stay with their respective skills.
-- SR-163: sandbox connectivity retry stays with cli-usage.
-- SR-164: component inspection stays read-only.
+- SR-164/165: add Rigidbody to an existing Player (Japanese / English).
+- SR-166: new-scene authoring remains owned by scene-create.
+- SR-167/168: Prefab and material mutations stay with their respective skills.
+- SR-169: sandbox connectivity retry stays with cli-usage.
+- SR-170: component inspection stays read-only.
 - Three existing routing regression tests passed (action discriminators,
   runtime inspection and input-asset-update boundaries).
+
+The original seven cases used SR-158–SR-164. After #375 landed, its six cases
+retained SR-158–SR-163 and this change was renumbered to SR-164–SR-170.
+Predictions were regenerated against the merged 17-skill catalog and rescored.
+The gameobject-edit skill used by the real Editor sessions was unchanged by the
+merge, so those transcripts remain applicable.
 
 This is a documentation/skill-fixture change. No Rust, C# or Unity runtime
 implementation changed; the full runtime unit suites were not rerun locally.

@@ -1,0 +1,21 @@
+# commands run (cwd noted)
+[cwd /tmp] "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity" -batchmode -quit -createProject /tmp/issue375-unity-2022.3.62f3-final -logFile /tmp/issue375-evidence/2022.3.62f3-final/create.log
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json setup --launch-editor
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json system ping
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json scene create Bootstrap --path Assets/Scenes/Generated/E2E/ --load-scene
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_hierarchy --json {"includeComponents":true}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw create_gameobject --json {"name":"BootstrapCube","primitiveType":"cube","position":{"x":0,"y":0,"z":0}}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw save_scene --json {"scenePath":"Assets/Scenes/Generated/E2E/Bootstrap.unity"}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_hierarchy --json {"includeComponents":true}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw play_game --json {}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_editor_state --json {}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw capture_screenshot --json {"captureMode":"game","width":1280,"height":720,"osFallback":false}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw read_console --json {"count":20}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw stop_game --json {}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_editor_state --json {}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_scene_info --json {}
+[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw quit_editor --json {}
+# Note: between play_game and the recorded get_editor_state, a polling loop ran (up to 10x, 2s apart) until isPlaying=true:
+#   unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_editor_state --json {}
+# Read-only discovery commands also ran (not state-changing): unity-cli --version; unity-cli setup --help; unity-cli scene create --help;
+#   unity-cli ... tool schema create_scene|create_gameobject|quit_editor; unity-cli ... tool list --query quit|exit --compact

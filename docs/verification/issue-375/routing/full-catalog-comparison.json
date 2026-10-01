@@ -1,0 +1,36 @@
+{
+  "before": {
+    "model": "claude-opus-5-5-with-existing-overrides",
+    "total": 157,
+    "metrics": {
+      "top1": 0.9936,
+      "top2": 1.0,
+      "tool_correct": 0.8344,
+      "payload_valid": 0.8662
+    },
+    "thresholds": {
+      "top1": 0.9,
+      "top2": 0.98,
+      "tool_correct": 0.92,
+      "payload_valid": 0.95
+    },
+    "all_passed": false
+  },
+  "after": {
+    "model": "claude-opus-5-5-with-existing-overrides",
+    "total": 163,
+    "metrics": {
+      "top1": 0.9877,
+      "top2": 0.9877,
+      "tool_correct": 0.8466,
+      "payload_valid": 0.8712
+    },
+    "thresholds": {
+      "top1": 0.9,
+      "top2": 0.98,
+      "tool_correct": 0.92,
+      "payload_valid": 0.95
+    },
+    "all_passed": false
+  }
+}
