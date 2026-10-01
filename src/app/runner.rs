@@ -14,7 +14,6 @@ use crate::cli::{
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
-#[cfg(test)]
 use crate::core::editor_discovery::TargetError;
 use crate::instances::{list_instances, set_active_instance};
 use crate::tool_catalog::{get_tool_spec, is_known_tool};
@@ -782,7 +781,19 @@ async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
 }
 
 async fn discover_for_cli(cli: &Cli) -> Result<Vec<DiscoveredTool>> {
-    let mut config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    let mut config = match RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli)) {
+        Err(error)
+            if matches!(
+                error.downcast_ref::<TargetError>(),
+                Some(TargetError::NotFound { .. })
+            ) =>
+        {
+            // An unopened, explicitly selected project still has the offline
+            // builtin catalog. Ambiguous selection and invalid config remain errors.
+            return Ok(discovery::builtin_tool_specs());
+        }
+        result => result?,
+    };
     // Listing remains useful offline. Bound the optional discovery probe, but
     // honor an explicit timeout for busy/remote Editors.
     if cli.timeout_ms.is_none() {

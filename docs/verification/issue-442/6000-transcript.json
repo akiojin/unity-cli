@@ -1,0 +1,674 @@
+[
+  {
+    "args": [
+      "tool",
+      "list",
+      "--query",
+      "spawn_light"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool list",
+      "data": [],
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "refresh_assets",
+      "--json",
+      "{}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw refresh_assets",
+      "data": {
+        "isCompiling": true,
+        "message": "Asset refresh triggered",
+        "timestamp": "2026-10-01T18:50:09.5551420Z"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "tool",
+      "schema",
+      "spawn_light"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool schema spawn_light",
+      "data": {
+        "description": "Create a scene light",
+        "executor": "remote",
+        "mutating": true,
+        "name": "spawn_light",
+        "params_schema": {
+          "additionalProperties": false,
+          "properties": {
+            "intensity": {
+              "default": 1.0,
+              "maximum": 3.402823466385289e+38,
+              "minimum": -3.402823466385289e+38,
+              "type": "number"
+            },
+            "name": {
+              "description": "GameObject name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "type": "object"
+        },
+        "response_schema": {},
+        "source": "custom"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "tool",
+      "list",
+      "--query",
+      "spawn_light"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool list",
+      "data": [
+        {
+          "description": "Create a scene light",
+          "executor": "remote",
+          "mutating": true,
+          "name": "spawn_light",
+          "params_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "intensity": {
+                "default": 1.0,
+                "maximum": 3.402823466385289e+38,
+                "minimum": -3.402823466385289e+38,
+                "type": "number"
+              },
+              "name": {
+                "description": "GameObject name",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "type": "object"
+          },
+          "response_schema": {},
+          "source": "custom"
+        }
+      ],
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "tool",
+      "list",
+      "--query",
+      "spawn_light",
+      "--names-only"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool list",
+      "data": [
+        "spawn_light"
+      ],
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "create_scene",
+      "--json",
+      "{\"sceneName\": \"CustomTools442\", \"path\": \"Assets/Scenes/Generated/E2E\", \"loadScene\": true}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw create_scene",
+      "data": {
+        "isLoaded": true,
+        "path": "Assets/Scenes/Generated/E2E/CustomTools442.unity",
+        "sceneIndex": -1,
+        "sceneName": "CustomTools442",
+        "summary": "Created and loaded scene \"CustomTools442\" at \"Assets/Scenes/Generated/E2E/CustomTools442.unity\""
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\": \"Sun\"}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw spawn_light",
+      "data": {
+        "instanceId": -47604,
+        "mainThread": true,
+        "name": "Sun",
+        "spawnCalls": 1
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "get_hierarchy",
+      "--json",
+      "{}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw get_hierarchy",
+      "data": {
+        "hierarchy": [
+          {
+            "isActive": true,
+            "name": "Main Camera",
+            "path": "/Main Camera"
+          },
+          {
+            "isActive": true,
+            "name": "Directional Light",
+            "path": "/Directional Light"
+          },
+          {
+            "isActive": true,
+            "name": "Sun",
+            "path": "/Sun"
+          }
+        ],
+        "isPrefabMode": false,
+        "objectCount": 3,
+        "sceneName": "CustomTools442"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "get_gameobject_details",
+      "--json",
+      "{\"path\": \"/Sun\", \"includeComponents\": true}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw get_gameobject_details",
+      "data": {
+        "components": [
+          {
+            "enabled": true,
+            "properties": {
+              "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              }
+            },
+            "type": "Transform"
+          },
+          {
+            "enabled": true,
+            "properties": {
+              "color": {
+                "a": 1.0,
+                "b": 1.0,
+                "g": 1.0,
+                "r": 1.0
+              },
+              "intensity": 1.0,
+              "range": 10.0,
+              "shadows": "None",
+              "type": "Directional"
+            },
+            "type": "Light"
+          }
+        ],
+        "isActive": true,
+        "isStatic": false,
+        "layer": "Default",
+        "name": "Sun",
+        "path": "/Sun",
+        "prefabInfo": {
+          "isInstance": false,
+          "isPrefab": false
+        },
+        "summary": "GameObject \"Sun\" with 2 components at /Sun",
+        "tag": "Untagged",
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "rotation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "scale": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "worldPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{}"
+    ],
+    "exit": 2,
+    "response": {
+      "command": "raw spawn_light",
+      "data": null,
+      "errors": [
+        {
+          "code": "INVALID_ARGUMENT",
+          "message": "INVALID_ARGUMENT: Invalid parameters for tool `spawn_light`: $.name is required"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "direct_tool": "spawn_light",
+    "params": {},
+    "response": {
+      "id": "custom-tools-e2e",
+      "status": "error",
+      "error": "Argument 'name' is required",
+      "code": "INVALID_ARGUMENT",
+      "details": {
+        "tool": "spawn_light"
+      }
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\": 42}"
+    ],
+    "exit": 2,
+    "response": {
+      "command": "raw spawn_light",
+      "data": null,
+      "errors": [
+        {
+          "code": "INVALID_ARGUMENT",
+          "message": "INVALID_ARGUMENT: Invalid parameters for tool `spawn_light`: $.name must be a string"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "direct_tool": "spawn_light",
+    "params": {
+      "name": 42
+    },
+    "response": {
+      "id": "custom-tools-e2e",
+      "status": "error",
+      "error": "Argument 'name' must be a string",
+      "code": "INVALID_ARGUMENT",
+      "details": {
+        "tool": "spawn_light"
+      }
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\": \"Invalid\", \"intensity\": \"bright\"}"
+    ],
+    "exit": 2,
+    "response": {
+      "command": "raw spawn_light",
+      "data": null,
+      "errors": [
+        {
+          "code": "INVALID_ARGUMENT",
+          "message": "INVALID_ARGUMENT: Invalid parameters for tool `spawn_light`: $.intensity must be a number"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "direct_tool": "spawn_light",
+    "params": {
+      "name": "Invalid",
+      "intensity": "bright"
+    },
+    "response": {
+      "id": "custom-tools-e2e",
+      "status": "error",
+      "error": "Argument 'intensity' must be a number",
+      "code": "INVALID_ARGUMENT",
+      "details": {
+        "tool": "spawn_light"
+      }
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\": \"Invalid\", \"extra\": true}"
+    ],
+    "exit": 2,
+    "response": {
+      "command": "raw spawn_light",
+      "data": null,
+      "errors": [
+        {
+          "code": "INVALID_ARGUMENT",
+          "message": "INVALID_ARGUMENT: Invalid parameters for tool `spawn_light`: $.extra is not allowed"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "direct_tool": "spawn_light",
+    "params": {
+      "name": "Invalid",
+      "extra": true
+    },
+    "response": {
+      "id": "custom-tools-e2e",
+      "status": "error",
+      "error": "Unknown argument 'extra'",
+      "code": "INVALID_ARGUMENT",
+      "details": {
+        "tool": "spawn_light"
+      }
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "custom_tool_stats",
+      "--json",
+      "{}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw custom_tool_stats",
+      "data": {
+        "spawnCalls": 1
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "--dry-run",
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\":\"DrySun\"}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw spawn_light",
+      "data": {
+        "dryRun": true,
+        "executed": false,
+        "params": {
+          "name": "DrySun"
+        },
+        "reason": "mutating_tool_blocked_by_dry_run",
+        "tool": "spawn_light"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "custom_tool_stats",
+      "--json",
+      "{}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw custom_tool_stats",
+      "data": {
+        "spawnCalls": 1
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "throw_custom",
+      "--json",
+      "{}"
+    ],
+    "exit": 6,
+    "response": {
+      "command": "raw throw_custom",
+      "data": {
+        "code": "CUSTOM_TOOL_FAILED",
+        "details": {
+          "exceptionType": "System.InvalidOperationException",
+          "tool": "throw_custom"
+        },
+        "error": "custom failure 442",
+        "id": "1",
+        "status": "error"
+      },
+      "errors": [
+        {
+          "code": "CUSTOM_TOOL_FAILED",
+          "message": "custom failure 442 (code: CUSTOM_TOOL_FAILED)"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "system",
+      "ping"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "system ping",
+      "data": {
+        "bridgeVersion": "0.17.0",
+        "echo": null,
+        "message": "pong",
+        "projectPath": "/private/tmp/unity-cli-442-final2-6000/project",
+        "supportsSafeClose": true,
+        "timestamp": "2026-10-01T18:50:16.5038010Z",
+        "versionCheck": {
+          "bridgeVersion": "0.17.0",
+          "cliVersion": "0.17.0",
+          "message": "CLI and bridge are both 0.17.0",
+          "status": "match"
+        }
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "refresh_assets",
+      "--json",
+      "{}"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "raw refresh_assets",
+      "data": {
+        "isCompiling": true,
+        "message": "Asset refresh triggered",
+        "timestamp": "2026-10-01T18:50:16.8590060Z"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "tool",
+      "schema",
+      "spawn_light_v2"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool schema spawn_light_v2",
+      "data": {
+        "description": "Create a scene light",
+        "executor": "remote",
+        "mutating": true,
+        "name": "spawn_light_v2",
+        "params_schema": {
+          "additionalProperties": false,
+          "properties": {
+            "intensity": {
+              "default": 1.0,
+              "maximum": 3.402823466385289e+38,
+              "minimum": -3.402823466385289e+38,
+              "type": "number"
+            },
+            "name": {
+              "description": "GameObject name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "type": "object"
+        },
+        "response_schema": {},
+        "source": "custom"
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "tool",
+      "list",
+      "--query",
+      "spawn_light",
+      "--names-only"
+    ],
+    "exit": 0,
+    "response": {
+      "command": "tool list",
+      "data": [
+        "spawn_light_v2"
+      ],
+      "errors": [],
+      "success": true,
+      "warnings": []
+    }
+  },
+  {
+    "args": [
+      "raw",
+      "spawn_light",
+      "--json",
+      "{\"name\": \"StaleSun\"}"
+    ],
+    "exit": 2,
+    "response": {
+      "command": "raw spawn_light",
+      "data": null,
+      "errors": [
+        {
+          "code": "INVALID_ARGUMENT",
+          "message": "INVALID_ARGUMENT: Unknown tool `spawn_light`. Use `unity-cli tool list` with the target Editor connected to see supported names."
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  }
+]
