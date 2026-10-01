@@ -1,0 +1,18 @@
+{
+  "issue": 410,
+  "cli": "0.16.0",
+  "binary_sha256": "01922e815d9b44bfce3c722e6a6d260bb3c4ddeafa6f2e243b2220f00f82076c",
+  "platform": "macOS 26.5 arm64",
+  "editors": [
+    "2022.3.62f3",
+    "6000.3.25f1"
+  ],
+  "ac1_precondition": "PATH and launcher absent; shared managed binary exists and was re-downloaded by installer; completely empty home not tested",
+  "user_verification": "n/a (autonomous)",
+  "plugin_source": "git archive v0.16.0 .claude-plugin/plugins/unity-cli",
+  "baseline_plugin_tag": "v0.16.0",
+  "fixed_skill_sha256": "ea05f5a86b676f6f3a002be1ab459df14faeb6cbffc4093078e2fec326a47d1d",
+  "fixed_plugin_source": "current worktree; only unity-scene-create modified for this issue",
+  "prompt": "シーンに Cube を追加して",
+  "pm_scope_ruling": "66f6f56c-0631-4ae3-ab80-51f15e466ca3"
+}

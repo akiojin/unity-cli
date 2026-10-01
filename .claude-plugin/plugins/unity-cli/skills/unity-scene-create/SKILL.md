@@ -25,6 +25,10 @@ metadata:
 
 Create scenes, add starter GameObjects, and attach initial components via `unity-cli`. This skill owns greenfield scene authoring; it hands off to `unity-gameobject-edit` or `unity-prefab-workflow` once objects already exist.
 
+## Bootstrap Prerequisite
+
+Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SKILL.md) and [toolchain checklist](../unity-cli-usage/references/runtime-checklist.md). If `unity-cli` is missing, install the release binary and run `setup --launch-editor` yourself; do not ask the user to install it. Use the current project and configured port. Inspect `create_gameobject` schema before creating a primitive; its enum values are lowercase.
+
 ## Use When
 
 - The user wants to create a brand-new scene from scratch.
