@@ -1,0 +1,6 @@
+{"id": "UI377-01", "predicted_skills": ["unity-development-loop", "unity-csharp-edit"], "predicted_tool": "apply_csharp_edits", "predicted_payload_keys": ["files"]}
+{"id": "UI377-02", "predicted_skills": ["unity-development-loop", "unity-csharp-edit"], "predicted_tool": "apply_csharp_edits", "predicted_payload_keys": ["files"]}
+{"id": "UI377-03", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"]}
+{"id": "UI377-04", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "UI377-05", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["path", "sceneName"]}
+{"id": "UI377-06", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_database", "predicted_payload_keys": ["action"]}

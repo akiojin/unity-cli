@@ -134,6 +134,7 @@ or stop the Editor. Global installed skills remain available after the test.
 | `unity-editor-tools` | Editor state, packages, builds, baking and profiling |
 | `unity-input-system` | Input action asset authoring |
 | `unity-playmode-testing` | Runtime tests, input simulation and media capture |
+| `unity-ui-toolkit-build` | UXML/USS, UIDocument, C# binding and Play-mode UI verification |
 | `unity-ui-automation` | Inspect and interact with Unity UI |
 | `unity-development-loop` | Gameplay implementation and runtime verification loops |
 | `unity-vfx-graph` | Visual Effect Graph inspection and authoring |

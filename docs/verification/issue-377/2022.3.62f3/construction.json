@@ -1,0 +1,1402 @@
+[
+  {
+    "type": "system",
+    "subtype": "init",
+    "session_id": "dbf39541-89e2-4d0f-b792-7bee9c715b2d",
+    "cwd": "/private/tmp/issue377-unity-2022.3.62f3",
+    "model": "claude-opus-5-5",
+    "slash_commands": [
+      "deep-research",
+      "unity-cli:unity-addressables",
+      "unity-cli:unity-asset-management",
+      "unity-cli:unity-csharp-edit",
+      "unity-cli:unity-csharp-navigate",
+      "unity-cli:unity-csharp-reference",
+      "unity-cli:unity-development-loop",
+      "unity-cli:unity-editor-tools",
+      "unity-cli:unity-gameobject-edit",
+      "unity-cli:unity-input-system",
+      "unity-cli:unity-playmode-testing",
+      "unity-cli:unity-prefab-workflow",
+      "unity-cli:unity-project-bootstrap",
+      "unity-cli:unity-scene-create",
+      "unity-cli:unity-scene-inspect",
+      "unity-cli:unity-ui-automation",
+      "unity-cli:unity-ui-toolkit-build",
+      "unity-cli:unity-vfx-graph",
+      "design",
+      "design-sync",
+      "dataviz",
+      "update-config",
+      "verify",
+      "debug",
+      "code-review",
+      "simplify",
+      "batch",
+      "fewer-permission-prompts",
+      "doctor",
+      "loop",
+      "schedule",
+      "claude-api",
+      "workflow-authoring",
+      "run",
+      "run-skill-generator",
+      "advisor",
+      "agents",
+      "auto-mode-setup",
+      "autocompact",
+      "clear",
+      "color",
+      "compact",
+      "config",
+      "output-style",
+      "context",
+      "effort",
+      "fast",
+      "focus",
+      "heapdump",
+      "init",
+      "mcp",
+      "import",
+      "model",
+      "__remote-workflow",
+      "workflow-launch-exec",
+      "reload-plugins",
+      "reload-skills",
+      "rename",
+      "ultrareview",
+      "security-review",
+      "usage-credits",
+      "extra-usage",
+      "usage",
+      "insights",
+      "recap",
+      "skill-doctor",
+      "goal",
+      "design-consent",
+      "design-revoke",
+      "list-agents",
+      "team-onboarding"
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_017Ap2EsCcWybbxqdJGwstyy",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /Users/akiojin/Workbench/unity-cli/work/issue-377/.claude-plugin/plugins/unity-cli/skills/unity-ui-toolkit-build/references && cat runtime-checklist.md construction.md'",
+          "description": "Read skill reference documents"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_017Ap2EsCcWybbxqdJGwstyy",
+        "type": "tool_result",
+        "content": "# Runtime Checklist\n\n## Binary Selection\n\n- Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).\n- If no binary is installed, run `scripts/install.sh` (macOS / Linux) or `scripts/install.ps1` (Windows, when published) instead of asking the user.\n- Only inside a unity-cli source checkout, `cargo run -- <args>` is a development alternative.\n\n## Project Setup\n\n- `unity-cli setup` = binary check → `bridge install` → Editor `ping`; it prints one JSON report and exits non-zero until the Editor answers for this project.\n- Tell the user before running it: it edits `Packages/manifest.json` and, when the project uses only the legacy Input Manager and the Editor is closed, sets `activeInputHandler: 2` (Both) in `ProjectSettings/ProjectSettings.asset` so the Input System dependency does not block the Editor with a restart dialog. `bridge install` is idempotent (a second run leaves both files byte-identical).\n- If the Editor was already open, it may show \"enable the Input System backends? (restart)\"; bridge commands time out until someone answers it. Close the Editor and rerun `setup --launch-editor` instead.\n- `--launch-editor` starts the Unity Hub Editor recorded in `ProjectSettings/ProjectVersion.txt` (`UNITY_EDITOR_PATH` overrides) and waits up to 900 s (`--wait-secs`).\n- `editor.projectMatches: false` means another project's Editor owns the port; pass `--port`.\n- `versionCheck.status: mismatch` (from `setup` or `system ping`) → `unity-cli bridge upgrade`, or update the CLI.\n- Verify the binary with `unity-cli --version` before debugging higher-level workflows.\n\n## Instance Selection\n\n- Use `unity-cli system ping` when a single active target is expected.\n- Use `unity-cli instances list` when multiple editors may be running.\n- Prefer `--project-path <project>` (or running inside the project) to target one Editor; `AMBIGUOUS_EDITOR` lists candidates in `data.candidates`.\n- Use `unity-cli instances set-active <host:port>` only after confirming the target is `up`.\n\n## Command Routing\n\n- The bootstrap-relevant typed subcommands are `system ping`, `scene create`, `instances list`, `instances set-active`. Use them when available. (`instances list` / `instances set-active` are local registry operations rather than bridge-tool wrappers.)\n- The `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`) also has typed wrappers over the `reference_*` bridge tools — see the `unity-csharp-reference` skill. Beyond these, most bridge tools have no typed wrapper.\n- For every tool without a typed wrapper, use `unity-cli raw <tool_name> --json '{...}'` (or its alias `unity-cli tool call <tool_name> --json '{...}'`). This is the primary invocation pattern, not a fallback — bridge tools such as `analyze_scene_contents`, `find_by_component`, `modify_component`, and `get_compilation_state` are all invoked this way.\n- Discover tools with `unity-cli tool list --query <term> --compact`; add `--category <name>` (a `docs/tools.md` heading or slug such as `scenes`, `playback-testing`) and `--limit N` / `--offset N` to keep output small. Inspect a tool's expected JSON payload with `unity-cli tool schema <tool_name> --output json`.\n- Use `--output json` when another tool or script will consume the result.\n\n## Connection Recovery\n\n- A failed `system ping` does not prove the Editor is closed. Run `unity-cli doctor --output json` (add `--project-path <dir>` outside the project) before any fallback such as hand-editing YAML.\n- Act on the `diagnosis` code:\n  - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) by editing the file directly, then let Unity recompile or restart the Editor.\n  - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.\n  - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.\n  - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.\n  - `SANDBOX_BLOCKED`: the local socket was denied. Retry in a permitted execution context according to the host's approval policy; do not bypass sandbox restrictions or conclude the Editor is missing. If reachability still cannot be verified, ask the user to confirm the running project and bridge connection before considering an offline fallback.\n  - `BRIDGE_NOT_RESPONDING`: the Editor is still importing/compiling or the port differs from Project Settings > Unity CLI Bridge.\n- Re-run `unity-cli doctor` until `diagnosis` is `OK`, then continue the workflow.\n- An empty instance list or failed process probe inside a sandbox is also inconclusive. Confirm the project/host/port and the user's Editor state instead of treating restricted visibility as `EDITOR_NOT_RUNNING`.\n- When the target Editor is reachable, never hand-edit serialized `.unity`, `.prefab`, or `.asset` YAML. Bridge operations keep serialized references, prefab overrides, and the live Editor state in sync.\n- If recovery cannot restore the connection and offline work is appropriate, declare the fallback before editing: explain the verified limitation, affected files, alternative method, and how the result will be checked after reopening Unity. Without confirmation of an uncertain sandbox diagnosis, pause dependent edits. Do not silently substitute YAML edits for bridge calls.\n\n## CI Notes\n\n- Set `UNITY_CLI_HOST` and `UNITY_CLI_PORT` explicitly in CI.\n- Keep JSON payloads quoted as a single shell argument.\n- If connectivity fails in CI, report the resolved host and port before retrying.\n# Small runtime form\n\n## Table of Contents\n\n- UXML and USS\n- Serialized setup through the Editor\n- Binding script\n\nUse an unused folder such as `Assets/UI/ToolkitDemo`. These are independently\nauthored examples, using APIs shared by Unity 2022.3 and Unity 6. Adapt the paths\nand screen content to the request. Inspect existing files before replacing them.\n\n## UXML and USS\n\nWrite these source texts through `unity-editor-tools` using\n`unity-cli editor eval '<statements>' --mode statements --request-id <unique-id>`\nwith `System.IO.Directory.CreateDirectory` / `System.IO.File.WriteAllText`.\nEscape text as C# string literals and then shell-quote the entire expression;\nnever interpolate untrusted text into shell commands. Use absolute paths derived\nfrom `UnityEngine.Application.dataPath`. Import via AssetDatabase afterward.\n\n`Screen.uxml`:\n\n```xml\n<ui:UXML xmlns:ui=\"UnityEngine.UIElements\">\n    <Style src=\"Screen.uss\" />\n    <ui:VisualElement name=\"form\" class=\"form\">\n        <ui:Label text=\"Welcome\" name=\"status\" />\n        <ui:TextField label=\"Name\" name=\"player-name\" />\n        <ui:Button text=\"Submit\" name=\"submit\" />\n    </ui:VisualElement>\n</ui:UXML>\n```\n\n`Screen.uss`:\n\n```css\n.form {\n    padding-top: 32px;\n    padding-left: 32px;\n    padding-right: 32px;\n    padding-bottom: 32px;\n    width: 480px;\n    background-color: rgb(28, 35, 48);\n    color: rgb(240, 243, 250);\n    font-size: 24px;\n}\n#status { margin-bottom: 20px; }\n#submit { margin-top: 16px; height: 48px; }\n```\n\n## Serialized setup through the Editor\n\nImport UXML and USS synchronously and confirm both load as `VisualTreeAsset`\nand `StyleSheet`. Use fully qualified API names in eval statements:\n\n```csharp\nUnityEditor.AssetDatabase.Refresh(UnityEditor.ImportAssetOptions.ForceSynchronousImport);\nvar tree = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.VisualTreeAsset>(\"Assets/UI/ToolkitDemo/Screen.uxml\");\nif (tree == null) throw new System.InvalidOperationException(\"UXML import failed\");\nvar panel = UnityEngine.ScriptableObject.CreateInstance<UnityEngine.UIElements.PanelSettings>();\nUnityEditor.AssetDatabase.CreateAsset(panel, \"Assets/UI/ToolkitDemo/Panel.asset\");\nvar go = new UnityEngine.GameObject(\"ToolkitDemo\");\nvar document = go.AddComponent<UnityEngine.UIElements.UIDocument>();\ndocument.panelSettings = panel;\ndocument.visualTreeAsset = tree;\nUnityEditor.EditorUtility.SetDirty(document);\nUnityEditor.AssetDatabase.SaveAssets();\nUnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(go.scene);\nreturn go.name;\n```\n\nThis is for a new, unused path/object only. For existing assets load and modify\nthe requested object instead of duplicating it. Ensure PanelSettings has a theme\nstyle sheet for legible built-in controls. If Unity does not assign its default\ntheme, import/create a `.tss` source containing\n`@import url(\"unity-theme://default\");` and assign the resulting\n`ThemeStyleSheet` to `panel.themeStyleSheet` before saving.\n\n## Binding script\n\nUse `unity-csharp-edit` to write `Assets/Scripts/ToolkitDemoBinding.cs`:\n\n```csharp\nusing UnityEngine;\nusing UnityEngine.UIElements;\n\n[RequireComponent(typeof(UIDocument))]\npublic class ToolkitDemoBinding : MonoBehaviour\n{\n    private Button submit;\n    private TextField playerName;\n    private Label status;\n    private void OnEnable()\n    {\n        var root = GetComponent<UIDocument>().rootVisualElement;\n        submit = root.Q<Button>(\"submit\");\n        playerName = root.Q<TextField>(\"player-name\");\n        status = root.Q<Label>(\"status\");\n        if (submit == null || playerName == null || status == null)\n        {\n            Debug.LogError(\"ToolkitDemo: required UXML controls missing\");\n            return;\n        }\n        submit.clicked += Submit;\n    }\n    private void OnDisable() { if (submit != null) submit.clicked -= Submit; }\n    private void Submit() { status.text = \"Hello, \" + playerName.value + \"!\"; }\n}\n```\n\nAfter compilation succeeds, add this component to the document object using\n`add_component` and save/reload the scene. In Play, discover the controls, assert\ninitial label `Welcome`, input `Ada`, read back `Ada`, click Submit, then assert\n`Hello, Ada!`. Capture actual Game images before/after (`osFallback:false`),\ncheck text visibility and layout, and inspect the console for errors. Preserve\nUXML/USS, command responses and captures as evidence; restore Edit Mode afterward.",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01VehhyFWypcWcKp1qzM8n23",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && export UNITY_CLI_HOST=127.0.0.1 UNITY_CLI_PORT=6518; U=/Users/akiojin/.local/bin/unity-cli; mkdir -p /tmp/issue377-evidence/2022.3.62f3; $U --version; $U system ping --output json; ls Assets Assets/Scenes Assets/UI Assets/Scripts 2>&1; $U --help | head -40'",
+          "description": "Ping editor and inspect project state"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01VehhyFWypcWcKp1qzM8n23",
+        "type": "tool_result",
+        "content": "unity-cli 0.16.0\nError: unityd request failed: Timed out while waiting for Unity response header\nls: Assets/Scripts: No such file or directory\nls: Assets/UI: No such file or directory\nAssets:\nScenes\nScenes.meta\n\nAssets/Scenes:\nGenerated\nGenerated.meta\nRust CLI for Unity Editor automation over Unity TCP protocol\n\nUsage: unity-cli [OPTIONS] <COMMAND>\n\nCommands:\n  raw        \n  editor     \n  tool       \n  system     \n  scene      \n  instances  \n  lsp        \n  cli        \n  lspd       \n  unityd     \n  skills     \n  reference  \n  setup      Install the bridge into a Unity project and confirm the Editor connection\n  bridge     Manage the com.akiojin.unity-cli-bridge package in a Unity project\n  doctor     Diagnose why the Unity bridge is unreachable (Safe Mode, missing bridge, port conflict, ...)\n  batch      \n  help       Print this message or the help of the given subcommand(s)\n\nOptions:\n      --output <OUTPUT>      [default: text] [possible values: text, json]\n      --host <HOST>          \n      --port <PORT>          \n      --project-path <PATH>  Target the Unity Editor that has this project open (default: the project containing the current directory). Also read from UNITY_PROJECT_ROOT\n      --timeout-ms <MS>      \n  -v, --verbose...           \n      --dry-run              \n  -h, --help                 Print help\n  -V, --version              Print version",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Ping timed out. Running doctor as the checklist directs."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01CtSc67uLyfJndKudNxCsBX",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && U=/Users/akiojin/.local/bin/unity-cli; $U --host 127.0.0.1 --port 6518 doctor --output json; ls -R Assets/Scenes/Generated'",
+          "description": "Diagnose bridge connection"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01CtSc67uLyfJndKudNxCsBX",
+        "type": "tool_result",
+        "content": "{\n  \"bridge\": {\n    \"installed\": true,\n    \"source\": \"file:unity-cli-bridge\",\n    \"version\": \"0.16.0\"\n  },\n  \"diagnosis\": \"BRIDGE_NOT_RESPONDING\",\n  \"editor\": {\n    \"pid\": 51125,\n    \"processes\": [\n      {\n        \"logFile\": \"/tmp/unity-issue378/6000.3.25f1-editor.log\",\n        \"pid\": 3553,\n        \"projectPath\": \"/tmp/unity-issue378/6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"/tmp/issue377-evidence/6000.3.25f1/editor.log\",\n        \"pid\": 3711,\n        \"projectPath\": \"/tmp/issue377-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker0.log\",\n        \"pid\": 40143,\n        \"projectPath\": \"/private/tmp/issue377-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker2.log\",\n        \"pid\": 40147,\n        \"projectPath\": \"/private/tmp/issue377-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"/tmp/issue377-evidence/2022.3.62f3/editor.log\",\n        \"pid\": 51125,\n        \"projectPath\": \"/tmp/issue377-unity-2022.3.62f3\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker0.log\",\n        \"pid\": 70144,\n        \"projectPath\": \"/private/tmp/issue376-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker1.log\",\n        \"pid\": 70151,\n        \"projectPath\": \"/private/tmp/issue376-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker2.log\",\n        \"pid\": 70162,\n        \"projectPath\": \"/private/tmp/issue376-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"Logs/AssetImportWorker3.log\",\n        \"pid\": 70186,\n        \"projectPath\": \"/private/tmp/issue376-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"/tmp/unity-issue378/2022.3.62f3-editor.log\",\n        \"pid\": 83654,\n        \"projectPath\": \"/tmp/unity-issue378/2022.3.62f3\"\n      },\n      {\n        \"logFile\": \"/private/tmp/issue376-evidence/6000.3.25f1/editor.log\",\n        \"pid\": 85739,\n        \"projectPath\": \"/private/tmp/issue376-unity-6000.3.25f1\"\n      },\n      {\n        \"logFile\": \"/private/tmp/issue376-evidence/2022.3.62f3/editor.log\",\n        \"pid\": 86856,\n        \"projectPath\": \"/private/tmp/issue376-unity-2022.3.62f3\"\n      }\n    ],\n    \"running\": true\n  },\n  \"editorLog\": {\n    \"compileErrors\": [],\n    \"path\": \"/tmp/issue377-evidence/2022.3.62f3/editor.log\",\n    \"safeMode\": false\n  },\n  \"endpoint\": {\n    \"host\": \"127.0.0.1\",\n    \"port\": 6518,\n    \"portSource\": \"cli\"\n  },\n  \"healthy\": false,\n  \"port\": {\n    \"bridgeResponded\": false,\n    \"error\": \"Timed out while waiting for Unity response header: deadline has elapsed\",\n    \"listenerPid\": 51125,\n    \"listenerProcess\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity\",\n    \"listening\": true,\n    \"permissionDenied\": false\n  },\n  \"project\": {\n    \"path\": \"/private/tmp/issue377-unity-2022.3.62f3\",\n    \"unityVersion\": \"2022.3.62f3\"\n  },\n  \"recovery\": \"The Editor is running with the bridge installed but nothing answered on the port. Wait for import/compilation to finish, and check the port in Project Settings > Unity CLI Bridge matches --port.\"\n}\nE2E\nE2E.meta\n\nAssets/Scenes/Generated/E2E:\nIssue366.unity\nIssue366.unity.meta",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The correct Editor (pid 51125) owns port 6518 but isn't answering yet. Let me check its log and retry."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01NgidvajqJw6exuKA8Dd8Wf",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'tail -25 /tmp/issue377-evidence/2022.3.62f3/editor.log; cd /tmp/issue377-unity-2022.3.62f3; /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 --timeout-ms 60000 system ping --output json'",
+          "description": "Check editor log and retry ping with longer timeout",
+          "timeout": 90000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01NgidvajqJw6exuKA8Dd8Wf",
+        "type": "tool_result",
+        "content": "Command did not complete within its 90s timeout and was moved to the background (ID: bibbtvrip). Output is being written to: /private/tmp/claude-501/-private-tmp-issue377-unity-2022-3-62f3/dbf39541-89e2-4d0f-b792-7bee9c715b2d/tasks/bibbtvrip.output. You will be notified when it completes. If it is still running after 30m in the background, it will be stopped and you will be notified. To check interim output, use Read on that file path.",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01RzWpBRH6eiR3iPimV4TZFy",
+        "name": "Read",
+        "input": {
+          "file_path": "/private/tmp/claude-501/-private-tmp-issue377-unity-2022-3-62f3/dbf39541-89e2-4d0f-b792-7bee9c715b2d/tasks/bibbtvrip.output"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01RzWpBRH6eiR3iPimV4TZFy",
+        "type": "tool_result",
+        "content": "1\tUnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])\n2\tUnityEngine.Logger:Log (UnityEngine.LogType,object)\n3\tUnityEngine.Debug:Log (object)\n4\tUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\n5\tUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\n6\tSystem.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n7\tSystem.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)\n8\tSystem.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)\n9\tSystem.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n10\tSystem.Threading.Tasks.AwaitTaskContinuation:RunOrScheduleAction (System.Action,bool,System.Threading.Tasks.Task&)\n11\tSystem.Threading.Tasks.Task:FinishContinuations ()\n12\tSystem.Threading.Tasks.Task:FinishStageThree ()\n13\tSystem.Threading.Tasks.Task`1<int>:TrySetResult (int)\n14\tSystem.Threading.Tasks.ValueTask`1/ValueTaskSourceAsTask/<>c<int>:<.cctor>b__4_0 (object)\n15\tSystem.Net.Sockets.Socket/AwaitableSocketAsyncEventArgs:InvokeContinuation (System.Action`1<object>,object,bool)\n16\tSystem.Net.Sockets.Socket/AwaitableSocketAsyncEventArgs:OnCompleted (System.Net.Sockets.SocketAsyncEventArgs)\n17\tSystem.Net.Sockets.SocketAsyncEventArgs:Complete_internal ()\n18\tSystem.Net.Sockets.Socket/<>c:<.cctor>b__367_10 (System.IAsyncResult)\n19\tSystem.Net.Sockets.SocketAsyncResult/<>c:<Complete>b__27_0 (object)\n20\tSystem.Threading.QueueUserWorkItemCallback:System.Threading.IThreadPoolWorkItem.ExecuteWorkItem ()\n21\tSystem.Threading.ThreadPoolWorkQueue:Dispatch ()\n22\tSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n23\t\n24\t(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n25\t\n26\t"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01UDJwVTaNSbRCv846e3QEw5",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'grep -v \"^\\(UnityEngine\\|System\\|UnityCliBridge\\)\\.\" /tmp/issue377-evidence/2022.3.62f3/editor.log | grep -v \"^$\" | tail -40'",
+          "description": "Show recent non-stacktrace editor log lines"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01UDJwVTaNSbRCv846e3QEw5",
+        "type": "tool_result",
+        "content": "/Applications/Unity/Hub/Editor/6000.3.25f1/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb\nUnityEditor.Android.AndroidDeploymentTargetsExtension:GetKnownTargets (UnityEditor.DeploymentTargets.IDeploymentTargetsMainThreadContext,UnityEditor.ProgressHandler) (at /home/bokken/build/output/unity/unity/PlatformDependent/AndroidPlayer/Editor/Managed/DeploymentTargets/AndroidDeploymentTargetsExtension.cs:374)\nUnityEditor.Android.TargetScanWorker:DoScan (UnityEditor.DeploymentTargets.IDeploymentTargetsExtension,UnityEditor.DeploymentTargets.IDeploymentTargetsMainThreadContext,System.Threading.CancellationToken) (at /home/bokken/build/output/unity/unity/PlatformDependent/AndroidPlayer/Editor/Managed/TargetScanWorker.cs:218)\nUnityEditor.Android.TargetScanWorker/<>c__DisplayClass20_0:<MainThreadProcessing>b__0 () (at /home/bokken/build/output/unity/unity/PlatformDependent/AndroidPlayer/Editor/Managed/TargetScanWorker.cs:257)\n(Filename: /home/bokken/build/output/unity/unity/PlatformDependent/AndroidPlayer/Editor/Managed/DeploymentTargets/AndroidDeploymentTargetsExtension.cs Line: 374)\nAndroid Extension - Scanning For ADB Devices 610 ms\n[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58341\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 564)\n[unity-cli-bridge] Status changed to: Disconnected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client disconnected: 127.0.0.1:58341\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n[unity-cli-bridge] Status changed to: Connected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client connected from 127.0.0.1:58520\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 408)\n[unity-cli-bridge] Client disconnected: 127.0.0.1:58520\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n[unity-cli-bridge] Client connected from 127.0.0.1:58521\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 408)\n[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58521\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 564)\n[unity-cli-bridge] Status changed to: Disconnected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client disconnected: 127.0.0.1:58521\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n[unity-cli-bridge] Status changed to: Connected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client connected from 127.0.0.1:58533\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 408)\n[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58533\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 564)\n[unity-cli-bridge] Status changed to: Disconnected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client disconnected: 127.0.0.1:58533\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n[unity-cli-bridge] Status changed to: Connected\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 49)\n[unity-cli-bridge] Client connected from 127.0.0.1:58622\n(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 408)",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Commands are reaching the bridge but sit in its queue unprocessed, meaning the Editor main thread isn't ticking (modal dialog or background throttling). I'll wait for the 60s ping attempt to finish."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_019njbHLQRvvpxZgfARyxk1v",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'for i in $(seq 1 20); do grep -q \"\\\"\" /private/tmp/claude-501/-private-tmp-issue377-unity-2022-3-62f3/dbf39541-89e2-4d0f-b792-7bee9c715b2d/tasks/bibbtvrip.output 2>/dev/null && break; ps -p $(pgrep -f \"timeout-ms 60000 system ping\" | head -1) >/dev/null 2>&1 || break; sleep 3; done; tail -5 /private/tmp/claude-501/-private-tmp-issue377-unity-2022-3-62f3/dbf39541-89e2-4d0f-b792-7bee9c715b2d/tasks/bibbtvrip.output'",
+          "description": "Wait for background ping to finish",
+          "timeout": 90000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_019njbHLQRvvpxZgfARyxk1v",
+        "type": "tool_result",
+        "content": "(Filename: ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs Line: 578)\n\nError: Timed out while waiting for Unity response header: deadline has elapsed\n\n[exited with code 1]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The 60 s ping also timed out. Let me look for what's blocking the main thread earlier in the log."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01JSWPXwYvxPsq9Lj1foyfoo",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'L=/tmp/issue377-evidence/2022.3.62f3/editor.log; ls -l $L; wc -l $L; grep -n -i -E \"dialog|restart|input system|compil|Reload|error CS|Refresh|Safe Mode|Play|Listening|Started on\" $L | grep -v \"Filename\" | tail -40; ps -o pid,stat,%cpu,etime,command -p 51125'",
+          "description": "Search editor log for blocking state"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01JSWPXwYvxPsq9Lj1foyfoo",
+        "type": "tool_result",
+        "content": "-rw-r--r--@ 1 akiojin  wheel  109997 Oct  1 15:00 /tmp/issue377-evidence/2022.3.62f3/editor.log\n    1274 /tmp/issue377-evidence/2022.3.62f3/editor.log\n926:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n929:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n953:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n956:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n981:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n984:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n989:System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\n991:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n994:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1000:System.Threading.Tasks.TaskFactory`1/<>c__DisplayClass35_0<System.Net.Sockets.TcpClient>:<FromAsyncImpl>b__0 (System.IAsyncResult)\n1015:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1018:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1023:System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\n1025:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1028:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1034:System.Threading.Tasks.TaskFactory`1/<>c__DisplayClass35_0<System.Net.Sockets.TcpClient>:<FromAsyncImpl>b__0 (System.IAsyncResult)\n1049:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1052:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1077:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1080:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1104:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1107:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1132:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1135:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1140:System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\n1142:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1145:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1151:System.Threading.Tasks.TaskFactory`1/<>c__DisplayClass35_0<System.Net.Sockets.TcpClient>:<FromAsyncImpl>b__0 (System.IAsyncResult)\n1166:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1169:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1174:System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\n1176:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1179:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1185:System.Threading.Tasks.TaskFactory`1/<>c__DisplayClass35_0<System.Net.Sockets.TcpClient>:<FromAsyncImpl>b__0 (System.IAsyncResult)\n1200:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1203:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1228:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1231:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n1255:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)\n1258:System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()\n  PID STAT  %CPU ELAPSED COMMAND\n51125 RNs    0.2   04:21 /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity -projectPath /tmp/issue377-unity-2022.3.62f3 -logFile /tmp/issue377-evidence/2022.3.62f3/editor.log",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01NGS1pHfs499YEXhuX7AzyP",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'grep -v -E \"^(UnityEngine|System|UnityCliBridge|UnityEditor)[.:]|^\\(Filename|^$|^\\[unity-cli-bridge\\] (Client|Status|Dropped)\" /tmp/issue377-evidence/2022.3.62f3/editor.log | tail -60'",
+          "description": "Summarize editor startup log"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01NGS1pHfs499YEXhuX7AzyP",
+        "type": "tool_result",
+        "content": "[MODES] ModeService[none].LoadModes\n[MODES] Loading mode Default (0) for mode-current-id-issue366-unity-2022.3.62f3\n[PhysX] Initialized MultithreadedTaskDispatcher with 18 workers.\nUnloading 2 Unused Serialized files (Serialized files now loaded: 0)\nProgressiveSceneManager::Cancel()\n-- Listing OpenCL platforms(s) --\n * OpenCL platform 0\n\tPROFILE = FULL_PROFILE\n\tVERSION = OpenCL 1.2 (Apr 18 2026 19:20:04)\n\tNAME = Apple\n\tVENDOR = Apple\n-- Listing OpenCL device(s) --\n * OpenCL platform 0, device 0 \n\tDEVICE_TYPE = 4\n\tDEVICE_NAME = Apple M5 Max\n\tDEVICE_VENDOR = Apple\n\tDEVICE_VERSION = OpenCL 1.2 \n\tDRIVER_VERSION = 1.2 1.0\n\tDEVICE_MAX_COMPUTE_UNITS = 40\n\tDEVICE_MAX_CLOCK_FREQUENCY = 1000\n\tCL_DEVICE_MAX_CONSTANT_BUFFER_SIZE = 1073741824\n\tCL_DEVICE_HOST_UNIFIED_MEMORY = true\n\tCL_DEVICE_MAX_MEM_ALLOC_SIZE = 21646635008\n\tDEVICE_GLOBAL_MEM_SIZE = 115448725504\n-- GPU Progressive lightmapper will use OpenCL device 'Apple M5 Max' from 'Apple'--\n   use -OpenCL-PlatformAndDeviceIndices <platformIdx> <deviceIdx> as command line arguments if you want to select a specific adapter for OpenCL.\nLoaded scene 'Assets/Scenes/Generated/E2E/Issue366.unity'\n\tDeserialize:            0.843 ms\n\tIntegration:            25.936 ms\n\tIntegration of assets:  0.001 ms\n\tThread Wait Time:       0.013 ms\n\tTotal Operation Time:   26.793 ms\nUnloading 37 unused Assets / (1.2 MB). Loaded Objects now: 2201.\nMemory consumption went from 110.3 MB to 109.0 MB.\nTotal: 4.194083 ms (FindLiveObjects: 0.096083 ms CreateObjectMapping: 0.026541 ms MarkObjects: 3.738834 ms  DeleteObjects: 0.331750 ms)\n[LAYOUT] About to load /Users/akiojin/Library/Preferences/Unity/Editor-5.x/Layouts/current/default-2022.dwlt, keepMainWindow=False\n[PhysX] Initialized MultithreadedTaskDispatcher with 18 workers.\n[MODES] ModeService[default].InitializeCurrentMode\n[MODES] ModeService[default].RaiseModeChanged(default, default)\nIsTimeToCheckForNewEditor: Update time 1790833674 current 1790834238\n[Project] Loading completed in 69.957 seconds\n\tProject init time: \t\t\t\t53.983 seconds\n\t\tTemplate init time: \t\t0.000 seconds\n\t\tPackage Manager init time: \t\t5.399 seconds\n\t\tAsset Database init time: \t\t13.569 seconds\n\t\tGlobal illumination init time: \t0.001 seconds\n\t\tAssemblies load time: \t\t\t6.374 seconds\n\t\tUnity extensions init time: \t0.003 seconds\n\t\tAsset Database refresh time: \t0.000 seconds\n\tScene opening time: \t\t\t10.231 seconds\n##utp:{\"type\":\"ProjectInfo\",\"version\":2,\"phase\":\"Immediate\",\"time\":1790834238146,\"processId\":51125,\"projectLoad\":69.956785042,\"projectInit\":53.98308775,\"templateInit\":0.0,\"packageManagerInit\":5.399322875,\"assetDatabaseInit\":13.568760917,\"globalIlluminationInit\":0.001156208,\"assembliesLoad\":6.37367525,\"unityExtensionsInit\":0.002722542,\"assetDatabaseRefresh\":0.0,\"sceneOpening\":10.230564875}\n##utp:{\"type\":\"EditorInfo\",\"version\":2,\"phase\":\"Immediate\",\"time\":1790834238146,\"processId\":51125,\"editorVersion\":\"2022.3.62f3 (96770f904ca7)\",\"branch\":\"2022.3/respin/2022.3.62f2-4af31df585-v2\",\"buildType\":\"Release\",\"platform\":\"OSX\"}\nSubscribe to USB device events\n[Licensing::Client] Successfully resolved entitlement details\n[Licensing::Module] Serial number assigned to: \"SC-RHYZ-NWK7-96UK-YS9C-XXXX\"\n[Licensing::Module] Serial number assigned to: \"15668817498195-laila-tokio-UnitXXXX\"\n[Licensing::Module] Serial number assigned to: \"15669619043518-3e1fd9a6-d8c7-46c9-9791-f8c9b048740c-UnitXXXX\"\nMultiple ADB server instances found, the following ADB server instance have been terminated due to being run from another SDK. Process paths: \n/Applications/Unity/Hub/Editor/6000.3.25f1/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb\nAndroid Extension - Scanning For ADB Devices 610 ms",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Project loading completed and the Editor is idle (0.2% CPU), yet queued bridge commands are dropped without execution. One more ping attempt:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01JBdkT2ntKSKEt4WzdyjriU",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 --timeout-ms 45000 system ping --output json; echo exit=$?'",
+          "description": "Retry bridge ping",
+          "timeout": 60000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01JBdkT2ntKSKEt4WzdyjriU",
+        "type": "tool_result",
+        "content": "{\n  \"bridgeVersion\": \"0.16.0\",\n  \"echo\": null,\n  \"message\": \"pong\",\n  \"projectPath\": \"/private/tmp/issue377-unity-2022.3.62f3\",\n  \"timestamp\": \"2026-10-01T06:00:40.4380570Z\",\n  \"versionCheck\": {\n    \"bridgeVersion\": \"0.16.0\",\n    \"cliVersion\": \"0.16.0\",\n    \"message\": \"CLI and bridge are both 0.16.0\",\n    \"status\": \"match\"\n  }\n}\nexit=0",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Connected now (CLI/bridge 0.16.0 match, correct project). I'll create a logging wrapper so every operation is recorded as evidence."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01FVu27Jm6Mku9ui2FNboh3G",
+        "name": "Write",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/u.sh",
+          "content": "#!/usr/bin/env bash\n# Usage: u.sh <step-label> <unity-cli args...>\n# Runs unity-cli against 127.0.0.1:6518 and appends the call + response to ops.log.\nset -o pipefail\ncd /tmp/issue377-unity-2022.3.62f3 || exit 1\nEVID=/tmp/issue377-evidence/2022.3.62f3\nlabel=\"$1\"; shift\nout=$(/Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 --timeout-ms \"${UTIMEOUT:-60000}\" --output json \"$@\" 2>&1)\nrc=$?\n{\n  printf '=== %s | %s | exit=%s\\n' \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \"$label\" \"$rc\"\n  printf 'cmd: unity-cli --host 127.0.0.1 --port 6518 --output json'\n  printf ' %q' \"$@\"; printf '\\n'\n  printf '%s\\n\\n' \"$out\"\n} >> \"$EVID/ops.log\"\nprintf '%s\\n' \"$out\"\nexit $rc\n"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01FVu27Jm6Mku9ui2FNboh3G",
+        "type": "tool_result",
+        "content": "File created successfully at: /tmp/issue377-evidence/2022.3.62f3/u.sh (file state is current in your context — no need to Read it back)"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_014bmqJsQ4sVYyErKFCc1kvS",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'chmod +x /tmp/issue377-evidence/2022.3.62f3/u.sh; U=/tmp/issue377-evidence/2022.3.62f3/u.sh; $U ping system ping; /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 tool list --query ui --compact; /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 tool list --query scene --compact; cd /tmp/issue377-unity-2022.3.62f3; /Users/akiojin/.local/bin/unity-cli editor eval --help'",
+          "description": "Discover UI, scene, and eval tools"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_014bmqJsQ4sVYyErKFCc1kvS",
+        "type": "tool_result",
+        "content": "{\n  \"bridgeVersion\": \"0.16.0\",\n  \"echo\": null,\n  \"message\": \"pong\",\n  \"projectPath\": \"/private/tmp/issue377-unity-2022.3.62f3\",\n  \"timestamp\": \"2026-10-01T06:00:49.8153590Z\",\n  \"versionCheck\": {\n    \"bridgeVersion\": \"0.16.0\",\n    \"cliVersion\": \"0.16.0\",\n    \"message\": \"CLI and bridge are both 0.16.0\",\n    \"status\": \"match\"\n  }\n}\naddressables_build\tBuild Addressables content\nbuild_index\tBuild code search index\nquit_editor\tQuit Unity Editor\nbuild_player\tQueue a standalone player build on the Unity Editor host\nget_build_status\tRead build status, report, and artifact paths by build ID\nclick_ui_element\tClick a UI element\nfind_ui_elements\tFind UI elements by criteria\nget_ui_element_state\tGet UI element state\nset_ui_element_value\tSet UI element value\nsimulate_ui_input\tSimulate UI input events\nreference_embed_build\tBuild an embedding index (BGE-Small-EN, ONNX) for a cached Unity version. Writes `.unity-cli-index/embeddings.bin`.\nanalyze_scene_contents\tAnalyze scene asset contents\ninstantiate_prefab\tInstantiate a Prefab in the scene\nget_hierarchy\tGet scene hierarchy tree\ncreate_scene\tCreate a new scene\nget_scene_info\tGet scene metadata\nstart_scene_bake\tStart Lighting, legacy NavMesh, NavMeshSurface, or Occlusion baking\nget_scene_bake_status\tPoll bake progress, terminal failure, and verified saved artifacts\nlist_scenes\tList all scenes\nload_scene\tLoad a scene\nsave_scene\tSave the current scene\nEvaluate synchronous C# in the Editor. Timeout does not cancel execution\n\nUsage: unity-cli editor eval [OPTIONS] <CODE>\n\nArguments:\n  <CODE>  \n\nOptions:\n      --mode <MODE>              [default: expression] [possible values: expression, statements]\n      --output <OUTPUT>          [default: text] [possible values: text, json]\n      --host <HOST>              \n      --request-id <REQUEST_ID>  Reuse this ID to query the result after a timeout. Never retry with a new ID\n      --port <PORT>              \n      --project-path <PATH>      Target the Unity Editor that has this project open (default: the project containing the current directory). Also read from UNITY_PROJECT_ROOT\n      --timeout-ms <MS>          \n  -v, --verbose...               \n      --dry-run                  \n  -h, --help                     Print help",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Vf84Q6USJDPjZ4dteeeWQQ",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'U=\"/Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518\"; cd /tmp/issue377-unity-2022.3.62f3; for t in create_scene save_scene add_component play_game stop_game capture_screenshot get_editor_state read_console; do echo \"## $t\"; $U tool schema $t --output json 2>&1 | head -60; done; $U tool list --query play --compact; $U tool list --query component --compact; $U tool list --query console --compact; $U tool list --query compil --compact'",
+          "description": "Inspect schemas of needed tools"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Vf84Q6USJDPjZ4dteeeWQQ",
+        "type": "tool_result",
+        "content": "## create_scene\n{\n  \"description\": \"Create a new scene\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"create_scene\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"addToBuildSettings\": {\n        \"type\": \"boolean\"\n      },\n      \"loadScene\": {\n        \"type\": \"boolean\"\n      },\n      \"path\": {\n        \"type\": \"string\"\n      },\n      \"sceneName\": {\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"sceneName\"\n    ],\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## save_scene\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"save_scene\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"saveAs\": {\n        \"type\": \"boolean\"\n      },\n      \"scenePath\": {\n        \"type\": \"string\"\n      }\n    },\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## add_component\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"add_component\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"componentType\": {\n        \"type\": \"string\"\n      },\n      \"gameObjectPath\": {\n        \"type\": \"string\"\n      },\n      \"properties\": {\n        \"additionalProperties\": true,\n        \"properties\": {},\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"gameObjectPath\",\n      \"componentType\"\n    ],\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## play_game\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"play_game\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"delayMs\": {\n        \"type\": \"integer\"\n      }\n    },\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## stop_game\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"stop_game\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {},\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## capture_screenshot\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"capture_screenshot\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"captureMode\": {\n        \"enum\": [\n          \"game\",\n          \"scene\",\n          \"window\",\n          \"explorer\"\n        ],\n        \"type\": \"string\"\n      },\n      \"encodeAsBase64\": {\n        \"type\": \"boolean\"\n      },\n      \"explorerSettings\": {\n        \"additionalProperties\": true,\n        \"properties\": {},\n        \"type\": \"object\"\n      },\n      \"height\": {\n        \"type\": \"integer\"\n      },\n      \"includeUI\": {\n        \"type\": \"boolean\"\n      },\n      \"osFallback\": {\n        \"type\": \"boolean\"\n      },\n      \"width\": {\n        \"type\": \"integer\"\n      },\n      \"windowName\": {\n        \"type\": \"string\"\n      }\n    },\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## get_editor_state\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": false,\n  \"name\": \"get_editor_state\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {},\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\n## read_console\n{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": false,\n  \"name\": \"read_console\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"count\": {\n        \"type\": \"integer\"\n      },\n      \"filterText\": {\n        \"type\": \"string\"\n      },\n      \"format\": {\n        \"type\": \"string\"\n      },\n      \"groupBy\": {\n        \"type\": \"string\"\n      },\n      \"includeStackTrace\": {\n        \"type\": \"boolean\"\n      },\n      \"logTypes\": {\n        \"items\": {\n          \"type\": \"string\"\n        },\n        \"type\": \"array\"\n      },\n      \"sinceTimestamp\": {\n        \"type\": \"string\"\n      },\n      \"sortOrder\": {\n        \"type\": \"string\"\n      },\n      \"untilTimestamp\": {\n        \"type\": \"string\"\n      }\n    },\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\nget_timeline\tInspect a Timeline asset or PlayableDirector, tracks, clips, and bindings (read-only)\nhot_reload\tPreview methods or recover Play\npause_game\tPause Play mode\nplay_game\tEnter Play mode\nstop_game\tExit Play mode\nrun_tests\tRun EditMode/PlayMode tests\nbuild_player\tQueue a standalone player build on the Unity Editor host\nreference_view\tDisplay a slice of a file in the cached reference source by line range.\nfind_by_component\tFind GameObjects by component type\nget_component_values\tGet component field values\nadd_component\tAdd a component to a GameObject\nset_component_field\tSet a component field value\nget_component_types\tList available component types\nlist_components\tList components on a GameObject\nmodify_component\tModify component properties\nremove_component\tRemove a component\nvfx_runtime\tControl a VisualEffect component at runtime via its public API\nclear_console\tClear the Console window\nread_console\tRead Console output\nget_compilation_state\tGet C# compilation state\nvfx_describe_graph\tDescribe a Visual Effect Graph asset: contexts, blocks, operators, parameters, links, and compile errors\nvfx_apply\tApply an authoring mutation to a Visual Effect Graph asset and recompile",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Now the pre-mutation state: editor state, scene dirty state, console."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01134xi5XRSQ4pw4hkUaiuGU",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'U=/tmp/issue377-evidence/2022.3.62f3/u.sh; $U editor-state raw get_editor_state --json \"{}\"; $U scene-info raw get_scene_info --json \"{}\"; $U console-before raw read_console --json \"{\\\"count\\\":20,\\\"logTypes\\\":[\\\"Error\\\",\\\"Warning\\\"]}\" | head -60; $U compile-state raw get_compilation_state --json \"{}\"'",
+          "description": "Inspect editor, scene, console, compile state"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01134xi5XRSQ4pw4hkUaiuGU",
+        "type": "tool_result",
+        "content": "{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 290.229993208\n  },\n  \"status\": \"success\"\n}\n{\n  \"buildIndex\": -1,\n  \"fileSize\": 9666,\n  \"isActive\": true,\n  \"isDirty\": false,\n  \"isLoaded\": true,\n  \"lastModified\": \"2026-10-01T04:47:33.2211598Z\",\n  \"sceneName\": \"Issue366\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/Issue366.unity\",\n  \"summary\": \"Scene \\\"Issue366\\\" - Loaded and active, not in build settings, 9.4 KB\"\n}\n{\n  \"count\": 20,\n  \"logs\": [\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:58782\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client connected from 127.0.0.1:58782\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client disconnected: 127.0.0.1:58622\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client disconnected: 127.0.0.1:58622\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:576)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:576)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Error] [unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58622\\nUnityEngine.Debug:LogWarning (object)\\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58622\\nUnityEngine.Debug:LogWarning (object)\\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:58622\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client connected from 127.0.0.1:58622\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client disconnected: 127.0.0.1:58533\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client disconnected: 127.0.0.1:58533\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:576)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:576)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Error] [unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58533\\nUnityEngine.Debug:LogWarning (object)\\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58533\\nUnityEngine.Debug:LogWarning (object)\\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:58533\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client connected from 127.0.0.1:58533\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n{\n  \"consoleErrorCount\": 0,\n  \"consoleWarningCount\": 4,\n  \"errorCount\": 0,\n  \"isCompiling\": false,\n  \"isMonitoring\": false,\n  \"isUpdating\": false,\n  \"lastCompilationTime\": \"2026-10-01T04:44:23.2751020Z\",\n  \"messageCount\": 22,\n  \"success\": true,\n  \"warningCount\": 0\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01LStYgvr3WvaqdvTp1J7Q9q",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'U=/tmp/issue377-evidence/2022.3.62f3/u.sh; ls /tmp/issue377-unity-2022.3.62f3/Assets/Scenes/Generated/E2E/; $U clear-console raw clear_console --json \"{}\"; $U create-scene raw create_scene --json \"{\\\"sceneName\\\":\\\"ToolkitDemo\\\",\\\"path\\\":\\\"Assets/Scenes/Generated/E2E/\\\",\\\"loadScene\\\":true}\"; $U scene-info-new raw get_scene_info --json \"{}\"'",
+          "description": "Clear console and create ToolkitDemo scene"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01LStYgvr3WvaqdvTp1J7Q9q",
+        "type": "tool_result",
+        "content": "Issue366.unity\nIssue366.unity.meta\n{\n  \"clearOnBuild\": false,\n  \"clearOnPlay\": false,\n  \"clearOnRecompile\": false,\n  \"clearedCount\": 29,\n  \"message\": \"Console cleared successfully\",\n  \"remainingCount\": 0,\n  \"settingsUpdated\": false,\n  \"success\": true,\n  \"timestamp\": \"2026-10-01T06:01:04.6637960Z\"\n}\n{\n  \"isLoaded\": true,\n  \"path\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"sceneIndex\": -1,\n  \"sceneName\": \"ToolkitDemo\",\n  \"summary\": \"Created and loaded scene \\\"ToolkitDemo\\\" at \\\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\\\"\"\n}\n{\n  \"buildIndex\": -1,\n  \"fileSize\": 8134,\n  \"isActive\": true,\n  \"isDirty\": false,\n  \"isLoaded\": true,\n  \"lastModified\": \"2026-10-01T06:01:05.6295833Z\",\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Scene \\\"ToolkitDemo\\\" - Loaded and active, not in build settings, 7.9 KB\"\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Now write UXML/USS via `editor eval`. I'll keep eval bodies in files in the evidence folder (avoids shell-quoting issues and preserves them as evidence)."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01PEQPbHS8RVasmgTaiYFFNU",
+        "name": "Write",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/eval-01-write-sources.cs",
+          "content": "var dir = System.IO.Path.Combine(UnityEngine.Application.dataPath, \"UI/ToolkitDemo\");\nvar uxmlPath = System.IO.Path.Combine(dir, \"Screen.uxml\");\nvar ussPath = System.IO.Path.Combine(dir, \"Screen.uss\");\nvar tssPath = System.IO.Path.Combine(dir, \"Theme.tss\");\nif (System.IO.File.Exists(uxmlPath) || System.IO.File.Exists(ussPath) || System.IO.File.Exists(tssPath))\n    throw new System.InvalidOperationException(\"Refusing to overwrite existing ToolkitDemo sources\");\nSystem.IO.Directory.CreateDirectory(dir);\nSystem.IO.File.WriteAllText(uxmlPath,\n\"<ui:UXML xmlns:ui=\\\"UnityEngine.UIElements\\\">\\n\" +\n\"    <Style src=\\\"Screen.uss\\\" />\\n\" +\n\"    <ui:VisualElement name=\\\"form\\\" class=\\\"form\\\">\\n\" +\n\"        <ui:Label text=\\\"Welcome\\\" name=\\\"status\\\" />\\n\" +\n\"        <ui:TextField label=\\\"Name\\\" name=\\\"player-name\\\" />\\n\" +\n\"        <ui:Button text=\\\"Submit\\\" name=\\\"submit\\\" />\\n\" +\n\"    </ui:VisualElement>\\n\" +\n\"</ui:UXML>\\n\");\nSystem.IO.File.WriteAllText(ussPath,\n\".form {\\n\" +\n\"    padding-top: 32px;\\n\" +\n\"    padding-left: 32px;\\n\" +\n\"    padding-right: 32px;\\n\" +\n\"    padding-bottom: 32px;\\n\" +\n\"    width: 480px;\\n\" +\n\"    background-color: rgb(28, 35, 48);\\n\" +\n\"    color: rgb(240, 243, 250);\\n\" +\n\"    font-size: 24px;\\n\" +\n\"}\\n\" +\n\"#status { margin-bottom: 20px; }\\n\" +\n\"#submit { margin-top: 16px; height: 48px; }\\n\");\nSystem.IO.File.WriteAllText(tssPath, \"@import url(\\\"unity-theme://default\\\");\\n\");\nUnityEditor.AssetDatabase.Refresh(UnityEditor.ImportAssetOptions.ForceSynchronousImport);\nvar tree = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.VisualTreeAsset>(\"Assets/UI/ToolkitDemo/Screen.uxml\");\nvar sheet = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.StyleSheet>(\"Assets/UI/ToolkitDemo/Screen.uss\");\nvar theme = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.ThemeStyleSheet>(\"Assets/UI/ToolkitDemo/Theme.tss\");\nreturn \"tree=\" + (tree != null) + \" sheet=\" + (sheet != null) + \" theme=\" + (theme != null);\n"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01PEQPbHS8RVasmgTaiYFFNU",
+        "type": "tool_result",
+        "content": "File created successfully at: /tmp/issue377-evidence/2022.3.62f3/eval-01-write-sources.cs (file state is current in your context — no need to Read it back)"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01UpTsCx2MsCACQ9JXwXFUEv",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; ls /tmp/issue377-unity-2022.3.62f3/Assets/UI 2>&1; $E/u.sh eval-01-write-sources editor eval \"$(cat $E/eval-01-write-sources.cs)\" --mode statements --request-id issue377-2022-eval-01-sources'",
+          "description": "Write and import UXML/USS/TSS via editor eval"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01UpTsCx2MsCACQ9JXwXFUEv",
+        "type": "tool_result",
+        "content": "ls: /tmp/issue377-unity-2022.3.62f3/Assets/UI: No such file or directory\n{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 40,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-2022-eval-01-sources\",\n  \"state\": \"completed\",\n  \"value\": \"tree=True sheet=True theme=True\"\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "All three sources imported (CS0162 is the eval wrapper's own trailing code, harmless). Next: PanelSettings + UIDocument GameObject."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01YLVTJamS5cGF7akzzNYvjF",
+        "name": "Write",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/eval-02-panel-document.cs",
+          "content": "const string panelPath = \"Assets/UI/ToolkitDemo/Panel.asset\";\nif (UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(panelPath) != null)\n    throw new System.InvalidOperationException(\"Refusing to overwrite \" + panelPath);\nvar scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();\nif (scene.path != \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\")\n    throw new System.InvalidOperationException(\"Unexpected active scene \" + scene.path);\nif (UnityEngine.GameObject.Find(\"ToolkitDemo\") != null)\n    throw new System.InvalidOperationException(\"ToolkitDemo object already exists\");\nvar tree = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.VisualTreeAsset>(\"Assets/UI/ToolkitDemo/Screen.uxml\");\nvar theme = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.ThemeStyleSheet>(\"Assets/UI/ToolkitDemo/Theme.tss\");\nif (tree == null || theme == null) throw new System.InvalidOperationException(\"UXML/TSS import missing\");\nvar panel = UnityEngine.ScriptableObject.CreateInstance<UnityEngine.UIElements.PanelSettings>();\nif (panel.themeStyleSheet == null) panel.themeStyleSheet = theme;\npanel.scaleMode = UnityEngine.UIElements.PanelScaleMode.ConstantPixelSize;\nUnityEditor.AssetDatabase.CreateAsset(panel, panelPath);\nvar go = new UnityEngine.GameObject(\"ToolkitDemo\");\nvar document = go.AddComponent<UnityEngine.UIElements.UIDocument>();\ndocument.panelSettings = panel;\ndocument.visualTreeAsset = tree;\nUnityEditor.EditorUtility.SetDirty(panel);\nUnityEditor.EditorUtility.SetDirty(document);\nUnityEditor.AssetDatabase.SaveAssets();\nUnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(go.scene);\nvar saved = UnityEditor.SceneManagement.EditorSceneManager.SaveScene(go.scene);\nreturn \"go=\" + go.name + \" theme=\" + UnityEditor.AssetDatabase.GetAssetPath(panel.themeStyleSheet) + \" saved=\" + saved;\n"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01YLVTJamS5cGF7akzzNYvjF",
+        "type": "tool_result",
+        "content": "File created successfully at: /tmp/issue377-evidence/2022.3.62f3/eval-02-panel-document.cs (file state is current in your context — no need to Read it back)"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Nkf5tyxqatgLxokzpXLYKD",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh eval-02-panel-document editor eval \"$(cat $E/eval-02-panel-document.cs)\" --mode statements --request-id issue377-2022-eval-02-panel-document'",
+          "description": "Create PanelSettings and UIDocument via eval"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Nkf5tyxqatgLxokzpXLYKD",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 30,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-2022-eval-02-panel-document\",\n  \"state\": \"completed\",\n  \"value\": \"go=ToolkitDemo theme=Assets/UI/ToolkitDemo/Theme.tss saved=True\"\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Unity 2022.3 didn't auto-assign a theme, so the `Theme.tss` fallback was assigned. Now the binding script via CLI C# write tools."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_017kRdQFm17ZNNDLMdEaF9yP",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'U=\"/Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518\"; cd /tmp/issue377-unity-2022.3.62f3; $U tool list --query script --compact; $U tool list --query csharp --compact; $U tool list --query create --compact | head -30'",
+          "description": "Discover C# write tools"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_017kRdQFm17ZNNDLMdEaF9yP",
+        "type": "tool_result",
+        "content": "vfx_list_library\tList available Visual Effect Graph descriptors (`kind`: block, operator, context, parameter, or template)\neval_csharp\tEvaluate synchronous C#\nwrite_csharp_file\tWrite a complete C# source file\ncreate_csharp_file\tCreate a new C# source file\napply_csharp_edits\tApply structured C# source edits\nmanage_timeline\tCreate and edit Timeline AnimationTracks, bind a director, or evaluate a time (mutating)\ncreate_animator_controller\tCreate an AnimatorController asset with parameters, states, and transitions\ncreate_animation_clip\tCreate an AnimationClip asset from sprite frames with frame rate and loop settings\ncreate_sprite_atlas\tCreate a SpriteAtlas asset with packables and packing settings\ncreate_material\tCreate a new Material\ncreate_prefab\tCreate a new Prefab\ncreate_gameobject\tCreate a new GameObject\ncreate_action_map\tCreate an Action Map\ncreate_composite_binding\tCreate a composite binding\ncreate_input_sequence\tCreate an input sequence\ncreate_scene\tCreate a new scene\ncreate_csharp_file\tCreate a new C# source file\ncreate_class\tCreate a C# class",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01No3PemT4A69Tt5Q7df6kbM",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3; /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 tool schema create_csharp_file --output json'",
+          "description": "Show create_csharp_file schema"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01No3PemT4A69Tt5Q7df6kbM",
+        "type": "tool_result",
+        "content": "{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"local\",\n  \"mutating\": true,\n  \"name\": \"create_csharp_file\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"apply\": {\n        \"type\": \"boolean\"\n      },\n      \"format\": {\n        \"type\": \"boolean\"\n      },\n      \"overwrite\": {\n        \"type\": \"boolean\"\n      },\n      \"path\": {\n        \"type\": \"string\"\n      },\n      \"refresh\": {\n        \"type\": \"boolean\"\n      },\n      \"relative\": {\n        \"type\": \"string\"\n      },\n      \"text\": {\n        \"type\": \"string\"\n      },\n      \"updateIndex\": {\n        \"type\": \"boolean\"\n      },\n      \"validate\": {\n        \"type\": \"boolean\"\n      },\n      \"waitForCompile\": {\n        \"type\": \"boolean\"\n      }\n    },\n    \"required\": [\n      \"text\"\n    ],\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Lta5WDjMAFJ6V9MLfzzbZD",
+        "name": "Write",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/ToolkitDemoBinding.cs.src",
+          "content": "using UnityEngine;\nusing UnityEngine.UIElements;\n\n[RequireComponent(typeof(UIDocument))]\npublic class ToolkitDemoBinding : MonoBehaviour\n{\n    private Button submit;\n    private TextField playerName;\n    private Label status;\n\n    private void OnEnable()\n    {\n        var root = GetComponent<UIDocument>().rootVisualElement;\n        submit = root.Q<Button>(\"submit\");\n        playerName = root.Q<TextField>(\"player-name\");\n        status = root.Q<Label>(\"status\");\n        if (submit == null || playerName == null || status == null)\n        {\n            Debug.LogError(\"ToolkitDemo: required UXML controls missing\");\n            return;\n        }\n        submit.clicked += Submit;\n    }\n\n    private void OnDisable()\n    {\n        if (submit != null) submit.clicked -= Submit;\n    }\n\n    private void Submit()\n    {\n        status.text = \"Hello, \" + playerName.value + \"!\";\n    }\n}\n"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Lta5WDjMAFJ6V9MLfzzbZD",
+        "type": "tool_result",
+        "content": "File created successfully at: /tmp/issue377-evidence/2022.3.62f3/ToolkitDemoBinding.cs.src (file state is current in your context — no need to Read it back)"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01JnTiHTpfH2EoqWmk38wNHx",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; test -e /tmp/issue377-unity-2022.3.62f3/Assets/Scripts/ToolkitDemoBinding.cs && echo EXISTS; J=$(jq -n --rawfile t $E/ToolkitDemoBinding.cs.src \"{path:\\\"Assets/Scripts/ToolkitDemoBinding.cs\\\",text:\\$t,overwrite:false,refresh:true,waitForCompile:true,validate:true}\"); UTIMEOUT=300000 $E/u.sh create-binding raw create_csharp_file --json \"$J\"'",
+          "description": "Create binding script via create_csharp_file",
+          "timeout": 320000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "type": "tool_result",
+        "content": "Exit code 101\n\nthread 'main' (1642294) panicked at src/tooling/local_tools.rs:842:13:\nCannot start a runtime from within a runtime. This happens because a function (like `block_on`) attempted to block the current thread while the thread is being used to drive asynchronous tasks.\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace",
+        "is_error": true,
+        "tool_use_id": "toolu_01JnTiHTpfH2EoqWmk38wNHx"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The CLI panicked (Rust nested-runtime bug in `local_tools.rs:842`). Checking whether the file was written before the panic:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01CNR8Uf1hB9bpH9nnNwZ1JF",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'ls -la /tmp/issue377-unity-2022.3.62f3/Assets/Scripts 2>&1'",
+          "description": "Check whether binding file exists"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01CNR8Uf1hB9bpH9nnNwZ1JF",
+        "type": "tool_result",
+        "content": "total 8\ndrwxr-xr-x@ 3 akiojin  wheel   96 Oct  1 15:02 .\ndrwxr-xr-x@ 7 akiojin  wheel  224 Oct  1 15:02 ..\n-rw-r--r--@ 1 akiojin  wheel  887 Oct  1 15:02 ToolkitDemoBinding.cs",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The file was written before the panic (likely during the refresh/compile-wait phase). I'll verify content matches, then refresh and wait for compilation with separate tools."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_018BRyor1J86X8YBD2LRZYcy",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; diff $E/ToolkitDemoBinding.cs.src /tmp/issue377-unity-2022.3.62f3/Assets/Scripts/ToolkitDemoBinding.cs && echo IDENTICAL; U=\"/Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518\"; cd /tmp/issue377-unity-2022.3.62f3; $U tool list --query refresh --compact'",
+          "description": "Verify written script and find refresh tool"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_018BRyor1J86X8YBD2LRZYcy",
+        "type": "tool_result",
+        "content": "1c1\n< using UnityEngine;\n---\n> ﻿using UnityEngine;\nrefresh_assets\tRefresh the AssetDatabase",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Identical except a UTF-8 BOM the tool added (fine for Unity). Refreshing and polling compilation:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01F6FJy17broiHppN6NnhwB1",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh refresh-assets raw refresh_assets --json \"{}\"; for i in $(seq 1 40); do sleep 3; out=$(UTIMEOUT=15000 $E/u.sh compile-poll raw get_compilation_state --json \"{}\" 2>&1) || { echo \"poll $i: no response (reload?)\"; continue; }; echo \"$out\" | jq -c \"{isCompiling,isUpdating,errorCount,lastCompilationTime}\"; echo \"$out\" | jq -e \".isCompiling==false and .isUpdating==false and .lastCompilationTime > \\\"2026-10-01T06:02\\\"\" >/dev/null && break; done; $E/u.sh compile-final raw get_compilation_state --json \"{}\"'",
+          "description": "Refresh assets and wait for compilation",
+          "timeout": 200000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01F6FJy17broiHppN6NnhwB1",
+        "type": "tool_result",
+        "content": "{\n  \"isCompiling\": true,\n  \"message\": \"Asset refresh triggered\",\n  \"timestamp\": \"2026-10-01T06:02:28.7183830Z\"\n}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\n{\"isCompiling\":true,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T04:44:23.2751020Z\"}\npoll 7: no response (reload?)\npoll 8: no response (reload?)\npoll 9: no response (reload?)\npoll 10: no response (reload?)\npoll 11: no response (reload?)\n{\"isCompiling\":false,\"isUpdating\":false,\"errorCount\":0,\"lastCompilationTime\":\"2026-10-01T06:02:51.1014690Z\"}\n{\n  \"consoleErrorCount\": 0,\n  \"consoleWarningCount\": 1,\n  \"errorCount\": 0,\n  \"isCompiling\": false,\n  \"isMonitoring\": false,\n  \"isUpdating\": false,\n  \"lastCompilationTime\": \"2026-10-01T06:02:51.1014690Z\",\n  \"messageCount\": 11,\n  \"success\": true,\n  \"warningCount\": 0\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Compiled with 0 errors after domain reload. Confirming the type exists, then attaching it with `add_component`:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01PQe3hRZ9QjWB8yCj1Xbu9k",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh type-check editor eval \"System.Type.GetType(\\\"ToolkitDemoBinding, Assembly-CSharp\\\") != null\" --request-id issue377-2022-eval-03-typecheck; $E/u.sh console-after-compile raw read_console --json \"{\\\"count\\\":20,\\\"logTypes\\\":[\\\"Error\\\",\\\"Warning\\\"],\\\"includeStackTrace\\\":false}\" | jq -c \".logs[]? | {logType, m: (.message|split(\\\"\\n\\\")[0])}\"; $E/u.sh add-binding raw add_component --json \"{\\\"gameObjectPath\\\":\\\"/ToolkitDemo\\\",\\\"componentType\\\":\\\"ToolkitDemoBinding\\\"}\"'",
+          "description": "Verify type and add binding component"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01PQe3hRZ9QjWB8yCj1Xbu9k",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-2022-eval-03-typecheck\",\n  \"state\": \"completed\",\n  \"value\": true\n}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client disconnected: 127.0.0.1:59453\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client connected from 127.0.0.1:59453\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client connected from 127.0.0.1:59372\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Connected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] TCP listener binding on 127.0.0.1:6518 (host=localhost)\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Disconnected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6518\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Initializing...\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client disconnected: 127.0.0.1:58782\"}\n{\"logType\":\"Error\",\"m\":\"[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:58782\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] TCP listener stopped\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Disconnected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Shutting down...\"}\n{\n  \"appliedProperties\": [],\n  \"componentType\": \"ToolkitDemoBinding\",\n  \"gameObjectPath\": \"/ToolkitDemo\",\n  \"message\": \"Component ToolkitDemoBinding added successfully\",\n  \"success\": true\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Console has only bridge lifecycle messages (the one dropped command was the poll in flight during domain reload). Save, reload, and verify persistence:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01DEoWaf4qi4V2bP74FgpRnx",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh save-scene raw save_scene --json \"{}\"; $E/u.sh save-assets editor eval \"UnityEditor.AssetDatabase.SaveAssets(); return true;\" --mode statements --request-id issue377-2022-eval-04-saveassets | jq -c \"{state,value,exception}\"; $E/u.sh reload-scene raw load_scene --json \"{\\\"scenePath\\\":\\\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\\\"}\"; $E/u.sh persistence-check editor eval \"var go = UnityEngine.GameObject.Find(\\\"ToolkitDemo\\\"); var d = go.GetComponent<UnityEngine.UIElements.UIDocument>(); return go.scene.path + \\\" dirty=\\\" + go.scene.isDirty + \\\" panel=\\\" + UnityEditor.AssetDatabase.GetAssetPath(d.panelSettings) + \\\" tree=\\\" + UnityEditor.AssetDatabase.GetAssetPath(d.visualTreeAsset) + \\\" theme=\\\" + UnityEditor.AssetDatabase.GetAssetPath(d.panelSettings.themeStyleSheet) + \\\" binding=\\\" + (go.GetComponent(\\\"ToolkitDemoBinding\\\") != null);\" --mode statements --request-id issue377-2022-eval-05-persistence | jq -c \"{state,value,exception}\"'",
+          "description": "Save, reload scene, verify persistence"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01DEoWaf4qi4V2bP74FgpRnx",
+        "type": "tool_result",
+        "content": "{\n  \"isDirty\": false,\n  \"originalPath\": null,\n  \"saved\": true,\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Saved scene \\\"ToolkitDemo\\\" to \\\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\\\"\"\n}\n{\"state\":\"completed\",\"value\":true,\"exception\":null}\n{\n  \"activeSceneCount\": null,\n  \"isLoaded\": true,\n  \"loadMode\": \"Single\",\n  \"previousScene\": \"ToolkitDemo\",\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Loaded scene \\\"ToolkitDemo\\\" in Single mode\"\n}\n{\"state\":\"completed\",\"value\":\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity dirty=False panel=Assets/UI/ToolkitDemo/Panel.asset tree=Assets/UI/ToolkitDemo/Screen.uxml theme=Assets/UI/ToolkitDemo/Theme.tss binding=True\",\"exception\":null}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Everything persisted after reload. Entering Play Mode:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_016UC74nXwdi1ZEFTBXiAFT7",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh clear-console-pre-play raw clear_console --json \"{}\" | jq -c \"{success}\"; $E/u.sh play raw play_game --json \"{}\"; for i in $(seq 1 30); do sleep 2; s=$(UTIMEOUT=15000 $E/u.sh play-poll raw get_editor_state --json \"{}\" 2>/dev/null) || { echo \"poll $i no response\"; continue; }; echo \"$s\" | jq -c \".state|{isPlaying,isCompiling,reason:.playability.reason}\"; echo \"$s\" | jq -e \".state.isPlaying==true\" >/dev/null && break; done'",
+          "description": "Enter Play Mode and wait",
+          "timeout": 120000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_016UC74nXwdi1ZEFTBXiAFT7",
+        "type": "tool_result",
+        "content": "{\"success\":true}\n{\n  \"message\": \"Play mode scheduled in 300ms\",\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": \"2026-10-01T06:03:40.7095720Z\",\n      \"msSincePlayRequested\": 3.2030000000000003,\n      \"playRequested\": true,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 452.5214667080001\n  },\n  \"status\": \"success\"\n}\npoll 1 no response\npoll 2 no response\npoll 3 no response\npoll 4 no response\n{\"isPlaying\":true,\"isCompiling\":false,\"reason\":\"in_play_mode\"}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Playing. Waiting for the panel to be ready, then discovering controls via UI automation:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_015mcPLCCrPduBkww7nCEehs",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh panel-ready editor eval \"var d = UnityEngine.GameObject.Find(\\\"ToolkitDemo\\\").GetComponent<UnityEngine.UIElements.UIDocument>(); return \\\"panel=\\\" + (d.rootVisualElement != null && d.rootVisualElement.panel != null) + \\\" layout=\\\" + d.rootVisualElement.layout + \\\" screen=\\\" + UnityEngine.Screen.width + \\\"x\\\" + UnityEngine.Screen.height;\" --mode statements --request-id issue377-2022-eval-06-panelready | jq -c \"{state,value,exception}\"; $E/u.sh find-uitk raw find_ui_elements --json \"{\\\"uiSystem\\\":\\\"uitk\\\"}\"'",
+          "description": "Check panel readiness and find UITK elements"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_015mcPLCCrPduBkww7nCEehs",
+        "type": "tool_result",
+        "content": "{\"state\":\"completed\",\"value\":\"panel=True layout=(x:0.00, y:0.00, width:1280.00, height:720.00) screen=3024x40\",\"exception\":null}\n{\n  \"count\": 6,\n  \"elements\": [\n    {\n      \"classes\": [\n        \"unity-ui-document__root\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TemplateContainer\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"ToolkitDemo-container\",\n      \"path\": \"uitk:/ToolkitDemo#ToolkitDemo-container\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"form\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"VisualElement\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"form\",\n      \"path\": \"uitk:/ToolkitDemo#form\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-text-element\",\n        \"unity-button\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"Button\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"submit\",\n      \"path\": \"uitk:/ToolkitDemo#submit\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-base-field\",\n        \"unity-base-text-field\",\n        \"unity-text-field\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TextField\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"player-name\",\n      \"path\": \"uitk:/ToolkitDemo#player-name\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-base-text-field__input\",\n        \"unity-base-text-field__input--single-line\",\n        \"unity-base-field__input\",\n        \"unity-text-field__input\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TextInput\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"unity-text-input\",\n      \"path\": \"uitk:/ToolkitDemo#unity-text-input\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-text-element\",\n        \"unity-label\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"Label\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"status\",\n      \"path\": \"uitk:/ToolkitDemo#status\",\n      \"uiSystem\": \"uitk\"\n    }\n  ]\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Panel ready (1280×720 layout), all controls discovered at `uitk:/ToolkitDemo#…`. Initial state + initial Game capture:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01JBE2ExKvcUNEWABtQgNy8P",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh state-status-initial raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#status\\\"}\"; $E/u.sh state-name-initial raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\"}\" | jq -c .; $E/u.sh capture-initial raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\"'",
+          "description": "Read initial state and capture Game view"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01JBE2ExKvcUNEWABtQgNy8P",
+        "type": "tool_result",
+        "content": "{\n  \"elementType\": \"Label\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"status\",\n  \"path\": \"uitk:/ToolkitDemo#status\",\n  \"text\": \"Welcome\",\n  \"uiSystem\": \"uitk\"\n}\n{\"elementType\":\"TextField\",\"isActive\":true,\"isInteractable\":true,\"name\":\"player-name\",\"path\":\"uitk:/ToolkitDemo#player-name\",\"uiSystem\":\"uitk\",\"value\":\"\"}\n{\n  \"captureMode\": \"game\",\n  \"fileSize\": 158955,\n  \"height\": 720,\n  \"includeUI\": true,\n  \"message\": \"Screenshot captured successfully from Main Camera\",\n  \"path\": \"/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-17.png\",\n  \"width\": 1280\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_0153A2dWiHaF3EBB23UPTLm9",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cp /private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-17.png /tmp/issue377-evidence/2022.3.62f3/game-initial.png && file /tmp/issue377-evidence/2022.3.62f3/game-initial.png'",
+          "description": "Copy initial capture to evidence"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_0153A2dWiHaF3EBB23UPTLm9",
+        "type": "tool_result",
+        "content": "/tmp/issue377-evidence/2022.3.62f3/game-initial.png: PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01MWMKoi6fzbXhmkcsM3bjtY",
+        "name": "Read",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/game-initial.png"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01MWMKoi6fzbXhmkcsM3bjtY",
+        "type": "tool_result",
+        "content": [
+          {
+            "type": "image",
+            "omitted": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01MCrMMD5NvDucecdA1YnzzS",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh capture-initial-window raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"window\\\",\\\"windowName\\\":\\\"Game\\\",\\\"osFallback\\\":false}\"'",
+          "description": "Try Game window capture mode"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01MCrMMD5NvDucecdA1YnzzS",
+        "type": "tool_result",
+        "content": "{\n  \"error\": \"Direct window capture is not fully supported. Use 'game' or 'scene' mode instead.\"\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Window capture is explicitly unsupported by the bridge. The required interaction steps still work, so I'll continue the scenario and record this as a capture gap. Setting the text field:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01SY9hdNMuLDECJ3jB2UDhAk",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh set-name-ada raw set_ui_element_value --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\",\\\"value\\\":\\\"Ada\\\"}\"; $E/u.sh state-name-after-set raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\"}\"; $E/u.sh state-status-before-click raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#status\\\"}\" | jq -c \"{text}\"'",
+          "description": "Set text field to Ada and read back"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01SY9hdNMuLDECJ3jB2UDhAk",
+        "type": "tool_result",
+        "content": "{\n  \"elementPath\": \"uitk:/ToolkitDemo#player-name\",\n  \"newValue\": \"Ada\",\n  \"success\": true,\n  \"uiSystem\": \"uitk\"\n}\n{\n  \"elementType\": \"TextField\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"player-name\",\n  \"path\": \"uitk:/ToolkitDemo#player-name\",\n  \"uiSystem\": \"uitk\",\n  \"value\": \"Ada\"\n}\n{\"text\":\"Welcome\"}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Value reads back `Ada`; status still `Welcome`. Clicking Submit and verifying:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_018zaFjF4yNfd59NdSesRRMX",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh click-submit raw click_ui_element --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#submit\\\"}\"; $E/u.sh state-status-after-click raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#status\\\"}\"; $E/u.sh capture-result raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\"'",
+          "description": "Click Submit, verify status, capture result"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_018zaFjF4yNfd59NdSesRRMX",
+        "type": "tool_result",
+        "content": "{\n  \"elementPath\": \"uitk:/ToolkitDemo#submit\",\n  \"message\": \"Successfully clicked submit\",\n  \"success\": true,\n  \"uiSystem\": \"uitk\",\n  \"warnings\": null\n}\n{\n  \"elementType\": \"Label\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"status\",\n  \"path\": \"uitk:/ToolkitDemo#status\",\n  \"text\": \"Hello, Ada!\",\n  \"uiSystem\": \"uitk\"\n}\n{\n  \"captureMode\": \"game\",\n  \"fileSize\": 158955,\n  \"height\": 720,\n  \"includeUI\": true,\n  \"message\": \"Screenshot captured successfully from Main Camera\",\n  \"path\": \"/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-40.png\",\n  \"width\": 1280\n}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "`Hello, Ada!` confirmed via `get_ui_element_state`. Saving the result capture and checking it plus the console:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_018CkFitKn86p81mb2Rrpw5H",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; cp /private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-40.png $E/game-result.png; shasum $E/game-initial.png $E/game-result.png; $E/u.sh console-in-play raw read_console --json \"{\\\"count\\\":50,\\\"logTypes\\\":[\\\"Error\\\",\\\"Exception\\\",\\\"Warning\\\",\\\"Log\\\"],\\\"includeStackTrace\\\":false}\" | jq -c \".logs[]? | {logType, m: (.message|split(\\\"\\n\\\")[0])}\"'",
+          "description": "Save result capture, compare, read console"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_018CkFitKn86p81mb2Rrpw5H",
+        "type": "tool_result",
+        "content": "eefc9d8677f8d2a91a84ff096f330a7404a53b48  /tmp/issue377-evidence/2022.3.62f3/game-initial.png\neefc9d8677f8d2a91a84ff096f330a7404a53b48  /tmp/issue377-evidence/2022.3.62f3/game-result.png\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge][ScreenshotHandler] Using main camera in Play Mode\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge][ScreenshotHandler] CaptureGameView called: path=/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-40.png, width=1280, height=720\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge][ScreenshotHandler] Using main camera in Play Mode\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge][ScreenshotHandler] CaptureGameView called: path=/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-17.png, width=1280, height=720\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client disconnected: 127.0.0.1:59631\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client connected from 127.0.0.1:59631\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client connected from 127.0.0.1:59557\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Connected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] TCP listener binding on 127.0.0.1:6518 (host=localhost)\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Disconnected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6518\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Initializing...\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Client disconnected: 127.0.0.1:59372\"}\n{\"logType\":\"Error\",\"m\":\"[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:59372\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] TCP listener stopped\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Status changed to: Disconnected\"}\n{\"logType\":\"Warning\",\"m\":\"[unity-cli-bridge] Shutting down...\"}",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_019FLp2Km8RjuCc34HE3B7WA",
+        "name": "Read",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/game-result.png"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_019FLp2Km8RjuCc34HE3B7WA",
+        "type": "tool_result",
+        "content": [
+          {
+            "type": "image",
+            "omitted": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01TmEFhXx4Jwu641ZnLJ6h79",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'E=/tmp/issue377-evidence/2022.3.62f3; $E/u.sh stop raw stop_game --json \"{}\" | jq -c .; for i in $(seq 1 20); do sleep 2; s=$(UTIMEOUT=15000 $E/u.sh stop-poll raw get_editor_state --json \"{}\" 2>/dev/null) || { echo \"poll $i no response\"; continue; }; echo \"$s\" | jq -c \".state|{isPlaying,reason:.playability.reason}\"; echo \"$s\" | jq -e \".state.isPlaying==false\" >/dev/null && break; done; $E/u.sh scene-info-final raw get_scene_info --json \"{}\" | jq -c \"{scenePath,isDirty}\"; $E/u.sh persistence-after-play editor eval \"var go = UnityEngine.GameObject.Find(\\\"ToolkitDemo\\\"); return go.scene.path + \\\" dirty=\\\" + go.scene.isDirty + \\\" binding=\\\" + (go.GetComponent(\\\"ToolkitDemoBinding\\\") != null);\" --mode statements --request-id issue377-2022-eval-07-postplay | jq -c \"{state,value}\"; ls -la $E; ls -R /tmp/issue377-unity-2022.3.62f3/Assets/UI /tmp/issue377-unity-2022.3.62f3/Assets/Scripts /tmp/issue377-unity-2022.3.62f3/Assets/Scenes/Generated/E2E'",
+          "description": "Exit Play and verify final state",
+          "timeout": 90000
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01TmEFhXx4Jwu641ZnLJ6h79",
+        "type": "tool_result",
+        "content": "{\"message\":\"Exited play mode\",\"state\":{\"applicationContentsPath\":\"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\"applicationPath\":\"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\"isCompiling\":false,\"isPaused\":false,\"isPlaying\":true,\"isUpdating\":false,\"playability\":{\"compilation\":null,\"lastPlayRequestTime\":null,\"playRequested\":false,\"reason\":\"in_play_mode\"},\"timeSinceStartup\":524.527580625},\"status\":\"success\"}\n{\"isPlaying\":false,\"reason\":\"ready\"}\n{\"scenePath\":\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\"isDirty\":false}\n{\"state\":\"completed\",\"value\":\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity dirty=False binding=True\"}\ntotal 5808\ndrwxr-xr-x@ 16 akiojin  wheel      512 Oct  1 15:04 .\ndrwxr-xr-x@  4 akiojin  wheel      128 Oct  1 14:56 ..\n-rw-r--r--@  1 akiojin  wheel      884 Oct  1 15:02 ToolkitDemoBinding.cs.src\n-rw-r--r--@  1 akiojin  wheel  1183201 Oct  1 15:04 claude-session.jsonl\n-rw-r--r--@  1 akiojin  wheel        0 Oct  1 14:57 claude-stderr.log\n-rw-r--r--@  1 akiojin  wheel   227455 Oct  1 15:04 editor.log\n-rw-r--r--@  1 akiojin  wheel     1984 Oct  1 15:01 eval-01-write-sources.cs\n-rw-r--r--@  1 akiojin  wheel     1858 Oct  1 15:01 eval-02-panel-document.cs\n-rw-r--r--@  1 akiojin  wheel   158955 Oct  1 15:04 game-initial.png\n-rw-r--r--@  1 akiojin  wheel   158955 Oct  1 15:04 game-result.png\n-rw-r--r--@  1 akiojin  wheel   108984 Oct  1 15:04 ops.log\n-rw-r--r--@  1 akiojin  wheel        5 Oct  1 14:56 pid\n-rw-r--r--@  1 akiojin  wheel      331 Oct  1 14:57 ping.json\n-rw-r--r--@  1 akiojin  wheel     1463 Oct  1 14:57 prompt.txt\ndrwxr-xr-x@  4 akiojin  wheel      128 Oct  1 15:02 tools\n-rwxr-xr-x@  1 akiojin  wheel      669 Oct  1 15:00 u.sh\n/tmp/issue377-unity-2022.3.62f3/Assets/Scenes/Generated/E2E:\nIssue366.unity\nIssue366.unity.meta\nToolkitDemo.unity\nToolkitDemo.unity.meta\n\n/tmp/issue377-unity-2022.3.62f3/Assets/Scripts:\nToolkitDemoBinding.cs\nToolkitDemoBinding.cs.meta\n\n/tmp/issue377-unity-2022.3.62f3/Assets/UI:\nToolkitDemo\nToolkitDemo.meta\n\n/tmp/issue377-unity-2022.3.62f3/Assets/UI/ToolkitDemo:\nPanel.asset\nPanel.asset.meta\nScreen.uss\nScreen.uss.meta\nScreen.uxml\nScreen.uxml.meta\nTheme.tss\nTheme.tss.meta",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The build and the UI interaction part of the scenario passed on Unity 2022.3.62f3, but the visual evidence failed: neither Game capture shows the UI. Both PNGs show only the skybox and are byte-identical, so they don't prove anything about the screen. There were also two tool problems along the way, listed below. All commands went to 127.0.0.1:6518 and the Editor is back in Edit Mode.\n\n**Assets created**\n- Scene: `Assets/Scenes/Generated/E2E/ToolkitDemo.unity`, containing a `ToolkitDemo` object with a `UIDocument` and the `ToolkitDemoBinding` component\n- `Assets/UI/ToolkitDemo/Screen.uxml`, `Screen.uss`, `Theme.tss`, `Panel.asset` (the PanelSettings)\n- `Assets/Scripts/ToolkitDemoBinding.cs`\n\nI wrote the source files and created the PanelSettings and UIDocument with `editor eval`, the script with `create_csharp_file`, and attached the component with `add_component`. No scene or asset YAML was edited. Unity 2022.3 didn't assign a default theme, so `Theme.tss` (which imports Unity's default theme) is assigned to the panel. The script compiled with 0 errors. After saving and reloading, the scene still had the document, panel, layout file, theme and binding, and none of that changed after Play. `Issue366.unity` was not changed.\n\n**UI automation results** (all read with `get_ui_element_state`)\n\n| Step | Result |\n|---|---|\n| Find controls | `uitk:/ToolkitDemo#submit`, `#player-name` and `#status` found; panel ready at 1280×720 |\n| Before input | status = `Welcome`, player-name = `\"\"` |\n| Set player-name to `Ada` | success; reads back `Ada`; status still `Welcome` |\n| Click `#submit` | success |\n| After click | **status = `Hello, Ada!`** ✅ |\n\nThe console showed no errors from the binding or the UI. The only Error entries are the bridge's \"Dropped 1 queued command\" messages, logged when requests were cut off during startup and the script reload.\n\n**Failures**\n1. **The Game captures don't include the UI.** `capture_screenshot` with `captureMode:\"game\"`, `includeUI:true` and `osFallback:false` rendered from Main Camera only, which leaves out the UI Toolkit layer. `game-initial.png` and `game-result.png` are 1280×720 skybox images with the same checksum. I tried the bridge's Game window capture and it returned \"Direct window capture is not fully supported\". I didn't use OS screenshots or any other workaround. This needs a separate Issue.\n2. **`create_csharp_file` crashed the CLI** with \"Cannot start a runtime from within a runtime\" (`src/tooling/local_tools.rs:842`) when called with `refresh`/`waitForCompile` set to true. The file had already been written, and it matches the source except for a UTF-8 byte-order mark the tool added. I then refreshed with `refresh_assets` and polled `get_compilation_state` until it finished. This also needs an Issue.\n3. **The bridge didn't respond at first.** Pings timed out for about a minute after the project loaded, even though the correct Editor owned the port. It answered on a later retry without me changing anything.\n\n**Evidence in `/tmp/issue377-evidence/2022.3.62f3/`**\n- `ops.log`: the command and full response for every step, including the crash and the unsupported capture\n- `game-initial.png` and `game-result.png` (skybox only, as above)\n- `eval-01-write-sources.cs`, `eval-02-panel-document.cs` and `ToolkitDemoBinding.cs.src`: the exact code I ran or wrote\n- `u.sh`: the logging wrapper I used to run each command"
+      }
+    ]
+  },
+  {
+    "type": "result",
+    "session_id": "dbf39541-89e2-4d0f-b792-7bee9c715b2d",
+    "is_error": false,
+    "permission_denials": [],
+    "result": "The build and the UI interaction part of the scenario passed on Unity 2022.3.62f3, but the visual evidence failed: neither Game capture shows the UI. Both PNGs show only the skybox and are byte-identical, so they don't prove anything about the screen. There were also two tool problems along the way, listed below. All commands went to 127.0.0.1:6518 and the Editor is back in Edit Mode.\n\n**Assets created**\n- Scene: `Assets/Scenes/Generated/E2E/ToolkitDemo.unity`, containing a `ToolkitDemo` object with a `UIDocument` and the `ToolkitDemoBinding` component\n- `Assets/UI/ToolkitDemo/Screen.uxml`, `Screen.uss`, `Theme.tss`, `Panel.asset` (the PanelSettings)\n- `Assets/Scripts/ToolkitDemoBinding.cs`\n\nI wrote the source files and created the PanelSettings and UIDocument with `editor eval`, the script with `create_csharp_file`, and attached the component with `add_component`. No scene or asset YAML was edited. Unity 2022.3 didn't assign a default theme, so `Theme.tss` (which imports Unity's default theme) is assigned to the panel. The script compiled with 0 errors. After saving and reloading, the scene still had the document, panel, layout file, theme and binding, and none of that changed after Play. `Issue366.unity` was not changed.\n\n**UI automation results** (all read with `get_ui_element_state`)\n\n| Step | Result |\n|---|---|\n| Find controls | `uitk:/ToolkitDemo#submit`, `#player-name` and `#status` found; panel ready at 1280×720 |\n| Before input | status = `Welcome`, player-name = `\"\"` |\n| Set player-name to `Ada` | success; reads back `Ada`; status still `Welcome` |\n| Click `#submit` | success |\n| After click | **status = `Hello, Ada!`** ✅ |\n\nThe console showed no errors from the binding or the UI. The only Error entries are the bridge's \"Dropped 1 queued command\" messages, logged when requests were cut off during startup and the script reload.\n\n**Failures**\n1. **The Game captures don't include the UI.** `capture_screenshot` with `captureMode:\"game\"`, `includeUI:true` and `osFallback:false` rendered from Main Camera only, which leaves out the UI Toolkit layer. `game-initial.png` and `game-result.png` are 1280×720 skybox images with the same checksum. I tried the bridge's Game window capture and it returned \"Direct window capture is not fully supported\". I didn't use OS screenshots or any other workaround. This needs a separate Issue.\n2. **`create_csharp_file` crashed the CLI** with \"Cannot start a runtime from within a runtime\" (`src/tooling/local_tools.rs:842`) when called with `refresh`/`waitForCompile` set to true. The file had already been written, and it matches the source except for a UTF-8 byte-order mark the tool added. I then refreshed with `refresh_assets` and polled `get_compilation_state` until it finished. This also needs an Issue.\n3. **The bridge didn't respond at first.** Pings timed out for about a minute after the project loaded, even though the correct Editor owned the port. It answered on a later retry without me changing anything.\n\n**Evidence in `/tmp/issue377-evidence/2022.3.62f3/`**\n- `ops.log`: the command and full response for every step, including the crash and the unsupported capture\n- `game-initial.png` and `game-result.png` (skybox only, as above)\n- `eval-01-write-sources.cs`, `eval-02-panel-document.cs` and `ToolkitDemoBinding.cs.src`: the exact code I ran or wrote\n- `u.sh`: the logging wrapper I used to run each command",
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 68,
+        "outputTokens": 16429,
+        "cacheReadInputTokens": 1474746,
+        "cacheCreationInputTokens": 63414,
+        "webSearchRequests": 0,
+        "costUSD": 1.1311132000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2155,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  }
+]

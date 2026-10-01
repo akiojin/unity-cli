@@ -14,6 +14,7 @@ metadata:
     - package
     - setting
   siblings:
+    - unity-ui-toolkit-build
     - unity-cli-usage
     - unity-csharp-edit
     - unity-asset-management
@@ -34,6 +35,8 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 - The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The task is scene creation or prefab editing (rather than a bake job); use `unity-scene-create` or `unity-prefab-workflow`.
 - The work is asset import or material edits; use `unity-asset-management`.

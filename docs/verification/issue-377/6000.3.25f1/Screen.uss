@@ -1,0 +1,13 @@
+.form {
+    padding-top: 32px;
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-bottom: 32px;
+    width: 480px;
+    background-color: rgb(28, 35, 48);
+    color: rgb(240, 243, 250);
+    font-size: 24px;
+}
+#status { margin-bottom: 20px; }
+#player-name .unity-base-text-field__input { color: rgb(28, 35, 48); }
+#submit { margin-top: 16px; height: 48px; color: rgb(28, 35, 48); }
