@@ -116,9 +116,9 @@ impl ConnectionPool {
                 port,
                 timeout,
             };
-            let client = UnityClient::connect(&config).await.map_err(|error| {
-                anyhow::anyhow!(
-                    "Failed to connect to Unity at {host}:{port}: {error:#}. {}",
+            let client = UnityClient::connect(&config).await.with_context(|| {
+                format!(
+                    "Failed to connect to Unity at {host}:{port}. {}",
                     crate::core::doctor::DOCTOR_HINT
                 )
             })?;
@@ -768,7 +768,11 @@ async fn handle_request(
                             ok: false,
                             result: error
                                 .downcast_ref::<UnityCommandError>()
-                                .map(|failure| failure.response.clone()),
+                                .map(|failure| failure.response.clone())
+                                .or_else(|| {
+                                    let failure = crate::core::failure::classify(&error);
+                                    Some(json!({"status":"error", "code":failure.code, "error":failure.message}))
+                                }),
                             error: Some(error.to_string()),
                             timing: None,
                         },
@@ -801,7 +805,7 @@ async fn handle_request(
                     }
                     Err(error) => {
                         pool.remove(&host, port);
-                        results.push(json!({ "ok": false, "error": error.to_string() }));
+                        results.push(crate::core::failure::batch_error(&error));
                     }
                 }
             }

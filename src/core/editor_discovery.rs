@@ -87,7 +87,7 @@ impl TargetError {
     pub fn exit_code(&self) -> i32 {
         match self {
             Self::Ambiguous { .. } => AMBIGUOUS_EDITOR_EXIT_CODE,
-            Self::NotFound { .. } => 1,
+            Self::NotFound { .. } => 7,
         }
     }
 

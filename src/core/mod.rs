@@ -5,6 +5,7 @@ pub mod contracts;
 pub mod doctor;
 pub mod editor_discovery;
 pub mod endpoint;
+pub mod failure;
 pub mod instances;
 pub mod managed_binaries;
 pub mod runtime_paths;

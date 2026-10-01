@@ -26,38 +26,7 @@ pub struct ToolCallResult {
     pub timing: TransportTiming,
 }
 
-/// A Unity command failure, retaining the complete wire response for JSON output.
-#[derive(Debug, thiserror::Error)]
-#[error("{message}")]
-pub struct UnityCommandError {
-    pub response: Value,
-    message: String,
-}
-
-impl UnityCommandError {
-    pub(crate) fn new(response: Value) -> Self {
-        let error = response
-            .get("error")
-            .and_then(Value::as_str)
-            .unwrap_or_else(|| {
-                if response
-                    .get("status")
-                    .and_then(Value::as_str)
-                    .is_some_and(|status| status.eq_ignore_ascii_case("error"))
-                {
-                    "Unity command returned status=error"
-                } else {
-                    "Unity command failed"
-                }
-            });
-        let code = response
-            .get("code")
-            .and_then(Value::as_str)
-            .unwrap_or("UNKNOWN_ERROR");
-        let message = format!("{error} (code: {code})");
-        Self { response, message }
-    }
-}
+pub use crate::core::failure::UnityCommandError;
 
 impl UnityClient {
     pub(crate) fn set_timeout(&mut self, timeout: std::time::Duration) {
@@ -89,7 +58,9 @@ impl UnityClient {
                 "Connection timeout while connecting to Unity at {}:{}",
                 config.host, config.port
             )
-        })??;
+        })
+        .and_then(|result| result.map_err(anyhow::Error::from))
+        .context(crate::core::failure::FailureKind::Unreachable)?;
 
         Ok(Self {
             stream,
@@ -120,11 +91,16 @@ impl UnityClient {
         self.next_id += 1;
 
         let send_started_at = Instant::now();
-        self.send_framed(&request).await?;
+        self.send_framed(&request)
+            .await
+            .context(crate::core::failure::FailureKind::Operation)?;
         let send_ms = send_started_at.elapsed().as_secs_f64() * 1000.0;
 
         let read_started_at = Instant::now();
-        let response = self.read_response().await?;
+        let response = self
+            .read_response()
+            .await
+            .context(crate::core::failure::FailureKind::Operation)?;
         let read_ms = read_started_at.elapsed().as_secs_f64() * 1000.0;
 
         let normalize_started_at = Instant::now();
@@ -133,6 +109,7 @@ impl UnityClient {
             .and_then(Value::as_str)
             .map(str::to_owned);
         let mut value = normalize_response(response)?;
+        crate::core::failure::check_response(&value)?;
         // Bridges older than the ping `bridgeVersion` field still report their
         // package version in the envelope; surface it for version checks.
         if tool_name == "ping" {
@@ -243,12 +220,22 @@ fn normalize_response(response: Value) -> Result<Value> {
         return Err(UnityCommandError::new(response).into());
     }
 
-    if let Some(result) = response.get("result") {
-        return Ok(parse_embedded_json(result.clone()));
-    }
-
-    if let Some(data) = response.get("data") {
-        return Ok(parse_embedded_json(data.clone()));
+    if let Some(payload) = response.get("result").or_else(|| response.get("data")) {
+        let mut value = parse_embedded_json(payload.clone());
+        if let (Some(object), Some(warnings)) = (
+            value.as_object_mut(),
+            response.get("warnings").and_then(Value::as_array),
+        ) {
+            let entry = object.entry("warnings").or_insert_with(|| json!([]));
+            if let Some(existing) = entry.as_array_mut() {
+                for warning in warnings {
+                    if !existing.contains(warning) {
+                        existing.push(warning.clone());
+                    }
+                }
+            }
+        }
+        return Ok(value);
     }
 
     Ok(response)
