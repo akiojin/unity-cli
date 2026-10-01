@@ -1,0 +1,1159 @@
+{
+  "before": {
+    "timestamp": "2026-10-01T05:49:31.397789+00:00",
+    "model": "claude-opus-5-5",
+    "total": 178,
+    "metrics": {
+      "top1": 0.9888,
+      "top2": 0.9888,
+      "tool_correct": 0.8427,
+      "payload_valid": 0.8652
+    },
+    "thresholds": {
+      "top1": 0.9,
+      "top2": 0.98,
+      "tool_correct": 0.92,
+      "payload_valid": 0.95
+    },
+    "all_passed": false,
+    "failures": [
+      {
+        "id": "SR-010",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-create"
+        ],
+        "expected_tool": "load_scene",
+        "expected_payload_keys": [
+          "scenePath"
+        ],
+        "predicted_skills": [
+          "unity-scene-create"
+        ],
+        "predicted_tool": "create_scene",
+        "predicted_payload_keys": [
+          "path"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-015",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-scene-create"
+        ],
+        "expected_tool": "create_scene",
+        "expected_payload_keys": [
+          "loadScene",
+          "path",
+          "sceneName"
+        ],
+        "predicted_skills": [
+          "unity-scene-create"
+        ],
+        "predicted_tool": "create_scene",
+        "predicted_payload_keys": [
+          "loadScene",
+          "sceneName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-016",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-create"
+        ],
+        "expected_tool": "create_scene",
+        "expected_payload_keys": [
+          "path",
+          "sceneName"
+        ],
+        "predicted_skills": [
+          "unity-scene-create"
+        ],
+        "predicted_tool": "create_scene",
+        "predicted_payload_keys": [
+          "sceneName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-018",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-inspect"
+        ],
+        "expected_tool": "get_scene_info",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-scene-inspect"
+        ],
+        "predicted_tool": "analyze_scene_contents",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-019",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-inspect"
+        ],
+        "expected_tool": "list_scenes",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-scene-inspect"
+        ],
+        "predicted_tool": "analyze_scene_contents",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-021",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-inspect"
+        ],
+        "expected_tool": "find_by_component",
+        "expected_payload_keys": [
+          "componentType"
+        ],
+        "predicted_skills": [
+          "unity-scene-inspect"
+        ],
+        "predicted_tool": "find_gameobject",
+        "predicted_payload_keys": [
+          "componentType"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-026",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-gameobject-edit"
+        ],
+        "expected_tool": "delete_gameobject",
+        "expected_payload_keys": [
+          "path"
+        ],
+        "predicted_skills": [
+          "unity-gameobject-edit"
+        ],
+        "predicted_tool": "modify_gameobject",
+        "predicted_payload_keys": [
+          "path"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-038",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-prefab-workflow"
+        ],
+        "expected_tool": "modify_prefab",
+        "expected_payload_keys": [
+          "modifications",
+          "prefabPath"
+        ],
+        "predicted_skills": [
+          "unity-prefab-workflow"
+        ],
+        "predicted_tool": "modify_gameobject",
+        "predicted_payload_keys": [
+          "name",
+          "path"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-043",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-asset-management"
+        ],
+        "expected_tool": "modify_material",
+        "expected_payload_keys": [
+          "materialPath",
+          "properties"
+        ],
+        "predicted_skills": [
+          "unity-asset-management"
+        ],
+        "predicted_tool": "manage_asset_database",
+        "predicted_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-044",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-asset-management"
+        ],
+        "expected_tool": "manage_asset_import_settings",
+        "expected_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "predicted_skills": [
+          "unity-asset-management"
+        ],
+        "predicted_tool": "manage_asset_database",
+        "predicted_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-048",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-asset-management"
+        ],
+        "expected_tool": "refresh_assets",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-asset-management"
+        ],
+        "predicted_tool": "manage_asset_database",
+        "predicted_payload_keys": [
+          "action"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-058",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-csharp-navigate"
+        ],
+        "expected_tool": "read",
+        "expected_payload_keys": [
+          "maxLines",
+          "path",
+          "startLine"
+        ],
+        "predicted_skills": [
+          "unity-csharp-navigate"
+        ],
+        "predicted_tool": "read",
+        "predicted_payload_keys": [
+          "endLine",
+          "path",
+          "startLine"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-062",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-csharp-navigate"
+        ],
+        "expected_tool": "get_symbols",
+        "expected_payload_keys": [
+          "path"
+        ],
+        "predicted_skills": [
+          "unity-csharp-edit"
+        ],
+        "predicted_tool": "get_symbols",
+        "predicted_payload_keys": [
+          "path"
+        ],
+        "top1": false,
+        "top2": false,
+        "tool_correct": true,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-064",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-csharp-navigate"
+        ],
+        "expected_tool": "build_index",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-csharp-navigate"
+        ],
+        "predicted_tool": "search",
+        "predicted_payload_keys": [
+          "pattern"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-065",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-csharp-edit"
+        ],
+        "expected_tool": "update_index",
+        "expected_payload_keys": [
+          "paths"
+        ],
+        "predicted_skills": [
+          "unity-csharp-navigate"
+        ],
+        "predicted_tool": "search",
+        "predicted_payload_keys": [],
+        "top1": false,
+        "top2": false,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-068",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-csharp-edit"
+        ],
+        "expected_tool": "insert_before_symbol",
+        "expected_payload_keys": [
+          "namePath",
+          "relative",
+          "text"
+        ],
+        "predicted_skills": [
+          "unity-csharp-edit"
+        ],
+        "predicted_tool": "apply_csharp_edits",
+        "predicted_payload_keys": [
+          "files"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-076",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-playmode-testing"
+        ],
+        "expected_tool": "input_mouse",
+        "expected_payload_keys": [
+          "action",
+          "button"
+        ],
+        "predicted_skills": [
+          "unity-playmode-testing"
+        ],
+        "predicted_tool": "input_mouse",
+        "predicted_payload_keys": [
+          "action"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-084",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-input-system"
+        ],
+        "expected_tool": "create_composite_binding",
+        "expected_payload_keys": [
+          "actionName",
+          "assetPath",
+          "bindings",
+          "mapName"
+        ],
+        "predicted_skills": [
+          "unity-input-system"
+        ],
+        "predicted_tool": "add_input_binding",
+        "predicted_payload_keys": [
+          "actionName",
+          "assetPath",
+          "compositeType",
+          "mapName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-086",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-input-system"
+        ],
+        "expected_tool": "remove_all_bindings",
+        "expected_payload_keys": [
+          "actionName",
+          "assetPath",
+          "mapName"
+        ],
+        "predicted_skills": [
+          "unity-input-system"
+        ],
+        "predicted_tool": "add_input_binding",
+        "predicted_payload_keys": [
+          "actionName",
+          "assetPath",
+          "mapName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-087",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-input-system"
+        ],
+        "expected_tool": "manage_control_schemes",
+        "expected_payload_keys": [
+          "assetPath",
+          "devices",
+          "operation",
+          "schemeName"
+        ],
+        "predicted_skills": [
+          "unity-input-system"
+        ],
+        "predicted_tool": "create_action_map",
+        "predicted_payload_keys": [
+          "assetPath",
+          "schemeName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-094",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-ui-automation"
+        ],
+        "expected_tool": "simulate_ui_input",
+        "expected_payload_keys": [
+          "inputSequence"
+        ],
+        "predicted_skills": [
+          "unity-ui-automation"
+        ],
+        "predicted_tool": "click_ui_element",
+        "predicted_payload_keys": [
+          "elementPath"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-097",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-editor-tools"
+        ],
+        "expected_tool": "get_editor_info",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "get_editor_state",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-098",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-editor-tools"
+        ],
+        "expected_tool": "get_project_settings",
+        "expected_payload_keys": [
+          "includePlayer"
+        ],
+        "predicted_skills": [
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "update_project_settings",
+        "predicted_payload_keys": [
+          "player"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-101",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-editor-tools"
+        ],
+        "expected_tool": "clear_console",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "read_console",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-103",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-editor-tools"
+        ],
+        "expected_tool": "manage_windows",
+        "expected_payload_keys": [
+          "action"
+        ],
+        "predicted_skills": [
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "get_editor_state",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-104",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-editor-tools"
+        ],
+        "expected_tool": "execute_menu_item",
+        "expected_payload_keys": [
+          "menuPath"
+        ],
+        "predicted_skills": [
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "get_editor_state",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-116",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-asset-management",
+          "unity-gameobject-edit"
+        ],
+        "expected_tool": "analyze_asset_dependencies",
+        "expected_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "predicted_skills": [
+          "unity-asset-management"
+        ],
+        "predicted_tool": "manage_asset_database",
+        "predicted_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-119",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-input-system",
+          "unity-playmode-testing"
+        ],
+        "expected_tool": "manage_control_schemes",
+        "expected_payload_keys": [
+          "assetPath",
+          "devices",
+          "operation",
+          "schemeName"
+        ],
+        "predicted_skills": [
+          "unity-input-system",
+          "unity-playmode-testing"
+        ],
+        "predicted_tool": "create_action_map",
+        "predicted_payload_keys": [
+          "assetPath",
+          "schemeName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-131",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_apply",
+        "expected_payload_keys": [
+          "blockName",
+          "contextIndex",
+          "op"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "assetPath",
+          "blockName",
+          "contextType",
+          "op"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-134",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_apply",
+        "expected_payload_keys": [
+          "blockIndex",
+          "contextType",
+          "op",
+          "setting",
+          "value"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "assetPath",
+          "blockName",
+          "contextType",
+          "op",
+          "settings"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-136",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_runtime",
+        "expected_payload_keys": [
+          "name",
+          "op",
+          "value"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "op",
+          "parameterName",
+          "value"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-137",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_runtime",
+        "expected_payload_keys": [
+          "eventName",
+          "op"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "op"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-138",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_bake_sdf",
+        "expected_payload_keys": [
+          "meshPath",
+          "outputPath"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "op"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-139",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_settings",
+        "expected_payload_keys": [
+          "op",
+          "setting",
+          "value"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph",
+          "unity-editor-tools"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "op"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-140",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_apply",
+        "expected_payload_keys": [
+          "name",
+          "op"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "assetPath",
+          "op"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-175",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-package-management"
+        ],
+        "expected_tool": "registry_config",
+        "expected_payload_keys": [
+          "action",
+          "autoAddPopular",
+          "scopes"
+        ],
+        "predicted_skills": [
+          "unity-package-management"
+        ],
+        "predicted_tool": "registry_config",
+        "predicted_payload_keys": [
+          "action",
+          "scopes"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-177",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-csharp-navigate"
+        ],
+        "expected_tool": "list_packages",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-csharp-navigate"
+        ],
+        "predicted_tool": "search",
+        "predicted_payload_keys": [],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      }
+    ]
+  },
+  "after": {
+    "timestamp": "2026-10-01T06:09:19.836109+00:00",
+    "model": "claude-opus-5-5-with-existing-overrides",
+    "total": 178,
+    "metrics": {
+      "top1": 1.0,
+      "top2": 1.0,
+      "tool_correct": 0.9888,
+      "payload_valid": 0.9663
+    },
+    "thresholds": {
+      "top1": 0.9,
+      "top2": 0.98,
+      "tool_correct": 0.92,
+      "payload_valid": 0.95
+    },
+    "all_passed": true,
+    "failures": [
+      {
+        "id": "SR-016",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-scene-create"
+        ],
+        "expected_tool": "create_scene",
+        "expected_payload_keys": [
+          "path",
+          "sceneName"
+        ],
+        "predicted_skills": [
+          "unity-scene-create"
+        ],
+        "predicted_tool": "create_scene",
+        "predicted_payload_keys": [
+          "sceneName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-064",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-csharp-navigate"
+        ],
+        "expected_tool": "build_index",
+        "expected_payload_keys": [],
+        "predicted_skills": [
+          "unity-csharp-navigate"
+        ],
+        "predicted_tool": "search",
+        "predicted_payload_keys": [
+          "pattern"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-076",
+        "difficulty": "easy",
+        "expected_skills": [
+          "unity-playmode-testing"
+        ],
+        "expected_tool": "input_mouse",
+        "expected_payload_keys": [
+          "action",
+          "button"
+        ],
+        "predicted_skills": [
+          "unity-playmode-testing"
+        ],
+        "predicted_tool": "input_mouse",
+        "predicted_payload_keys": [
+          "action"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-087",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-input-system"
+        ],
+        "expected_tool": "manage_control_schemes",
+        "expected_payload_keys": [
+          "assetPath",
+          "devices",
+          "operation",
+          "schemeName"
+        ],
+        "predicted_skills": [
+          "unity-input-system"
+        ],
+        "predicted_tool": "manage_control_schemes",
+        "predicted_payload_keys": [
+          "assetPath",
+          "operation",
+          "schemeName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-116",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-asset-management",
+          "unity-gameobject-edit"
+        ],
+        "expected_tool": "analyze_asset_dependencies",
+        "expected_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "predicted_skills": [
+          "unity-asset-management"
+        ],
+        "predicted_tool": "manage_asset_database",
+        "predicted_payload_keys": [
+          "action",
+          "assetPath"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": false,
+        "payload_valid": true,
+        "error": null
+      },
+      {
+        "id": "SR-119",
+        "difficulty": "hard",
+        "expected_skills": [
+          "unity-input-system",
+          "unity-playmode-testing"
+        ],
+        "expected_tool": "manage_control_schemes",
+        "expected_payload_keys": [
+          "assetPath",
+          "devices",
+          "operation",
+          "schemeName"
+        ],
+        "predicted_skills": [
+          "unity-input-system",
+          "unity-playmode-testing"
+        ],
+        "predicted_tool": "manage_control_schemes",
+        "predicted_payload_keys": [
+          "assetPath",
+          "operation",
+          "schemeName"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-134",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-vfx-graph"
+        ],
+        "expected_tool": "vfx_apply",
+        "expected_payload_keys": [
+          "blockIndex",
+          "contextType",
+          "op",
+          "setting",
+          "value"
+        ],
+        "predicted_skills": [
+          "unity-vfx-graph"
+        ],
+        "predicted_tool": "vfx_apply",
+        "predicted_payload_keys": [
+          "assetPath",
+          "blockName",
+          "contextType",
+          "op",
+          "setting",
+          "value"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      },
+      {
+        "id": "SR-175",
+        "difficulty": "medium",
+        "expected_skills": [
+          "unity-package-management"
+        ],
+        "expected_tool": "registry_config",
+        "expected_payload_keys": [
+          "action",
+          "autoAddPopular",
+          "scopes"
+        ],
+        "predicted_skills": [
+          "unity-package-management"
+        ],
+        "predicted_tool": "registry_config",
+        "predicted_payload_keys": [
+          "action",
+          "scopes"
+        ],
+        "top1": true,
+        "top2": true,
+        "tool_correct": true,
+        "payload_valid": false,
+        "error": null
+      }
+    ]
+  },
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 17894,
+      "cacheReadInputTokens": 2150,
+      "cacheCreationInputTokens": 24212,
+      "webSearchRequests": 0,
+      "costUSD": 0.552014,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 6290,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "source_commit": "d8ebeff3456765b9b75ac13a008f6eca5631fcbe",
+  "schema_sha256": "91a4ee6c5f80eae3bbc18b1f268120a60e06a9fc5c607ee7619587e246ae0324"
+}

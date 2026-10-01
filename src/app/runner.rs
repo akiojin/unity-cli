@@ -73,8 +73,12 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
-    // which manage the binary themselves.
-    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. }) {
+    // which manage the binary themselves, offline skill operations, and setup
+    // previews, which must not access the network or write an update-check stamp.
+    let setup_preview = cli.dry_run && matches!(&cli.command, Command::Setup { .. });
+    let mut update_handle = if !setup_preview
+        && !matches!(&cli.command, Command::Cli { .. } | Command::Skills { .. })
+    {
         crate::core::self_update::maybe_self_update()
     } else {
         None
@@ -323,6 +327,39 @@ async fn run_command(cli: Cli) -> Result<()> {
             }
         },
         Command::Skills { command } => match command {
+            SkillsCommand::Install {
+                client,
+                local,
+                force,
+            } => {
+                for path in crate::skills::distribution::distribute(
+                    Some(*client),
+                    *local,
+                    *force,
+                    cli.dry_run,
+                    false,
+                )? {
+                    println!("{}", path.display());
+                }
+            }
+            SkillsCommand::Refresh {
+                client,
+                local,
+                force,
+            } => {
+                for path in crate::skills::distribution::distribute(
+                    *client,
+                    *local,
+                    *force,
+                    cli.dry_run,
+                    true,
+                )? {
+                    println!("{}", path.display());
+                }
+            }
+            SkillsCommand::Show { name } => {
+                println!("{}", crate::skills::distribution::show(name.as_deref())?);
+            }
             SkillsCommand::Lint {
                 root,
                 format,
@@ -340,6 +377,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             project_path,
             launch_editor,
             wait_secs,
+            json,
         } => {
             let cwd = std::env::current_dir()?;
             let overrides = runtime_overrides_from_cli(&cli);
@@ -365,7 +403,14 @@ async fn run_command(cli: Cli) -> Result<()> {
                 dry_run: cli.dry_run,
             };
             let value = super::setup::run(&options, &config, &cwd).await?;
-            print_value(&value, cli.output)?;
+            print_value(
+                &value,
+                if *json {
+                    OutputFormat::Json
+                } else {
+                    cli.output
+                },
+            )?;
             if value["ok"] != json!(true) {
                 return Err(anyhow!(
                     "setup incomplete: the Unity Editor bridge is not ready for this project"
@@ -676,7 +721,12 @@ async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<V
     }
 
     if let Some(local_result) = local_tools::maybe_execute_local_tool(tool_name, &params) {
-        return local_result;
+        return local_tools::run_csharp_post_write_pipeline(
+            local_result?,
+            &params,
+            &runtime_overrides_from_cli(cli),
+        )
+        .await;
     }
 
     let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
@@ -1328,7 +1378,12 @@ fn init_tracing(verbose: u8) -> Result<()> {
 #[cfg(test)]
 mod tests {
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
     async fn eval_transport_error_keeps_generated_request_id() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -1419,6 +1474,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let temp = tempfile::tempdir().unwrap();
         let _tools = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", temp.path().to_str().unwrap());
         let socket = crate::daemon::runtime::DaemonRuntimePaths::new("unityd")
@@ -1782,6 +1838,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let dir = tempfile::tempdir().unwrap();
         for key in ["UNITY_CLI_HOST", "UNITY_CLI_PORT", "UNITY_PROJECT_ROOT"] {
             std::env::remove_var(key);
@@ -1874,6 +1931,30 @@ mod tests {
     }
 
     #[test]
+    fn audio_mixer_arguments_are_action_specific() {
+        for params in [
+            json!({"action":"create", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"get", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"add_group", "assetPath":"Assets/Test.mixer", "parentGroup":"Master", "name":"Music"}),
+            json!({"action":"expose_parameter", "assetPath":"Assets/Test.mixer", "groupPath":"Master/Music", "parameter":"Volume", "parameterName":"MusicVolume"}),
+        ] {
+            validate_tool_params("manage_audio_mixer", &params).expect("valid mixer operation");
+        }
+        for params in [
+            json!({}),
+            json!({"action":"delete", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"add_group", "assetPath":"Assets/Test.mixer", "name":"Music"}),
+            json!({"action":"expose_parameter", "assetPath":"Assets/Test.mixer", "groupPath":"Master", "parameter":"Unsupported", "parameterName":"Volume"}),
+            json!({"action":"get", "assetPath":"Assets/Test.mixer", "name":"unexpected"}),
+        ] {
+            assert!(
+                validate_tool_params("manage_audio_mixer", &params).is_err(),
+                "accepted {params}"
+            );
+        }
+    }
+
+    #[test]
     fn validate_tool_params_rejects_unknown_property_when_schema_is_strict() {
         let err = validate_tool_params("ping", &json!({ "unknown": true }))
             .expect_err("unknown key should fail for strict schema");
@@ -1900,6 +1981,31 @@ mod tests {
             json!({"action":"recover"}),
         ] {
             validate_tool_params("hot_reload", &params).expect("valid explicit hot reload action");
+        }
+    }
+
+    #[test]
+    fn prefab_override_validation_requires_explicit_scope_and_apply_target() {
+        for params in [
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"all"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"all", "assetPath":"Assets/Base.prefab"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"property", "instanceId":42}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"removed_component", "instanceId":42}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"invalid"}),
+        ] {
+            assert!(
+                validate_tool_params("manage_prefab_overrides", &params).is_err(),
+                "{params}"
+            );
+        }
+        for params in [
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"all", "assetPath":"Assets/Variant.prefab"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"all"}),
+            json!({"gameObjectPath":"/Player", "action":"revert", "scope":"property", "instanceId":42, "propertyPath":"m_Size.x"}),
+            json!({"gameObjectPath":"/Player", "action":"apply", "scope":"removed_component", "instanceId":42, "assetComponentId":43, "assetPath":"Assets/Base.prefab"}),
+        ] {
+            validate_tool_params("manage_prefab_overrides", &params)
+                .expect("valid prefab override selection");
         }
     }
 
@@ -2906,7 +3012,12 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)]
     async fn run_with_cli_batch_marks_skipped_items_in_dry_run_mode() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         run_with_cli(cli_for_dry_run(Command::Batch {
             json: Some(
                 r#"[{"tool":"create_scene","params":{"sceneName":"Main"}},{"tool":"list_packages","params":{}}]"#
@@ -2929,7 +3040,12 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)]
     async fn run_with_cli_exercises_remote_command_error_paths() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let ping_err = run_with_cli(cli_for(Command::System {
             command: SystemCommand::Ping {
                 message: Some("hello".to_string()),
@@ -2967,6 +3083,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry = tempdir().expect("tempdir should succeed");
         let _registry_env = EnvVarGuard::set(
             "UNITY_CLI_REGISTRY_PATH",
@@ -3362,6 +3479,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry = tempdir().expect("tempdir should succeed");
         let registry_path = registry.path().join("instances.json");
         std::fs::write(&registry_path, "{\n  \"entries\": []\n}\n")

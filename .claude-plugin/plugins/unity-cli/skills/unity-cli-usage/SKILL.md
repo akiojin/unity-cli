@@ -5,7 +5,7 @@ allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 user-invocable: false
 metadata:
   author: akiojin
-  version: 0.4.0
+  version: 0.4.1
   category: foundation
   triggers:
     - bootstrap
@@ -16,6 +16,8 @@ metadata:
     - doctor
     - instance
   siblings:
+    - unity-package-management
+    - unity-project-bootstrap
     - unity-scene-create
     - unity-csharp-edit
     - unity-editor-tools
@@ -34,6 +36,7 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 
 ## Do Not Use When
 
+- The user wants to create a new Unity project and bootstrap its bridge and first scene; use `unity-project-bootstrap`.
 - A more specific skill clearly matches the task. For scene authoring, use `unity-scene-create`. For C# edits, use `unity-csharp-edit`. For Editor state inspection, use `unity-editor-tools`.
 - The request only inspects or edits project files without invoking Unity.
 

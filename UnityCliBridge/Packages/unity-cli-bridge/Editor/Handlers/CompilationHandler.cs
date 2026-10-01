@@ -29,9 +29,6 @@ namespace UnityCliBridge.Handlers
             public string timestamp;
         }
 
-        // Mode bits for script compilation entries (Unity internal LogEntry.mode)
-        private const int ModeBitScriptCompileError = 1 << 12;   // 0x00001000
-        private const int ModeBitScriptCompileWarning = 1 << 13; // 0x00002000
         private static readonly Regex CompilerDiagnosticRegex = new Regex(
             @"\)\s*:\s*(error|warning)\s+(?:CS|BC|SG|AD|NU|IDE|CA)\d+",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -204,9 +201,9 @@ namespace UnityCliBridge.Handlers
                         {
                             getEntry.Invoke(null, new object[] { i, entry });
                             int mode = (int)modeField.GetValue(entry);
-                            if ((mode & ModeBitScriptCompileError) != 0)
+                            if ((mode & ConsoleHandler.ModeBitScriptCompileError) != 0)
                                 compErr++;
-                            if ((mode & ModeBitScriptCompileWarning) != 0)
+                            if ((mode & ConsoleHandler.ModeBitScriptCompileWarning) != 0)
                                 compWarn++;
 
                             if (messageField?.GetValue(entry) is string message &&

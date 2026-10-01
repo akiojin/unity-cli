@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 13,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-49654-18da5d8406a859a0-0",
+  "state": "completed",
+  "value": "unloadedFirst=True reopened=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity loaded=True dirty=False"
+}

@@ -1,0 +1,426 @@
+Route each request using ONLY the supplied skill catalog. Return a JSON array of {id,predicted_skills:[one primary skill],predicted_tool,predicted_payload_keys:[required keys for requested operation]}. No tools, no prose. Do not invent skills.
+CATALOG
+
+name: unity-2d-sprite-tilemap
+description: Build and verify a 2D sprite and Tilemap scene with unity-cli. Use when the user wants sprite import, Sprite Atlas, Tile or Rule Tile painting, and Pixel Perfect Camera verification as one workflow. Do not use for import or atlas edits alone; use `unity-asset-management`. For scene creation alone use `unity-scene-create`; for capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: assets
+  triggers:
+    - sprite
+    - tilemap
+    - pixel
+  siblings:
+    - unity-asset-management
+    - unity-scene-create
+    - unity-playmode-testing
+
+
+name: unity-addressables
+description: Manage Unity Addressables groups and content with unity-cli. Use when the user asks to list or create a group, add or remove an entry, build or clean addressables content, or analyze and fix addressables issues before a build. Do not use for generic import settings or material edits; use `unity-asset-management` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: assets
+  triggers:
+    - addressables
+    - group
+    - entry
+    - bundle
+    - content-build
+  siblings:
+    - unity-asset-management
+
+
+name: unity-asset-management
+description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to inspect or edit Timeline tracks/clips/bindings, create materials, animation clips or sprite atlases, refresh assets, update imports, or analyze dependencies. Do not use for Addressables builds; use `unity-addressables`. For Player builds or scene baking, use `unity-editor-tools`. For scene object edits, use `unity-gameobject-edit`. For URP pipeline and Volume setup use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.3
+  category: assets
+  triggers:
+    - asset
+    - material
+    - import
+    - animation
+    - sprite
+    - dependency
+  siblings:
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-addressables
+    - unity-prefab-workflow
+    - unity-gameobject-edit
+    - unity-editor-tools
+    - unity-vfx-graph
+
+
+name: unity-cli-usage
+description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+user-invocable: false
+metadata:
+  author: akiojin
+  version: 0.4.1
+  category: foundation
+  triggers:
+    - bootstrap
+    - install
+    - setup
+    - connect
+    - ping
+    - doctor
+    - instance
+  siblings:
+    - unity-package-management
+    - unity-project-bootstrap
+    - unity-scene-create
+    - unity-csharp-edit
+    - unity-editor-tools
+
+
+name: unity-csharp-edit
+description: Implement, fix, and refactor Unity C# code with unity-cli write tools. Use when the user wants to change behavior in .cs files, create or rewrite scripts, update multiple C# files together, rename a symbol, add or remove members, or change project or package settings as part of a code change. Do not use for read-only inspection with no planned edit; use `unity-csharp-navigate` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob, Edit, Write
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: code
+  triggers:
+    - csharp
+    - script
+    - rename
+    - refactor
+    - symbol
+    - setting
+  siblings:
+    - unity-ui-toolkit-build
+    - unity-csharp-navigate
+    - unity-csharp-reference
+    - unity-editor-tools
+    - unity-cli-usage
+    - unity-gameobject-edit
+
+
+name: unity-csharp-navigate
+description: Explore Unity C# code without modifying files. Use when the user asks to read scripts, search text, find a symbol, trace references, inspect namespaces or package sources, or understand where a class, method, or field is used. Do not use for UPM package discovery, installation or updates; use `unity-package-management`. For code edits use `unity-csharp-edit`; for scene inspection use `unity-scene-inspect`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: code
+  triggers:
+    - csharp
+    - read
+    - search
+    - reference
+    - symbol
+  siblings:
+    - unity-csharp-edit
+    - unity-csharp-reference
+    - unity-scene-inspect
+    - unity-package-management
+
+
+name: unity-csharp-reference
+description: Browse Unity Technologies' official UnityCsReference C# source as a read-only local cache. Use when the user asks about the exact signature, behavior, or internal implementation of a Unity API, when comparing API differences between Unity versions, or when validating LLM-suggested Unity code against the canonical source. Do not use for editing project code (use `unity-csharp-edit`). Do not use for project-local script reading (use `unity-csharp-navigate`).
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: code
+  triggers:
+    - reference
+    - unity-api
+    - signature
+    - unity-source
+    - version-diff
+  siblings:
+    - unity-csharp-navigate
+    - unity-csharp-edit
+    - unity-scene-inspect
+
+
+name: unity-development-loop
+description: Run Unity runtime development loops with gameplay-focused implementation and validation. Use when the user asks to iterate on runtime behavior, reproduce and fix a gameplay bug, measure Editor operation latency, or implement a Unity-side flow until acceptance criteria are met. Do not use for `.inputactions` authoring, read-only inspection, or Rust CLI-only work.
+compatibility: Requires unity-cli connected to a Unity Editor that supports Play Mode control, runtime input simulation, UI automation, and editor diagnostics.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: testing
+  triggers:
+    - runtime
+    - gameplay
+    - iterate
+    - acceptance
+    - latency
+    - benchmark
+
+
+name: unity-editor-tools
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows or capture profiler data. Do not use for package operations; use `unity-package-management`. For C# edits use `unity-csharp-edit`; for URP and Volume setup with visual verification use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.1
+  category: editor
+  triggers:
+    - editor
+    - console
+    - profiler
+    - menu
+    - package
+    - setting
+  siblings:
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-cli-usage
+    - unity-csharp-edit
+    - unity-asset-management
+    - unity-playmode-testing
+    - unity-package-management
+
+
+name: unity-gameobject-edit
+description: Edit existing GameObjects and components in Unity with unity-cli. Use when the user asks to rename objects, move or deactivate them, add components, change component fields, add or remove tags and layers, or delete objects from an existing scene. Do not use for new scene bootstrapping; use `unity-scene-create`. Do not use inside prefab edit mode; use `unity-prefab-workflow`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: scenes
+  triggers:
+    - gameobject
+    - component
+    - rename
+    - tag
+    - layer
+  siblings:
+    - unity-scene-create
+    - unity-scene-inspect
+    - unity-prefab-workflow
+    - unity-asset-management
+    - unity-csharp-edit
+
+
+name: unity-input-system
+description: Configure Unity Input System assets with unity-cli. Use when the user asks to create or remove an action map, add or remove an action or binding, set up a composite binding, inspect an input actions asset, or manage a control scheme. Do not use for runtime input simulation during tests; use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: input
+  triggers:
+    - input
+    - action-map
+    - binding
+    - composite
+    - control-scheme
+  siblings:
+    - unity-playmode-testing
+
+
+name: unity-package-management
+description: Manage Unity UPM packages and scoped registries with unity-cli. Use when the user asks to list installed packages, search, install, update or remove a package, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: editor
+  triggers:
+    - package
+    - upm
+    - registry
+  siblings:
+    - unity-editor-tools
+    - unity-csharp-navigate
+    - unity-project-bootstrap
+    - unity-cli-usage
+
+
+name: unity-playmode-testing
+description: Drive Unity runtime verification with unity-cli. Use when the user asks to run PlayMode tests with Domain Reload, simulate keyboard, mouse, gamepad or touch input, inspect InputAction notifications in Play, record video or PNG frames, or preview method hot reload. Do not use for authoring input action assets; use `unity-input-system` instead. For URP and Bloom setup with before/after captures use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.2
+  category: testing
+  triggers:
+    - playmode
+    - editmode
+    - test
+    - simulate
+    - screenshot
+    - capture
+  siblings:
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-project-bootstrap
+    - unity-input-system
+    - unity-ui-automation
+    - unity-editor-tools
+
+
+name: unity-prefab-workflow
+description: Manage Unity prefab assets with unity-cli. Use when the user asks to create or instantiate a prefab or Variant, list or apply/revert instance overrides, unpack a prefab, open prefab edit mode, save changes, or update prefab asset properties. Do not use for general scene object editing; use `unity-gameobject-edit` or `unity-scene-create` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.4.0
+  category: prefabs
+  triggers:
+    - prefab
+    - instantiate
+    - edit-mode
+    - asset
+  siblings:
+    - unity-gameobject-edit
+    - unity-scene-create
+    - unity-asset-management
+
+
+name: unity-project-bootstrap
+description: Bootstrap a new Unity project with unity-cli. Use when the user wants to create a project from scratch and install the bridge, connect it, or prepare its first runnable scene. Do not use for setup or ping alone in an existing project; use `unity-cli-usage`. For scene-only authoring use `unity-scene-create`; for runtime capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: foundation
+  triggers:
+    - project
+    - bootstrap
+  siblings:
+    - unity-cli-usage
+    - unity-scene-create
+    - unity-playmode-testing
+    - unity-package-management
+
+
+name: unity-scene-create
+description: Create and bootstrap Unity scenes with unity-cli. Use when the user asks to create a new scene, load or save a scene, add starter GameObjects, or attach initial components while bootstrapping a level or test scene. Do not use for editing existing GameObjects in place; use `unity-gameobject-edit`. Do not use inside prefab edit mode; use `unity-prefab-workflow` instead. For URP pipeline and Global Volume setup use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.2
+  category: scenes
+  triggers:
+    - scene
+    - bootstrap
+    - create
+    - gameobject
+    - level
+  siblings:
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-project-bootstrap
+    - unity-gameobject-edit
+    - unity-prefab-workflow
+    - unity-scene-inspect
+    - unity-cli-usage
+    - unity-ui-automation
+
+
+name: unity-scene-inspect
+description: Inspect Unity scenes without mutating them. Use when the user asks to analyze scene hierarchy, list scenes, find a gameobject by name or component, inspect component values, review object references, or query animator state. Do not use for creating scenes; use `unity-scene-create`. Do not use for editing GameObjects; use `unity-gameobject-edit`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: scenes
+  triggers:
+    - hierarchy
+    - inspect
+    - find
+    - reference
+    - animator
+  siblings:
+    - unity-scene-create
+    - unity-gameobject-edit
+    - unity-csharp-navigate
+    - unity-csharp-reference
+
+
+name: unity-ui-automation
+description: Automate Unity UI inspection and interaction with unity-cli. Use when the user asks to find a UI element by name or type, inspect button or input state, click a UI element, set a UI value, or run a short UI interaction sequence during testing. Do not use for scene authoring or general play-mode control without UI targeting; use `unity-scene-create` or `unity-playmode-testing` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: ui
+  triggers:
+    - ui
+    - canvas
+    - button
+    - click
+    - input-field
+  siblings:
+    - unity-ui-toolkit-build
+    - unity-playmode-testing
+    - unity-scene-create
+
+
+name: unity-ui-toolkit-build
+description: Build UI Toolkit screens with unity-cli. Use when the user asks to author UXML and USS, configure PanelSettings and UIDocument, bind C# callbacks, and verify the screen in Play Mode. Do not use for interacting with existing UI only; use `unity-ui-automation`. For scene-only creation use `unity-scene-create`, C#-only edits use `unity-csharp-edit`, and runtime capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: ui
+  triggers:
+    - ui-toolkit
+    - uxml
+    - uss
+    - uidocument
+  siblings:
+    - unity-ui-automation
+    - unity-scene-create
+    - unity-csharp-edit
+    - unity-asset-management
+    - unity-editor-tools
+    - unity-playmode-testing
+
+
+name: unity-urp-setup
+description: Set up URP and verify post-processing with unity-cli. Use when the user asks to install Universal Render Pipeline, assign its pipeline and renderer, configure a Global Volume with Bloom or Color Adjustments, or compare the rendered result before and after. Do not use for material or import edits alone; use `unity-asset-management`. For package management alone use `unity-package-management`; for generic settings or eval use `unity-editor-tools`; for capture alone use `unity-playmode-testing`; for scene-only creation use `unity-scene-create`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: editor
+  triggers:
+    - urp
+    - bloom
+    - post-processing
+  siblings:
+    - unity-editor-tools
+    - unity-asset-management
+    - unity-playmode-testing
+    - unity-scene-create
+
+
+name: unity-vfx-graph
+description: Author and inspect Unity Visual Effect Graph (vfx) assets with unity-cli. Use when the user wants to read, build, or modify a .vfx graph and its systems, contexts, blocks, operators, or particle behavior, or to discover available blocks. Do not use for generic asset, material, or import operations; use `unity-asset-management` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.35.0
+  category: assets
+  triggers:
+    - vfx
+    - visual effect
+    - particle
+    - spawner
+    - effect graph
+    - custom hlsl
+  siblings:
+    - unity-asset-management
+
+CASES
+[{"id": "AUD380-01", "prompt": "Configure Assets/Audio/music.wav load type and compression, create an AudioMixer with a Music group and exposed volume, assign an AudioSource, then verify playback in Play Mode."}, {"id": "AUD380-02", "prompt": "AudioClip を取り込んで AudioMixer のグループと公開音量を作り、AudioSource に割り当てて Play 中の isPlaying と time を確認して。まずクリップの取り込み設定を変更して。"}, {"id": "AUD380-03", "prompt": "Create Assets/Audio/Music.mixer first, then add a Music group, expose its Volume and route an AudioSource through it; verify saved references and Play Mode playback."}, {"id": "AUD380-04", "prompt": "Only change Assets/Audio/music.wav import compression to Vorbis. Do not create a mixer, AudioSource or playback test."}, {"id": "AUD380-05", "prompt": "Only set the existing /Music AudioSource volume to 0.25; do not import clips, author a mixer or enter Play."}, {"id": "AUD380-06", "prompt": "Only create an empty scene called AudioTest in Assets/Scenes/Generated/E2E/. No audio assets or playback setup."}, {"id": "AUD380-07", "prompt": "Only enter Play Mode in the existing audio scene. Do not configure its AudioClip or Mixer."}, {"id": "AUD380-08", "prompt": "Only read the latest 20 Unity console messages to investigate audio errors; do not change any assets or source settings."}]

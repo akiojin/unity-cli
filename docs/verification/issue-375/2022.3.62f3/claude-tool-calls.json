@@ -1,0 +1,161 @@
+[
+  {
+    "timestamp": "2026-10-01T04:43:05.658Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Skill",
+    "input": {
+      "skill": "unity-project-bootstrap"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:43:08.899Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /private/tmp/issue375-harness/.claude/skills/unity-project-bootstrap && cat references/project-creation.md references/runtime-checklist.md; which unity-cli; unity-cli --version; ls -la /tmp/issue375-unity-2022.3.62f3-final 2>&1; ls /tmp/issue375-evidence 2>&1; ps aux | grep -i \"Unity.app\" | grep -v grep | cut -c1-250'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:43:15.927Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp && lsof -nP -iTCP:6536 -sTCP:LISTEN; mkdir -p /tmp/issue375-evidence/2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; ls $E; echo \"# commands run (cwd noted)\" > $E/commands.txt; C=\"\\\"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity\\\" -batchmode -quit -createProject /tmp/issue375-unity-2022.3.62f3-final -logFile $E/create.log\"; echo \"[cwd /tmp] $C\" >> $E/commands.txt; eval $C; echo \"exit=$?\" | tee $E/create-exit.txt'",
+      "timeout": 600000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:44:23.615Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; cat ProjectSettings/ProjectVersion.txt; cat Packages/manifest.json | head -20; grep -i activeInputHandler ProjectSettings/ProjectSettings.asset; tail -5 $E/create.log; unity-cli setup --help 2>&1 | head -40'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:44:28.659Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; C=\"unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json setup --launch-editor\"; echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] $C\" >> $E/commands.txt; $C > $E/setup.json 2> $E/setup.stderr; echo \"exit=$?\" | tee $E/setup-exit.txt; cat $E/setup.json; cat $E/setup.stderr | tail -20'",
+      "timeout": 960000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:05.037Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; C=\"unity-cli $P system ping\"; echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] $C\" >> $E/commands.txt; $C > $E/ping.json; echo exit=$?; cat $E/ping.json; cp Packages/manifest.json $E/manifest.json; cp Packages/packages-lock.json $E/packages-lock.json; cp ProjectSettings/ProjectVersion.txt $E/ProjectVersion.txt; python3 -c \"\nimport json;m=json.load(open(\\\"Packages/manifest.json\\\"));print(m.get(\\\"scopedRegistries\\\"));print({k:v for k,v in m[\\\"dependencies\\\"].items() if \\\"akiojin\\\" in k or \\\"input\\\" in k})\nl=json.load(open(\\\"Packages/packages-lock.json\\\"))[\\\"dependencies\\\"]\nfor k in [\\\"com.akiojin.unity-cli-bridge\\\",\\\"com.unity.inputsystem\\\"]: print(k, l.get(k))\"; grep activeInputHandler ProjectSettings/ProjectSettings.asset'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:08.635Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && unity-cli scene create --help; unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json tool schema create_scene; unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json tool schema create_gameobject | head -60'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:12.085Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; run(){ echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P $*\" >> $E/commands.txt; unity-cli $P \"$@\"; echo \"exit=$?\"; }; run scene create Bootstrap --path Assets/Scenes/Generated/E2E/ --load-scene | tee $E/scene-create.json; run raw get_hierarchy --json \"{\\\"includeComponents\\\":true}\" | tee $E/hierarchy-before-cube.json | head -80'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:18.497Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; run(){ echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P $*\" >> $E/commands.txt; unity-cli $P \"$@\"; echo \"exit=$?\"; }; run raw create_gameobject --json \"{\\\"name\\\":\\\"BootstrapCube\\\",\\\"primitiveType\\\":\\\"cube\\\",\\\"position\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}}\" | tee $E/create-cube.json; run raw save_scene --json \"{\\\"scenePath\\\":\\\"Assets/Scenes/Generated/E2E/Bootstrap.unity\\\"}\" | tee $E/save-scene.json; run raw get_hierarchy --json \"{\\\"includeComponents\\\":true}\" > $E/hierarchy.json; cat $E/hierarchy.json; ls -la Assets/Scenes/Generated/E2E/; grep -c BootstrapCube Assets/Scenes/Generated/E2E/Bootstrap.unity'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:25.599Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; run(){ echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P $*\" >> $E/commands.txt; unity-cli $P \"$@\"; echo \"exit=$?\"; }; run raw play_game --json \"{}\" | tee $E/play-game.json; for i in 1 2 3 4 5 6 7 8 9 10; do out=$(unity-cli $P raw get_editor_state --json \"{}\" 2>&1); echo \"$out\" | grep -q \"\\\"isPlaying\\\": true\" && break; sleep 2; done; run raw get_editor_state --json \"{}\" | tee $E/play-state.json'",
+      "timeout": 180000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:37.372Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; run(){ echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P $*\" >> $E/commands.txt; unity-cli $P \"$@\"; echo \"exit=$?\"; }; run raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\" > $E/screenshot.json; cat $E/screenshot.json; run raw read_console --json \"{\\\"count\\\":20}\" > $E/console.json; cat $E/console.json | head -80'",
+      "timeout": 120000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:40.547Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; cp \"/private/tmp/issue375-unity-2022.3.62f3-final/.unity/capture/image_game_2026-10-01_13-46-37.png\" $E/game.png && file $E/game.png'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:40.934Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Read",
+    "input": {
+      "file_path": "/tmp/issue375-evidence/2022.3.62f3-final/game.png"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:45.811Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; run(){ echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P $*\" >> $E/commands.txt; unity-cli $P \"$@\"; echo \"exit=$?\"; }; run raw stop_game --json \"{}\" | tee $E/stop-game.json; sleep 3; run raw get_editor_state --json \"{}\" | tee $E/state-after-stop.json; run raw get_scene_info --json \"{}\" > $E/scene-info-after-stop.json 2>&1; cat $E/scene-info-after-stop.json | head -30; cp Assets/Scenes/Generated/E2E/Bootstrap.unity Assets/Scenes/Generated/E2E/Bootstrap.unity.meta $E/; grep -n \"m_Name: BootstrapCube\" $E/Bootstrap.unity'",
+      "timeout": 60000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:46:53.934Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && ps -p 4518 -o pid,command | cut -c1-200; unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 tool list --query quit --compact 2>&1 | head; unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 tool list --query exit --compact 2>&1 | head'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:47:05.464Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Write",
+    "input": {
+      "file_path": "/tmp/issue375-evidence/2022.3.62f3-final/result.json",
+      "content": "{\n  \"test\": \"unity-project-bootstrap acceptance (issue 375)\",\n  \"projectPath\": \"/tmp/issue375-unity-2022.3.62f3-final\",\n  \"projectPathReportedByBridge\": \"/private/tmp/issue375-unity-2022.3.62f3-final\",\n  \"editor\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity\",\n  \"unityVersion\": \"2022.3.62f3 (96770f904ca7)\",\n  \"template\": \"default built-in 3D (Editor CLI -createProject, no render-pipeline template)\",\n  \"cliVersion\": \"0.16.0\",\n  \"bridgeVersion\": \"0.16.0\",\n  \"port\": 6536,\n  \"launchedEditorPid\": 4518,\n  \"steps\": {\n    \"createProject\": {\"ok\": true, \"exit\": 0, \"evidence\": [\"create.log\", \"create-exit.txt\", \"ProjectVersion.txt\"]},\n    \"setup\": {\"ok\": true, \"exit\": 0, \"projectMatches\": true, \"versionCheck\": \"match\", \"source\": \"registry (package.openupm.com)\", \"inputBackends\": \"activeInputHandler 0 -> 2 (Both)\", \"evidence\": \"setup.json\"},\n    \"ping\": {\"ok\": true, \"exit\": 0, \"projectPath\": \"/private/tmp/issue375-unity-2022.3.62f3-final\", \"bridgeVersion\": \"0.16.0\", \"evidence\": \"ping.json\"},\n    \"packageResolution\": {\"ok\": true, \"com.akiojin.unity-cli-bridge\": \"0.16.0 (registry, https://package.openupm.com)\", \"com.unity.inputsystem\": \"1.14.2 (registry, depth 1 via bridge)\", \"evidence\": [\"manifest.json\", \"packages-lock.json\"]},\n    \"sceneCreateAndSave\": {\"ok\": true, \"scenePath\": \"Assets/Scenes/Generated/E2E/Bootstrap.unity\", \"hierarchy\": [\"Main Camera\", \"Directional Light\", \"BootstrapCube\"], \"evidence\": [\"scene-create.json\", \"hierarchy-before-cube.json\", \"create-cube.json\", \"save-scene.json\", \"hierarchy.json\", \"Bootstrap.unity\", \"Bootstrap.unity.meta\"]},\n    \"playMode\": {\"ok\": true, \"isPlaying\": true, \"evidence\": [\"play-game.json\", \"play-state.json\"]},\n    \"screenshot\": {\"ok\": true, \"captureMode\": \"game\", \"source\": \"Main Camera (bridge Game capture, osFallback=false)\", \"size\": \"1280x720\", \"originalPath\": \"/private/tmp/issue375-unity-2022.3.62f3-final/.unity/capture/image_game_2026-10-01_13-46-37.png\", \"inspected\": \"white BootstrapCube visible at center over default skybox/ground; not black, no 'No cameras rendering'\", \"evidence\": [\"screenshot.json\", \"game.png\"]},\n    \"console\": {\"ok\": true, \"errors\": 0, \"exceptions\": 0, \"asserts\": 0, \"warnings\": 11, \"note\": \"all warnings are unity-cli-bridge informational logs\", \"evidence\": \"console.json\"},\n    \"stopPlay\": {\"ok\": true, \"isPlayingAfter\": false, \"sceneDirtyAfter\": false, \"evidence\": [\"stop-game.json\", \"state-after-stop.json\", \"scene-info-after-stop.json\"]}\n  },\n  \"observations\": [\n    \"setup.json bridge.resolvedVersion is null (manifest written before the Editor resolved packages); packages-lock.json confirms 0.16.0 resolved afterwards.\",\n    \"stop_game response embeds state.isPlaying=true (snapshot taken before exit completed); a subsequent get_editor_state shows isPlaying=false.\"\n  ],\n  \"failures\": []\n}\n"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:47:09.110Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-2022.3.62f3-final && E=/tmp/issue375-evidence/2022.3.62f3-final; P=\"--project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json\"; unity-cli $P tool schema quit_editor | head -20; echo \"[cwd /tmp/issue375-unity-2022.3.62f3-final] unity-cli $P raw quit_editor --json {}\" >> $E/commands.txt; unity-cli $P raw quit_editor --json \"{}\" | tee $E/quit-editor.json; for i in $(seq 1 30); do ps -p 4518 >/dev/null || break; sleep 2; done; ps -p 4518 && echo STILL_RUNNING || echo \"pid 4518 exited\"; ls $E'",
+      "timeout": 120000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:47:15.184Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-evidence/2022.3.62f3-final && python3 - <<EOF\nimport json;r=json.load(open(\"result.json\"));r[\"editorClosed\"]={\"ok\":True,\"method\":\"unity-cli raw quit_editor\",\"pid\":4518,\"exited\":True,\"evidence\":\"quit-editor.json\"};json.dump(r,open(\"result.json\",\"w\"),indent=2)\nEOF\ncp screenshot.json screenshot-result.json; cat commands.txt'"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:47:19.201Z",
+    "session_id": "73ed3c7f-5c2f-45f2-bd5a-da99eaec1f70",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-evidence/2022.3.62f3-final && cat >> commands.txt <<EOF\n# Note: between play_game and the recorded get_editor_state, a polling loop ran (up to 10x, 2s apart) until isPlaying=true:\n#   unity-cli --project-path /tmp/issue375-unity-2022.3.62f3-final --port 6536 --output json raw get_editor_state --json {}\n# Read-only discovery commands also ran (not state-changing): unity-cli --version; unity-cli setup --help; unity-cli scene create --help;\n#   unity-cli ... tool schema create_scene|create_gameobject|quit_editor; unity-cli ... tool list --query quit|exit --compact\nEOF'"
+    }
+  }
+]

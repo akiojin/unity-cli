@@ -1,0 +1,220 @@
+{"id": "SR-001", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-002", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": ["message"]}
+{"id": "SR-003", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "create_gameobject", "predicted_payload_keys": ["name", "primitiveType"]}
+{"id": "SR-004", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "get_editor_state", "predicted_payload_keys": []}
+{"id": "SR-005", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "get_command_stats", "predicted_payload_keys": []}
+{"id": "SR-006", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-007", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-008", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-009", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-010", "predicted_skills": ["unity-scene-create"], "predicted_tool": "load_scene", "predicted_payload_keys": ["scenePath"]}
+{"id": "SR-011", "predicted_skills": ["unity-scene-create"], "predicted_tool": "save_scene", "predicted_payload_keys": []}
+{"id": "SR-012", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_gameobject", "predicted_payload_keys": ["name", "primitiveType"]}
+{"id": "SR-013", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_gameobject", "predicted_payload_keys": ["name", "parentPath"]}
+{"id": "SR-014", "predicted_skills": ["unity-scene-create"], "predicted_tool": "add_component", "predicted_payload_keys": ["gameObjectPath", "componentType"]}
+{"id": "SR-015", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path", "loadScene"]}
+{"id": "SR-016", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName"]}
+{"id": "SR-017", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_hierarchy", "predicted_payload_keys": ["nameOnly"]}
+{"id": "SR-018", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_scene_info", "predicted_payload_keys": []}
+{"id": "SR-019", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "list_scenes", "predicted_payload_keys": []}
+{"id": "SR-020", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "find_gameobject", "predicted_payload_keys": ["name"]}
+{"id": "SR-021", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "find_by_component", "predicted_payload_keys": ["componentType"]}
+{"id": "SR-022", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_gameobject_details", "predicted_payload_keys": ["gameObjectName", "includeChildren"]}
+{"id": "SR-023", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_component_values", "predicted_payload_keys": ["gameObjectName", "componentType"]}
+{"id": "SR-024", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_object_references", "predicted_payload_keys": ["gameObjectName"]}
+{"id": "SR-025", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "modify_gameobject", "predicted_payload_keys": ["path", "name"]}
+{"id": "SR-026", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "delete_gameobject", "predicted_payload_keys": ["path"]}
+{"id": "SR-027", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "modify_component", "predicted_payload_keys": ["gameObjectPath", "componentType", "properties"]}
+{"id": "SR-028", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "set_component_field", "predicted_payload_keys": ["gameObjectPath", "componentType", "fieldPath", "value"]}
+{"id": "SR-029", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "remove_component", "predicted_payload_keys": ["gameObjectPath", "componentType"]}
+{"id": "SR-030", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "list_components", "predicted_payload_keys": ["gameObjectPath"]}
+{"id": "SR-031", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "manage_tags", "predicted_payload_keys": ["action", "tagName"]}
+{"id": "SR-032", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "manage_layers", "predicted_payload_keys": ["action"]}
+{"id": "SR-033", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "create_prefab", "predicted_payload_keys": ["gameObjectPath", "prefabPath"]}
+{"id": "SR-034", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "open_prefab", "predicted_payload_keys": ["prefabPath"]}
+{"id": "SR-035", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "save_prefab", "predicted_payload_keys": []}
+{"id": "SR-036", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "exit_prefab_mode", "predicted_payload_keys": []}
+{"id": "SR-037", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "instantiate_prefab", "predicted_payload_keys": ["prefabPath"]}
+{"id": "SR-038", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "modify_prefab", "predicted_payload_keys": ["prefabPath", "modifications"]}
+{"id": "SR-039", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "create_prefab", "predicted_payload_keys": ["prefabPath", "createFromTemplate"]}
+{"id": "SR-040", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "create_prefab", "predicted_payload_keys": ["prefabPath", "overwrite"]}
+{"id": "SR-041", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_database", "predicted_payload_keys": ["action"]}
+{"id": "SR-042", "predicted_skills": ["unity-asset-management"], "predicted_tool": "create_material", "predicted_payload_keys": ["materialPath", "shader"]}
+{"id": "SR-043", "predicted_skills": ["unity-asset-management"], "predicted_tool": "modify_material", "predicted_payload_keys": ["materialPath", "properties"]}
+{"id": "SR-044", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath"]}
+{"id": "SR-045", "predicted_skills": ["unity-asset-management"], "predicted_tool": "analyze_asset_dependencies", "predicted_payload_keys": ["action", "assetPath", "recursive"]}
+{"id": "SR-046", "predicted_skills": ["unity-asset-management"], "predicted_tool": "analyze_asset_dependencies", "predicted_payload_keys": ["action"]}
+{"id": "SR-047", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_database", "predicted_payload_keys": ["action", "fromPath", "toPath"]}
+{"id": "SR-048", "predicted_skills": ["unity-asset-management"], "predicted_tool": "refresh_assets", "predicted_payload_keys": []}
+{"id": "SR-049", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action"]}
+{"id": "SR-050", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action", "groupName"]}
+{"id": "SR-051", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action", "groupName", "assetPath", "address"]}
+{"id": "SR-052", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}
+{"id": "SR-053", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}
+{"id": "SR-054", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_analyze", "predicted_payload_keys": ["action"]}
+{"id": "SR-055", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action", "assetPath", "label"]}
+{"id": "SR-056", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action", "assetPath", "newAddress"]}
+{"id": "SR-057", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "read", "predicted_payload_keys": ["path"]}
+{"id": "SR-058", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "read", "predicted_payload_keys": ["path", "startLine", "maxLines"]}
+{"id": "SR-059", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "search", "predicted_payload_keys": ["pattern"]}
+{"id": "SR-060", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "find_symbol", "predicted_payload_keys": ["name", "kind"]}
+{"id": "SR-061", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "find_refs", "predicted_payload_keys": ["name"]}
+{"id": "SR-062", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "get_symbols", "predicted_payload_keys": ["path"]}
+{"id": "SR-063", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "list_packages", "predicted_payload_keys": []}
+{"id": "SR-064", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "build_index", "predicted_payload_keys": []}
+{"id": "SR-065", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "update_index", "predicted_payload_keys": ["paths"]}
+{"id": "SR-066", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "rename_symbol", "predicted_payload_keys": ["relative", "namePath", "newName"]}
+{"id": "SR-067", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "replace_symbol_body", "predicted_payload_keys": ["relative", "namePath", "body"]}
+{"id": "SR-068", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "insert_before_symbol", "predicted_payload_keys": ["relative", "namePath", "text"]}
+{"id": "SR-069", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "insert_after_symbol", "predicted_payload_keys": ["relative", "namePath", "text"]}
+{"id": "SR-070", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "remove_symbol", "predicted_payload_keys": ["relative", "namePath", "failOnReferences"]}
+{"id": "SR-071", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "validate_text_edits", "predicted_payload_keys": ["relative", "newText"]}
+{"id": "SR-072", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "create_class", "predicted_payload_keys": ["name", "folder"]}
+{"id": "SR-073", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "play_game", "predicted_payload_keys": []}
+{"id": "SR-074", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "stop_game", "predicted_payload_keys": []}
+{"id": "SR-075", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_keyboard", "predicted_payload_keys": ["action", "key"]}
+{"id": "SR-076", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_mouse", "predicted_payload_keys": ["action"]}
+{"id": "SR-077", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_gamepad", "predicted_payload_keys": ["action", "button", "buttonAction"]}
+{"id": "SR-078", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "create_input_sequence", "predicted_payload_keys": ["sequence"]}
+{"id": "SR-079", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SR-080", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "run_tests", "predicted_payload_keys": ["testMode"]}
+{"id": "SR-081", "predicted_skills": ["unity-input-system"], "predicted_tool": "create_action_map", "predicted_payload_keys": ["assetPath", "mapName"]}
+{"id": "SR-082", "predicted_skills": ["unity-input-system"], "predicted_tool": "add_input_action", "predicted_payload_keys": ["assetPath", "mapName", "actionName"]}
+{"id": "SR-083", "predicted_skills": ["unity-input-system"], "predicted_tool": "add_input_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "path"]}
+{"id": "SR-084", "predicted_skills": ["unity-input-system"], "predicted_tool": "create_composite_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "compositeType", "bindings"]}
+{"id": "SR-085", "predicted_skills": ["unity-input-system"], "predicted_tool": "remove_input_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "bindingIndex"]}
+{"id": "SR-086", "predicted_skills": ["unity-input-system"], "predicted_tool": "remove_all_bindings", "predicted_payload_keys": ["assetPath", "mapName", "actionName"]}
+{"id": "SR-087", "predicted_skills": ["unity-input-system"], "predicted_tool": "manage_control_schemes", "predicted_payload_keys": ["assetPath", "operation", "schemeName"]}
+{"id": "SR-088", "predicted_skills": ["unity-input-system"], "predicted_tool": "analyze_input_actions_asset", "predicted_payload_keys": ["assetPath"]}
+{"id": "SR-089", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "find_ui_elements", "predicted_payload_keys": ["namePattern", "elementType"]}
+{"id": "SR-090", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "find_ui_elements", "predicted_payload_keys": ["elementType"]}
+{"id": "SR-091", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "get_ui_element_state", "predicted_payload_keys": ["elementPath"]}
+{"id": "SR-092", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"]}
+{"id": "SR-093", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "set_ui_element_value", "predicted_payload_keys": ["elementPath", "value"]}
+{"id": "SR-094", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "simulate_ui_input", "predicted_payload_keys": ["inputSequence"]}
+{"id": "SR-095", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "find_ui_elements", "predicted_payload_keys": ["includeInactive"]}
+{"id": "SR-096", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "find_ui_elements", "predicted_payload_keys": ["canvasFilter"]}
+{"id": "SR-097", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "get_editor_info", "predicted_payload_keys": []}
+{"id": "SR-098", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "get_project_settings", "predicted_payload_keys": ["includePlayer"]}
+{"id": "SR-099", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "update_project_settings", "predicted_payload_keys": ["confirmChanges", "player"]}
+{"id": "SR-100", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
+{"id": "SR-101", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "clear_console", "predicted_payload_keys": []}
+{"id": "SR-102", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "profiler_start", "predicted_payload_keys": []}
+{"id": "SR-103", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "manage_windows", "predicted_payload_keys": ["action"]}
+{"id": "SR-104", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "execute_menu_item", "predicted_payload_keys": ["menuPath"]}
+{"id": "SR-105", "predicted_skills": ["unity-ui-automation", "unity-playmode-testing"], "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"]}
+{"id": "SR-106", "predicted_skills": ["unity-prefab-workflow", "unity-gameobject-edit"], "predicted_tool": "instantiate_prefab", "predicted_payload_keys": ["prefabPath"]}
+{"id": "SR-107", "predicted_skills": ["unity-scene-create", "unity-scene-inspect"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-108", "predicted_skills": ["unity-input-system", "unity-playmode-testing"], "predicted_tool": "add_input_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "path"]}
+{"id": "SR-109", "predicted_skills": ["unity-csharp-navigate", "unity-csharp-edit"], "predicted_tool": "find_symbol", "predicted_payload_keys": ["name"]}
+{"id": "SR-110", "predicted_skills": ["unity-addressables", "unity-asset-management"], "predicted_tool": "addressables_manage", "predicted_payload_keys": ["action", "groupName"]}
+{"id": "SR-111", "predicted_skills": ["unity-editor-tools", "unity-cli-usage"], "predicted_tool": "get_project_settings", "predicted_payload_keys": ["includePlayer"]}
+{"id": "SR-112", "predicted_skills": ["unity-scene-inspect", "unity-gameobject-edit"], "predicted_tool": "get_gameobject_details", "predicted_payload_keys": ["gameObjectName"]}
+{"id": "SR-113", "predicted_skills": ["unity-prefab-workflow", "unity-ui-automation"], "predicted_tool": "open_prefab", "predicted_payload_keys": ["prefabPath"]}
+{"id": "SR-114", "predicted_skills": ["unity-csharp-navigate", "unity-csharp-edit"], "predicted_tool": "search", "predicted_payload_keys": ["pattern"]}
+{"id": "SR-115", "predicted_skills": ["unity-playmode-testing", "unity-editor-tools"], "predicted_tool": "get_editor_state", "predicted_payload_keys": []}
+{"id": "SR-116", "predicted_skills": ["unity-asset-management"], "predicted_tool": "analyze_asset_dependencies", "predicted_payload_keys": ["action", "assetPath"]}
+{"id": "SR-117", "predicted_skills": ["unity-ui-automation", "unity-playmode-testing"], "predicted_tool": "find_ui_elements", "predicted_payload_keys": ["namePattern"]}
+{"id": "SR-118", "predicted_skills": ["unity-scene-create", "unity-playmode-testing"], "predicted_tool": "load_scene", "predicted_payload_keys": ["scenePath"]}
+{"id": "SR-119", "predicted_skills": ["unity-input-system", "unity-playmode-testing"], "predicted_tool": "manage_control_schemes", "predicted_payload_keys": ["assetPath", "operation", "schemeName", "devices"]}
+{"id": "SR-120", "predicted_skills": ["unity-cli-usage", "unity-editor-tools"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-121", "predicted_skills": ["unity-development-loop"], "predicted_tool": "write_csharp_file", "predicted_payload_keys": []}
+{"id": "SR-122", "predicted_skills": ["unity-development-loop"], "predicted_tool": "write_csharp_file", "predicted_payload_keys": []}
+{"id": "SR-123", "predicted_skills": ["unity-development-loop"], "predicted_tool": "play_game", "predicted_payload_keys": []}
+{"id": "SR-124", "predicted_skills": ["unity-development-loop", "unity-editor-tools"], "predicted_tool": "profiler_start", "predicted_payload_keys": []}
+{"id": "SR-125", "predicted_skills": ["unity-input-system"], "predicted_tool": "add_input_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "path"]}
+{"id": "SR-126", "predicted_skills": ["unity-csharp-edit"], "predicted_tool": "write_csharp_file", "predicted_payload_keys": ["relative", "newText"]}
+{"id": "SR-127", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_keyboard", "predicted_payload_keys": ["action", "key"]}
+{"id": "SR-128", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_describe_graph", "predicted_payload_keys": ["assetPath"]}
+{"id": "SR-129", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_list_library", "predicted_payload_keys": ["kind"]}
+{"id": "SR-130", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "contextType", "blockName"]}
+{"id": "SR-131", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "contextType", "contextIndex", "blockName"]}
+{"id": "SR-132", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "name", "type", "exposed"]}
+{"id": "SR-133", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "from", "to"]}
+{"id": "SR-134", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "contextType", "blockIndex", "settings"]}
+{"id": "SR-135", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "from", "to"]}
+{"id": "SR-136", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_runtime", "predicted_payload_keys": ["op", "gameObject", "name", "value"]}
+{"id": "SR-137", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_runtime", "predicted_payload_keys": ["op", "gameObject", "eventName"]}
+{"id": "SR-138", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_bake_sdf", "predicted_payload_keys": ["meshPath", "outputPath"]}
+{"id": "SR-139", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_settings", "predicted_payload_keys": ["op", "setting", "value"]}
+{"id": "SR-140", "predicted_skills": ["unity-vfx-graph"], "predicted_tool": "vfx_apply", "predicted_payload_keys": ["op", "assetPath", "name"]}
+{"id": "SR-141", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "run_tests", "predicted_payload_keys": ["testMode"]}
+{"id": "SR-142", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_gamepad", "predicted_payload_keys": ["action", "button", "buttonAction", "holdSeconds"]}
+{"id": "SR-143", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_mouse", "predicted_payload_keys": ["action", "x", "y", "absolute"]}
+{"id": "SR-144", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "input_touch", "predicted_payload_keys": ["action", "x", "y"]}
+{"id": "SR-145", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "create_input_sequence", "predicted_payload_keys": ["sequence"]}
+{"id": "SR-146", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "get_input_actions_state", "predicted_payload_keys": ["assetPath"]}
+{"id": "SR-147", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_video_start", "predicted_payload_keys": ["captureMode", "format"]}
+{"id": "SR-148", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_video_status", "predicted_payload_keys": []}
+{"id": "SR-149", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_video_stop", "predicted_payload_keys": []}
+{"id": "SR-150", "predicted_skills": ["unity-asset-management"], "predicted_tool": "get_timeline", "predicted_payload_keys": ["assetPath"]}
+{"id": "SR-151", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_timeline", "predicted_payload_keys": ["action", "assetPath"]}
+{"id": "SR-152", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "hot_reload_status", "predicted_payload_keys": []}
+{"id": "SR-153", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "hot_reload", "predicted_payload_keys": ["action", "path"]}
+{"id": "SR-154", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "start_scene_bake", "predicted_payload_keys": ["target", "scenePath"]}
+{"id": "SR-155", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "get_scene_bake_status", "predicted_payload_keys": ["jobId"]}
+{"id": "SR-156", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "build_player", "predicted_payload_keys": ["target", "scenes", "outputPath"]}
+{"id": "SR-157", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "get_build_status", "predicted_payload_keys": ["buildId"]}
+{"id": "SR-158", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-159", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-160", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-161", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-162", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SR-163", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-164", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "add_component", "predicted_payload_keys": ["gameObjectPath", "componentType"]}
+{"id": "SR-165", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "add_component", "predicted_payload_keys": ["gameObjectPath", "componentType"]}
+{"id": "SR-166", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-167", "predicted_skills": ["unity-prefab-workflow"], "predicted_tool": "open_prefab", "predicted_payload_keys": ["prefabPath"]}
+{"id": "SR-168", "predicted_skills": ["unity-asset-management"], "predicted_tool": "create_material", "predicted_payload_keys": ["materialPath", "shader"]}
+{"id": "SR-169", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-170", "predicted_skills": ["unity-scene-inspect"], "predicted_tool": "get_component_values", "predicted_payload_keys": ["gameObjectName", "componentType"]}
+{"id": "SR-URP-001", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}
+{"id": "SR-URP-002", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code", "mode"]}
+{"id": "SR-URP-003", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code", "mode"]}
+{"id": "SR-URP-004", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SR-URP-005", "predicted_skills": ["unity-asset-management"], "predicted_tool": "create_material", "predicted_payload_keys": ["materialPath", "shader"]}
+{"id": "SR-URP-006", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}
+{"id": "SR-URP-007", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SR-URP-008", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "modify_gameobject", "predicted_payload_keys": ["path", "position"]}
+{"id": "UI377-01", "predicted_skills": ["unity-ui-toolkit-build"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "UI377-02", "predicted_skills": ["unity-ui-toolkit-build"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "UI377-03", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"]}
+{"id": "UI377-04", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "UI377-05", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "UI377-06", "predicted_skills": ["unity-asset-management"], "predicted_tool": "refresh_assets", "predicted_payload_keys": []}
+{"id": "UI377-07", "predicted_skills": ["unity-input-system", "unity-playmode-testing"], "predicted_tool": "add_input_binding", "predicted_payload_keys": ["assetPath", "mapName", "actionName", "path"]}
+{"id": "UI377-08", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
+{"id": "SR-171", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "keyword"]}
+{"id": "SR-172", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "SR-173", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId", "version"]}
+{"id": "SR-174", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageName"]}
+{"id": "SR-175", "predicted_skills": ["unity-package-management"], "predicted_tool": "registry_config", "predicted_payload_keys": ["action", "scopes"]}
+{"id": "SR-176", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["logTypes"]}
+{"id": "SR-177", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "list_packages", "predicted_payload_keys": []}
+{"id": "SR-178", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}
+{"id": "SR-PKG-009", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}
+{"id": "LOC381-01", "predicted_skills": ["unity-localization"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code", "mode"]}
+{"id": "LOC381-02", "predicted_skills": ["unity-localization"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code", "mode"]}
+{"id": "LOC381-03", "predicted_skills": ["unity-localization"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code", "mode"]}
+{"id": "LOC381-04", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "LOC381-05", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "LOC381-06", "predicted_skills": ["unity-ui-automation"], "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"]}
+{"id": "LOC381-07", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["logTypes"]}
+{"id": "LOC381-08", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}
+{"id": "SPR379-01", "predicted_skills": ["unity-2d-sprite-tilemap"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "SPR379-02", "predicted_skills": ["unity-2d-sprite-tilemap"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "SPR379-03", "predicted_skills": ["unity-2d-sprite-tilemap"], "predicted_tool": "create_sprite_atlas", "predicted_payload_keys": ["atlasPath", "packables"]}
+{"id": "SPR379-04", "predicted_skills": ["unity-asset-management"], "predicted_tool": "create_sprite_atlas", "predicted_payload_keys": ["atlasPath", "packables"]}
+{"id": "SPR379-05", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "SPR379-06", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "SPR379-07", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SPR379-08", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
+{"id": "SPR379-09", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "AUD380-01", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-02", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-03", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_audio_mixer", "predicted_payload_keys": ["action", "assetPath"]}
+{"id": "AUD380-04", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-05", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "set_component_field", "predicted_payload_keys": ["gameObjectPath", "componentType", "fieldPath", "value"]}
+{"id": "AUD380-06", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "AUD380-07", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "play_game", "predicted_payload_keys": []}
+{"id": "AUD380-08", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}

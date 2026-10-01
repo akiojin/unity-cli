@@ -1,0 +1,8 @@
+{
+  ".claude-plugin/plugins/unity-cli/skills/unity-project-bootstrap/SKILL.md": "c77d514536e5e17c1baf02df2d04772585fcfbc33c8e82a744b4ab2009d2a672",
+  ".claude-plugin/plugins/unity-cli/skills/unity-project-bootstrap/references/project-creation.md": "01db2cf791ed02ec9997e0efedea915b58967628d7670dadff9d0d5c75aa45b9",
+  ".claude-plugin/plugins/unity-cli/skills/unity-project-bootstrap/references/runtime-checklist.md": "50562048c9eba1700edae0b556b0dc71f88e6d3c4752caa92a3c36df4bbbee9b",
+  ".claude-plugin/plugins/unity-cli/skills/unity-scene-create/SKILL.md": "85a92a9c0a74ccf158ea0150f0af21c49d221e768b12105b705ad94936fa79f6",
+  ".claude-plugin/plugins/unity-cli/skills/unity-cli-usage/SKILL.md": "f7445d9e93e73610d65cba0b8617033f7c11f4707acaaa492d3c7c48d68c5ca2",
+  ".claude-plugin/plugins/unity-cli/skills/unity-playmode-testing/SKILL.md": "48933f370900615905773aa3170fbf6845377903f7c961c479c15efca7000f6c"
+}

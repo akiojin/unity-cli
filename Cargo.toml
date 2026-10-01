@@ -1,6 +1,6 @@
 [package]
 name = "unity-cli"
-version = "0.16.0"
+version = "0.17.0"
 edition = "2021"
 description = "Rust CLI for Unity Editor automation over the Unity TCP protocol"
 readme = "README.md"
@@ -12,6 +12,8 @@ keywords = ["unity", "cli", "automation", "editor"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
     "/src/**",
+    "/build.rs",
+    "/.claude-plugin/plugins/unity-cli/skills/**",
     "/Cargo.toml",
     "/Cargo.lock",
     "/README.md",
@@ -38,6 +40,7 @@ sha2 = "0.11"
 ureq = { version = "3.3", features = ["json"] }
 serde_yml = "0.0.13"
 similar = "3"
+tempfile = "3.27"
 socket2 = "0.6"
 zip = "8"
 # bincode 3.0.0 intentionally compile_error!s; retain the existing index format (#342).
@@ -53,9 +56,6 @@ fastembed = { version = "6", default-features = false, features = ["hf-hub-rustl
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
-
-[dev-dependencies]
-tempfile = "3.27"
 
 [profile.release]
 lto = true

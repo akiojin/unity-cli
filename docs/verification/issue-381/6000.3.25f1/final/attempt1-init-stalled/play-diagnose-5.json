@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 8,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-54114-18da5e00ed1b9420-0",
+  "state": "completed",
+  "value": "isPlaying=True;isPaused=False;frameCount=1;time=0.00;realtime=193.23;timeScale=1;runInBackground=False;opValid=True;isDone=True;status=Succeeded;percent=1;debugName=Localization Settings Initialization;appActive=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity"
+}

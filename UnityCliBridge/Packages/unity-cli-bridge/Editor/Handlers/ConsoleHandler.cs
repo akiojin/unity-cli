@@ -26,26 +26,22 @@ namespace UnityCliBridge.Handlers
         private static FieldInfo _lineField;
         private static FieldInfo _instanceIdField;
 
-        // Mode bits for log type detection
-        // These values are based on Unity's internal LogEntry mode field
-        private const int ModeBitError = 1 << 0;          // 0x00000001
-        private const int ModeBitAssert = 1 << 1;         // 0x00000002
-        private const int ModeBitWarning = 1 << 2;        // 0x00000004
-        private const int ModeBitLog = 1 << 3;            // 0x00000008
-        private const int ModeBitFatal = 1 << 4;          // 0x00000010 (Fatal/Exception)
-        
-        // Additional flags for scripting logs
-        private const int ModeBitScriptingError = 1 << 9;      // 0x00000200
-        private const int ModeBitScriptingWarning = 1 << 10;   // 0x00000400
-        private const int ModeBitScriptingLog = 1 << 11;       // 0x00000800
-        private const int ModeBitScriptingException = 1 << 18;  // 0x00040000
-        private const int ModeBitScriptingAssertion = 1 << 22;  // 0x00400000
-        
-        // Alternative Exception bit (sometimes used)
-        private const int ModeBitException = ModeBitFatal;
-        
-        // Debug flag for logging mode bit analysis
-        private static bool _debugModeBits = false;
+        // UnityEditor.ConsoleWindow.Mode / LogMessageFlags (UnityCsReference).
+        // Severity is encoded in these bits, never in the message or stacktrace text.
+        private const int ModeBitError = 1 << 0;
+        private const int ModeBitAssert = 1 << 1;
+        private const int ModeBitLog = 1 << 2;
+        private const int ModeBitFatal = 1 << 4;
+        private const int ModeBitAssetImportError = 1 << 6;
+        private const int ModeBitAssetImportWarning = 1 << 7;
+        private const int ModeBitScriptingError = 1 << 8;
+        private const int ModeBitScriptingWarning = 1 << 9;
+        private const int ModeBitScriptingLog = 1 << 10;
+        internal const int ModeBitScriptCompileError = 1 << 11;
+        internal const int ModeBitScriptCompileWarning = 1 << 12;
+        private const int ModeBitScriptingException = 1 << 17;
+        private const int ModeBitGraphCompileError = 1 << 20;
+        private const int ModeBitScriptingAssertion = 1 << 21;
 
         static ConsoleHandler()
         {
@@ -233,7 +229,7 @@ namespace UnityCliBridge.Handlers
                     object logEntryInstance = Activator.CreateInstance(logEntryType);
 
                     // Process entries (newest first by default)
-                    for (int i = totalEntries - 1; i >= 0 && logs.Count < count; i--)
+                    for (int i = totalEntries - 1; i >= 0; i--)
                     {
                         _getEntryMethod.Invoke(null, new object[] { i, logEntryInstance });
 
@@ -243,21 +239,7 @@ namespace UnityCliBridge.Handlers
                         string file = (string)_fileField.GetValue(logEntryInstance);
                         int line = (int)_lineField.GetValue(logEntryInstance);
 
-                        if (string.IsNullOrEmpty(message))
-                            continue;
-
-                        // Extract stack trace early for Assert detection
-                        // Note: For some logs, the entire message IS the stack trace
-                        string fullStackTrace = ExtractStackTrace(message);
-                        
-                        // Check if message itself contains stack trace indicators
-                        bool messageContainsStackTrace = message.Contains("\n") && 
-                            (message.Contains("UnityEngine.Debug:Assert") || 
-                             message.Contains("(at ") || 
-                             message.Contains(".cs:"));
-                        
-                        // Determine log type (pass both stack trace and flag)
-                        LogType logType = GetLogTypeFromMode(mode, message, fullStackTrace, messageContainsStackTrace);
+                        LogType logType = GetLogTypeFromMode(mode);
                         string logTypeString = logType.ToString();
 
                         // Update statistics
@@ -270,6 +252,11 @@ namespace UnityCliBridge.Handlers
                             case LogType.Exception: statistics["exceptions"]++; break;
                         }
 
+                        // Statistics describe the full console, independent of the result limit
+                        // and API filters. Empty messages still contribute to Unity's counts.
+                        if (logs.Count >= count || string.IsNullOrEmpty(message))
+                            continue;
+
                         // Filter by type
                         if (!logTypes.Contains(logTypeString))
                             continue;
@@ -279,11 +266,11 @@ namespace UnityCliBridge.Handlers
                             message.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) < 0)
                             continue;
 
-                        // Extract stack trace if present (using fullStackTrace from earlier)
+                        // Extract stack trace only for returned entries
                         string stackTrace = null;
                         if (includeStackTrace)
                         {
-                            stackTrace = fullStackTrace;
+                            stackTrace = ExtractStackTrace(message);
                             if (!string.IsNullOrEmpty(stackTrace))
                             {
                                 message = message.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[0];
@@ -439,122 +426,22 @@ namespace UnityCliBridge.Handlers
         }
 
         /// <summary>
-        /// Gets LogType from mode bits, message content, and stack trace
+        /// Gets severity from Unity's native mode bits, preserving Assert/Exception subtypes.
         /// </summary>
-        private static LogType GetLogTypeFromMode(int mode, string message = null, string stackTrace = null, bool messageContainsStackTrace = false)
+        private static LogType GetLogTypeFromMode(int mode)
         {
-            // Log mode bits for debugging (only for specific messages)
-            if (_debugModeBits && !string.IsNullOrEmpty(message))
-            {
-                // Check if this is one of the problematic assert messages
-                if (message.Contains("InputSystemActions") &&
-                    (message.Contains(".Disable() has not been called") || message.Contains("This will cause a leak")))
-                {
-                    BridgeLogger.Log("ConsoleHandler", $"Debug - Assert message detected: '{message.Split('\n')[0]}', Mode bits: 0x{mode:X8}");
-                }
-            }
-            
-            // Special handling for Assert messages that may have different mode values
-            // Check stack trace for Assert patterns (more reliable than message)
-            if (!string.IsNullOrEmpty(stackTrace))
-            {
-                // Check for UnityEngine.Debug:Assert in stack trace
-                if (stackTrace.Contains("UnityEngine.Debug:Assert"))
-                {
-                    if (_debugModeBits)
-                    {
-                        BridgeLogger.Log("ConsoleHandler", $"Stack trace indicates Assert (UnityEngine.Debug:Assert found), Mode: 0x{mode:X8}");
-                    }
-                    return LogType.Assert;
-                }
-            }
-            
-            // If message contains stack trace info, check it directly
-            if (messageContainsStackTrace && !string.IsNullOrEmpty(message))
-            {
-                // The message itself contains the stack trace
-                if (message.Contains("UnityEngine.Debug:Assert"))
-                {
-                    if (_debugModeBits)
-                    {
-                        BridgeLogger.Log("ConsoleHandler", $"Message contains Assert stack trace, Mode: 0x{mode:X8}");
-                    }
-                    return LogType.Assert;
-                }
-            }
-            
-            // Also check message content for Assert patterns
-            if (!string.IsNullOrEmpty(message))
-            {
-                // Check for explicit Assert patterns in the message
-                if (message.Contains("UnityEngine.Debug:Assert") ||
-                    (message.Contains("Assertion failed") || message.Contains("Assert(")))
-                {
-                    if (_debugModeBits)
-                    {
-                        BridgeLogger.Log("ConsoleHandler", $"Message pattern indicates Assert, Mode: 0x{mode:X8}");
-                    }
-                    return LogType.Assert;
-                }
-            }
-            
-            // Check for Fatal/Exception first (most specific)
-            // Fatal bit (1 << 4) is often used for exceptions
-            if ((mode & ModeBitFatal) != 0 || (mode & ModeBitScriptingException) != 0)
-            {
-                // Additional check: some Asserts may have Fatal bit set
-                if (!string.IsNullOrEmpty(message) && message.Contains("UnityEngine.Debug:Assert"))
-                {
-                    return LogType.Assert;
-                }
+            if ((mode & ModeBitScriptingException) != 0)
                 return LogType.Exception;
-            }
-            // Check for Assert - expanded check for various Assert patterns
-            else if ((mode & (ModeBitAssert | ModeBitScriptingAssertion)) != 0 ||
-                     (mode & 0x00000002) != 0 ||  // Direct check for bit 1
-                     (mode & 0x00400000) != 0)     // Direct check for bit 22
-            {
+            if ((mode & (ModeBitAssert | ModeBitScriptingAssertion)) != 0)
                 return LogType.Assert;
-            }
-            // Check for Error
-            else if ((mode & (ModeBitError | ModeBitScriptingError)) != 0)
-            {
-                // Double check: some Asserts may be misclassified as Errors
-                if (!string.IsNullOrEmpty(message) &&
-                    (message.Contains("UnityEngine.Debug:Assert") || message.Contains("Assertion")))
-                {
-                    if (_debugModeBits)
-                    {
-                        BridgeLogger.Log("ConsoleHandler", $"Reclassifying Error as Assert based on message, Mode: 0x{mode:X8}");
-                    }
-                    return LogType.Assert;
-                }
+            if ((mode & (ModeBitError | ModeBitFatal | ModeBitAssetImportError |
+                         ModeBitScriptingError | ModeBitScriptCompileError | ModeBitGraphCompileError)) != 0)
                 return LogType.Error;
-            }
-            // Check for Warning
-            else if ((mode & (ModeBitWarning | ModeBitScriptingWarning)) != 0)
-            {
+            if ((mode & (ModeBitAssetImportWarning | ModeBitScriptingWarning | ModeBitScriptCompileWarning)) != 0)
                 return LogType.Warning;
-            }
-            // Check for regular Log
-            else if ((mode & (ModeBitLog | ModeBitScriptingLog)) != 0)
-            {
+            if ((mode & (ModeBitLog | ModeBitScriptingLog)) != 0)
                 return LogType.Log;
-            }
-            // Default case - try to infer from message if available
-            else
-            {
-                if (!string.IsNullOrEmpty(message))
-                {
-                    if (message.Contains("UnityEngine.Debug:Assert") || message.Contains("Assertion"))
-                        return LogType.Assert;
-                    if (message.Contains("Exception") || message.Contains("Error"))
-                        return LogType.Error;
-                    if (message.Contains("Warning"))
-                        return LogType.Warning;
-                }
-                return LogType.Log;
-            }
+            return LogType.Log;
         }
 
         /// <summary>

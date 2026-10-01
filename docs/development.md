@@ -210,6 +210,10 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# AudioMixer hierarchy/exposed Volume and AudioImporter persistence (isolated Editor)
+bash scripts/e2e-audio-batch-host.sh --unity-version 2022.3.62f3 --port 6481
+bash scripts/e2e-audio-batch-host.sh --unity-version 6000.3.25f1 --port 6482
+
 # Reference fetch regression (live Editor; isolated cache; downloads UnityCsReference)
 # Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
 scripts/e2e-reference-fetch.sh --port 6400
@@ -349,6 +353,20 @@ its report explicitly records `full_matrix: false`. Acceptance uses the default
 complete suite set. A missing Editor, compiler error, failed suite or timeout
 fails the run. Inspect `matrix.json` and the linked per-suite logs before claiming PASS.
 
+The default matrix also includes `bake`, `player-build`, `video-formats`,
+`animation-curves`, `input-actions-persistence`, and `reference`. To reproduce
+only this extension, pass
+`--suites bake,player-build,video-formats,animation-curves,input-actions-persistence,reference`.
+The Player suite checks macOS output and, when Windows Build Support is installed,
+starts a second isolated Editor for Windows output (port + 2); Input Actions owns another project and two sequential
+Editor starts (port + 1) to prove persistence across restart. Install Windows
+Build Support in Unity Hub to exercise actual cross-building. Without it, the
+runner asserts `BUILD_MODULE_MISSING` and records `UNSUPPORTED`, never `PASS`.
+An all-supported run reports `PASS`; an otherwise successful run containing
+explicit unsupported results reports `UNSUPPORTED` and exits zero. Unexpected
+errors still fail. Video capture keeps graphics enabled. Reference suites use
+isolated caches and download public UnityCsReference with license acceptance.
+
 Graphics stay enabled for VFX/SDF. Only processes launched by the runner are
 stopped. Project settings, generated assets and package imports remain in the
 retained temporary fixture. Editor reloads and scripts may reset the listener;
@@ -474,9 +492,10 @@ CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and
 | Rust Tests (required)          | push / PR               | `cargo test`                                                                          |
 | LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                 |
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh` (full cases + history artifact)                           |
+| CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py` (p50/p95 budgets + injected-delay evidence)            |
 | Skill Routing Eval             | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
 
-Skill Contract Check, Rust Tests, LSP Tests, and LSP Performance are required checks for PR merges.
+Skill Contract Check, Rust Tests, LSP Tests, LSP Performance, and CLI Latency are required checks for PR merges.
 
 ## Capability Catalog
 
@@ -493,49 +512,127 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 ## Benchmark Policy
 
-### Baseline Targets (Reference)
+### Budgets and gates
 
-These are guidance values and vary by host:
+`perf-budgets.json` is the source of p50/p95 latency limits. A missing budget,
+failed operation, absolute limit violation, or relative regression fails the run.
+Percentiles use the nearest rank; failed operations never count as fast samples.
 
-| Scenario                             | Mean (target) | Notes                            |
-| ------------------------------------ | ------------- | -------------------------------- |
-| `unity-cli --help`                   | ~2-5 ms       | Local startup only               |
-| `unity-cli tool list`                | ~2-5 ms       | Local list generation            |
-| `unity-cli system ping`              | ~10-50 ms     | Requires running Unity Editor    |
-| `unity-cli system ping` (via unityd) | ~5-20 ms      | Daemon keeps TCP connection open |
-| `unity-cli batch` (5 commands)       | ~25-100 ms    | Single IPC round-trip via daemon |
+| Gate | Environment | Samples per operation | Evidence |
+| ---- | ----------- | --------------------- | -------- |
+| CLI Latency (required) | Linux CI, deterministic loopback TCP Bridge | 50 after 3 warmups | `cli-latency` artifact: normal and injected-delay JSON |
+| Editor `perf` suite | macOS GUI, 6000.3.25f1 and 2022.3.62f3 | 30 after 3 complete warmup cycles, each focus condition | `matrix.json`, `perf.json`, `perf.log` |
+| `editor_eval` | macOS GUI, Editor frontmost | 100 after 3 warmups | `bench-eval.py --budget editor_eval` JSON |
 
-Budgets that fail a run when exceeded live in `perf-budgets.json`. The first
-entry is `editor_eval` (warm `unity-cli editor eval '1+2'`, Editor frontmost:
-p50 ≤ 50 ms, p95 ≤ 100 ms), enforced by `scripts/bench-eval.py --budget editor_eval`.
+CI measures startup, tool list, and ping/state/batch-of-five over both direct TCP
+and a warm unityd connection. Direct mode exercises the existing daemon-unavailable
+fallback using a private unusable runtime path; connection counts prove the route.
+The job also injects 30 ms into every Bridge response and requires a measured
+budget failure. No Unity installation is needed.
+
+The real Editor suite measures the staff report's 23 operations (Issue #371 AC-6):
+state, hierarchy, object search, Transform, position, Cube creation, component
+add/remove, object deletion, scene info/save, console, screenshot, material search,
+asset copy/move/delete, import settings, material edit, Time settings, C# read,
+Play-until-ready and Stop-until-ready. The 22 remote operations use warm unityd; C# `read`
+uses the current CLI's local reader and is explicitly labelled `local` in JSON.
+Play/Stop include polling until the requested state is observed.
+
+**Sampling:** each operation still launches a CLI process, so reported wall time
+includes process spawn and exit. The Editor and unityd stay resident and warm;
+their initial startup, fixture creation and focus changes are outside the timed
+interval. This is not a persistent CLI shell measurement. Do not compare it with
+a resident-shell benchmark without stating that difference.
+
+**Focus:** frontmost and background have separate budgets. macOS frontmost PID
+is checked before and after every sample; background runs activate Finder.
+The owned Game View windows use `PlayUnfocused` during both conditions so entering
+Play Mode does not bring a background Editor forward. Their previous settings are
+restored afterwards; this window setting is also recorded in the history conditions.
+The background screenshot starts with Finder frontmost and may activate the target
+Editor: the existing capture handler calls `GameView.Focus()`. This exception is
+recorded as `backgroundScreenshot` in JSON conditions. Its post-call PID must remain
+Finder or become the target Editor; third-party activation is never accepted.
+Other focus changes discard the entire balanced cycle and retry; ten discarded cycles
+or an OS screenshot fallback fail the run. Only valid cycles supply samples. Use an idle host
+without another agent changing Editor focus or importing another project.
+
+Initial Editor budgets come from the four complete runs in
+[`issue-394-baseline.json`](verification/issue-394-baseline.json). For each operation
+and focus condition, take the larger measurement across the two Unity versions,
+multiply p50 by 1.5 and p95 by 2, and round up to 5 ms. For background p50 only,
+use the calibration p95 as a floor before rounding. Background update scheduling
+can move request timing between fast and slow phases: the same Unity 6 binary's
+material-search p50 changed from 74.6 to 154.3 ms while p95 stayed at 182.0/180.5 ms.
+The original failing verification is preserved; the baseline JSON records the
+observations and calibration rationale. Frontmost and all p95 budgets are unchanged.
+This leaves initial host variance headroom while the separate history gate still rejects p50 degradation
+greater than 20%. Existing `editor_eval` and mock CLI budgets are unchanged.
 
 ### Run
 
 ```bash
-# human-readable
-./scripts/benchmark.sh
+cargo build --release --bin unity-cli
 
-# JSON for CI/storage
-./scripts/benchmark.sh --json
+# Unity-free CI gate (50 samples per operation/route)
+python3 scripts/bench-cli-latency.py --out /tmp/cli-latency.json
 
-# LSP perf measurement with thresholds + size/token metrics
+# Must exit 1 with latency violations and all eight results present
+python3 scripts/bench-cli-latency.py --delay-ms 30 --out /tmp/cli-latency-delayed.json
+
+# Release prerequisite: both Editors, frontmost AND background, isolated GUI projects
+UNITY_CLI_PERF_REGRESSION_PERCENT=20 python3 scripts/e2e-matrix.py --suites perf \
+  --unity-cli "$PWD/target/release/unity-cli" \
+  --editor /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity \
+  --editor /Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity \
+  --output /tmp/unity-cli-release-perf
+
+# Repeat against an already-open project owned by the perf matrix
+python3 scripts/bench-editor-ops.py --project /tmp/perf-fixture/project \
+  --port 6508 --focus both --out /tmp/editor-ops.json
+
+# Existing eval and LSP gates
+python3 scripts/bench-eval.py --port 6400 --require-frontmost --activate --budget editor_eval
 ./scripts/lsp-perf-check.sh
-
-# Media capture / profiler benchmark against a connected Unity Editor
-# This is separate from lsp-perf-check.sh and does not append to lsp-history.jsonl.
-./scripts/perf-media-benchmark.sh
-
-# Stored history file
-cat .unity/perf/lsp-history.jsonl | tail -n 5
 ```
 
-Regression policy:
+Choose a fresh `--output` directory for every matrix run. The perf suite uses
+GUI Editors; its isolated-project ownership marker prevents the standalone
+benchmark from replacing a user's scene. Fixtures live only under
+`Assets/Scenes/Generated/E2E/Performance/`. The LSP binary is not needed for
+`--suites perf`.
+The copied URP material-upgrade cache is regenerated for the selected Editor;
+render pipeline settings are retained while avoiding a cross-version startup dialog.
+The suite also runs the existing `editor_eval` gate for 100 frontmost samples,
+saves `perf-eval.json`/`perf-eval.log`, and appends its results to the same history
+under separate eval conditions. Eval uses its existing direct TCP route.
 
-1. Track JSON outputs over time.
-2. Keep `.unity/perf/lsp-history.jsonl` as append-only history.
-3. Use recorded trends as baseline comparison input.
-4. Exclude `system ping` from strict regression gate (depends on Unity availability and machine/network state).
-5. Use `scripts/perf-media-benchmark.sh` only for runtime screenshot / video / profiler evidence alongside `get_command_stats`; it is not part of the LSP history pipeline.
+### History and recovery
+
+`scripts/bench-editor-ops.py` appends all results to
+`.unity/perf/editor-ops-history.jsonl`. Compare p50 against the median of the
+last five complete measurement runs with the same host, OS, architecture, Unity version,
+focus, Play Mode options, Game View focus mode and sampling method. Fail when degradation is strictly
+greater than 20%. Fewer than five matching runs means absolute budgets still
+apply and the relative baseline is not yet established. Completed measurements
+count even when a budget failed; incomplete/error runs remain in the log but do
+not supply a baseline. Absolute budgets always apply alongside the rolling median.
+
+`UNITY_CLI_PERF_REGRESSION_PERCENT` (or `--regression-percent`) overrides the
+relative threshold; it never disables absolute budgets. Diagnose a failure from
+`violations`, sample counts and condition metadata, then repeat on an idle host.
+Fix actual regressions. If a deliberate change justifies new limits, review the
+fresh measurements and update only the affected keys in `perf-budgets.json`.
+For an intentional environment/baseline reset, preserve the old JSONL and select
+a new `--history` path; do not delete failing history or raise limits merely to
+get a green run. Release verification uses the normal history and default 20%.
+
+`/release` requires both versions and both focus conditions to PASS before the
+release is prepared. Keep the command, version, pass/fail counts and log summary
+in the PR. Re-run after the last product or benchmark code change; a historical
+PASS is not evidence for changed code. `scripts/benchmark.sh` and
+`scripts/perf-media-benchmark.sh` remain exploratory tools; they do not replace
+the gates above. LSP history remains separate at `.unity/perf/lsp-history.jsonl`.
 
 ## Skill Accuracy Evaluation
 
@@ -575,7 +672,12 @@ Run a local Codex-based routing check:
   --runner-cmd 'python3 scripts/skill-eval/run-codex-routing.py'
 ```
 
-This local runner requires `codex login` to be configured on the machine.
+This local runner requires `codex login` and `unity-cli` on PATH. It reads
+`unity-cli tool schema --output json` locally to supplement skill examples
+with every available tool and its top-level payload keys; no Editor is needed.
+For checkout-specific evaluation, build with `cargo build` and append
+`--unity-cli ./target/debug/unity-cli` to the runner command. Schema discovery
+errors fail the prediction rather than silently using an incomplete catalog.
 
 Current thresholds:
 
@@ -1011,9 +1113,10 @@ CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/wo
 | Rust Tests (required)          | push / PR               | `cargo test`                                                                           |
 | LSP Tests (required)           | push / PR               | `dotnet test lsp/Server.Tests.csproj`                                                  |
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact）                             |
+| CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py`（p50/p95 予算 + 遅延注入の証跡）                        |
 | Skill Routing Eval             | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
 
-Skill Contract Check / Rust Tests / LSP Tests / LSP Performance は PR マージの必須チェックです。
+Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency は PR マージの必須チェックです。
 
 ## 機能カタログ
 
@@ -1030,49 +1133,69 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 
 ## ベンチマーク方針
 
-### 目安値（参考）
+`perf-budgets.json` の p50/p95 を予算として検査し、超過・予算欠落・操作失敗は
+非ゼロで終了します。パーセンタイルは nearest-rank です。失敗を高速なサンプルとして扱いません。
 
-環境依存ですが、目安は次のとおりです。
+- CI の **CLI Latency (required)** は Unity 不要のモック TCP Bridge に対して、
+  起動、tool list、ping、Editor 状態、batch 5 件を各 50 回（warmup 3 回除外）計測します。
+  リモート操作は直接 TCP と warm unityd の両方を測り、接続数で経路も確認します。
+  応答に 30 ms の遅延を加えて失敗を確認した JSON も artifact に保存します。
+- 実機の **perf スイート**はスタッフ調査の 23 操作（#371 AC-6）を各 30 回、
+  warmup 3 サイクル後に測ります。6000.3.25f1 / 2022.3.62f3 の GUI Editor を
+  最前面・背景の両条件で動かし、条件別予算を適用します。
+- Editor と unityd は常駐・warm ですが、CLI は操作ごとに起動します。
+  計測はプロセス起動から終了までで、Play/Stop は状態確認までを含みます。
+  常駐 CLI shell の計測とは区別してください。22 操作は warm unityd を使い、C# ファイル読取だけは現行 CLI の
+  ローカル処理であり、JSON の経路に `local` と明記します。
+- 最前面 PID を各サンプルの前後で確認し、背景条件は Finder を前面にします。
+  専用 Game View は両条件とも `PlayUnfocused` にし、Play 開始時の自動前面化を防ぎます。
+  終了時に元のウィンドウ設定へ戻し、この設定も履歴の比較条件に含めます。
+  背景スクリーンショットだけは、既存撮影処理の `GameView.Focus()` により対象 Editor が前面化する
+  動作を含めます。開始時は Finder が前面、終了時は同じ Finder または対象 Editor に限定し、
+  第三者 PID への移動は許可しません。この例外を JSON 条件の `backgroundScreenshot` に記録します。
+  フォーカス逸脱時は周全体を破棄して再計測し、有効な周だけを採用します。
+  10 周の破棄、OS スクリーンショットへのフォールバックは失敗です。
+  他 Agent の GUI 操作や重い import と同時に計測しません。
 
-| シナリオ                             | 平均（目安） | 備考                                  |
-| ------------------------------------ | ------------ | ------------------------------------- |
-| `unity-cli --help`                   | ~2-5 ms      | ローカル起動時間のみ                  |
-| `unity-cli tool list`                | ~2-5 ms      | ローカル一覧生成                      |
-| `unity-cli system ping`              | ~10-50 ms    | Unity Editor 起動時のみ               |
-| `unity-cli system ping` (unityd経由) | ~5-20 ms     | デーモンがTCP接続を保持               |
-| `unity-cli batch` (5コマンド)        | ~25-100 ms   | デーモン経由の単一IPCラウンドトリップ |
+Editor の初期予算は [4 条件の実測](verification/issue-394-baseline.json) に基づきます。
+操作・フォーカスごとに 2 Unity バージョンの大きい値を取り、p50 は 1.5 倍、p95 は 2 倍して
+5ms 単位に切り上げます。背景の p50 のみ、切り上げ前に校正時の p95 を下限とします。
+背景 Editor の更新待ちによる位相差で、同一 Unity6 バイナリの material search は p50 が
+74.6→154.3ms に動く一方、p95 は 182.0→180.5ms と安定していました。元の FAIL 記録を保持し、
+ベースライン JSON に比較値と校正理由を記録します。最前面と全 p95 予算は変更しません。
+別途、履歴比で p50 が 20% を超えて劣化した場合も失敗とします。
+既存の `editor_eval` と mock CLI の予算は変更していません。
 
-超過すると失敗になる予算は `perf-budgets.json` に置きます。最初の項目は `editor_eval`
-（ウォーム状態の `unity-cli editor eval '1+2'`、Editor 最前面で p50 ≤ 50 ms、p95 ≤ 100 ms）で、
-`scripts/bench-eval.py --budget editor_eval` が検査します。
+実行コマンドは英語版の [Run](#run) に記載しています。
+`cargo build --release --bin unity-cli` 後、
+`scripts/e2e-matrix.py --suites perf` に 2 Editor と release CLI を指定してください。
+`--perf-focus` の既定値 `both` を使い、毎回新しい出力先を指定します。
+専用プロジェクトの `Assets/Scenes/Generated/E2E/Performance/` のみを変更し、
+所有マーカーのないプロジェクトでは直接ベンチを実行できません。
+このスイートだけなら LSP バイナリは不要です。
+併せて既存の `editor_eval` ゲートも最前面で 100 回実行し、
+`perf-eval.json`/`perf-eval.log` と同じ JSONL に別条件として記録します。
+eval の既存の直接 TCP 経路は変更しません。
 
-### 実行
+全結果を `.unity/perf/editor-ops-history.jsonl` に追記し、同じホスト・OS・CPU・
+Unity・フォーカス・Play Mode 設定・計測方式で完全に計測できた直近 5 回の p50 中央値に
+対して 20% を超える劣化でも失敗にします。5 回未満でも絶対予算は有効です。
+予算超過でも完全な計測値は中央値に含め、操作エラーで不完全な回だけ除外します。
+絶対予算はこのローリング中央値と独立に必ず適用します。
+相対しきい値は `UNITY_CLI_PERF_REGRESSION_PERCENT` または
+`--regression-percent` で上書きできます（絶対予算は無効化されません）。
 
-```bash
-# 人間向け
-./scripts/benchmark.sh
+失敗時は `violations` と条件を確認し、低負荷で再計測して実際の回帰を修正します。
+意図的な変更なら実測のレビュー後に該当予算だけを更新してください。
+環境変更に伴う基準の作り直しは旧 JSONL を保存し、別の `--history` を指定します。
+失敗を隠すための履歴削除や予算引き上げはしません。
+リリースでは通常履歴・既定の 20% を使用します。
 
-# CI・保存向けJSON
-./scripts/benchmark.sh --json
-
-# LSP性能計測 + 閾値チェック + サイズ/トークン計測
-./scripts/lsp-perf-check.sh
-
-# 接続済み Unity Editor に対する media capture / profiler ベンチマーク
-# これは lsp-perf-check.sh とは別系統で、lsp-history.jsonl には追記しない
-./scripts/perf-media-benchmark.sh
-
-# 保存済み履歴の確認
-cat .unity/perf/lsp-history.jsonl | tail -n 5
-```
-
-回帰判定方針:
-
-1. JSON 結果を継続保存する
-2. `.unity/perf/lsp-history.jsonl` を追記履歴として維持する
-3. 履歴トレンドをベースライン比較に利用する
-4. `system ping` は Unity の可用性に依存するため厳密ゲートには含めない
-5. スクリーンショット / 動画 / Profiler の回帰確認には `scripts/perf-media-benchmark.sh` を使い、`get_command_stats` の結果も合わせて保存する。ただし LSP 履歴パイプラインには含めない
+`/release` は **2 Editor × 2 フォーカス条件の perf PASS を必須** とします。
+PR 本文にコマンド・Unity 版・pass/fail 件数・ログ要約を記録してください。
+最終コード変更後に再実行し、古い PASS を流用しません。
+既存 `editor_eval` 予算（最前面、p50 ≤ 50 ms / p95 ≤ 100 ms）と LSP ゲートも維持します。
+`benchmark.sh` と `perf-media-benchmark.sh` は調査用で、上記ゲートの代わりにはなりません。
 
 ## スキル精度評価
 
@@ -1112,7 +1235,12 @@ cargo run -- skills lint --severity error
   --runner-cmd 'python3 scripts/skill-eval/run-codex-routing.py'
 ```
 
-この local runner を使うには、事前に `codex login` が通っている必要があります。
+この local runner には `codex login` と PATH 上の `unity-cli` が必要です。
+`unity-cli tool schema --output json` をローカルで読み、スキルの例にない
+ツール名とトップレベル引数もカタログへ補完します（Editor 不要）。
+チェックアウトの実装を評価する場合は `cargo build` 後、runner command に
+`--unity-cli ./target/debug/unity-cli` を追加します。schema 取得失敗時は
+不完全なカタログで続行せず、その予測をエラーとして扱います。
 
 現在の閾値:
 

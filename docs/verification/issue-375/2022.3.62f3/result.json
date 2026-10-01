@@ -1,0 +1,117 @@
+{
+  "test": "unity-project-bootstrap acceptance (issue 375)",
+  "projectPath": "/tmp/issue375-unity-2022.3.62f3-final",
+  "projectPathReportedByBridge": "/private/tmp/issue375-unity-2022.3.62f3-final",
+  "editor": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+  "unityVersion": "2022.3.62f3 (96770f904ca7)",
+  "template": "default built-in 3D (Editor CLI -createProject, no render-pipeline template)",
+  "cliVersion": "0.16.0",
+  "bridgeVersion": "0.16.0",
+  "port": 6536,
+  "launchedEditorPid": 4518,
+  "steps": {
+    "createProject": {
+      "ok": true,
+      "exit": 0,
+      "evidence": [
+        "create.log",
+        "create-exit.txt",
+        "ProjectVersion.txt"
+      ]
+    },
+    "setup": {
+      "ok": true,
+      "exit": 0,
+      "projectMatches": true,
+      "versionCheck": "match",
+      "source": "registry (package.openupm.com)",
+      "inputBackends": "activeInputHandler 0 -> 2 (Both)",
+      "evidence": "setup.json"
+    },
+    "ping": {
+      "ok": true,
+      "exit": 0,
+      "projectPath": "/private/tmp/issue375-unity-2022.3.62f3-final",
+      "bridgeVersion": "0.16.0",
+      "evidence": "ping.json"
+    },
+    "packageResolution": {
+      "ok": true,
+      "com.akiojin.unity-cli-bridge": "0.16.0 (registry, https://package.openupm.com)",
+      "com.unity.inputsystem": "1.14.2 (registry, depth 1 via bridge)",
+      "evidence": [
+        "manifest.json",
+        "packages-lock.json"
+      ]
+    },
+    "sceneCreateAndSave": {
+      "ok": true,
+      "scenePath": "Assets/Scenes/Generated/E2E/Bootstrap.unity",
+      "hierarchy": [
+        "Main Camera",
+        "Directional Light",
+        "BootstrapCube"
+      ],
+      "evidence": [
+        "scene-create.json",
+        "hierarchy-before-cube.json",
+        "create-cube.json",
+        "save-scene.json",
+        "hierarchy.json",
+        "Bootstrap.unity",
+        "Bootstrap.unity.meta"
+      ]
+    },
+    "playMode": {
+      "ok": true,
+      "isPlaying": true,
+      "evidence": [
+        "play-game.json",
+        "play-state.json"
+      ]
+    },
+    "screenshot": {
+      "ok": true,
+      "captureMode": "game",
+      "source": "Main Camera (bridge Game capture, osFallback=false)",
+      "size": "1280x720",
+      "originalPath": "/private/tmp/issue375-unity-2022.3.62f3-final/.unity/capture/image_game_2026-10-01_13-46-37.png",
+      "inspected": "white BootstrapCube visible at center over default skybox/ground; not black, no 'No cameras rendering'",
+      "evidence": [
+        "screenshot.json",
+        "game.png"
+      ]
+    },
+    "console": {
+      "ok": true,
+      "errors": 0,
+      "exceptions": 0,
+      "asserts": 0,
+      "warnings": 11,
+      "note": "all warnings are unity-cli-bridge informational logs",
+      "evidence": "console.json"
+    },
+    "stopPlay": {
+      "ok": true,
+      "isPlayingAfter": false,
+      "sceneDirtyAfter": false,
+      "evidence": [
+        "stop-game.json",
+        "state-after-stop.json",
+        "scene-info-after-stop.json"
+      ]
+    }
+  },
+  "observations": [
+    "setup.json bridge.resolvedVersion is null (manifest written before the Editor resolved packages); packages-lock.json confirms 0.16.0 resolved afterwards.",
+    "stop_game response embeds state.isPlaying=true (snapshot taken before exit completed); a subsequent get_editor_state shows isPlaying=false."
+  ],
+  "failures": [],
+  "editorClosed": {
+    "ok": true,
+    "method": "unity-cli raw quit_editor",
+    "pid": 4518,
+    "exited": true,
+    "evidence": "quit-editor.json"
+  }
+}

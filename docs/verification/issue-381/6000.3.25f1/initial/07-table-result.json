@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 31,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-22217-18da5c80637110c8-0",
+  "state": "completed",
+  "value": "createdCollection; collection=Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset shared=Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset keyId=707780608 | en => Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset = [Hello, world!] | ja => Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset = [こんにちは、世界！]"
+}

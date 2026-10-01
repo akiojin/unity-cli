@@ -1,0 +1,29 @@
+{
+  "step": "p2_27_play_en_state_after_resume",
+  "locale": "en",
+  "note": "poll only; SelectedLocale=en was set in p2_20 while the Play loop was stalled in the background; Editor re-activated so frames resume",
+  "expected": "Hello, world!",
+  "actual": "Hello, world!",
+  "match": true,
+  "polls": 1,
+  "uiElementState": {
+    "color": "#FFFFFFFF",
+    "components": [
+      "RectTransform",
+      "CanvasRenderer",
+      "Text",
+      "LocalizeStringEvent"
+    ],
+    "font": "ArialUnicode",
+    "fontSize": 84,
+    "isActive": true,
+    "isInteractable": true,
+    "layer": "Default",
+    "name": "Greeting",
+    "path": "/LocalizationCanvas/Greeting",
+    "raycastTarget": false,
+    "tag": "Untagged",
+    "text": "Hello, world!"
+  },
+  "observedAt": "2026-10-01T09:31:41Z"
+}

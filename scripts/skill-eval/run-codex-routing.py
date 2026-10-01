@@ -46,6 +46,7 @@ SCHEMA = {
 class ToolSummary:
     name: str
     keys: set[str] = field(default_factory=set)
+    examples: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass
@@ -64,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         "--skills-dir",
         default=".claude-plugin/plugins/unity-cli/skills",
         help="Path to the plugin skills directory.",
+    )
+    parser.add_argument(
+        "--unity-cli",
+        default="unity-cli",
+        help="CLI binary used to read canonical tool schemas (no Editor required).",
     )
     parser.add_argument(
         "--model",
@@ -118,6 +124,9 @@ def parse_tool_summaries(text: str) -> dict[str, ToolSummary]:
             return
         if isinstance(parsed, dict):
             add(tool_name, parsed.keys())
+            examples = tools[tool_name].examples
+            if parsed not in examples and len(examples) < 2:
+                examples.append(parsed)
 
     for match in re.finditer(r"unity-cli raw ([a-z0-9_]+) --json '([^']*)'", text):
         add_from_json(match.group(1), match.group(2))
@@ -203,11 +212,51 @@ def format_skill_catalog(skills: list[SkillSummary]) -> str:
                     tool_parts.append(f"{tool_name} | keys: {', '.join(keys)}")
                 else:
                     tool_parts.append(f"{tool_name}")
+                if skill.tools[tool_name].examples:
+                    examples = json.dumps(
+                        skill.tools[tool_name].examples,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    )
+                    tool_parts[-1] += f" | example payloads: {examples}"
             lines.append(f"  Tool hints: {'; '.join(tool_parts)}")
     return "\n".join(lines)
 
 
-def build_prompt(skill_catalog: str, user_prompt: str) -> str:
+def format_tool_catalog(specs: list[dict[str, object]]) -> str:
+    """Include every real tool, even when no skill has a command example.
+
+    Only collect top-level payload properties; variant schemas may add keys,
+    but nested object fields are not top-level arguments.
+    """
+    def properties(schema: dict) -> dict:
+        result = dict(schema.get("properties", {}))
+        for composition in ("oneOf", "anyOf", "allOf"):
+            for variant in schema.get(composition, []):
+                result.update(properties(variant))
+        return result
+
+    lines = []
+    for spec in sorted(specs, key=lambda item: item["name"]):
+        hints = []
+        for key, value in sorted(properties(spec["params_schema"]).items()):
+            hint = key
+            if "enum" in value:
+                hint += "=" + json.dumps(value["enum"], ensure_ascii=False)
+            hints.append(hint)
+        lines.append(f"- {spec['name']} | keys: {', '.join(hints) or '(none)'}")
+    return "\n".join(lines)
+
+
+def load_tool_catalog(binary: str) -> str:
+    result = subprocess.run(
+        [binary, "tool", "schema", "--output", "json"],
+        capture_output=True, text=True, check=True,
+    )
+    return format_tool_catalog(json.loads(result.stdout)["tools"])
+
+
+def build_prompt(skill_catalog: str, user_prompt: str, tool_catalog: str = "") -> str:
     return f"""You are evaluating skill routing for the unity-cli plugin.
 
 Choose the best matching skill or up to two skills from the catalog below.
@@ -231,9 +280,13 @@ Rules:
 - `predicted_payload_keys` must contain only the minimum top-level payload keys implied by that first tool call.
 - If the first tool likely needs no payload, return an empty array.
 - Return only skills and tools that appear in the catalog.
+- The canonical tool catalog lists available tools and allowed top-level keys, including tools omitted from the skill examples. Keys are options, not a requirement to send every key. Skill examples are illustrative, not exhaustive.
 
 Skill catalog:
 {skill_catalog}
+
+Canonical tool catalog:
+{tool_catalog}
 
 User prompt:
 {user_prompt}
@@ -274,7 +327,10 @@ def route_by_keywords(user_prompt: str) -> dict[str, object] | None:
         return make_prediction(["unity-cli-usage"], "get_editor_state", [])
     if has_any("コマンド統計", "command stats"):
         return make_prediction(["unity-cli-usage"], "get_command_stats", [])
-    if has_any("packages一覧", "package一覧", "packages list", "package list", "パッケージ一覧"):
+    if (
+        has_any("packages一覧", "package一覧", "packages list", "package list", "パッケージ一覧")
+        and not has_any("upm", "package_manager")
+    ):
         return make_prediction(["unity-csharp-navigate"], "list_packages", [])
 
     # Explicit search/inspect-first workflows.
@@ -294,7 +350,11 @@ def route_by_keywords(user_prompt: str) -> dict[str, object] | None:
             "remove_input_binding",
             ["assetPath", "mapName", "actionName", "bindingIndex"],
         )
-    if has_any("入力アセット", ".inputactions", "action map", "binding") and has_any("play", "キー入力", "検証"):
+    if (
+        has_any("入力アセット", ".inputactions", "action map", "binding")
+        and has_any("play", "キー入力", "検証")
+        and has_any("更新", "追加", "作成", "update", "add", "create", "bind ")
+    ):
         return make_prediction(
             ["unity-input-system", "unity-playmode-testing"],
             "add_input_binding",
@@ -470,7 +530,7 @@ def main() -> int:
 
     skills = load_skills(Path(args.skills_dir))
     catalog = format_skill_catalog(skills)
-    prompt = build_prompt(catalog, user_prompt)
+    prompt = build_prompt(catalog, user_prompt, load_tool_catalog(args.unity_cli))
     structured = invoke_codex(prompt, args.model)
     print(json.dumps(structured, ensure_ascii=False))
     return 0

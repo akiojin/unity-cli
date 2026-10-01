@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 18,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-43476-18da5d7f9f9c5148-0",
+  "state": "completed",
+  "value": "unity=2022.3.62f3;isPlaying=False;isCompiling=False;isUpdating=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity;dirty=False;sceneCount=1;com.unity.localization=1.5.13(Registry);com.unity.addressables=1.25.0(Registry);com.unity.ugui=1.0.0(BuiltIn);com.akiojin.unity-cli-bridge=0.16.0(Embedded);com.unity.nuget.newtonsoft-json=3.2.1(Registry);com.unity.scriptablebuildpipeline=1.22.4(Registry)"
+}

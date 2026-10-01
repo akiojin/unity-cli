@@ -1,4 +1,8 @@
 {
+  "manage_audio_mixer": "Requires disposable mixer and WAV assets; covered by scripts/e2e-audio-batch-host.sh on both acceptance Editors.",
+  "get_prefab_overrides": "Requires property and structural overrides; covered by scripts/e2e-prefab.py on both acceptance Editors.",
+  "manage_prefab_overrides": "Mutates inherited Prefab assets; dedicated persistence and apply-target coverage in scripts/e2e-prefab.py.",
+  "unpack_prefab": "Destructively removes Prefab connections; dedicated nested hierarchy coverage in scripts/e2e-prefab.py.",
   "get_animation_curves": "Requires the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.",
   "edit_animation_curve": "Mutates the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.",
   "build_player": "Requires platform build modules and an isolated output/project; covered by scripts/e2e-player-build.py.",

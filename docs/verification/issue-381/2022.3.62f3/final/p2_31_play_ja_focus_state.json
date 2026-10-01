@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 8,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-51842-18da5df604d42f10-0",
+  "state": "completed",
+  "value": "focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=1601"
+}

@@ -1,0 +1,8 @@
+{"id": "SR-URP-001", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}
+{"id": "SR-URP-002", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code"]}
+{"id": "SR-URP-003", "predicted_skills": ["unity-urp-setup"], "predicted_tool": "eval_csharp", "predicted_payload_keys": ["code"]}
+{"id": "SR-URP-004", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SR-URP-005", "predicted_skills": ["unity-asset-management"], "predicted_tool": "create_material", "predicted_payload_keys": ["materialPath", "shader"]}
+{"id": "SR-URP-006", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}
+{"id": "SR-URP-007", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName"]}
+{"id": "SR-URP-008", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "modify_gameobject", "predicted_payload_keys": ["path", "position"]}

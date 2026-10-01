@@ -1,0 +1,24 @@
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Warning] Packages/com.akiojin.unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+      "logType": "Warning",
+      "message": "Packages/com.akiojin.unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n"
+    },
+    {
+      "formattedCompact": "[Warning] Packages/com.akiojin.unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n",
+      "logType": "Warning",
+      "message": "Packages/com.akiojin.unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 0,
+    "exceptions": 0,
+    "logs": 11,
+    "warnings": 2
+  },
+  "success": true,
+  "totalCaptured": 13
+}

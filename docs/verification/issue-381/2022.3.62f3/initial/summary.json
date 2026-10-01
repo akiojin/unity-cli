@@ -1,0 +1,175 @@
+{
+  "result": "PASS",
+  "project": "/tmp/issue381/2022.3.62f3/Project",
+  "port": 6507,
+  "versions": {
+    "unity": "2022.3.62f3",
+    "cli": "0.16.0",
+    "bridge": "0.16.0",
+    "com.unity.localization": "1.5.13",
+    "com.unity.addressables": "1.25.0",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "packageMetadata": {
+    "source": "UnityEditor.PackageManager.Client.Search via eval",
+    "latestCompatible": "1.5.13",
+    "recommended": "1.5.13",
+    "compatible": [
+      "1.5.2",
+      "1.5.3",
+      "1.5.4",
+      "1.5.5",
+      "1.5.7",
+      "1.5.8",
+      "1.5.9",
+      "1.5.10",
+      "1.5.11",
+      "1.5.12",
+      "1.5.13"
+    ],
+    "note": "1.4.4 is published but not in this Editor compatible list, so 1.5.13 was installed"
+  },
+  "initialization": {
+    "isDone": true,
+    "status": "Succeeded",
+    "startupSelectedLocale": "en",
+    "availableLocales": [
+      "en",
+      "ja"
+    ]
+  },
+  "steps": [
+    {
+      "step": "02_play_en_state",
+      "locale": "en",
+      "expected": "Hello, world!",
+      "actual": "Hello, world!",
+      "match": true,
+      "polls": 1
+    },
+    {
+      "step": "03_play_ja_state",
+      "locale": "ja",
+      "expected": "こんにちは、世界！",
+      "actual": "こんにちは、世界！",
+      "match": true,
+      "polls": 1
+    },
+    {
+      "step": "04_play_en_again_state",
+      "locale": "en",
+      "expected": "Hello, world!",
+      "actual": "Hello, world!",
+      "match": true,
+      "polls": 1
+    }
+  ],
+  "screenshots": {
+    "method": "UnityEngine.ScreenCapture.CaptureScreenshot with Game view active (1280x720)",
+    "en": {
+      "path": "/tmp/issue381/2022.3.62f3/evidence/02_play_en_game.png",
+      "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+      "size": "1280x720"
+    },
+    "ja": {
+      "path": "/tmp/issue381/2022.3.62f3/evidence/03_play_ja_game.png",
+      "sha256": "c4811c333a12f8f1b81f9687017f64d2d032bd3f477c43966ac1aa5ae49f551e",
+      "size": "1280x720"
+    },
+    "enAgain": {
+      "path": "/tmp/issue381/2022.3.62f3/evidence/04_play_en_again_game.png",
+      "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+      "size": "1280x720",
+      "identicalToFirstEn": true
+    },
+    "captureScreenshotToolGap": {
+      "issue": "#422",
+      "observation": "capture_screenshot captureMode=game returned camera background only; ScreenSpaceOverlay canvas omitted; en and ja outputs byte-identical",
+      "files": [
+        "/tmp/issue381/2022.3.62f3/evidence/capture_screenshot_en_tool.png",
+        "/tmp/issue381/2022.3.62f3/evidence/capture_screenshot_ja_tool.png"
+      ],
+      "sha256": "b2d6bec479dee998a313e3ffd1c2222415da2f58f4869b948a211124687ba996"
+    }
+  },
+  "console": {
+    "duringPlay": {
+      "errors": 0,
+      "exceptions": 0,
+      "warnings": [
+        "Ignoring depth surface store action as it is memoryless\n",
+        "Ignoring depth surface load action as it is memoryless\n"
+      ]
+    },
+    "afterStop": {
+      "errors": 0,
+      "exceptions": 0
+    }
+  },
+  "persistence": {
+    "prePlay": {
+      "isPlaying": false,
+      "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+      "sceneDirty": false,
+      "canvasRenderMode": "ScreenSpaceOverlay",
+      "labelPath": "/LocalizationCanvas/Greeting",
+      "labelComponent": "UnityEngine.UI.Text",
+      "labelSerializedText": "[unlocalized placeholder]",
+      "fontAsset": "Assets/Scenes/Generated/E2E/Localization/Fonts/ArialUnicode.ttf",
+      "fontSize": 84,
+      "stringReference": {
+        "tableReference": "TableReference(9ede7073-fd0a-d4de-49b8-b572bcc11acb - DemoStrings)",
+        "tableCollectionName": "DemoStrings",
+        "entryReference": "TableEntryReference(951050240)",
+        "keyId": 951050240,
+        "resolvedKey": "greeting"
+      },
+      "persistentListeners": [
+        {
+          "index": 0,
+          "targetType": "UnityEngine.UI.Text",
+          "targetObject": "Greeting",
+          "targetIsLabelText": true,
+          "method": "set_text",
+          "callState": "EditorAndRuntime"
+        }
+      ],
+      "localizationSettings": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+      "addressablesSettings": "Assets/Scenes/Generated/E2E/Localization/AddressableAssetsData/AddressableAssetSettings.asset",
+      "locales": [
+        {
+          "code": "en",
+          "name": "English",
+          "path": "Assets/Scenes/Generated/E2E/Localization/Locales/English.asset"
+        },
+        {
+          "code": "ja",
+          "name": "Japanese",
+          "path": "Assets/Scenes/Generated/E2E/Localization/Locales/Japanese.asset"
+        }
+      ],
+      "collection": {
+        "name": "DemoStrings",
+        "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings.asset",
+        "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings Shared Data.asset",
+        "greetingKeyId": 951050240,
+        "tables": [
+          {
+            "locale": "en",
+            "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_en.asset",
+            "greeting": "Hello, world!",
+            "entryKeyId": 951050240
+          },
+          {
+            "locale": "ja",
+            "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_ja.asset",
+            "greeting": "こんにちは、世界！",
+            "entryKeyId": 951050240
+          }
+        ]
+      }
+    },
+    "postPlayIdenticalToPrePlay": true
+  }
+}

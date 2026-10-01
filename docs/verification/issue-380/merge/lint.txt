@@ -1,0 +1,5 @@
+   Compiling unity-cli v0.16.0 (/Users/akiojin/Workbench/unity-cli/work/issue-380)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.26s
+     Running `target/debug/unity-cli skills lint --severity error`
+
+23 skills checked, 0 violations

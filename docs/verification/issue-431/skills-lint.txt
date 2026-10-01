@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+     Running `target/debug/unity-cli skills lint --severity error`
+
+20 skills checked, 0 violations

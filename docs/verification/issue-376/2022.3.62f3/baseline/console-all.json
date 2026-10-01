@@ -1,0 +1,64 @@
+{
+  "count": 10,
+  "logs": [
+    {
+      "formattedCompact": "[Error] GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.\n",
+      "logType": "Error",
+      "message": "GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.\n"
+    },
+    {
+      "formattedCompact": "[Warning] Unity CLI batch host keep-alive started. Shutdown file: /private/tmp/issue376-evidence/2022.3.62f3-final/stop\nUnityEngine.Debug:Log (object)\nUnityCliBridge.TestScenes.UnityCliInputBatchHost:Run () (at Assets/Editor/UnityCliInputBatchHost.cs:31)\n",
+      "logType": "Warning",
+      "message": "Unity CLI batch host keep-alive started. Shutdown file: /private/tmp/issue376-evidence/2022.3.62f3-final/stop\nUnityEngine.Debug:Log (object)\nUnityCliBridge.TestScenes.UnityCliInputBatchHost:Run () (at Assets/Editor/UnityCliInputBatchHost.cs:31)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:59864\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Client connected from 127.0.0.1:59864\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Status changed to: Connected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Status changed to: Connected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] TCP listener binding on 127.0.0.1:6549 (host=localhost)\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] TCP listener binding on 127.0.0.1:6549 (host=localhost)\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6549\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6549\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Initializing...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Initializing...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:119)\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 1,
+    "exceptions": 2,
+    "logs": 0,
+    "warnings": 7
+  },
+  "success": true,
+  "totalCaptured": 10
+}

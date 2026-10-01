@@ -1,0 +1,7 @@
+{
+  "action": "focus",
+  "message": "Focused window: GameView",
+  "previousFocus": null,
+  "success": true,
+  "windowType": "GameView"
+}

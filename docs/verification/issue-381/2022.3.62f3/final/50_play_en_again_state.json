@@ -1,0 +1,33 @@
+{
+  "step": "50_play_en_again_state",
+  "locale": "en",
+  "expected": "Hello, world!",
+  "actual": "Hello, world!",
+  "match": true,
+  "polls": 1,
+  "selectResult": {
+    "state": "completed",
+    "exception": null,
+    "value": "selected=en"
+  },
+  "uiElementState": {
+    "color": "#FFFFFFFF",
+    "components": [
+      "RectTransform",
+      "CanvasRenderer",
+      "Text",
+      "LocalizeStringEvent"
+    ],
+    "font": "ArialUnicode",
+    "fontSize": 84,
+    "isActive": true,
+    "isInteractable": true,
+    "layer": "Default",
+    "name": "Greeting",
+    "path": "/LocalizationCanvas/Greeting",
+    "raycastTarget": false,
+    "tag": "Untagged",
+    "text": "Hello, world!"
+  },
+  "observedAt": "2026-10-01T09:27:47Z"
+}

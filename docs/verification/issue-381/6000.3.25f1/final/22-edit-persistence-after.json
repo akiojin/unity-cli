@@ -1,0 +1,51 @@
+{
+  "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+  "sceneDirty": false,
+  "labelPath": "/LocalizationCanvas/Greeting",
+  "font": "Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf",
+  "fontSize": 84,
+  "tableReference": "TableReference(5e97c0ff-0d89-5426-abb0-0eac0dde9f60 - DemoStrings)",
+  "tableEntryReference": "TableEntryReference(707780608)",
+  "resolvedCollection": "DemoStrings",
+  "resolvedCollectionPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset",
+  "resolvedKey": "greeting",
+  "sharedKeyId": 707780608,
+  "persistentListeners": [
+    {
+      "index": 0,
+      "targetType": "UnityEngine.UI.Text",
+      "targetObjectPath": "/LocalizationCanvas/Greeting",
+      "targetIsLabelText": true,
+      "method": "set_text",
+      "callState": "EditorAndRuntime"
+    }
+  ],
+  "activeSettingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+  "locales": [
+    {
+      "code": "en",
+      "name": "English (en)",
+      "path": "Assets/Scenes/Generated/E2E/Localization/English (en).asset"
+    },
+    {
+      "code": "ja",
+      "name": "Japanese (ja)",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Japanese (ja).asset"
+    }
+  ],
+  "tables": [
+    {
+      "locale": "en",
+      "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset",
+      "keyId": 707780608,
+      "greeting": "Hello, world!"
+    },
+    {
+      "locale": "ja",
+      "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset",
+      "keyId": 707780608,
+      "greeting": "こんにちは、世界！"
+    }
+  ],
+  "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset"
+}

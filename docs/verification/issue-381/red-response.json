@@ -1,0 +1,10 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "session_id": "607ad348-a517-4249-929d-6e9a87116bf1",
+  "result": "You've hit your session limit · resets 6pm (Asia/Tokyo)",
+  "is_error": true,
+  "api_error_status": 429,
+  "duration_ms": 596,
+  "models": []
+}

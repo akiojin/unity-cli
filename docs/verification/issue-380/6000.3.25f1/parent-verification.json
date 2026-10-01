@@ -1,0 +1,170 @@
+{
+  "status": "PASS",
+  "version": "6000.3.25f1",
+  "before_reload": {
+    "active": true,
+    "clip": "Assets/Audio/tone.wav",
+    "enabled": true,
+    "group": "Music",
+    "instance": 29688,
+    "isPlaying": false,
+    "listeners": 1,
+    "loop": true,
+    "mixer": "Assets/Audio/Final2.mixer",
+    "mute": false,
+    "playOnAwake": false,
+    "samples": 1323000,
+    "scene": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+    "spatialBlend": 0.0,
+    "time": 0.0,
+    "timeSamples": 0,
+    "volume": 0.25
+  },
+  "after_reload": {
+    "active": true,
+    "clip": "Assets/Audio/tone.wav",
+    "enabled": true,
+    "group": "Music",
+    "instance": 29748,
+    "isPlaying": false,
+    "listeners": 1,
+    "loop": true,
+    "mixer": "Assets/Audio/Final2.mixer",
+    "mute": false,
+    "playOnAwake": false,
+    "samples": 1323000,
+    "scene": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+    "spatialBlend": 0.0,
+    "time": 0.0,
+    "timeSamples": 0,
+    "volume": 0.25
+  },
+  "importer": {
+    "action": "get",
+    "assetPath": "Assets/Audio/tone.wav",
+    "settings": {
+      "ambisonic": false,
+      "assetType": "Audio",
+      "compressionFormat": "PCM",
+      "forceToMono": false,
+      "loadInBackground": false,
+      "loadType": "DecompressOnLoad",
+      "quality": 1.0,
+      "sampleRateOverride": 44100,
+      "sampleRateSetting": "PreserveSampleRate"
+    },
+    "success": true
+  },
+  "mixer": {
+    "action": "get",
+    "assetPath": "Assets/Audio/Final2.mixer",
+    "exposedParameters": [
+      {
+        "groupPath": "Master/Music",
+        "guid": "854490bdde0954bd8bb7cba419920fbb",
+        "name": "MusicVolume",
+        "parameter": "Volume"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Master",
+        "parentPath": null,
+        "path": "Master"
+      },
+      {
+        "name": "Music",
+        "parentPath": "Master",
+        "path": "Master/Music"
+      }
+    ],
+    "success": true
+  },
+  "background_before": {
+    "app": false,
+    "player": false
+  },
+  "background_restored": {
+    "app": false,
+    "player": false
+  },
+  "playback": [
+    {
+      "active": true,
+      "clip": "Assets/Audio/tone.wav",
+      "enabled": true,
+      "group": "Music",
+      "instance": 29748,
+      "isPlaying": true,
+      "listeners": 1,
+      "loop": true,
+      "mixer": "Assets/Audio/Final2.mixer",
+      "mute": false,
+      "playOnAwake": false,
+      "samples": 1323000,
+      "scene": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "spatialBlend": 0.0,
+      "time": 0.191995472,
+      "timeSamples": 8467,
+      "volume": 0.25
+    },
+    {
+      "active": true,
+      "clip": "Assets/Audio/tone.wav",
+      "enabled": true,
+      "group": "Music",
+      "instance": 29748,
+      "isPlaying": true,
+      "listeners": 1,
+      "loop": true,
+      "mixer": "Assets/Audio/Final2.mixer",
+      "mute": false,
+      "playOnAwake": false,
+      "samples": 1323000,
+      "scene": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "spatialBlend": 0.0,
+      "time": 1.13065755,
+      "timeSamples": 49862,
+      "volume": 0.25
+    }
+  ],
+  "after_stop": {
+    "active": true,
+    "clip": "Assets/Audio/tone.wav",
+    "enabled": true,
+    "group": "Music",
+    "instance": 29748,
+    "isPlaying": false,
+    "listeners": 1,
+    "loop": true,
+    "mixer": "Assets/Audio/Final2.mixer",
+    "mute": false,
+    "playOnAwake": false,
+    "samples": 1323000,
+    "scene": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+    "spatialBlend": 0.0,
+    "time": 0.0,
+    "timeSamples": 0,
+    "volume": 0.25
+  },
+  "console": {
+    "count": 0,
+    "logs": [],
+    "statistics": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 21,
+      "warnings": 0
+    },
+    "success": true,
+    "totalCaptured": 21
+  },
+  "asset_sha256": {
+    "Assets/Scenes/Generated/E2E/Audio380Final2.unity": "2fc14bf1713af59733356c30b53ad04a2143de785a0d5ddbf258009484490994",
+    "Assets/Scenes/Generated/E2E/Audio380Final2.unity.meta": "38a50df10519cf6a64beda4e24e4b057b7f186057db961698678f8a1b8175cb6",
+    "Assets/Audio/Final2.mixer": "4d3db14f398c1ba72798bcb5aeb8e3d8191bf89b16be46aeedf77aad65c62530",
+    "Assets/Audio/Final2.mixer.meta": "16ee54fd0f6a72f9a2ec4a680d77ddb49e2d245408ae4179c4cc47401aa0d510",
+    "Assets/Audio/tone.wav.meta": "c396ee16002b523fda0c6f74671719aa540ace8d0a24ddcfa8d6879bf2493fda"
+  }
+}

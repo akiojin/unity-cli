@@ -102,6 +102,9 @@ pub enum Command {
         /// Seconds to wait for the Editor bridge (default: 0, or 900 with --launch-editor).
         #[arg(long, value_name = "SECS")]
         wait_secs: Option<u64>,
+        /// Print the setup report (or dry-run steps) as JSON; same as --output json.
+        #[arg(long)]
+        json: bool,
     },
     /// Manage the com.akiojin.unity-cli-bridge package in a Unity project.
     Bridge {
@@ -310,6 +313,29 @@ pub enum SkillFormat {
 
 #[derive(Debug, Subcommand)]
 pub enum SkillsCommand {
+    /// Install bundled skills for an AI client (global by default).
+    Install {
+        #[arg(value_enum)]
+        client: crate::skills::distribution::SkillClient,
+        /// Install in the current directory instead of the user's home.
+        #[arg(long)]
+        local: bool,
+        /// Replace conflicting files; symlinks are always refused.
+        #[arg(long)]
+        force: bool,
+    },
+    /// Sync installed skills to this binary's bundled version.
+    Refresh {
+        /// Omit to refresh all installed clients in the selected scope.
+        #[arg(value_enum)]
+        client: Option<crate::skills::distribution::SkillClient>,
+        #[arg(long)]
+        local: bool,
+        #[arg(long)]
+        force: bool,
+    },
+    /// List embedded skills, or print one skill's SKILL.md.
+    Show { name: Option<String> },
     /// Validate Claude Code / Codex skill directories against Skill Contract v1.
     Lint {
         /// Skills root (default: auto-detect `.claude-plugin/plugins/unity-cli/skills`).

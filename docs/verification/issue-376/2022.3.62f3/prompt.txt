@@ -1,0 +1,14 @@
+Use /unity-package-management via the Skill tool for this real acceptance scenario. The project /private/tmp/issue376-unity-2022.3.62f3-final is an isolated test fixture, running native macOS Apple Silicon Unity 2022.3.62f3 at port 6549. Use the CLI /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli, explicitly passing --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 on EVERY call. The bridge is already installed as a local package from the checkout. Do not run setup, recreate the project, change other Editors, edit code/skills or hand-edit Packages files. Do not launch subagents. The Editor runs in the documented isolated batch-host mode; no human visual confirmation is part of this test. All shell commands use bash -lc and this project as their explicit working directory.
+
+Perform the following authorized scenario through the skill and existing tools:
+- Preserve baseline manifest, packages-lock, editor state and console in /private/tmp/issue376-evidence/2022.3.62f3-final.
+- Add an OpenUPM scoped registry for com.cysharp only, with no auto popular scopes. Verify the actual registry config.
+- Search for UniTask using package_manager; report results honestly, a registry search may be limited.
+- Install com.cysharp.unitask 2.5.4. Confirm the resolved version, wait for import/reload/compilation and capture console/errors before proceeding.
+- Update that package to 2.5.5 and repeat completion/version/console checks.
+- Remove com.cysharp.unitask and verify absence as direct dependency and from the resolved package list; repeat idle/console checks.
+- Leave the newly added registry as the requested final configuration. Do not remove it or change any other packages.
+
+After EACH baseline/registry/install/update/remove phase save a copy of Packages/manifest.json and Packages/packages-lock.json, plus the exact CLI JSON responses, final idle editor state, and console JSON into a phase subfolder of /private/tmp/issue376-evidence/2022.3.62f3-final. Preserve command invocations in commands.txt. Compute manifest diffs baseline->registry->install->update->remove. Do not clear console. Use bounded read-only polling during reload; never resend an ambiguous mutation before checking actual state. Stop on any real failure and retain evidence. No unavailable operation may be replaced by manual manifest edits.
+
+This request authorizes all listed changes to this dedicated fixture and evidence writes. No human confirmation is expected. Report a result.json with actual Editor/project/port, each observed package version, any console/compiler errors, successes and failures. Do not stop or close this Editor; the test harness will independently verify and close it. Do not claim success for unrun steps.

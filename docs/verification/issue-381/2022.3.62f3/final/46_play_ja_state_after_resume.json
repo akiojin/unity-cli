@@ -1,0 +1,30 @@
+{
+  "step": "46_play_ja_state_after_resume",
+  "locale": "ja",
+  "note": "poll only; SelectedLocale was already set to ja in step 40 and was not re-set; Editor re-activated so the Play loop resumes",
+  "expected": "こんにちは、世界！",
+  "actual": "こんにちは、世界！",
+  "match": true,
+  "polls": 2,
+  "uiElementState": {
+    "color": "#FFFFFFFF",
+    "components": [
+      "RectTransform",
+      "CanvasRenderer",
+      "Text",
+      "LocalizeStringEvent"
+    ],
+    "font": "ArialUnicode",
+    "fontSize": 84,
+    "isActive": true,
+    "isInteractable": true,
+    "layer": "Default",
+    "name": "Greeting",
+    "path": "/LocalizationCanvas/Greeting",
+    "raycastTarget": false,
+    "tag": "Untagged",
+    "text": "こんにちは、世界！"
+  },
+  "diag": "selected=ja;labelText=こんにちは、世界！;lseEnabled=True;goActive=True;loadingOpValid=True;loadingOpDone=True;loadingOpStatus=Succeeded;loadingOpException=null;initDone=True;initStatus=Succeeded;frame=12344;timeScale=1;paused=False;appActive=True;runInBackground=False",
+  "observedAt": "2026-10-01T09:27:18Z"
+}

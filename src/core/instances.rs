@@ -423,6 +423,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_file =
             temp_registry_path("instances-registry-path").with_file_name("nested/instances.json");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_file);
@@ -445,6 +446,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-load");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -468,6 +470,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-up");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -494,6 +497,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-zombie");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -529,6 +533,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-default");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -550,6 +555,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-down");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -579,6 +585,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry_path = temp_registry_path("instances-active");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", &registry_path);
         isolate_editors_dir();
@@ -627,6 +634,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let dir = tempfile::tempdir().expect("tempdir");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
         std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));
@@ -672,6 +680,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let dir = tempfile::tempdir().expect("tempdir");
         std::env::set_var("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"));
         std::env::set_var("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"));

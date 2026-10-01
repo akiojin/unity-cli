@@ -1,0 +1,60 @@
+{
+  "editor": "6000.3.25f1",
+  "platform": "macOS arm64",
+  "source_streams": {
+    "construction": {
+      "sha256": "d7dc38602b545972138627c537c6d86f25fc8e68a1ab1cb85024d8a551b17d76",
+      "local_path": "/tmp/issue377-evidence/6000.3.25f1/claude-session.jsonl"
+    },
+    "verification": {
+      "sha256": "178a0abd934b9e8c287932a8ab9a30ab15e02774d84591ba97011d6106b6fb74",
+      "local_path": "/tmp/issue377-evidence/6000.3.25f1/claude-accepted.jsonl"
+    }
+  },
+  "files": {
+    "Screen.uss": {
+      "sha256": "95ae16abe41aafb09cba9696bfc7bc5318093ff1baf2415863e4909bd3113f48",
+      "bytes": 389
+    },
+    "Screen.uxml": {
+      "sha256": "b336d4a7d4f4c914e53861c07bc6ca0827ed347dd7241494c069eb622dea3fa8",
+      "bytes": 315
+    },
+    "Theme.tss": {
+      "sha256": "682e2b1c6cc1d6e332c15f56c840f7d8282cb1e5bc627eb6664580352a752fda",
+      "bytes": 38
+    },
+    "ToolkitDemoBinding.cs": {
+      "sha256": "d00560919813a0f43399a4e70cfadc0e18b0f3480062cb3addec9a43d4528f8d",
+      "bytes": 887
+    },
+    "accepted-ui.log": {
+      "sha256": "dda61403e02e51ff2e787a096a8cda9839704ee1e5aa78b0c04d573effc3d45e",
+      "bytes": 24239
+    },
+    "construction.json": {
+      "sha256": "6c311116d74484acc388a63f0a3f9f67bc472219d32fc25430a17815dcaaadea",
+      "bytes": 154376
+    },
+    "contrast-corrected.json": {
+      "sha256": "49597508f978fc11cc0afde672775e1208f4b897a1764d8322dfa26eb0eb6894",
+      "bytes": 1088
+    },
+    "game-after-accepted.png": {
+      "sha256": "1d4ccd383768fca4f9104af24fd3c2d56fba8b07d408e7ad6b0fe0992bd5cf9b",
+      "bytes": 36835
+    },
+    "game-before-accepted.png": {
+      "sha256": "9220cd87f191abcb8f3d43d13e882612c3132e7611545b66558e6e8adbe992dd",
+      "bytes": 33471
+    },
+    "independent-state.json": {
+      "sha256": "8cde782c0fd3f2a6a58a3f277dbce5c6b562e7dfec05e0f3bb8e4c13978d36ca",
+      "bytes": 1254
+    },
+    "verification.json": {
+      "sha256": "2b33795a0c3621edc355edc1dc7874cf726f957e1abbe8a808adb2880d71080f",
+      "bytes": 63829
+    }
+  }
+}

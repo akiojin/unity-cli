@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 35,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-17177-18da5c7c15338ae8-0",
+  "state": "completed",
+  "value": "createdSettings;createdLocale:en;createdLocale:ja; settingsPath=Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset locales=2"
+}

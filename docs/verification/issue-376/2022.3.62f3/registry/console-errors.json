@@ -1,0 +1,29 @@
+{
+  "count": 3,
+  "logs": [
+    {
+      "formattedCompact": "[Error] GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.\n",
+      "logType": "Error",
+      "message": "GfxDevice renderer is null. Unity cannot update the Ambient Probe and Reflection Probes that the SkyManager generates. Run the Editor without the -nographics argument or generate lighting for your scene.\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 1,
+    "exceptions": 2,
+    "logs": 0,
+    "warnings": 7
+  },
+  "success": true,
+  "totalCaptured": 10
+}

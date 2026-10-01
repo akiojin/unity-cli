@@ -1,0 +1,417 @@
+{
+  "run": "INTEGRATION verification (bridge refreshed from develop ff3e2f3 / PR #429) — distinct from the prior fallback verification in final-evidence/report.json, which is left untouched",
+  "kind": "agent verification (not human confirmation)",
+  "result": "PASS for localization behaviour; primary capture PASS only with the Editor OS-frontmost, FAIL (retained) with the Editor in the background",
+  "startedAt": "2026-10-01T09:21:07Z",
+  "playEnteredAt": "2026-10-01T09:23:58Z",
+  "phase2StartedAt": "2026-10-01T09:29:59Z",
+  "phase2PlayEnteredAt": "2026-10-01T09:30:00Z",
+  "completedAt": "2026-10-01T09:32:32Z",
+  "project": "/tmp/issue381/2022.3.62f3/Project",
+  "port": 6507,
+  "everyCliCallPinned": {
+    "pinnedCalls": 196,
+    "totalCalls": 196,
+    "transcript": "/tmp/issue381/2022.3.62f3/integration-evidence/transcript.log"
+  },
+  "reportLocationNote": "Written to integration-evidence/report.json instead of final-evidence/report.json: the request both names final-evidence/report.json and forbids overwriting earlier evidence, and that file already holds the prior fallback run.",
+  "skill": {
+    "directory": "/Users/akiojin/Workbench/unity-cli/work/issue-381/.claude-plugin/plugins/unity-cli/skills/unity-localization",
+    "sha256AtStart": {
+      "SKILL.md": "9dd254e13309eff2dffeda1b736eada374ec0b50d429c2c1c494b43d8dfae489",
+      "references/localization-workflow.md": "f9da5cad6bb5968c6c82bb0b3510064b7e8b45efa21f95e0c034e1a4d7761964",
+      "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6"
+    },
+    "sha256AtEnd": {
+      "SKILL.md": "9dd254e13309eff2dffeda1b736eada374ec0b50d429c2c1c494b43d8dfae489",
+      "references/localization-workflow.md": "feb2d3d93fc4d42f0639299802ec94964edc21cee337a232d2e1b139b69e9c92",
+      "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6"
+    },
+    "changedDuringRun": true,
+    "change": "references/localization-workflow.md was modified by another party at 2026-10-01T09:26:42Z (file mtime), mid-run; not by this agent. Phase 1 was read from the start hash (identical to the prior final-evidence hash); phase 2 was run after re-reading the new text (snapshot: p2_00_localization-workflow.md.snapshot). SKILL.md and runtime-checklist.md unchanged.",
+    "newTextSummary": "On GAME_VIEW_NOT_FOCUSED focus the Game view through unity-editor-tools and retry; if the Editor cannot take foreground focus or the capture omits overlay UI, retain the failure (#422) and use the ScreenCapture fallback."
+  },
+  "bridge": {
+    "package": "com.akiojin.unity-cli-bridge 0.16.0 (Embedded)",
+    "csManifest": "/tmp/issue381/2022.3.62f3/integration-evidence/80_bridge_cs_sha256_end.txt",
+    "csFileCount": 79,
+    "csManifestDigestSha256": "e13efbaae317a064bea94d14362fdcb4b68f419082395831e811d7d254f274d6",
+    "matchesCheckout": "identical to UnityCliBridge/Packages/unity-cli-bridge Editor+Runtime .cs at /Users/akiojin/Workbench/unity-cli/work/issue-381 HEAD ff3e2f3095cfe5304368d619e2bbd27dde8fc8b0 (08_bridge_cs_sha256_checkout_ff3e2f3.txt)",
+    "csUnchangedDuringRun": true,
+    "keyFiles": {
+      "Editor/Handlers/ScreenshotHandler.cs": "8a863341f242d10f7c650a3d5cb45ee71f4ed8b95bb89cefd79d6dde0d2920ae",
+      "Editor/Core/BridgeCommandRouter.cs": "1a362f4a54f29c384a85cdcf7b32762f16060e7739c9673d8671389b6f437c4e"
+    },
+    "loadedAssembly": "Sources were refreshed on disk at 18:20:09 JST but the Editor still ran UnityCliBridge.Editor.dll built 18:05:56 and did not recompile during a 45 s wait (unfocused Editor). This agent issued refresh_assets at 09:22:53Z; the DLL was rebuilt at 18:23:00 JST, compilation errorCount 0, ping OK (05_ping_after_reload.json).",
+    "metaSideEffect": "During that refresh Unity rewrote 43 guid-only .cs.meta files in the embedded bridge into full MonoImporter metas (same GUIDs). No .cs changed. List: p2_81_project_files_modified_during_run.txt"
+  },
+  "versions": {
+    "unity": "2022.3.62f3",
+    "cli": "0.16.0",
+    "bridge": "0.16.0 (Embedded)",
+    "raw": "unity=2022.3.62f3;isPlaying=False;isCompiling=False;isUpdating=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity;dirty=False;sceneCount=1;com.unity.localization=1.5.13(Registry);com.unity.addressables=1.25.0(Registry);com.unity.ugui=1.0.0(BuiltIn);com.akiojin.unity-cli-bridge=0.16.0(Embedded);com.unity.nuget.newtonsoft-json=3.2.1(Registry);com.unity.scriptablebuildpipeline=1.22.4(Registry)"
+  },
+  "assetsReusedNotRecreated": true,
+  "labelTextWrittenDirectly": false,
+  "editModePersistence": {
+    "prePlay": {
+      "isPlaying": false,
+      "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+      "sceneDirty": false,
+      "canvasRenderMode": "ScreenSpaceOverlay",
+      "labelPath": "/LocalizationCanvas/Greeting",
+      "labelComponent": "UnityEngine.UI.Text",
+      "labelSerializedText": "[unlocalized placeholder]",
+      "fontAsset": "Assets/Scenes/Generated/E2E/Localization/Fonts/ArialUnicode.ttf",
+      "fontSize": 84,
+      "localizeStringEventCount": 1,
+      "localizeStringEventEnabled": true,
+      "stringReference": {
+        "tableReference": "TableReference(9ede7073-fd0a-d4de-49b8-b572bcc11acb - DemoStrings)",
+        "tableCollectionName": "DemoStrings",
+        "entryReference": "TableEntryReference(951050240)",
+        "keyId": 951050240,
+        "resolvedKey": "greeting"
+      },
+      "persistentListenerCount": 1,
+      "persistentListeners": [
+        {
+          "index": 0,
+          "targetType": "UnityEngine.UI.Text",
+          "targetObject": "Greeting",
+          "targetIsLabelText": true,
+          "method": "set_text",
+          "callState": "EditorAndRuntime"
+        }
+      ],
+      "localizationSettings": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+      "addressablesSettings": "Assets/Scenes/Generated/E2E/Localization/AddressableAssetsData/AddressableAssetSettings.asset",
+      "locales": [
+        {
+          "code": "en",
+          "name": "English",
+          "path": "Assets/Scenes/Generated/E2E/Localization/Locales/English.asset"
+        },
+        {
+          "code": "ja",
+          "name": "Japanese",
+          "path": "Assets/Scenes/Generated/E2E/Localization/Locales/Japanese.asset"
+        }
+      ],
+      "collection": {
+        "name": "DemoStrings",
+        "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings.asset",
+        "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings Shared Data.asset",
+        "greetingKeyId": 951050240,
+        "tables": [
+          {
+            "locale": "en",
+            "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_en.asset",
+            "entryCount": 1,
+            "greeting": "Hello, world!",
+            "entryKeyId": 951050240
+          },
+          {
+            "locale": "ja",
+            "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_ja.asset",
+            "entryCount": 1,
+            "greeting": "こんにちは、世界！",
+            "entryKeyId": 951050240
+          }
+        ]
+      }
+    },
+    "postPlayPhase1IdenticalToPrePlay": true,
+    "postPlayPhase2IdenticalToPrePlay": true,
+    "identicalToPriorRunReadback": true,
+    "sceneReloadedFromDiskBeforeEachRead": true,
+    "assetFileSha256": [
+      "57475d9d70a8d2190f5c28c812d9d79e87a142bdfd2f90c73f81c9fb8859829e  Assets/Scenes/Generated/E2E/Localization/Locales/English.asset",
+      "c886efdc8dc07f8e298c1043b0ddf7f299682d1c0111af935829ba904b348b51  Assets/Scenes/Generated/E2E/Localization/Locales/Japanese.asset",
+      "2e270203985d2a0a3a57a884981dc57913dc0db309d3d96cdad8e1a251ffba8b  Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+      "b7ca5f2a489e83907cfba97e9c4d0fdd667bb522f1a22ba374c2ad4d2dabb7ca  Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+      "d8f2e1591081574c4ec0adae5a2db42dc6f26fc046be8a4134e5195f780b85e0  Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings Shared Data.asset",
+      "a421c6729a7fbebdae11a060a3c7512b1690b9840dc1d1b697bcf010c5d69d40  Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings.asset",
+      "d029ab3ee0ebc797e7e24cf347d7ec2afc1e1a4866a55f61ec3f2810fcc36e37  Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_en.asset",
+      "f898b2da58f37e93f74e9a2b999d5759248e46a4bb23a6c843936299db74857c  Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_ja.asset"
+    ],
+    "assetFilesByteIdenticalAfter": true
+  },
+  "phase1": {
+    "skillHash": "f9da5cad… (start-of-run text)",
+    "initialization": "isPlaying=True;frame=6;isDone=True;status=Succeeded;opException=null;available=en,ja,;selected=en;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+    "steps": [
+      {
+        "step": "20_play_en_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:24:03Z"
+      },
+      {
+        "step": "40_play_ja_state",
+        "locale": "ja",
+        "expected": "こんにちは、世界！",
+        "actual": "Hello, world!",
+        "match": false,
+        "polls": 20,
+        "observedAt": "2026-10-01T09:26:27Z",
+        "note": "FAILED while the Play loop was frozen (frame stuck at 10726) after this agent sent the Editor back to the background; see anomalies"
+      },
+      {
+        "step": "46_play_ja_state_after_resume",
+        "locale": "ja",
+        "expected": "こんにちは、世界！",
+        "actual": "こんにちは、世界！",
+        "match": true,
+        "polls": 2,
+        "observedAt": "2026-10-01T09:27:18Z",
+        "note": "poll only; SelectedLocale was already set to ja in step 40 and was not re-set; Editor re-activated so the Play loop resumes"
+      },
+      {
+        "step": "50_play_en_again_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:27:47Z"
+      }
+    ]
+  },
+  "phase2": {
+    "skillHash": "feb2d3d9… (text as modified mid-run)",
+    "steps": [
+      {
+        "step": "p2_20_play_en_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "[unlocalized placeholder]",
+        "match": false,
+        "polls": 20,
+        "observedAt": "2026-10-01T09:31:06Z",
+        "note": "FAILED: Play loop frozen at frame 2 with the Editor in the background (initialization not done); see anomalies"
+      },
+      {
+        "step": "p2_27_play_en_state_after_resume",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:41Z",
+        "note": "poll only; SelectedLocale=en was set in p2_20 while the Play loop was stalled in the background; Editor re-activated so frames resume"
+      },
+      {
+        "step": "p2_30_play_ja_state",
+        "locale": "ja",
+        "expected": "こんにちは、世界！",
+        "actual": "こんにちは、世界！",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:52Z"
+      },
+      {
+        "step": "p2_40_play_en_again_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:54Z"
+      }
+    ],
+    "initializationAfterResume": "isPlaying=True;frame=2;isDone=True;status=Succeeded;opException=null;available=en,ja,;selected=en;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity"
+  },
+  "labelSource": "get_ui_element_state /LocalizationCanvas/Greeting .text (UnityEngine.UI.Text, ScreenSpaceOverlay canvas)",
+  "primaryCapture": {
+    "call": "capture_screenshot {captureMode:game,width:1280,height:720,osFallback:false}",
+    "editorFrontmost": {
+      "verdict": "PASS — returned PNGs include the Screen Space Overlay label; visually inspected",
+      "message": "Composited Game View screenshot captured successfully",
+      "en": {
+        "path": "/tmp/issue381/2022.3.62f3/integration-evidence/31_play_en_capture_screenshot_primary_frontmost_attempt2.png",
+        "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+        "bytes": 23161,
+        "resolution": "1280x720",
+        "visualInspection": "Hello, world! white, centered, legible"
+      },
+      "ja": {
+        "path": "/tmp/issue381/2022.3.62f3/integration-evidence/47_play_ja_capture_screenshot_primary_frontmost.png",
+        "sha256": "c4811c333a12f8f1b81f9687017f64d2d032bd3f477c43966ac1aa5ae49f551e",
+        "bytes": 29260,
+        "resolution": "1280x720",
+        "visualInspection": "こんにちは、世界！ all Japanese glyphs rendered, no replacement boxes, centered, legible"
+      },
+      "enAgain": {
+        "path": "/tmp/issue381/2022.3.62f3/integration-evidence/51_play_en_again_capture_screenshot_primary_frontmost.png",
+        "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+        "bytes": 23161,
+        "resolution": "1280x720"
+      },
+      "phase2": {
+        "en": {
+          "path": "/tmp/issue381/2022.3.62f3/integration-evidence/p2_28_play_en_capture_screenshot_primary_frontmost.png",
+          "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+          "bytes": 23161,
+          "resolution": "1280x720"
+        },
+        "ja": {
+          "path": "/tmp/issue381/2022.3.62f3/integration-evidence/p2_31_play_ja_capture_screenshot_primary_frontmost.png",
+          "sha256": "c4811c333a12f8f1b81f9687017f64d2d032bd3f477c43966ac1aa5ae49f551e",
+          "bytes": 29260,
+          "resolution": "1280x720"
+        },
+        "enAgain": {
+          "path": "/tmp/issue381/2022.3.62f3/integration-evidence/p2_41_play_en_again_capture_screenshot_primary_frontmost.png",
+          "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+          "bytes": 23161,
+          "resolution": "1280x720"
+        }
+      },
+      "identicalResolution": "1280x720 for every capture",
+      "enAndJaDiffer": true,
+      "byteIdenticalToPriorFallbackImages": "en == final-evidence/12_play_en_game.png (17eed410…), ja == final-evidence/22_play_ja_game.png (c4811c33…)",
+      "priorRunToolOutputForComparison": "final-evidence 11/21_*_capture_screenshot_tool.png (b2d6bec4…) were background-only and identical for en and ja",
+      "howFrontmostWasObtained": "EXTRA step outside the skill and outside unity-cli: osascript/System Events set this Editor process (pid 28525) frontmost; the previously frontmost app (Google Chrome) was restored after each Play session"
+    },
+    "editorInBackground": {
+      "verdict": "FAIL (retained) — error GAME_VIEW_NOT_FOCUSED, no image returned",
+      "error": {
+        "code": "GAME_VIEW_NOT_FOCUSED",
+        "error": "Focus the Game View before capturing with includeUI=true."
+      },
+      "occurrences": [
+        "21_play_en_capture_screenshot_primary.json",
+        "24_play_en_capture_screenshot_primary_after_focus.json (after Window/General/Game)",
+        "41_play_ja_capture_screenshot_primary_background.json",
+        "p2_21_play_en_capture_screenshot_primary.json",
+        "p2_23_play_en_capture_screenshot_primary_retry.json (after manage_windows focus GameView, which reported success)"
+      ],
+      "cause": "The handler requires EditorWindow.focusedWindow to be the GameView; with the Unity app not the active macOS app that property is null even when GameView.hasFocus is true (26_play_en_focus_game_view_explicit.json, p2_22_play_en_focus_state.json). manage_windows focus and the Game menu item cannot change that."
+    },
+    "transientFailureWhileFrontmost": {
+      "file": "29_play_en_capture_screenshot_primary_frontmost.json",
+      "note": "First attempt right after OS activation still returned GAME_VIEW_NOT_FOCUSED although focusedWindow was GameView 0.5 s earlier; the next attempt succeeded. Cause not determined."
+    }
+  },
+  "fallbackCapture": {
+    "method": "Skill-documented: ExecuteMenuItem(Window/General/Game) + UnityEngine.ScreenCapture.CaptureScreenshot(absolute PNG) in Play",
+    "enBackground": {
+      "path": "/tmp/issue381/2022.3.62f3/integration-evidence/28_play_en_fallback_screencapture.png",
+      "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+      "bytes": 23161,
+      "resolution": "1280x720",
+      "note": "Editor in background, Play loop running; correct en image"
+    },
+    "jaFrontmost": {
+      "path": "/tmp/issue381/2022.3.62f3/integration-evidence/48_play_ja_fallback_screencapture_frontmost.png",
+      "sha256": "c4811c333a12f8f1b81f9687017f64d2d032bd3f477c43966ac1aa5ae49f551e",
+      "bytes": 29260,
+      "resolution": "1280x720",
+      "note": "correct ja image, byte-identical to the primary ja capture"
+    },
+    "staleCaptures": [
+      {
+        "path": "/tmp/issue381/2022.3.62f3/integration-evidence/42_play_ja_fallback_screencapture.png",
+        "sha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+        "bytes": 23161,
+        "resolution": "1280x720",
+        "note": "NOT a ja image: taken while the Play loop was frozen, shows Hello, world!"
+      },
+      {
+        "path": "/tmp/issue381/2022.3.62f3/integration-evidence/p2_24_play_en_fallback_screencapture.png",
+        "sha256": "9a392ec7de40d15289dd4974aca62b9ec943c66f11036b52faca206bb3fb04a5",
+        "bytes": 28216,
+        "resolution": "1280x720",
+        "note": "NOT an en image: taken while the Play loop was frozen at frame 2, shows [unlocalized placeholder]"
+      }
+    ]
+  },
+  "anomalies": [
+    "Play loop freezes in the background after the Editor has once been OS-frontmost: Application.runInBackground is False, so after this agent activated and then deactivated the Editor, frames stopped (44_play_ja_stall_probe_background.txt, p2_13_initialization.json). Before the first activation the same background Editor kept ticking. Locale switches and initialization completed as soon as the Editor was frontmost again, with no re-set and no label write. This Editor process remains in that state: later background Play sessions will stall until it is frontmost or restarted.",
+    "refresh_assets, OS activation of the Editor, GameView.Focus() via eval and manage_windows focus were operations beyond the originally listed ones; each is recorded in transcript.log / *.activation.json."
+  ],
+  "console": {
+    "clearedByThisRun": false,
+    "preReload": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 30,
+      "warnings": 2
+    },
+    "beforePlay": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 11,
+      "warnings": 2
+    },
+    "duringPlayPhase1": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 56,
+      "warnings": 2
+    },
+    "afterStopPhase1": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 58,
+      "warnings": 2
+    },
+    "duringPlayPhase2": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 78,
+      "warnings": 2
+    },
+    "afterStopPhase2": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 80,
+      "warnings": 2
+    },
+    "errorExceptionAssertEntries": 0,
+    "warnings": {
+      "beforePlay": [
+        "Packages/com.akiojin.unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+        "Packages/com.akiojin.unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+      ],
+      "inPlay": [
+        "Ignoring depth surface store action as it is memoryless\n",
+        "Ignoring depth surface load action as it is memoryless\n"
+      ]
+    },
+    "searchIndexerException": {
+      "presentInConsole": false,
+      "presentInEditorLog": false,
+      "note": "No Search indexer exception exists in this Editor session: read_console (Error/Exception/Assert and filterText Search/index) returned 0 entries before and after, and editor.log has 0 matching non-import lines. Nothing was cleared; there was nothing to preserve separately.",
+      "files": [
+        "07_console_before_search_filter.json",
+        "72_console_after_stop_search_filter.json",
+        "p2_72_console_after_stop_search_filter.json",
+        "p2_72_editor_log_exception_grep_after.txt"
+      ]
+    },
+    "bufferNote": "The bridge console buffer restarts on domain reload / Play entry; the pre-reload buffer is kept in 02_console_prereload_all.json and the pre-Play buffer in 07_console_before_all.json."
+  },
+  "finalEditorState": "unity=2022.3.62f3;isPlaying=False;isCompiling=False;isUpdating=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity;dirty=False;sceneCount=1;com.unity.localization=1.5.13(Registry);com.unity.addressables=1.25.0(Registry);com.unity.ugui=1.0.0(BuiltIn);com.akiojin.unity-cli-bridge=0.16.0(Embedded);com.unity.nuget.newtonsoft-json=3.2.1(Registry);com.unity.scriptablebuildpipeline=1.22.4(Registry)",
+  "sideEffects": [
+    "43 bridge .cs.meta files normalised by Unity during the asset refresh",
+    "6 PNGs written by capture_screenshot under Project/.unity/capture/",
+    "Game view window opened/focused; macOS frontmost app switched to Unity twice and restored to Google Chrome",
+    "Editor process now pauses Play when in the background (see anomalies)"
+  ],
+  "priorEvidenceUntouched": {
+    "finalEvidenceAndFirstRunFilesModified": 0
+  },
+  "evidenceDir": "/tmp/issue381/2022.3.62f3/integration-evidence",
+  "pngManifest": "/tmp/issue381/2022.3.62f3/integration-evidence/82_png_manifest.txt"
+}

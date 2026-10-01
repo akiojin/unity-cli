@@ -1,0 +1,33 @@
+{
+  "step": "03_play_ja_state",
+  "locale": "ja",
+  "expected": "こんにちは、世界！",
+  "actual": "こんにちは、世界！",
+  "match": true,
+  "polls": 1,
+  "selectResult": {
+    "state": "completed",
+    "exception": null,
+    "value": "selected=ja"
+  },
+  "uiElementState": {
+    "color": "#FFFFFFFF",
+    "components": [
+      "RectTransform",
+      "CanvasRenderer",
+      "Text",
+      "LocalizeStringEvent"
+    ],
+    "font": "ArialUnicode",
+    "fontSize": 84,
+    "isActive": true,
+    "isInteractable": true,
+    "layer": "Default",
+    "name": "Greeting",
+    "path": "/LocalizationCanvas/Greeting",
+    "raycastTarget": false,
+    "tag": "Untagged",
+    "text": "こんにちは、世界！"
+  },
+  "observedAt": "2026-10-01T09:10:51Z"
+}

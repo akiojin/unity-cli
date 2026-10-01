@@ -106,6 +106,7 @@ namespace UnityCliBridge.Handlers
                     settings["compressionFormat"] = sampleSettings.compressionFormat.ToString();
                     settings["quality"] = sampleSettings.quality;
                     settings["sampleRateSetting"] = sampleSettings.sampleRateSetting.ToString();
+                    settings["sampleRateOverride"] = sampleSettings.sampleRateOverride;
                 }
 
                 return new
@@ -216,6 +217,11 @@ namespace UnityCliBridge.Handlers
                     }
                 }
 
+                else if (assetImporter is AudioImporter audioImporter)
+                {
+                    ApplyAudioSettings(audioImporter, newSettings, previousSettings, appliedSettings);
+                }
+
                 // Apply the changes
                 assetImporter.SaveAndReimport();
 
@@ -231,9 +237,89 @@ namespace UnityCliBridge.Handlers
             }
             catch (Exception e)
             {
-                BridgeLogger.LogError("AssetImportSettingsHandler", $"Error modifying import settings for '{assetPath}': {e.Message}");
+                if (!(e is ArgumentException))
+                    BridgeLogger.LogError("AssetImportSettingsHandler", $"Error modifying import settings for '{assetPath}': {e.Message}");
                 return new { error = $"Failed to modify import settings: {e.Message}" };
             }
+        }
+
+        private static T AudioEnum<T>(JToken value, string key) where T : struct
+        {
+            if (value.Type != JTokenType.String || !Enum.TryParse<T>(value.Value<string>(), out var parsed)
+                || !Enum.IsDefined(typeof(T), parsed))
+                throw new ArgumentException("Invalid " + key);
+            return parsed;
+        }
+
+        private static bool AudioBool(JToken value, string key)
+        {
+            if (value.Type != JTokenType.Boolean) throw new ArgumentException(key + " must be a boolean");
+            return value.Value<bool>();
+        }
+
+        private static void ApplyAudioSettings(AudioImporter importer, JObject settings,
+            Dictionary<string, object> previous, Dictionary<string, object> applied)
+        {
+            // Sample settings are a struct. Validate the entire request before touching the importer.
+            var samples = importer.defaultSampleSettings;
+            var mono = importer.forceToMono;
+            var background = importer.loadInBackground;
+            var ambisonic = importer.ambisonic;
+            foreach (var setting in settings)
+            {
+                var key = setting.Key;
+                var value = setting.Value;
+                switch (key)
+                {
+                    case "loadType":
+                        previous[key] = samples.loadType.ToString();
+                        samples.loadType = AudioEnum<AudioClipLoadType>(value, key);
+                        applied[key] = samples.loadType.ToString();
+                        break;
+                    case "compressionFormat":
+                        previous[key] = samples.compressionFormat.ToString();
+                        samples.compressionFormat = AudioEnum<AudioCompressionFormat>(value, key);
+                        applied[key] = samples.compressionFormat.ToString();
+                        break;
+                    case "quality":
+                        if ((value.Type != JTokenType.Float && value.Type != JTokenType.Integer)
+                            || double.IsNaN(value.Value<double>()) || value.Value<double>() < 0 || value.Value<double>() > 1)
+                            throw new ArgumentException("quality must be a number between 0 and 1");
+                        previous[key] = samples.quality;
+                        samples.quality = value.Value<float>();
+                        applied[key] = samples.quality;
+                        break;
+                    case "sampleRateSetting":
+                        previous[key] = samples.sampleRateSetting.ToString();
+                        samples.sampleRateSetting = AudioEnum<AudioSampleRateSetting>(value, key);
+                        applied[key] = samples.sampleRateSetting.ToString();
+                        break;
+                    case "sampleRateOverride":
+                        if (value.Type != JTokenType.Integer || value.Value<long>() < 1 || value.Value<long>() > 192000)
+                            throw new ArgumentException("sampleRateOverride must be an integer between 1 and 192000");
+                        previous[key] = samples.sampleRateOverride;
+                        samples.sampleRateOverride = value.Value<uint>();
+                        applied[key] = samples.sampleRateOverride;
+                        break;
+                    case "forceToMono":
+                        previous[key] = mono;
+                        applied[key] = mono = AudioBool(value, key);
+                        break;
+                    case "loadInBackground":
+                        previous[key] = background;
+                        applied[key] = background = AudioBool(value, key);
+                        break;
+                    case "ambisonic":
+                        previous[key] = ambisonic;
+                        applied[key] = ambisonic = AudioBool(value, key);
+                        break;
+                    default: throw new ArgumentException("Unsupported AudioImporter setting: " + key);
+                }
+            }
+            importer.defaultSampleSettings = samples;
+            importer.forceToMono = mono;
+            importer.loadInBackground = background;
+            importer.ambisonic = ambisonic;
         }
 
         /// <summary>
