@@ -1,0 +1,102 @@
+{
+  "project": "/tmp/issue375-unity-6000.3.25f1-final",
+  "reportedProjectPath": "/private/tmp/issue375-unity-6000.3.25f1-final",
+  "unityVersion": "6000.3.25f1 (e1dba0a9aba4)",
+  "editorExecutable": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+  "template": "built-in 3D minimal (Editor CLI -createProject, no render-pipeline template)",
+  "port": 6535,
+  "cliVersion": "0.16.0",
+  "bridgeVersion": "0.16.0",
+  "steps": {
+    "createProject": {
+      "ok": true,
+      "exitCode": 0,
+      "log": "create.log"
+    },
+    "setup": {
+      "ok": true,
+      "source": "registry (https://package.openupm.com)",
+      "projectMatches": true,
+      "versionCheck": "match",
+      "inputBackends": "set activeInputHandler 0 -> 2 (Both)",
+      "launchedEditorPid": 48950,
+      "file": "setup.json"
+    },
+    "ping": {
+      "ok": true,
+      "projectPath": "/private/tmp/issue375-unity-6000.3.25f1-final",
+      "file": "ping.json"
+    },
+    "packages": {
+      "ok": true,
+      "com.akiojin.unity-cli-bridge": "0.16.0 (registry, openupm)",
+      "com.unity.inputsystem": "1.20.0 (registry, depth 1; bridge declares 1.14.2 minimum)",
+      "files": [
+        "manifest.json",
+        "packages-lock.json"
+      ]
+    },
+    "compileState": {
+      "ok": true,
+      "errorCount": 0
+    },
+    "scene": {
+      "ok": true,
+      "path": "Assets/Scenes/Generated/E2E/Bootstrap.unity",
+      "objects": [
+        "Main Camera",
+        "Directional Light",
+        "BootstrapCube"
+      ],
+      "saved": true,
+      "files": [
+        "Bootstrap.unity",
+        "Bootstrap.unity.meta",
+        "hierarchy.json"
+      ]
+    },
+    "play": {
+      "ok": true,
+      "isPlaying": true,
+      "file": "play-state.json",
+      "note": "4 get_editor_state polls got Connection refused during Play-entry domain reload before the bridge recovered"
+    },
+    "screenshot": {
+      "ok": true,
+      "captureMode": "game",
+      "osFallback": false,
+      "size": "1280x720",
+      "source": "Main Camera",
+      "originalPath": "/private/tmp/issue375-unity-6000.3.25f1-final/.unity/capture/image_game_2026-10-01_13-41-17.png",
+      "file": "game.png",
+      "inspection": "default skybox and ground horizon with a white cube at screen center; not black, no No-cameras message"
+    },
+    "console": {
+      "ok": true,
+      "errors": 0,
+      "exceptions": 0,
+      "asserts": 1,
+      "warnings": 11,
+      "assertDetail": "ArgumentOutOfRangeException in UnityEditor.Search.SearchDatabase.EnumerateAll (Unity QuickSearch startup indexing, Editor-internal, not project/bridge code)",
+      "file": "console.json"
+    },
+    "stopPlay": {
+      "ok": true,
+      "note": "stop_game response embedded a pre-transition state with isPlaying=true; polling then showed isPlaying=false",
+      "file": "stopped-state.json"
+    },
+    "sceneAfterStop": {
+      "ok": true,
+      "note": "hierarchy still has the 3 objects; Bootstrap.unity byte-identical to saved copy"
+    },
+    "closeEditor": {
+      "ok": true,
+      "pid": 48950,
+      "method": "SIGTERM",
+      "port6535ListenerAfter": "none"
+    }
+  },
+  "inputSimulation": "not run (optional; no controller/action in scene)",
+  "failures": [],
+  "overall": "pass"
+}

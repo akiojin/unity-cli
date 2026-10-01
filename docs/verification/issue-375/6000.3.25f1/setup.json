@@ -1,0 +1,56 @@
+{
+  "binary": {
+    "ok": true,
+    "onPath": "/Users/akiojin/Workbench/unity-cli/work/issue-375/target/debug/unity-cli",
+    "path": "/Users/akiojin/Workbench/unity-cli/work/issue-375/target/debug/unity-cli",
+    "version": "0.16.0"
+  },
+  "bridge": {
+    "action": "install",
+    "declared": "0.16.0",
+    "dryRun": false,
+    "inputBackends": {
+      "changed": true,
+      "previous": 0
+    },
+    "installed": true,
+    "manifestChanged": true,
+    "manifestPath": "/tmp/issue375-unity-6000.3.25f1-final/Packages/manifest.json",
+    "notes": [
+      "Set PlayerSettings activeInputHandler to Both (2) so the Input System dependency imports without a restart prompt"
+    ],
+    "package": "com.akiojin.unity-cli-bridge",
+    "projectPath": "/tmp/issue375-unity-6000.3.25f1-final",
+    "registry": true,
+    "resolvedVersion": null,
+    "source": "registry",
+    "versionCheck": {
+      "bridgeVersion": "0.16.0",
+      "cliVersion": "0.16.0",
+      "message": "CLI and bridge are both 0.16.0",
+      "status": "match"
+    }
+  },
+  "editor": {
+    "bridgeVersion": "0.16.0",
+    "endpoint": "127.0.0.1:6535",
+    "projectMatches": true,
+    "projectPath": "/private/tmp/issue375-unity-6000.3.25f1-final",
+    "reachable": true,
+    "versionCheck": {
+      "bridgeVersion": "0.16.0",
+      "cliVersion": "0.16.0",
+      "message": "CLI and bridge are both 0.16.0",
+      "status": "match"
+    }
+  },
+  "launch": {
+    "editorPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+    "launched": true,
+    "pid": 48950,
+    "port": 6535,
+    "unityVersion": "6000.3.25f1"
+  },
+  "ok": true,
+  "warnings": []
+}

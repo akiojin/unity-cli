@@ -1,0 +1,32 @@
+# cwd=/tmp
+"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity" -batchmode -quit -createProject "/tmp/issue375-unity-6000.3.25f1-final" -logFile "/tmp/issue375-evidence/6000.3.25f1-final/create.log"
+# exit=0
+UNITY_EDITOR_PATH=/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json setup --launch-editor > setup.json
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json system ping > ping.json
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json scene create Bootstrap --path Assets/Scenes/Generated/E2E/ --load-scene
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw get_hierarchy --json {"includeComponents":true}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw create_gameobject --json {"name":"BootstrapCube","primitiveType":"cube"}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw save_scene --json {"scenePath":"Assets/Scenes/Generated/E2E/Bootstrap.unity"}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw get_hierarchy --json {"includeComponents":true}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw play_game --json {}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw get_editor_state --json {}  (polled until isPlaying) > play-state.json
+# note: 4 get_editor_state polls during Play entry returned Connection refused (os error 61) before isPlaying=true
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw capture_screenshot --json {"captureMode":"game","width":1280,"height":720,"osFallback":false}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw read_console --json {"count":20}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw stop_game --json {}
+# exit=0
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw get_editor_state --json {}  (polled until isPlaying=false) > stopped-state.json
+unity-cli --project-path /tmp/issue375-unity-6000.3.25f1-final --port 6535 --output json raw get_hierarchy --json {"includeComponents":false}
+# exit=0
+kill -TERM 48950  # close only the Editor launched by setup for this project
+# result: editor-closed

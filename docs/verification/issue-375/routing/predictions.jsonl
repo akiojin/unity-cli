@@ -1,0 +1,6 @@
+{"id": "SR-158", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-159", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-160", "predicted_skills": ["unity-cli-usage"], "predicted_tool": "ping", "predicted_payload_keys": []}
+{"id": "SR-161", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["path", "sceneName"]}
+{"id": "SR-162", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}
+{"id": "SR-163", "predicted_skills": ["unity-project-bootstrap"], "predicted_tool": "create_scene", "predicted_payload_keys": ["path", "sceneName"]}
