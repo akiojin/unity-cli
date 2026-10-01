@@ -27,6 +27,7 @@ pub async fn run() -> Result<()> {
 }
 
 pub async fn run_with_cli(cli: Cli) -> Result<()> {
+    crate::unity::auth::warn_unauthenticated();
     let output = cli.output;
     let result = run_command(cli).await;
     if let Err(error) = &result {

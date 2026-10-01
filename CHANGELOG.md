@@ -1,3 +1,18 @@
+## [Unreleased]
+
+### Security
+
+- Require per-Editor authentication for TCP Bridge requests, including ping and
+  C# eval. Store a random 256-bit token in the discovery lockfile with POSIX 0600
+  permissions. CLI and unityd read it automatically; remote clients can use
+  `UNITY_CLI_AUTH_TOKEN_FILE` with a mounted lockfile.
+- Default the Bridge bind address to loopback, including failed settings loads,
+  and warn in the Editor Console for non-loopback listeners.
+- For this release only, `UNITY_CLI_ALLOW_UNAUTHENTICATED=1` in the Editor
+  environment permits legacy clients without a token. The CLI emits a stderr
+  deprecation warning when set. This opt-out will be removed in the next minor
+  release, when authentication becomes mandatory without exception.
+
 ## [0.17.0] - 2026-10-01
 
 ### 🚀 Features

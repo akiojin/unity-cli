@@ -210,6 +210,15 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# TCP authentication: isolated real Editor, missing/wrong token rejection,
+# eval side effects, CLI/unityd success, POSIX 0600, and focused EditMode tests.
+# Repeat for 2022.3.62f3; use a fresh output directory for each run.
+python3 scripts/e2e-bridge-auth.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/bridge-auth-6000 --editmode
+# Temporary legacy opt-out and next-minor deprecation warning
+python3 scripts/e2e-bridge-auth.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/bridge-auth-optout-6000 --opt-out
+
 # AudioMixer hierarchy/exposed Volume and AudioImporter persistence (isolated Editor)
 bash scripts/e2e-audio-batch-host.sh --unity-version 2022.3.62f3 --port 6481
 bash scripts/e2e-audio-batch-host.sh --unity-version 6000.3.25f1 --port 6482
