@@ -1,0 +1,21 @@
+{
+  "Assets/Scenes/Generated/E2E/URP/DefaultVolumeProfile.asset": "70e9ed4656132bf185009cb47db521fdeece0b1f4d464a73cb9d0bd04fe3bda5",
+  "Assets/Scenes/Generated/E2E/URP/DefaultVolumeProfile.asset.meta": "43e82fc4e2c543fc7c281d10a41cfe128e734483fca59a13d35941859d470f68",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity": "541d2ae2381b2a440029ed30334540a83f0dac1baad5ccba37e9645702915541",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity.meta": "9d94e9a13b80ea0054ea60e91461a1d268e4c57d54b3729a97b888246ffbba9d",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset": "095013ecd34c020ec653b42880e6303da08993a8eb1da2bde47d480be000fe90",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset.meta": "eef0c5aa99a12a6d96ba9cb643d03b7f13701488c39f79ef7a0f1499fcd1032b",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat": "98a30abc1e62c2ac23d46ba11106ee3b0d0f547bab6194ce21ba7882805c65dd",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat.meta": "4202865ad11a0652e684484caa320793f9e7893fa7a90458407f1765d2ed5e63",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset": "0c3c0536bfe978813e349040e7f2cbb701f6d82de0a757d481c1d000272e2566",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset.meta": "3be6ed76112d93715c8d8f6785717204faecb82cfdb905bba9ecb12763893f48",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset": "7c5bbad00db89e07f10942cf206181a713299e919e00d1667f7cda6e9c7d9ca8",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset.meta": "d1ea28c6709f44e86cba14f2d6ef564cb08939015f5d06f360932edf23531fcd",
+  "Assets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset": "d64580e7275f35d59767b728e7c8ced83e4cdc27de89a52330bb024a94fbe6ac",
+  "Assets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset.meta": "3270e2d1efc69fde333f8cea68f335cb0bf57de29fe399825a511c880d042e2c",
+  "Packages/manifest.json": "0d0ecfc7e86babdfdb4926765a2517e563edde69d6d4987d59dd789dee7ef809",
+  "Packages/packages-lock.json": "91f17720608aaa9a3b3e22e313728c512b599ef9628282d2523f29b914512d0a",
+  "ProjectSettings/GraphicsSettings.asset": "bca30bbf83f8c0f8ecd2c9739b0bf973895fe706c057e77a8148e5d598da3140",
+  "ProjectSettings/ProjectVersion.txt": "4a18b4936a9f83ec28b32cf336e6f62f6b00ddf12a48c792feac779add1380f3",
+  "ProjectSettings/QualitySettings.asset": "13d73df5624d64e6891e241247d44244b8f4f7a45c935fdef9f995aa3d1cef78"
+}

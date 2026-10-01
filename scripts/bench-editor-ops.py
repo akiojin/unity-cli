@@ -49,7 +49,7 @@ def operations():
         ("scene_save", "save_scene", {}),
         ("console", "read_console", {"count": 20}),
         ("screenshot", "capture_screenshot", {"captureMode": "game", "width": 1280, "height": 720,
-                                               "encodeAsBase64": False, "osFallback": False}),
+                                               "includeUI": False, "encodeAsBase64": False, "osFallback": False}),
         ("material_search", "manage_asset_database", {"action": "find_assets", "filter": "t:Material",
                                                        "searchInFolders": [FIXTURE]}),
         ("asset_copy", "manage_asset_database", {"action": "copy_asset", "fromPath": SOURCE, "toPath": COPIED}),

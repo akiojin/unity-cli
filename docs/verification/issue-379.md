@@ -102,4 +102,19 @@ Web UI のテーマ切替ではなく Unity の静的シーン描画を検証し
 公式 `unity-agent-plugin/skills/` のテキスト・コードは参照・コピーしていない。
 手順はこのリポジトリの CLI スキーマ / handler、既存スキルの責務境界、Unity API と
 実 Editor の測定から独自に構成した。runtime-checklist は当リポジトリの既存形式を使用する。
-PR 本文にもこの点を明記し、PR レビューで確認する。AC-4 はレビュー完了までは未完了とする。
+PR #433 の再開時に Codex が正本3ファイル、既存スキルとの共有部分、CLI の
+`tool_catalog.rs` と実行証跡をレビューした。runtime-checklist は当リポジトリの
+既存素材で、recipe は CLI 固有の制約と実測による修正を反映している。
+公式 plugin の素材の取り込みや派生物を示す差分はなく、独自著作の説明と整合する。
+これはリポジトリの来歴に基づくエージェントレビューであり、人間の確認ではない。
+
+## PR #433 の競合解消
+
+develop の URP スキル追加と、asset / playmode / scene スキルの `siblings` で競合した。
+各一覧に `unity-2d-sprite-tilemap` と `unity-urp-setup` の両方を残した。
+2D 正本3ファイルと実機証跡は変更していないため、保存済み実機検証の対象は同一。
+統合後に fmt / clippy、Rust 588件、Skill Contract 21スキル・違反0件、
+routing 評価器10件、Markdown lint、102証跡の整合性検査が成功した。
+保存予測204件の再採点は全閾値PASS（top1/top2 99.51%、tool 98.53%、payload 96.57%）。
+この再採点は、統合後の新しい LLM 推論とは区別する。
+正式検証記録と配送結果は PR #433 に記録する。

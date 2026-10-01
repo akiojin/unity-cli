@@ -35,6 +35,11 @@ class EditorPerfTests(unittest.TestCase):
                 self.bench.validate_result("capture_screenshot", payload)
         self.bench.validate_result("get_editor_state", {"status": "success", "state": {"isPlaying": False}})
 
+    def test_screenshot_benchmark_explicitly_preserves_camera_only_capture(self):
+        screenshot = next(params for _, tool, params in self.bench.operations()
+                          if tool == "capture_screenshot")
+        self.assertIs(screenshot.get("includeUI"), False)
+
     def test_play_transition_waits_for_observed_state(self):
         calls = []
         states = iter([False, False, True])

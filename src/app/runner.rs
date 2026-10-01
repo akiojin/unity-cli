@@ -721,7 +721,12 @@ async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<V
     }
 
     if let Some(local_result) = local_tools::maybe_execute_local_tool(tool_name, &params) {
-        return local_result;
+        return local_tools::run_csharp_post_write_pipeline(
+            local_result?,
+            &params,
+            &runtime_overrides_from_cli(cli),
+        )
+        .await;
     }
 
     let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;

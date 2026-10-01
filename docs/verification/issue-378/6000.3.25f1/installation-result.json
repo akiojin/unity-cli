@@ -1,0 +1,46 @@
+{
+  "status": "success",
+  "unityVersion": "6000.3.25f1",
+  "urpVersion": "17.3.0",
+  "scenePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity",
+  "pipelinePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+  "rendererPath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset",
+  "profilePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset",
+  "beforeScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-02-12.png",
+  "afterScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-02-24.png",
+  "observedDifference": "Both are 1280x720 Game-view captures from Main Camera in the same Play session, with osFallback false and only Bloom intensity changed (threshold 1 in both). Before (intensity 0): a hard-edged white disc on a pure black background; the centre row is lit only from x=562 to 717 and pixels at x=760 and 800 are (0,0,0). After (intensity 2): the same disc at the same position and size, now surrounded by a soft warm halo that fades outwards; the centre row is lit from x=474 to 805, with x=760 at (19,19,16), x=800 at (10,10,8) and x=900 at (2,2,2). Pixels with luminance above 8 rose from about 19,120 to about 90,064 and mean luminance from 5.27 to 7.59. Live readback matched: the volume stack reported Bloom intensity 0 then 2. The subject is a stationary sphere with HDR emission (8, 4.4, 1.2), so the disc itself clips to white in both images.",
+  "consoleErrors": {
+    "compileErrors": 0,
+    "urpOrBloomErrors": 0,
+    "entries": [
+      {
+        "logType": "Assert",
+        "message": "ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.",
+        "source": "UnityEditor.Search.SearchDatabase.EnumerateAll via SearchInit.IndexationOnStartup (SearchDatabase.cs:453)",
+        "assessment": "Unity's own QuickSearch indexer, logged once at 06:03:18Z around the Play-mode domain reload; no URP, Volume or bridge frames in the stack."
+      },
+      {
+        "logType": "Error",
+        "count": 2,
+        "message": "[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:<port>",
+        "assessment": "Caused by my state polling timing out while the Editor was reloading; the stack shows the bridge emits these through Debug.LogWarning although read_console labels them Error."
+      }
+    ],
+    "earlierEntriesBeforeConsoleCleared": "Right after the package install, read_console also returned 'URP Global Settings Asset has been created for you' labelled Error, and bridge CS0618 obsolete-API compile warnings labelled Exception. They were no longer in the console at the final read."
+  },
+  "qualityLevelsAssigned": [
+    "Very Low",
+    "Low",
+    "Medium",
+    "High",
+    "Very High",
+    "Ultra"
+  ],
+  "persistenceCheck": "After stopping Play, I set Bloom intensity back to 2, saved, opened an empty scene, force-reimported the pipeline, renderer and profile, and reopened the scene. Graphics default, all six Quality levels and the effective pipeline point to the pipeline asset (previously all unassigned; active level still Ultra). The pipeline has HDR on and references the renderer, which uses the package's default PostProcessData. The Global Volume (global, weight 1, priority 10) references the saved profile, whose Bloom is active with intensity 2 and threshold 1, both overridden. Main Camera has HDR and post-processing on with volume layer mask 1. The same values are in the saved profile, GraphicsSettings and QualitySettings files on disk.",
+  "notes": [
+    "Installing URP made Unity auto-create UniversalRenderPipelineGlobalSettings.asset and DefaultVolumeProfile.asset in the Assets root. I moved both into Assets/Scenes/Generated/E2E/URP/ with AssetDatabase.MoveAsset so nothing sits outside that folder; the URP global settings still resolve to the moved asset.",
+    "I also created the emissive material Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat (URP Lit, black base, emission keyword on).",
+    "One eval returned state compile_error (it used an internal URP property) and executed nothing; I reran it with the public accessor under a new request ID. Every eval that changed anything returned state completed.",
+    "No required capability was missing. No serialized YAML was written by hand, and no other project or Editor was touched."
+  ]
+}

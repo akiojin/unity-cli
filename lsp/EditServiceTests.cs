@@ -7,6 +7,43 @@ using Xunit;
 
 public sealed class EditServiceTests
 {
+    [Theory]
+    [InlineData("create")]
+    [InlineData("write")]
+    [InlineData("apply")]
+    public async Task RetryingFullFileWrites_DoesNotDuplicateContent(string operation)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-retry-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(Path.Combine(root, "Assets"));
+        const string relative = "Assets/Retry.cs";
+        const string text = "public class Retry { public int Value; }";
+        try
+        {
+            if (operation != "create")
+            {
+                await File.WriteAllTextAsync(Path.Combine(root, relative), "public class Retry { }");
+            }
+            var service = new LspEditService(root, new LspFileLockProvider());
+            using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative, newText = text } }));
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                var result = operation switch
+                {
+                    "create" => await service.CreateCSharpFileAsync(relative, text, false, true, true, false),
+                    "write" => await service.WriteCSharpFileAsync(relative, text, true, true, false),
+                    _ => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false)
+                };
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.Equal(attempt == 0, response.RootElement.GetProperty("applied").GetBoolean());
+                Assert.Equal(text, await File.ReadAllTextAsync(Path.Combine(root, relative)));
+            }
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task WriteCSharpFileAsync_PreviewsWithoutApplying()
     {
