@@ -1,0 +1,14 @@
+{
+  "message": "Found 1 configured registries",
+  "registries": [
+    {
+      "name": "OpenUPM",
+      "scopes": [
+        "com.cysharp"
+      ],
+      "url": "https://package.openupm.com"
+    }
+  ],
+  "success": true,
+  "totalCount": 1
+}

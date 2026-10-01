@@ -13,6 +13,7 @@ metadata:
     - unity-cli-usage
     - unity-scene-create
     - unity-playmode-testing
+    - unity-package-management
 ---
 
 # Unity Project Bootstrap
@@ -32,7 +33,7 @@ and a visible Play-mode check using existing Unity and unity-cli operations.
 - Only install or diagnose the CLI/bridge in an existing project: `unity-cli-usage`.
 - Only create, load or save a scene in an existing project: `unity-scene-create`.
 - Only capture or simulate input in Play mode: `unity-playmode-testing`.
-- Only manage packages: `unity-editor-tools`; only edit materials/imports:
+- Only manage packages: `unity-package-management`; only edit materials/imports:
   `unity-asset-management`; only interact with UI: `unity-ui-automation`.
 
 ## Preferred Flow
@@ -61,7 +62,7 @@ and a visible Play-mode check using existing Unity and unity-cli operations.
    open the project and verify ping per `unity-cli-usage` (#363 / #366).
 4. Verify package resolution in `Packages/packages-lock.json`. The bridge brings
    Input System as a dependency; do not install an arbitrary latest version.
-   Add only other packages requested by the user, using `unity-editor-tools`
+   Add only other packages requested by the user, using `unity-package-management`
    and the selected Editor's compatible package versions. Allow import/reload
    to settle and ping again before continuing.
 5. Use `unity-scene-create` to create and save a minimal scene. The default scene

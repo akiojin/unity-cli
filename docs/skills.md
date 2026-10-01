@@ -131,7 +131,8 @@ or stop the Editor. Global installed skills remain available after the test.
 | `unity-csharp-edit` | C# implementation and refactoring |
 | `unity-csharp-navigate` | Read and navigate project C# |
 | `unity-csharp-reference` | Read official UnityCsReference sources |
-| `unity-editor-tools` | Editor state, packages, builds, baking and profiling |
+| `unity-editor-tools` | Editor state, console, builds, baking and profiling |
+| `unity-package-management` | UPM discovery/install/update/removal, scoped registries and compilation checks |
 | `unity-input-system` | Input action asset authoring |
 | `unity-playmode-testing` | Runtime tests, input simulation and media capture |
 | `unity-ui-automation` | Inspect and interact with Unity UI |

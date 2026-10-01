@@ -1,0 +1,86 @@
+{
+  "consoleErrorCount": 0,
+  "consoleWarningCount": 0,
+  "errorCount": 0,
+  "isCompiling": false,
+  "isMonitoring": false,
+  "isUpdating": false,
+  "lastCompilationTime": "2026-10-01T06:09:14.2662880Z",
+  "messageCount": 9,
+  "messages": [
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 999,
+      "message": "[unity-cli-bridge] Shutting down...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:999)\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\n",
+      "timestamp": "2026-10-01T15:10:52.5529410+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 49,
+      "message": "[unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StopTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:385)\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1000)\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\n",
+      "timestamp": "2026-10-01T15:10:52.5529380+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 386,
+      "message": "[unity-cli-bridge] TCP listener stopped\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StopTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:386)\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1000)\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\n",
+      "timestamp": "2026-10-01T15:10:52.5529250+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 71,
+      "message": "[unity-cli-bridge] Initializing...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "timestamp": "2026-10-01T15:10:52.5529240+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 107,
+      "message": "[unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6548\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "timestamp": "2026-10-01T15:10:52.5529220+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 49,
+      "message": "[unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "timestamp": "2026-10-01T15:10:52.5529200+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 337,
+      "message": "[unity-cli-bridge] TCP listener binding on 127.0.0.1:6548 (host=localhost)\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "timestamp": "2026-10-01T15:10:52.5528420+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 49,
+      "message": "[unity-cli-bridge] Status changed to: Connected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "timestamp": "2026-10-01T15:10:52.5528400+09:00",
+      "type": "Warning"
+    },
+    {
+      "column": 0,
+      "file": "./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs",
+      "line": 408,
+      "message": "[unity-cli-bridge] Client connected from 127.0.0.1:61400\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "timestamp": "2026-10-01T15:10:52.5528320+09:00",
+      "type": "Warning"
+    }
+  ],
+  "success": true,
+  "warningCount": 0
+}

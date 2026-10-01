@@ -1,0 +1,20 @@
+Unity Editor version:    6000.3.25f1 (e1dba0a9aba4)
+Branch:                  6000.3/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 26.5 (Build 25F71)
+Darwin version:          25.5.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        131072 MB
+Date:                    2026-10-01T06:02:48Z
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (1022ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (1541ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (878ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (806ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (813ms)

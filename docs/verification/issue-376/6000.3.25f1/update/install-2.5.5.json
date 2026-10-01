@@ -1,0 +1,9 @@
+{
+  "action": "install",
+  "displayName": "UniTask",
+  "message": "Successfully installed UniTask version 2.5.5",
+  "name": "com.cysharp.unitask",
+  "packageId": "com.cysharp.unitask@2.5.5",
+  "success": true,
+  "version": "2.5.5"
+}

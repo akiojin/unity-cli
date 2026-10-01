@@ -1,0 +1,24 @@
+{
+  "action": "info",
+  "package": {
+    "author": "Cysharp, Inc.",
+    "category": "XR",
+    "changelogUrl": "",
+    "dependencies": [],
+    "description": "Provides an efficient async/await integration to Unity.",
+    "displayName": "UniTask",
+    "documentationUrl": "",
+    "keywords": [
+      "async/await",
+      "async",
+      "Task",
+      "UniTask"
+    ],
+    "licensesUrl": "",
+    "name": "com.cysharp.unitask",
+    "packageId": "com.cysharp.unitask@2.5.5",
+    "source": "Registry",
+    "version": "2.5.5"
+  },
+  "success": true
+}

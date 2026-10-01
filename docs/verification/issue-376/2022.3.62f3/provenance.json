@@ -1,0 +1,10 @@
+{
+  "collected_at": "2026-10-01T06:12:09.948078+00:00",
+  "original_directory": "/private/tmp/issue376-evidence/2022.3.62f3-final",
+  "editor_log_sha256": "6a714deaf84d02886711c1241e5147e96ef0979cafc206e370491744ad59e71d",
+  "compiler_error_lines": [],
+  "transcript_sha256": "975884d7795b6ca7b63c55893beb559b49f54eddb75ff0a3eea137966738aaac",
+  "bridge_source": "checkout local package copy",
+  "architecture": "arm64",
+  "final_compilation": 0
+}
