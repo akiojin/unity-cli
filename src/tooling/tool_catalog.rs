@@ -102,6 +102,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "analyze_screenshot",
     "capture_screenshot",
     "list_packages",
+    "list_tools",
     "read",
     "find_refs",
     "search",
@@ -234,6 +235,7 @@ fn tool_description(name: &str) -> &'static str {
             "Create and edit Timeline AnimationTracks, bind a director, or evaluate a time"
         }
         "list_packages" => "List installed packages",
+        "list_tools" => "Discover project-local tools registered in the connected Editor",
         "create_animator_controller" => {
             "Create an AnimatorController asset with parameters, states, and transitions"
         }
@@ -354,6 +356,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "list_scenes"
             | "analyze_screenshot"
             | "list_packages"
+            | "list_tools"
             | "read"
             | "find_refs"
             | "search"
@@ -693,7 +696,7 @@ fn tool_params_schema(name: &str) -> Value {
             &["pattern"],
             false,
         ),
-        "list_packages" => object_schema(&[], &[], false),
+        "list_packages" | "list_tools" => object_schema(&[], &[], false),
         "get_symbols" => object_schema(&[("path", string_schema())], &["path"], false),
         "build_index" => object_schema(
             &[
@@ -3112,7 +3115,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 153);
+        assert_eq!(TOOL_NAMES.len(), 154);
     }
 
     #[test]

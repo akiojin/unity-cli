@@ -82,6 +82,7 @@ unity-cli --output json setup --launch-editor   # bridge install + Editor connec
 unity-cli bridge status                        # declared / resolved bridge version
 unity-cli system ping
 unity-cli tool list --query scene --compact    # discover tools by keyword
+unity-cli tool list --names-only --output json # name array in data
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
 unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ```
@@ -106,6 +107,13 @@ and emits `notifications/tools/list_changed` when the selected Editor connects.
    content. Inspect `errors[0].code` and use the same recovery steps as CLI calls.
 
 ## Examples
+
+JSON discovery returns descriptors in `data`, including `params_schema` and
+`source` (`builtin` or `custom`). Read `.data[].name` for names, or add
+`--names-only` to retain `.data[]`. `--compact` still returns name/description
+pairs. Connected Editors add project-local tools to `tool list` / `tool schema`;
+`--category custom` selects them. Offline discovery lists builtins. For creating
+`[UnityCliBridge.Tools.UnityCliTool]` methods, use `unity-editor-tools`.
 
 - "Add a Cube to the scene" in a fresh project without unity-cli → install the binary, run `unity-cli --output json setup --launch-editor`, then `unity-cli raw create_gameobject --json '{"name":"Cube","primitiveType":"cube"}'`.
 - "Check whether unity-cli can reach my Unity Editor." → run `unity-cli system ping`.

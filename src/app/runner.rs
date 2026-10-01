@@ -17,8 +17,9 @@ use crate::core::contracts::BatchItem;
 #[cfg(test)]
 use crate::core::editor_discovery::TargetError;
 use crate::instances::{list_instances, set_active_instance};
-use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs};
+use crate::tool_catalog::{get_tool_spec, is_known_tool};
 use crate::tool_index::{filter_tools, ToolListFilter};
+use crate::tooling::discovery::{self, DiscoveredTool};
 use crate::tooling::os_capture;
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
@@ -189,27 +190,45 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
         }
         Command::Tool { command } => match command {
             ToolCommand::List(args) => {
-                let tools = filter_tools(&ToolListFilter {
-                    query: args.query.as_deref(),
-                    category: args.category.as_deref(),
-                    offset: args.offset,
-                    limit: args.limit,
-                })
+                let tools = discovery::filter_discovered_tools(
+                    discover_for_cli(&cli).await?,
+                    &ToolListFilter {
+                        query: args.query.as_deref(),
+                        category: args.category.as_deref(),
+                        offset: args.offset,
+                        limit: args.limit,
+                    },
+                )
                 .map_err(|message| anyhow!(message))
                 .context(FailureKind::Usage)?;
+                let summaries =
+                    filter_tools(&ToolListFilter::default()).map_err(|message| anyhow!(message))?;
+                let compact = |tool: &DiscoveredTool| {
+                    json!({
+                        "name": tool.name,
+                        "description": summaries.iter().find(|entry| entry.name == tool.name)
+                            .map(|entry| entry.description).unwrap_or(&tool.description)
+                    })
+                };
                 if matches!(cli.output, OutputFormat::Json) {
                     let value = if args.compact {
-                        serde_json::to_value(&tools)?
-                    } else {
+                        json!(tools.iter().map(compact).collect::<Vec<_>>())
+                    } else if args.names_only {
                         serde_json::to_value(
-                            tools.iter().map(|tool| tool.name).collect::<Vec<_>>(),
+                            tools.iter().map(|tool| &tool.name).collect::<Vec<_>>(),
                         )?
+                    } else {
+                        serde_json::to_value(&tools)?
                     };
                     print_value(&value, cli.output)?;
                 } else {
                     for tool in &tools {
                         if args.compact {
-                            println!("{}\t{}", tool.name, tool.description);
+                            println!(
+                                "{}\t{}",
+                                tool.name,
+                                compact(tool)["description"].as_str().unwrap_or_default()
+                            );
                         } else {
                             println!("{}", tool.name);
                         }
@@ -218,18 +237,15 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
             }
             ToolCommand::Schema { tool_name } => {
                 let value = if let Some(name) = tool_name {
-                    let spec = get_tool_spec(name)
-                        .ok_or_else(|| {
-                            anyhow!(
-                            "Unknown tool `{}`. Use `unity-cli tool list` to see supported names.",
-                            name
-                        )
-                        })
-                        .context(FailureKind::Usage)?;
+                    let spec = if let Some(spec) = get_tool_spec(name) {
+                        DiscoveredTool::from(spec)
+                    } else {
+                        find_discovered_tool(&discover_for_cli(&cli).await?, name)?
+                    };
                     serde_json::to_value(spec)?
                 } else {
                     json!({
-                        "tools": list_tool_specs()
+                        "tools": discover_for_cli(&cli).await?
                     })
                 };
                 print_value(&value, cli.output)?;
@@ -240,13 +256,6 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
             }
             ToolCommand::External(args) => {
                 let raw = parse_external_tool_command(args).context(FailureKind::Usage)?;
-                if !is_known_tool(&raw.tool_name) {
-                    return Err(anyhow!(
-                        "Unknown tool `{}`. Use `unity-cli tool list` to see supported names.",
-                        raw.tool_name
-                    )
-                    .context(FailureKind::Usage));
-                }
                 let value = execute_raw(&cli, &raw).await?;
                 print_value(&value, cli.output)?;
             }
@@ -821,7 +830,56 @@ async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     execute_tool(cli, &args.tool_name, params).await
 }
 
+async fn discover_for_cli(cli: &Cli) -> Result<Vec<DiscoveredTool>> {
+    let mut config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    // Listing remains useful offline. Bound the optional discovery probe, but
+    // honor an explicit timeout for busy/remote Editors.
+    if cli.timeout_ms.is_none() {
+        config.timeout = config.timeout.min(std::time::Duration::from_secs(2));
+    }
+    match discovery::discover_tool_specs(&config).await {
+        Ok(tools) => Ok(tools),
+        Err(error)
+            if matches!(
+                error.downcast_ref::<FailureKind>(),
+                Some(FailureKind::Unreachable)
+            ) =>
+        {
+            Ok(discovery::builtin_tool_specs())
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn find_discovered_tool(tools: &[DiscoveredTool], name: &str) -> Result<DiscoveredTool> {
+    tools.iter().find(|tool| tool.name == name).cloned()
+        .ok_or_else(|| anyhow!("Unknown tool `{name}`. Use `unity-cli tool list` with the target Editor connected to see supported names."))
+        .context(FailureKind::Usage)
+}
+
+async fn execute_custom_tool(cli: &Cli, name: &str, params: Value) -> Result<Value> {
+    let spec = find_discovered_tool(&discover_for_cli(cli).await?, name)?;
+    validate_value_against_schema(&params, &spec.params_schema, "$")
+        .with_context(|| format!("Invalid parameters for tool `{name}`"))
+        .context(FailureKind::Usage)?;
+    if cli.dry_run && spec.mutating {
+        return Ok(json!({"dryRun":true, "executed":false, "tool":name,
+            "reason":"mutating_tool_blocked_by_dry_run", "params":params}));
+    }
+    let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    // User methods can have arbitrary side effects. A lost response must never
+    // cause the daemon fallback path to invoke the method a second time.
+    let (value, timing) = call_remote_tool_direct(&config, name, params).await?;
+    if let Some(timing) = timing {
+        command_stats::record_cli_tool_call(name, timing);
+    }
+    Ok(value)
+}
+
 pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
+    if !is_known_tool(tool_name) {
+        return execute_custom_tool(cli, tool_name, params).await;
+    }
     validate_tool_params(tool_name, &params).context(FailureKind::Usage)?;
 
     if should_skip_for_dry_run(cli, tool_name) {
@@ -1009,13 +1067,25 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
         return Ok(json!([]));
     }
 
+    let has_custom = commands.iter().any(|item| !is_known_tool(&item.tool));
+    let custom_catalog = if has_custom {
+        discover_for_cli(cli).await?
+    } else {
+        Vec::new()
+    };
     for item in &commands {
-        validate_tool_params(&item.tool, &item.params)
+        let validation = if is_known_tool(&item.tool) {
+            validate_tool_params(&item.tool, &item.params)
+        } else {
+            let spec = find_discovered_tool(&custom_catalog, &item.tool)?;
+            validate_value_against_schema(&item.params, &spec.params_schema, "$")
+        };
+        validation
             .with_context(|| format!("Batch command validation failed for tool `{}`", item.tool))
             .context(FailureKind::Usage)?;
     }
 
-    if !cli.dry_run && !commands.iter().any(|item| item.tool == "eval_csharp") {
+    if !cli.dry_run && !has_custom && !commands.iter().any(|item| item.tool == "eval_csharp") {
         let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),
@@ -1052,6 +1122,9 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
         }
 
         match execute_tool(cli, &item.tool, item.params).await {
+            Ok(value) if value["dryRun"] == true && value["executed"] == false => {
+                results.push(json!({ "ok": true, "skipped": true, "result": value }));
+            }
             Ok(value) => results.push(json!({ "ok": true, "result": value })),
             Err(error) => results.push(crate::core::failure::batch_error(&error)),
         }
@@ -1128,6 +1201,9 @@ fn validate_value_against_schema(value: &Value, schema: &Value, path: &str) -> R
             "boolean" if !value.is_boolean() => {
                 return Err(anyhow!("{path} must be a boolean"));
             }
+            "null" if !value.is_null() => {
+                return Err(anyhow!("{path} must be null"));
+            }
             "integer" => {
                 let is_integer = value.as_i64().is_some()
                     || value.as_u64().is_some()
@@ -1140,6 +1216,31 @@ fn validate_value_against_schema(value: &Value, schema: &Value, path: &str) -> R
                 return Err(anyhow!("{path} must be a number"));
             }
             _ => {}
+        }
+    }
+
+    if value.is_number() {
+        // Keep integral comparisons exact at i64/u64 boundaries rather than
+        // rounding both sides to the same f64 (e.g. i64::MAX and MAX+1).
+        let integer = |v: &Value| {
+            v.as_i64()
+                .map(i128::from)
+                .or_else(|| v.as_u64().map(i128::from))
+        };
+        for (key, minimum) in [("minimum", true), ("maximum", false)] {
+            if let Some(bound) = schema.get(key).filter(|bound| bound.is_number()) {
+                let order = match (integer(value), integer(bound)) {
+                    (Some(value), Some(bound)) => Some(value.cmp(&bound)),
+                    _ => value.as_f64().and_then(|value| {
+                        bound.as_f64().and_then(|bound| value.partial_cmp(&bound))
+                    }),
+                };
+                if matches!(order, Some(std::cmp::Ordering::Less) if minimum)
+                    || matches!(order, Some(std::cmp::Ordering::Greater) if !minimum)
+                {
+                    return Err(anyhow!("{path} violates {key} {bound}"));
+                }
+            }
         }
     }
 

@@ -9,6 +9,7 @@ using UnityCliBridge.Handlers;
 using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
 using UnityCliBridge.Models;
+using UnityCliBridge.Tools;
 
 namespace UnityCliBridge.Core
 {
@@ -23,6 +24,7 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["list_tools"] = command => Success(command, new { tools = CustomToolRegistry.Current.Describe() }),
                 ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
                 ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
@@ -212,6 +214,9 @@ namespace UnityCliBridge.Core
             {
                 return handler(command);
             }
+
+            if (CustomToolRegistry.Current.TryHandle(command, out var customResponse))
+                return Task.FromResult(customResponse);
 
             return Task.FromResult(Response.ErrorResult(
                 command?.Id,
