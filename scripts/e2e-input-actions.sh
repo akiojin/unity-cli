@@ -58,7 +58,7 @@ invoke_tool() {
   printf '%s\n%s\n' "$1" "${output}" >> "${LOG}"
   jq -e 'type == "object" and (.error == null) and (.success != false) and (.status != "error")' \
     >/dev/null <<<"${output}" || { printf '%s\n' "${output}" >&2; return 1; }
-  printf '%s\n' "${output}"
+  jq -c '.data' <<<"${output}"
 }
 
 cleanup() {

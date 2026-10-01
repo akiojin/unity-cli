@@ -108,7 +108,7 @@ namespace UnityCliBridge.Tests.Editor.Core
         private void Write(string name, int pid, string projectPath)
         {
             var content = EditorLockfile.BuildContent(pid, projectPath, "127.0.0.1", 6400, 6400, "x", "y", "ready", 0, 0);
-            File.WriteAllText(Path.Combine(directory, name), content.ToString());
+            EditorLockfile.WritePrivateFile(Path.Combine(directory, name), content.ToString());
         }
 
         private static int DeadPid()

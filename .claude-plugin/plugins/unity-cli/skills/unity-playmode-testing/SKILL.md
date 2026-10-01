@@ -27,6 +27,8 @@ metadata:
 
 # Play Mode Testing
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capture media. This skill is the runtime sibling of `unity-input-system` (asset authoring) and `unity-ui-automation` (UI interaction).
 
 ## Use When

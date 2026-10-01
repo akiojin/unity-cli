@@ -151,6 +151,7 @@ const TOOL_INDEX: &[(&str, &str, &str)] = &[
     ("get_command_stats", "System", "Get bridge command statistics and, via the CLI, merged local transport timing stats"),
     ("ping", "System", "Check Unity Editor connectivity"),
     ("list_packages", "System", "List installed packages"),
+    ("list_tools", "System", "Discover project-local tools registered in the connected Editor"),
     ("reference_fetch", "Reference Cache", "Shallow-clone UnityCsReference for the active Unity version into the local cache."),
     ("reference_status", "Reference Cache", "List cached UnityCsReference versions, branches, fetched-at, and disk usage."),
     ("reference_search", "Reference Cache", "Search the cached reference source for a pattern with optional path and result limits."),

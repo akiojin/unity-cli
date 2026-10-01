@@ -101,7 +101,10 @@ def cli(args: list[str], cwd: Path, env: dict[str, str]) -> tuple[int, str, str]
 def lockfile_for(editors_dir: Path, pid: int) -> dict | None:
     path = editors_dir / f"{pid}.json"
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text())
+        # Diagnostics print this metadata; credentials must remain file-private.
+        value.pop("authToken", None)
+        return value
     except (OSError, json.JSONDecodeError):
         return None
 
@@ -138,6 +141,8 @@ def main() -> int:
 
     cli_env = {k: v for k, v in os.environ.items() if not k.startswith("UNITY_CLI_") and k != "UNITY_PROJECT_ROOT"}
     cli_env["UNITY_CLI_REGISTRY_PATH"] = str(work / "instances.json")
+    # A shared daemon retains its launch environment and may read another registry.
+    cli_env["UNITY_CLI_TOOLS_ROOT"] = str(work / "tools")
     cli_env["UNITY_CLI_NO_AUTO_UPDATE"] = "1"
     if "UNITY_CLI_EDITORS_DIR" in os.environ:
         cli_env["UNITY_CLI_EDITORS_DIR"] = os.environ["UNITY_CLI_EDITORS_DIR"]
@@ -194,7 +199,7 @@ def main() -> int:
               refreshed.get("heartbeatAt", 0) > lock_a["heartbeatAt"], json.dumps(refreshed))
 
         code, out, err = cli([unity_cli, "--output", "json", "instances", "list"], work, cli_env)
-        listed = json.loads(out) if code == 0 else []
+        listed = json.loads(out)["data"] if code == 0 else []
         by_project = {Path(entry.get("project_path", "")).name: entry for entry in listed}
         check(
             "AC-2 instances list (no --ports) lists both Editors with project paths",
@@ -237,7 +242,7 @@ def main() -> int:
         check(
             "AC-4 AMBIGUOUS_EDITOR with exit 6 and candidates (projectPath, port, pid)",
             code == 6
-            and payload.get("error", {}).get("code") == "AMBIGUOUS_EDITOR"
+            and (payload.get("errors") or [{}])[0].get("code") == "AMBIGUOUS_EDITOR"
             and {Path(c["projectPath"]).name for c in candidates} == {"ProjectA", "ProjectB"}
             and all(c.get("port") and c.get("pid") for c in candidates),
             out.strip(),
@@ -252,7 +257,7 @@ def main() -> int:
         code, out, _ = cli(
             [unity_cli, "--output", "json", "instances", "list", "--ports",
              f"{lock_a['port']},{lock_b['port']}"], work, cli_env)
-        check("compat instances list --ports", code == 0 and len(json.loads(out)) == 2, out.strip())
+        check("compat instances list --ports", code == 0 and len(json.loads(out)["data"]) == 2, out.strip())
         code, out, err = cli(
             [unity_cli, "--output", "json", "instances", "set-active", f"127.0.0.1:{lock_b['port']}"],
             work, cli_env)
@@ -267,7 +272,7 @@ def main() -> int:
         hosts["ProjectA"].send_signal(signal.SIGKILL)
         hosts["ProjectA"].wait(timeout=30)
         code, out, err = cli([unity_cli, "--output", "json", "instances", "list"], work, cli_env)
-        listed = json.loads(out) if code == 0 else []
+        listed = json.loads(out)["data"] if code == 0 else []
         by_project = {Path(entry.get("project_path", "")).name: entry for entry in listed}
         check(
             "AC-5 force-killed Editor is listed as unreachable",
@@ -323,6 +328,7 @@ def main() -> int:
         # The killed Editor's lockfile is expected to remain; remove it so it does not linger.
         for proc in hosts.values():
             (editors_dir / f"{proc.pid}.json").unlink(missing_ok=True)
+        cli([unity_cli, "unityd", "stop"], work, cli_env)
         if not args.keep:
             shutil.rmtree(work, ignore_errors=True)
 

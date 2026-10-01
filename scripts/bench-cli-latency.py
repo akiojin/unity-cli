@@ -105,7 +105,7 @@ def main():
             daemon = subprocess.Popen([binary, "unityd", "serve"], env=daemon_env,
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             deadline = time.monotonic() + 10
-            while not json.loads(invoke([binary, "--output", "json", "unityd", "status"], daemon_env)[1]).get("running"):
+            while not json.loads(invoke([binary, "--output", "json", "unityd", "status"], daemon_env)[1])["data"].get("running"):
                 if daemon.poll() is not None or time.monotonic() > deadline:
                     raise RuntimeError("owned daemon did not start")
                 time.sleep(.05)
@@ -120,7 +120,7 @@ def main():
                     samples = []
                     for i in range(args.iterations + 3):
                         elapsed, stdout = invoke(base + command, route_env)
-                        result = json.loads(stdout)
+                        result = json.loads(stdout)["data"]
                         values = [item["result"] for item in result if item.get("ok")] if name == "batch5" else [result]
                         if len(values) != (5 if name == "batch5" else 1) or any(
                                 value.get("mock") is not True or value.get("operation") != operation for value in values):

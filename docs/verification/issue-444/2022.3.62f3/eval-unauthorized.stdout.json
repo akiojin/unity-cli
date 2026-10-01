@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"command\":\"eval_csharp\",\"data\":{\"code\":\"UNAUTHORIZED\",\"error\":\"Missing or invalid authentication token\",\"id\":\"1\",\"status\":\"error\"},\"errors\":[{\"code\":\"UNAUTHORIZED\",\"message\":\"Evaluation may still be running (requestId=cli-5289-18da7c3b8459b620-0). Query `unity-cli editor eval-status cli-5289-18da7c3b8459b620-0` on the same endpoint; do not automatically rerun: Missing or invalid authentication token (code: UNAUTHORIZED)\"}],\"success\":false,\"warnings\":[]}"
+    }
+  ],
+  "isError": true
+}

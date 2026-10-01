@@ -1,0 +1,1356 @@
+{
+  "source_commit": "aa726e7",
+  "binary_sha256": "a0741cdeeb032551961de8e0357632c577cc873ccaa2a335ecb7134231156579",
+  "matrix_suites": [
+    {
+      "version": "6000.3.25f1",
+      "name": "compile",
+      "status": "PASS",
+      "source_report": "/tmp/issue-441-skills-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "input",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-tools.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/input.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-tools.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "timeline",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-timeline.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/timeline.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-timeline.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "vfx",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-vfx.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project",
+          "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/vfx"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/vfx.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-vfx.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project",
+            "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/vfx"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "compile",
+      "status": "PASS",
+      "source_report": "/tmp/issue-441-skills-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "input",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-tools.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/input.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-tools.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "timeline",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-timeline.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/timeline.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-timeline.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "vfx",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-vfx.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project",
+          "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/vfx"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/vfx.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-vfx.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project",
+            "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/vfx"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "eval",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-eval.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/eval.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-eval.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-first/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "hot-reload",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-hot-reload.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+          "--expect",
+          "missing"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/hot-reload.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-hot-reload.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project",
+            "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+            "--expect",
+            "missing"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "hot-reload",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-hot-reload.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+          "--expect",
+          "missing"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/6000.3.25f1-7rx7z0_1/hot-reload.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-hot-reload.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project",
+            "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+            "--expect",
+            "missing"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "reload",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--output",
+          "/private/tmp/issue-441-compat-rest/6000.3.25f1-7rx7z0_1/reload.json"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/6000.3.25f1-7rx7z0_1/reload.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--output",
+            "/private/tmp/issue-441-compat-rest/6000.3.25f1-7rx7z0_1/reload.json"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "bake",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-bake.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-root",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/6000.3.25f1-7rx7z0_1/bake.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-bake.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project-root",
+            "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "player-build-macOS",
+      "status": "PASS",
+      "step": {
+        "command": [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-path",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+        ],
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json",
+      "note": "Windows module unavailable; outside Issue 441 macOS scope (#386)."
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "reload",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--output",
+          "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reload.json"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reload.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--output",
+            "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reload.json"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "bake",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-bake.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-root",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/bake.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-bake.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project-root",
+            "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "player-build-macOS",
+      "status": "PASS",
+      "step": {
+        "command": [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-path",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+        ],
+        "returncode": 0,
+        "status": "PASS"
+      },
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json",
+      "note": "Windows module unavailable; outside Issue 441 macOS scope (#386)."
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "video-formats",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-video-formats.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--artifact-dir",
+          "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/video"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/video-formats.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-video-formats.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--artifact-dir",
+            "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/video"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "animation-curves",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-animation-curves.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-root",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/animation-curves.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-animation-curves.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project-root",
+            "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "input-actions-persistence",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-actions-persistence.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--unity-path",
+          "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+          "--port",
+          "6542",
+          "--project-path",
+          "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/persistence/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/input-actions-persistence.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-actions-persistence.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--unity-path",
+            "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+            "--port",
+            "6542",
+            "--project-path",
+            "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/persistence/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "reference",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-fetch.sh",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reference-fetch"
+        ],
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-resolution.sh",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6541",
+          "--project-root",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reference-resolution"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reference.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-fetch.sh",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reference-fetch"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        },
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-resolution.sh",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6541",
+            "--project-root",
+            "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-rest/2022.3.62f3-0te8ln_a/reference-resolution"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-rest/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "eval",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-eval.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/eval.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-eval.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "video-formats",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-video-formats.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551",
+          "--artifact-dir",
+          "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/video"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/video-formats.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-video-formats.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551",
+            "--artifact-dir",
+            "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/video"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "animation-curves",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-animation-curves.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551",
+          "--project-root",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/animation-curves.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-animation-curves.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551",
+            "--project-root",
+            "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "input-actions-persistence",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-actions-persistence.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--unity-path",
+          "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+          "--port",
+          "6552",
+          "--project-path",
+          "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/persistence/project"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/input-actions-persistence.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-input-actions-persistence.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--unity-path",
+            "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+            "--port",
+            "6552",
+            "--project-path",
+            "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/persistence/project"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "reference",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-fetch.sh",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/reference-fetch"
+        ],
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-resolution.sh",
+          "--cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551",
+          "--project-root",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+          "--artifacts",
+          "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/reference-resolution"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/reference.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-fetch.sh",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/reference-fetch"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        },
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-reference-resolution.sh",
+            "--cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551",
+            "--project-root",
+            "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+            "--artifacts",
+            "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/reference-resolution"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "all-tools",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6551",
+          "--skip-quit"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-compat-6000-final/6000.3.25f1-4j7zm6ov/all-tools.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6551",
+            "--skip-quit"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-compat-6000-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "screenshot",
+      "command": [
+        [
+          "/tmp/issue-441-python/bin/python",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6565",
+          "--project",
+          "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+          "--output",
+          "/private/tmp/issue-441-extras-final/2022.3.62f3-re5krz00/screenshots",
+          "--activate",
+          "--run-tests"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-extras-final/2022.3.62f3-re5krz00/screenshot.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "/tmp/issue-441-python/bin/python",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6565",
+            "--project",
+            "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project",
+            "--output",
+            "/private/tmp/issue-441-extras-final/2022.3.62f3-re5krz00/screenshots",
+            "--activate",
+            "--run-tests"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-extras-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "smoke",
+      "command": [
+        [
+          "env",
+          "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+          "--port",
+          "6565"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-extras-final/2022.3.62f3-re5krz00/smoke.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "env",
+            "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+            "--port",
+            "6565"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-extras-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "test-results",
+      "command": [
+        [
+          "env",
+          "UNITY_CLI=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-results.sh"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-extras-final/2022.3.62f3-re5krz00/test-results.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "env",
+            "UNITY_CLI=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-results.sh"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-extras-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "all-tools",
+      "command": [
+        [
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6601",
+          "--skip-quit"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-all-tools-2022-final/2022.3.62f3-ymlbjv75/all-tools.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6601",
+            "--skip-quit"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-all-tools-2022-final/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "screenshot",
+      "command": [
+        [
+          "/tmp/issue-441-python/bin/python",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--port",
+          "6605",
+          "--project",
+          "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+          "--output",
+          "/private/tmp/issue-441-gui-6000-retry/6000.3.25f1-2w2pr54u/screenshots",
+          "--activate",
+          "--run-tests"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-gui-6000-retry/6000.3.25f1-2w2pr54u/screenshot.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "/tmp/issue-441-python/bin/python",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--port",
+            "6605",
+            "--project",
+            "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project",
+            "--output",
+            "/private/tmp/issue-441-gui-6000-retry/6000.3.25f1-2w2pr54u/screenshots",
+            "--activate",
+            "--run-tests"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-gui-6000-retry/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "smoke",
+      "command": [
+        [
+          "env",
+          "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+          "--port",
+          "6605"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-gui-6000-retry/6000.3.25f1-2w2pr54u/smoke.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "env",
+            "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+            "--port",
+            "6605"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-gui-6000-retry/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "test-results",
+      "command": [
+        [
+          "env",
+          "UNITY_CLI=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "bash",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-results.sh"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-gui-6000-retry/6000.3.25f1-2w2pr54u/test-results.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "env",
+            "UNITY_CLI=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "bash",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-results.sh"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-gui-6000-retry/matrix.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "skills-install",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-skills-install.py",
+          "--project-root",
+          "/tmp/issue-441-prefab/6000.3.25f1/project",
+          "--port",
+          "6591",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--out",
+          "/private/tmp/issue-441-skills-final/6000.3.25f1-63yt8_jr/skills-install"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-skills-final/6000.3.25f1-63yt8_jr/skills-install.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-skills-install.py",
+            "--project-root",
+            "/tmp/issue-441-prefab/6000.3.25f1/project",
+            "--port",
+            "6591",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--out",
+            "/private/tmp/issue-441-skills-final/6000.3.25f1-63yt8_jr/skills-install"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-skills-final/matrix.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "skills-install",
+      "command": [
+        [
+          "python3",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-skills-install.py",
+          "--project-root",
+          "/tmp/issue-441-prefab/2022.3.62f3/project",
+          "--port",
+          "6591",
+          "--unity-cli",
+          "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+          "--out",
+          "/private/tmp/issue-441-skills-final/2022.3.62f3-yaqbxgq_/skills-install"
+        ]
+      ],
+      "log": "/private/tmp/issue-441-skills-final/2022.3.62f3-yaqbxgq_/skills-install.log",
+      "status": "PASS",
+      "steps": [
+        {
+          "command": [
+            "python3",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-skills-install.py",
+            "--project-root",
+            "/tmp/issue-441-prefab/2022.3.62f3/project",
+            "--port",
+            "6591",
+            "--unity-cli",
+            "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+            "--out",
+            "/private/tmp/issue-441-skills-final/2022.3.62f3-yaqbxgq_/skills-install"
+          ],
+          "returncode": 0,
+          "status": "PASS"
+        }
+      ],
+      "returncode": 0,
+      "source_report": "/tmp/issue-441-skills-final/matrix.json"
+    }
+  ],
+  "additional_checks": [
+    {
+      "version": "6000.3.25f1",
+      "name": "prefab",
+      "status": "PASS",
+      "passed": 45,
+      "source_report": "/tmp/issue-441-prefab/results.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "unityd",
+      "status": "PASS",
+      "passed": 9,
+      "source_log": "/tmp/issue-441-unityd-6000.3.25f1.log"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "unityd-restart",
+      "status": "PASS",
+      "cycles": 5,
+      "passed": 16,
+      "source_report": "/tmp/issue-441-restart-6000.3.25f1/run-20261002-012353/result.json"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "audio",
+      "status": "PASS",
+      "unit_tests": 16,
+      "source_log": "/tmp/issue-441-audio-6000.3.25f1.log"
+    },
+    {
+      "version": "6000.3.25f1",
+      "name": "ugui",
+      "status": "PASS",
+      "configurations": [
+        "present",
+        "absent"
+      ],
+      "source_logs": [
+        "/tmp/issue-441-ugui-6000.3.25f1-present.log",
+        "/tmp/issue-441-ugui-6000.3.25f1-absent.log"
+      ]
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "prefab",
+      "status": "PASS",
+      "passed": 45,
+      "source_report": "/tmp/issue-441-prefab/results.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "unityd",
+      "status": "PASS",
+      "passed": 9,
+      "source_log": "/tmp/issue-441-unityd-2022.3.62f3.log"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "unityd-restart",
+      "status": "PASS",
+      "cycles": 5,
+      "passed": 16,
+      "source_report": "/tmp/issue-441-restart-2022.3.62f3/run-20261002-012555/result.json"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "audio",
+      "status": "PASS",
+      "unit_tests": 16,
+      "source_log": "/tmp/issue-441-audio-2022.3.62f3.log"
+    },
+    {
+      "version": "2022.3.62f3",
+      "name": "ugui",
+      "status": "PASS",
+      "configurations": [
+        "present",
+        "absent"
+      ],
+      "source_logs": [
+        "/tmp/issue-441-ugui-2022.3.62f3-present.log",
+        "/tmp/issue-441-ugui-2022.3.62f3-absent.log"
+      ]
+    },
+    {
+      "name": "editor-discovery",
+      "status": "PASS",
+      "passed": 19,
+      "source_log": "/tmp/issue-441-discovery.log"
+    }
+  ]
+}

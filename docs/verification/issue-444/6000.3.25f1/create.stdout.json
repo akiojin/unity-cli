@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"command\":\"create_gameobject\",\"data\":{\"id\":-47524,\"isActive\":true,\"layer\":0,\"name\":\"McpInspector444_6000.3.25f1\",\"path\":\"/McpInspector444_6000.3.25f1\",\"position\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"rotation\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"scale\":{\"x\":1.0,\"y\":1.0,\"z\":1.0},\"tag\":\"Untagged\"},\"errors\":[],\"success\":true,\"warnings\":[]}"
+    }
+  ],
+  "isError": false
+}

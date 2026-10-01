@@ -52,17 +52,23 @@ def call(tool, params=None, expect_error=False, allow_cli_validation=False):
     print(f"{stem}: exit={result.returncode} {result.stdout.strip()} {result.stderr.strip()}",
           file=log, flush=True)
     try:
-        data = json.loads(result.stdout)
+        envelope = json.loads(result.stdout)
+        data = envelope["data"]
     except ValueError as error:
         if (expect_error and allow_cli_validation and result.returncode != 0
                 and "format" in result.stderr.lower()
                 and any(word in result.stderr.lower() for word in ("invalid", "enum", "must be", "not one of"))):
             return {"error": result.stderr.strip(), "source": "CLI validation"}
         raise AssertionError(f"{tool}: non-JSON response: {result.stdout} {result.stderr}") from error
-    assert isinstance(data, dict), f"{tool}: expected response object: {data}"
     if expect_error:
-        assert data.get("error"), f"{tool}: expected explicit error: {data}"
+        assert result.returncode != 0 and envelope["success"] is False, envelope
+        assert envelope["errors"], f"{tool}: expected explicit error: {envelope}"
+        if data is None:
+            assert allow_cli_validation and result.returncode == 2, envelope
+            assert envelope["errors"][0]["code"] == "INVALID_ARGUMENT", envelope
+        return envelope
     else:
+        assert isinstance(data, dict), f"{tool}: expected response object: {data}"
         assert result.returncode == 0 and not data.get("error"), f"{tool}: {data} {result.stderr}"
     return data
 

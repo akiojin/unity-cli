@@ -82,9 +82,14 @@ fn serve_unity(mut stream: TcpStream, label: &str, stop: Arc<AtomicBool>) {
         let mut body = vec![0; length];
         stream.read_exact(&mut body).unwrap();
         let request: Value = serde_json::from_slice(&body).unwrap();
+        let result = if request["type"] == "list_tools" {
+            json!({"tools": []})
+        } else {
+            json!({ "endpoint": label, "tool": request["type"], "params": request["params"] })
+        };
         let response = serde_json::to_vec(&json!({
             "id": request["id"], "status": "success",
-            "result": { "endpoint": label, "tool": request["type"], "params": request["params"] }
+            "result": result
         }))
         .unwrap();
         if stream
@@ -166,12 +171,14 @@ fn parse_success(output: Output) -> Value {
         "CLI failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
+    let envelope: Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
         panic!(
             "stdout is not JSON: {error}: {}",
             String::from_utf8_lossy(&output.stdout)
         )
-    })
+    });
+    assert_eq!(envelope["success"], true);
+    envelope["data"].clone()
 }
 
 #[test]
@@ -265,7 +272,7 @@ fn daemon_routes_each_endpoint_to_its_own_pooled_connection() {
 }
 
 #[test]
-fn local_invalid_status_and_skipped_dry_run_commands_do_not_start_daemon() {
+fn discovery_local_invalid_and_skipped_dry_run_commands_do_not_start_daemon() {
     let unity = MockUnity::new("unused");
     let cli = CliTest::new(unity.port);
     for args in [
@@ -292,7 +299,9 @@ fn local_invalid_status_and_skipped_dry_run_commands_do_not_start_daemon() {
             "spawned for invalid {args:?}"
         );
     }
-    assert_eq!(unity.connections.load(Ordering::SeqCst), 0);
+    // Listing and unknown tool lookup each make one read-only direct discovery
+    // request. Neither discovery nor locally rejected commands start unityd.
+    assert_eq!(unity.connections.load(Ordering::SeqCst), 2);
 }
 
 #[test]

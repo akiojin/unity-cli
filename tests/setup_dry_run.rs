@@ -116,6 +116,8 @@ fn setup_dry_run_prints_plan_without_connections_writes_or_launches() {
             }
             if json {
                 let report: Value = serde_json::from_str(&text).unwrap();
+                assert_eq!(report["success"], true);
+                let report = &report["data"];
                 assert_eq!(report["dryRun"], true);
                 assert_eq!(report["steps"].as_array().unwrap().len(), 4);
                 assert_eq!(report["steps"][2]["enabled"], launch);

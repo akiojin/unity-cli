@@ -1,11 +1,11 @@
 ---
 name: unity-cli-usage
-description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
+description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, configuring an MCP client, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 user-invocable: false
 metadata:
   author: akiojin
-  version: 0.4.1
+  version: 0.4.2
   category: foundation
   triggers:
     - bootstrap
@@ -15,6 +15,7 @@ metadata:
     - ping
     - doctor
     - instance
+    - mcp
   siblings:
     - unity-package-management
     - unity-project-bootstrap
@@ -54,7 +55,23 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 4. Pick the right entry point for the operation:
    - **Typed subcommand** when one exists. The bootstrap-relevant typed subcommands are `setup`, `bridge install|upgrade|status`, `system ping`, `scene create`, `instances list`, and `instances set-active`. Other typed subcommands exist too — notably the `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`), which wrap the `reference_*` bridge tools; see the `unity-csharp-reference` skill. But most bridge tools have no typed wrapper. (Note: `setup`, `bridge *`, `instances list`, and `instances set-active` are local operations, not bridge-tool wrappers.)
    - **`raw <tool_name> --json '{...}'`** (equivalent alias: `tool call <tool_name> --json '{...}'`) for every tool without a typed wrapper. This is the primary way to invoke the bridge, not a fallback. Discover tools by keyword with `unity-cli tool list --query <term> --compact` (narrow further with `--category <name>` such as `scenes`, and `--limit N`) instead of listing all tools; inspect a tool's expected payload with `unity-cli tool schema <tool_name> --output json`.
-5. Use `--output json` for chained automation.
+5. Use `--output json` for chained automation. Both success and failure write one stdout envelope: `{success, command, data, errors:[{code,message}], warnings}`. Tool fields below are relative to `data`; check the exit status and `success` before reading them. Bridge error codes remain unchanged in `errors[0].code`.
+
+| Exit | Meaning / next action |
+| --- | --- |
+| 0 | Success: consume `data` |
+| 1 | General failure: inspect diagnostics |
+| 2 | `INVALID_ARGUMENT`: correct arguments/JSON |
+| 3 | `UNAUTHORIZED`: correct authentication |
+| 4 | Unmet precondition: correct settings/capabilities |
+| 6 | Operation failure: inspect Bridge code; retry only if safe |
+| 7 | Editor unreachable: run `doctor`, recover the target, reconnect |
+| 8 | `TEST_FAILED`: inspect `data.failures` |
+| 130 / 143 | SIGINT / SIGTERM shell status: interrupted/terminated |
+
+For example, a failed ping returns `{"success":false,"command":"system ping","data":null,"errors":[{"code":"EDITOR_UNREACHABLE","message":"Could not connect to the Editor"}],"warnings":[]}` and exit 7. Read successful results with `jq '.data'`. `--help`/`--version` retain informational text; a signal may terminate the process before an envelope is written.
+
+`run_tests` normally returns a running job with exit 0. Poll `get_test_status` until `data.status` is `completed`; that final call returns exit 8 for failures and 0 for all passed. Response timeout (`TIMEOUT`, exit 6) may follow an executed mutation: inspect its job/request ID before resending.
 
 ```bash
 if ! command -v unity-cli >/dev/null 2>&1; then
@@ -66,11 +83,38 @@ unity-cli --output json setup --launch-editor   # bridge install + Editor connec
 unity-cli bridge status                        # declared / resolved bridge version
 unity-cli system ping
 unity-cli tool list --query scene --compact    # discover tools by keyword
+unity-cli tool list --names-only --output json # name array in data
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
 unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ```
 
+## MCP client setup
+
+The CLI is the primary implementation; `unity-cli mcp` is a thin stdio adapter
+over the same catalog, execution path and Editor authentication. Use it when a
+client needs MCP instead of shell/skill execution. It starts without an Editor
+and emits `notifications/tools/list_changed` when the selected Editor connects.
+
+1. Preview the requested client settings with `unity-cli mcp configure cursor --local --dry-run`.
+2. Apply them with `unity-cli mcp configure cursor --local`. Supported clients:
+   `claude-code`, `cursor`, `vscode`, `windsurf`, `codex`; Claude Desktop is not
+   distributed. `--local` writes project settings in the current directory and
+   pins that project path; omit it for user settings. Windsurf has no local scope.
+3. Ensure `unity-cli` is on the client's PATH, reload its MCP settings, and follow
+   the client's trust prompt. Existing keys/other servers are preserved; invalid
+   files and symlinks are rejected. Never put an Editor token in client settings.
+4. Verify with `npx @modelcontextprotocol/inspector --cli unity-cli mcp --method tools/list`.
+   MCP tool failures have `isError: true` and the normal CLI envelope in text
+   content. Inspect `errors[0].code` and use the same recovery steps as CLI calls.
+
 ## Examples
+
+JSON discovery returns descriptors in `data`, including `params_schema` and
+`source` (`builtin` or `custom`). Read `.data[].name` for names, or add
+`--names-only` to retain `.data[]`. `--compact` still returns name/description
+pairs. Connected Editors add project-local tools to `tool list` / `tool schema`;
+`--category custom` selects them. Offline discovery lists builtins. For creating
+`[UnityCliBridge.Tools.UnityCliTool]` methods, use `unity-editor-tools`.
 
 - "Add a Cube to the scene" in a fresh project without unity-cli → install the binary, run `unity-cli --output json setup --launch-editor`, then `unity-cli raw create_gameobject --json '{"name":"Cube","primitiveType":"cube"}'`.
 - "Check whether unity-cli can reach my Unity Editor." → run `unity-cli system ping`.

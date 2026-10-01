@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"command\":\"mcp_probe_444\",\"data\":\"mcp-dynamic-ok\",\"errors\":[],\"success\":true,\"warnings\":[]}"
+    }
+  ],
+  "isError": false
+}

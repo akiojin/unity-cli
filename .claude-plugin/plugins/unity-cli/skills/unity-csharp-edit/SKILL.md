@@ -24,6 +24,8 @@ metadata:
 
 # Unity C# Edit
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Implement Unity C# changes with `unity-cli` as the primary write path. Prefer the smallest write primitive that keeps the change correct, and preserve Unity serialization, UI binding paths, and editor/runtime boundaries.
 
 ## Use When

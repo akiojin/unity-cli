@@ -377,7 +377,7 @@ fn default_editor_log_path() -> Option<PathBuf> {
     }
 }
 
-fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
+pub(crate) fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
     let Some(path) = editor.project_path.as_deref() else {
         return false;
     };
@@ -396,7 +396,7 @@ fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
     normalize(Path::new(path)) == normalize(project)
 }
 
-fn list_editor_processes() -> Vec<EditorProcess> {
+pub(crate) fn list_editor_processes() -> Vec<EditorProcess> {
     process_command_lines()
         .into_iter()
         .filter_map(|(pid, command_line)| parse_editor_command_line(pid, &command_line))
@@ -405,6 +405,14 @@ fn list_editor_processes() -> Vec<EditorProcess> {
 
 /// Recognizes a Unity Editor command line (not Unity Hub or helper processes).
 pub fn parse_editor_command_line(pid: u32, command_line: &str) -> Option<EditorProcess> {
+    // Workers use the Editor executable and project path, but cannot host a
+    // Bridge. They may briefly outlive the main Editor after headless tests.
+    if command_line
+        .split_whitespace()
+        .any(|arg| arg.eq_ignore_ascii_case("-adb2") || arg.starts_with("AssetImportWorker"))
+    {
+        return None;
+    }
     let executable = Regex::new(
         r#"(?i)(/Unity\.app/Contents/MacOS/Unity|[\\/]Editor[\\/]Unity(\.exe)?|^Unity\.exe|^Unity)(\s|"|$)"#,
     )
@@ -709,6 +717,12 @@ Safe Mode: Only loading a subset of assemblies\n";
             "/Applications/Unity Hub.app/Contents/Frameworks/Unity Hub Helper.app/Contents/MacOS/Unity Hub Helper --type=gpu-process"
         )
         .is_none());
+    }
+
+    #[test]
+    fn editor_import_workers_are_not_reusable_editors() {
+        assert!(parse_editor_command_line(123,
+            "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -adb2 -batchMode -name AssetImportWorker0 -projectPath /tmp/test-project -parentPid 12").is_none());
     }
 
     #[test]

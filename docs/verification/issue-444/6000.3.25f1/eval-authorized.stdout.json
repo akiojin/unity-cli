@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"command\":\"eval_csharp\",\"data\":{\"diagnostics\":[],\"exception\":null,\"logs\":[],\"requestId\":\"cli-1972-18da7c3576019e90-0\",\"state\":\"completed\",\"value\":3},\"errors\":[],\"success\":true,\"warnings\":[]}"
+    }
+  ],
+  "isError": false
+}

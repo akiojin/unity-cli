@@ -9,6 +9,7 @@ using UnityCliBridge.Handlers;
 using UnityCliBridge.Helpers;
 using UnityCliBridge.Logging;
 using UnityCliBridge.Models;
+using UnityCliBridge.Tools;
 
 namespace UnityCliBridge.Core
 {
@@ -23,6 +24,7 @@ namespace UnityCliBridge.Core
         private static readonly IReadOnlyDictionary<string, CommandHandler> Handlers =
             new Dictionary<string, CommandHandler>(StringComparer.OrdinalIgnoreCase)
             {
+                ["list_tools"] = command => Success(command, new { tools = CustomToolRegistry.Current.Describe() }),
                 ["build_player"] = command => Task.FromResult(PlayerBuildHandler.Start(command)),
                 ["get_build_status"] = command => Task.FromResult(PlayerBuildHandler.Status(command)),
                 ["ping"] = command => Success(command, new
@@ -31,6 +33,7 @@ namespace UnityCliBridge.Core
                     echo = command.Parameters?["message"]?.ToString(),
                     timestamp = DateTime.UtcNow.ToString("o"),
                     bridgeVersion = Response.PackageVersion,
+                    supportsSafeClose = true,
                     projectPath = Path.GetDirectoryName(Application.dataPath)
                 }),
                 ["clear_logs"] = command =>
@@ -147,6 +150,22 @@ namespace UnityCliBridge.Core
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
                 {
+                    // Typed `editor close` always supplies force. Keep legacy raw
+                    // quit requests (no force field) compatible with existing hosts.
+                    if (command.Parameters?["force"]?.ToObject<bool>() == false)
+                    {
+                        var unsaved = new List<string>();
+                        for (var i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                        {
+                            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                            if (scene.isDirty)
+                                unsaved.Add(string.IsNullOrEmpty(scene.path) ? "Untitled" : scene.path);
+                        }
+                        if (unsaved.Count > 0)
+                            return Task.FromResult(Response.ErrorResult(command.Id,
+                                "Unsaved scenes; save them first or use editor close --force to discard changes",
+                                "UNSAVED_SCENES", new { scenes = unsaved }));
+                    }
                     var response = Response.SuccessResult(command.Id, new { message = "Unity Editor quitting" });
                     // The transport schedules exit only after this response is sent.
                     return Task.FromResult(response);
@@ -160,9 +179,15 @@ namespace UnityCliBridge.Core
                 ["manage_audio_mixer"] = command => Success(command, AudioMixerHandler.HandleCommand(command.Parameters)),
                 ["manage_asset_database"] = command => Success(command, AssetDatabaseHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["analyze_asset_dependencies"] = command => Success(command, AssetDependencyHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
+#if UNITY_ADDRESSABLES
                 ["addressables_manage"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["addressables_build"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["addressables_analyze"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
+#else
+                ["addressables_manage"] = AddressablesUnavailable,
+                ["addressables_build"] = AddressablesUnavailable,
+                ["addressables_analyze"] = AddressablesUnavailable,
+#endif
                 ["get_project_setting"] = command => Success(command, ProjectSettingsHandler.GetProjectSetting(command.Parameters)),
                 ["set_project_setting"] = command => Success(command, ProjectSettingsHandler.SetProjectSetting(command.Parameters)),
                 ["get_project_settings"] = command => Success(command, ProjectSettingsHandler.GetProjectSettings(command.Parameters)),
@@ -190,6 +215,9 @@ namespace UnityCliBridge.Core
                 return handler(command);
             }
 
+            if (CustomToolRegistry.Current.TryHandle(command, out var customResponse))
+                return Task.FromResult(customResponse);
+
             return Task.FromResult(Response.ErrorResult(
                 command?.Id,
                 $"Unknown command type: {command?.Type}",
@@ -200,6 +228,18 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+#if !UNITY_ADDRESSABLES
+        // com.unity.addressables is optional (UNITY_ADDRESSABLES comes from the asmdef versionDefines).
+        // The command types stay registered so `tool list` is stable across projects and a caller
+        // gets an actionable error instead of UNKNOWN_COMMAND.
+        private static Task<string> AddressablesUnavailable(Command command) =>
+            Task.FromResult(Response.ErrorResult(
+                command.Id,
+                "Addressables tools require the com.unity.addressables package, which is not installed in this project",
+                "ADDRESSABLES_NOT_INSTALLED",
+                new { package = "com.unity.addressables", commandType = command.Type }));
+#endif
 
         private static Task<string> PrefabResult(Command command, object result)
         {

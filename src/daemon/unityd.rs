@@ -116,9 +116,9 @@ impl ConnectionPool {
                 port,
                 timeout,
             };
-            let client = UnityClient::connect(&config).await.map_err(|error| {
-                anyhow::anyhow!(
-                    "Failed to connect to Unity at {host}:{port}: {error:#}. {}",
+            let client = UnityClient::connect(&config).await.with_context(|| {
+                format!(
+                    "Failed to connect to Unity at {host}:{port}. {}",
                     crate::core::doctor::DOCTOR_HINT
                 )
             })?;
@@ -202,14 +202,15 @@ fn spawn_daemon(exe: &std::path::Path) -> Result<std::process::Child> {
         .append(true)
         .open(tools_dir()?.join("unityd.log"))
         .context("Failed to open unityd startup log")?;
-    Command::new(exe)
-        .args(["unityd", "serve"])
-        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::from(log))
-        .spawn()
-        .context("Failed to spawn unityd background process")
+    super::spawn::spawn_detached(
+        Command::new(exe)
+            .args(["unityd", "serve"])
+            .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::from(log)),
+    )
+    .context("Failed to spawn unityd background process")
 }
 
 #[cfg(not(test))]
@@ -610,9 +611,15 @@ pub async fn serve_forever() -> Result<()> {
         match accept_result {
             Ok(Ok((stream, _))) => {
                 last_activity = Instant::now();
-                let action = handle_async_stream(stream, &mut pool).await?;
-                if matches!(action, ConnectionAction::Stop) {
-                    break;
+                // One bad connection must not take the daemon down. A malformed request,
+                // or a client that hangs up before reading its reply (every client-side
+                // --timeout-ms expiry does exactly that), used to propagate out of the
+                // accept loop and kill the process, silently costing ~2s on every later
+                // call. Log it and keep serving; only a listener failure is fatal.
+                match handle_async_stream(stream, &mut pool).await {
+                    Ok(ConnectionAction::Stop) => break,
+                    Ok(ConnectionAction::Continue) => {}
+                    Err(error) => eprintln!("unityd: dropped connection: {error:#}"),
                 }
             }
             Ok(Err(error)) => {
@@ -761,7 +768,11 @@ async fn handle_request(
                             ok: false,
                             result: error
                                 .downcast_ref::<UnityCommandError>()
-                                .map(|failure| failure.response.clone()),
+                                .map(|failure| failure.response.clone())
+                                .or_else(|| {
+                                    let failure = crate::core::failure::classify(&error);
+                                    Some(json!({"status":"error", "code":failure.code, "error":failure.message}))
+                                }),
                             error: Some(error.to_string()),
                             timing: None,
                         },
@@ -794,7 +805,7 @@ async fn handle_request(
                     }
                     Err(error) => {
                         pool.remove(&host, port);
-                        results.push(json!({ "ok": false, "error": error.to_string() }));
+                        results.push(crate::core::failure::batch_error(&error));
                     }
                 }
             }
@@ -1446,6 +1457,94 @@ mod tests {
 
         let _invalid = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "0");
         assert_eq!(idle_timeout_secs(), 600);
+    }
+
+    // A malformed request, or a client that hangs up before reading its reply, used to
+    // propagate out of the accept loop and kill the daemon. Everything afterwards then
+    // silently fell back to direct TCP at ~10x the latency. The daemon must outlive both.
+    #[cfg(unix)]
+    #[test]
+    fn serve_forever_survives_a_bad_connection() {
+        use std::io::{BufRead, BufReader, Write};
+        use std::os::unix::net::UnixStream;
+
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let home = tempdir().expect("tempdir should succeed");
+        let _home = EnvVarGuard::set(
+            "HOME",
+            home.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        // Long enough that the idle path cannot end the loop for us; the Stop below does.
+        let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "30");
+
+        let socket = socket_path().expect("socket path should resolve");
+        let server = std::thread::spawn(|| {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("runtime should build");
+            runtime.block_on(serve_forever())
+        });
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        while !socket.exists() && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(socket.exists(), "daemon should have bound its socket");
+
+        // (1) malformed request line
+        {
+            let mut bad = UnixStream::connect(&socket).expect("connect should succeed");
+            bad.write_all(
+                b"this-is-not-json
+",
+            )
+            .expect("write should succeed");
+        }
+        // (2) valid request, abandoned before reading the reply -- what a client-side
+        //     --timeout-ms expiry looks like from here
+        {
+            let mut rude = UnixStream::connect(&socket).expect("connect should succeed");
+            rude.write_all(
+                b"{\"type\":\"ping\"}
+",
+            )
+            .expect("write should succeed");
+        }
+
+        // The daemon must still answer.
+        let mut good = UnixStream::connect(&socket).expect("daemon should still be listening");
+        good.write_all(
+            b"{\"type\":\"ping\"}
+",
+        )
+        .expect("write should succeed");
+        let mut reply = String::new();
+        BufReader::new(good.try_clone().expect("clone should work"))
+            .read_line(&mut reply)
+            .expect("daemon should reply after bad connections");
+        let parsed: DaemonResponse =
+            serde_json::from_str(reply.trim()).expect("reply should be a daemon response");
+        assert!(parsed.ok, "daemon should still serve after bad connections");
+
+        let mut stop = UnixStream::connect(&socket).expect("connect should succeed");
+        stop.write_all(
+            b"{\"type\":\"stop\"}
+",
+        )
+        .expect("write should succeed");
+        let mut stop_reply = String::new();
+        let _ =
+            BufReader::new(stop.try_clone().expect("clone should work")).read_line(&mut stop_reply);
+
+        server
+            .join()
+            .expect("server thread should not panic")
+            .expect("serve_forever should exit cleanly");
     }
 
     #[cfg(unix)]

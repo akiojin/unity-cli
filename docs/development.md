@@ -193,6 +193,89 @@ Keep test-first commit order whenever possible.
 
 ## Local Unity E2E
 
+### CI test command (headless or existing Editor)
+
+`unity-cli test` reuses the Editor for `--project-path` when it is already
+running. Otherwise it starts that project's installed Editor in batch mode and
+stops only the process it started, including on compilation errors and timeout.
+The project must contain the Unity CLI Bridge and Unity Test Framework packages.
+Editor selection uses `ProjectSettings/ProjectVersion.txt`; `UNITY_EDITOR_PATH`
+can select an installed binary explicitly.
+
+```bash
+unity-cli test --project-path ./UnityCliBridge --mode editmode \
+  --report junit --output ./artifacts/editmode.xml --timeout 600
+unity-cli test --project-path ./UnityCliBridge --mode playmode \
+  --filter MyPlayModeTests --report nunit --output ./artifacts/playmode.xml
+# Optional: exercise Enter Play Mode without Domain Reload
+unity-cli test --project-path ./UnityCliBridge --mode playmode \
+  --disable-domain-reload --output ./artifacts/playmode-no-reload.xml
+```
+
+For this subcommand, `--output` is the report filename, relative to the current
+directory; other commands retain their `--output text|json` presentation option.
+`--filter` follows `run_tests`: a dotted name selects an exact test, otherwise it
+selects a fixture. PlayMode preserves the project's Domain Reload configuration
+unless `--disable-domain-reload` is supplied. Reconnection polls the same run ID
+and never restarts the tests. NUnit reports use the NUnit 3 XML structure; JUnit
+reports include failures, skipped cases, durations and captured test output.
+
+Exit codes are `0` for success, `8` for failed tests, `6` for execution failures
+(including compilation errors), and `7` when the Editor cannot be reached.
+A test execution timeout after the run starts is `6`. The timeout covers startup
+and the test run; terminating an owned process can take up to 10 additional
+seconds. Failed tests still produce a report before exit `8`.
+`--output-format github` emits GitHub error annotations; file and line metadata
+are included when Unity's failure stack trace contains a source location.
+
+Example GitHub Actions workflow for an already provisioned self-hosted macOS
+Apple Silicon runner (this example is not run by this repository's CI):
+
+```yaml
+name: Unity tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  editmode:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --bin unity-cli
+      - name: Run Unity tests
+        env:
+          UNITY_CLI_NO_AUTO_UPDATE: '1'
+        run: |
+          target/release/unity-cli test --project-path UnityCliBridge \
+            --mode editmode --report junit --output artifacts/editmode.xml \
+            --timeout 600 --output-format github
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results
+          path: artifacts/*.xml
+```
+
+Install the matching Editor and activate a valid Unity license for the runner's
+OS account before running the job. This command does not install or activate
+Unity. Configure license-server access or activation according to your Unity
+subscription; keep any activation credentials in Actions secrets, not in YAML
+or artifacts. A license failure is an infrastructure failure, not a failed test.
+Use an isolated runner/project checkout so concurrent jobs cannot open the same
+Unity project.
+
+Local acceptance verification (requires `xmllint` and the Jenkins xUnit
+[JUnit schema](https://github.com/jenkinsci/xunit-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd)):
+
+```bash
+python3 scripts/e2e-ci-tests.py --version 6000.3.25f1 \
+  --output /tmp/ci-tests-unity6 --port 6551 --junit-schema /path/to/junit-10.xsd
+python3 scripts/e2e-ci-tests.py --version 2022.3.62f3 \
+  --output /tmp/ci-tests-unity2022 --port 6552 --junit-schema /path/to/junit-10.xsd
+```
+
 Unity E2E is not executed in CI. Use it only for local validation against a running Unity Editor with the TCP listener active.
 
 ### Preparation
@@ -209,6 +292,23 @@ cargo build --release
 
 # Smoke E2E
 scripts/e2e-test.sh
+
+# Custom attributes, live recompilation/discovery, CLI/Bridge argument rejection,
+# Light creation, exception isolation, and focused EditMode collision tests.
+# Each run creates its own project, credentials, port, logs and source hashes.
+python3 scripts/e2e-custom-tools.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/custom-tools-6000
+python3 scripts/e2e-custom-tools.py --version 2022.3.62f3 \
+  --cli target/debug/unity-cli --output /tmp/custom-tools-2022
+
+# TCP authentication: isolated real Editor, missing/wrong token rejection,
+# eval side effects, CLI/unityd success, POSIX 0600, and focused EditMode tests.
+# Repeat for 2022.3.62f3; use a fresh output directory for each run.
+python3 scripts/e2e-bridge-auth.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/bridge-auth-6000 --editmode
+# Temporary legacy opt-out and next-minor deprecation warning
+python3 scripts/e2e-bridge-auth.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/bridge-auth-optout-6000 --opt-out
 
 # AudioMixer hierarchy/exposed Volume and AudioImporter persistence (isolated Editor)
 bash scripts/e2e-audio-batch-host.sh --unity-version 2022.3.62f3 --port 6481
@@ -472,8 +572,9 @@ export UNITY_PROJECT_ROOT=/absolute/path/to/UnityCliBridge
 
 ### `Capabilities: none`
 
-`unity-cli` is a CLI, not an MCP server.  
-If a client still expects MCP capabilities directly, remove legacy MCP launch settings and configure command execution to call `unity-cli`.
+The CLI is the primary implementation. For MCP clients, use the thin
+`unity-cli mcp` stdio adapter and `unity-cli mcp configure <client>`;
+see [MCP configuration](./mcp.md). Legacy Node.js MCP launch settings are not supported.
 
 Verification:
 
@@ -507,7 +608,7 @@ Regenerate command examples:
 
 ```bash
 unity-cli --help
-unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
+unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].name'
 ```
 
 ## Benchmark Policy
@@ -518,11 +619,11 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
 failed operation, absolute limit violation, or relative regression fails the run.
 Percentiles use the nearest rank; failed operations never count as fast samples.
 
-| Gate | Environment | Samples per operation | Evidence |
-| ---- | ----------- | --------------------- | -------- |
-| CLI Latency (required) | Linux CI, deterministic loopback TCP Bridge | 50 after 3 warmups | `cli-latency` artifact: normal and injected-delay JSON |
-| Editor `perf` suite | macOS GUI, 6000.3.25f1 and 2022.3.62f3 | 30 after 3 complete warmup cycles, each focus condition | `matrix.json`, `perf.json`, `perf.log` |
-| `editor_eval` | macOS GUI, Editor frontmost | 100 after 3 warmups | `bench-eval.py --budget editor_eval` JSON |
+| Gate                   | Environment                                 | Samples per operation                                   | Evidence                                               |
+| ---------------------- | ------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| CLI Latency (required) | Linux CI, deterministic loopback TCP Bridge | 50 after 3 warmups                                      | `cli-latency` artifact: normal and injected-delay JSON |
+| Editor `perf` suite    | macOS GUI, 6000.3.25f1 and 2022.3.62f3      | 30 after 3 complete warmup cycles, each focus condition | `matrix.json`, `perf.json`, `perf.log`                 |
+| `editor_eval`          | macOS GUI, Editor frontmost                 | 100 after 3 warmups                                     | `bench-eval.py --budget editor_eval` JSON              |
 
 CI measures startup, tool list, and ping/state/batch-of-five over both direct TCP
 and a warm unityd connection. Direct mode exercises the existing daemon-unavailable
@@ -1093,8 +1194,9 @@ export UNITY_PROJECT_ROOT=/absolute/path/to/UnityCliBridge
 
 ### `Capabilities: none`
 
-`unity-cli` は MCP サーバーではなく CLI です。  
-クライアントが MCP capabilities を直接期待している場合は、旧 MCP 起動設定を削除し、コマンド実行先を `unity-cli` に切り替えてください。
+CLI が本体です。MCP クライアントには薄い stdio アダプタ `unity-cli mcp` と
+`unity-cli mcp configure <client>` を使用してください（[MCP 設定](./mcp.md)）。
+旧 Node.js MCP サーバーの起動設定はサポートしません。
 
 確認:
 
@@ -1128,7 +1230,7 @@ Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency �
 
 ```bash
 unity-cli --help
-unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
+unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].name'
 ```
 
 ## ベンチマーク方針

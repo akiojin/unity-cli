@@ -39,7 +39,7 @@ class Suite:
                 data = {"unparsed": result.stdout, "stderr": result.stderr}
             with (self.output / "calls.jsonl").open("a") as stream:
                 stream.write(json.dumps({"command": command, "exit": result.returncode, "result": data, "stderr": result.stderr}) + "\n")
-            if data.get("code") == "EDITOR_BUSY" and time.monotonic() < deadline:
+            if (data.get("errors") or [{}])[0].get("code") == "EDITOR_BUSY" and time.monotonic() < deadline:
                 time.sleep(0.5)
                 continue
             break
@@ -47,7 +47,7 @@ class Suite:
             self.check(result.returncode != 0 and error in json.dumps(data), tool + " rejects " + error)
         else:
             assert result.returncode == 0 and not data.get("error") and data.get("success") is not False, (tool, data)
-        return data
+        return data["data"]
 
     def evaluate(self, code, statements=False):
         data = self.raw("eval_csharp", {"code": code, "mode": "statements" if statements else "expression"})

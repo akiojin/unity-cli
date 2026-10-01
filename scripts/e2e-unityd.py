@@ -46,7 +46,7 @@ def main():
                                        "stderr": result.stderr})
             if result.returncode:
                 raise RuntimeError(f"{command}: {result.stderr}\n{result.stdout}")
-            return json.loads(result.stdout), elapsed
+            return json.loads(result.stdout)["data"], elapsed
 
         def check(name, condition):
             report["checks"].append({"name": name, "pass": bool(condition)})

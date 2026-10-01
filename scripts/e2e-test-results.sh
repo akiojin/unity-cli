@@ -26,7 +26,7 @@ def call(tool, params):
                               "stderr": run.stderr, "exit": run.returncode}) + "\n")
     if run.returncode:
         raise RuntimeError(f"{tool}: {run.stderr} {run.stdout}")
-    data = json.loads(run.stdout)
+    data = json.loads(run.stdout)["data"]
     if data.get("error") or data.get("status") == "error":
         raise RuntimeError(f"{tool}: {data}")
     return data

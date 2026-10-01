@@ -1,3 +1,80 @@
+## [Unreleased]
+
+## [0.18.0] - 2026-10-02
+
+### Breaking changes and migration
+
+- `--output json` now emits `{success, command, data, errors, warnings}` for
+  success and failure. Read existing tool fields through `.data` (for example,
+  `jq '.data'` or `json.loads(stdout)["data"]`), check the process exit status
+  and `success`, and inspect `errors[].code`. Diagnostics remain on stderr;
+  `--help` and `--version` retain their normal informational output.
+- Update automation that assumes every failure exits with code 1. The stable
+  codes are 0 success, 1 general failure, 2 invalid arguments, 3 authentication
+  failure, 4 unmet precondition, 6 operation failure/timeout, 7 Editor unreachable,
+  and 8 completed test failure (130/143 for signal termination). A timeout does
+  not prove a mutation did not run: inspect the request/job status before retrying.
+  See the [result contract](docs/tools.md#json-results-and-exit-codes).
+- TCP requests, including ping and eval, now require the current Editor's
+  authentication token, and the default bind address is loopback. Upgrade the CLI
+  and Bridge together; CLI/unityd read the private discovery lockfile automatically.
+  Custom TCP clients must send its `authToken` on every request and reload it
+  after domain reload. For remote clients, mount the lockfile directory and set
+  `UNITY_CLI_AUTH_TOKEN_FILE` to the Editor lockfile; restart existing daemons after
+  changing credential settings. Explicitly configure non-loopback binding when
+  remote access is required. See [authentication setup](docs/configuration.md#authentication)
+  and the temporary legacy-client opt-out below.
+
+- Together with the JSON envelope migration, `tool list --output json`
+  now returns schema-bearing objects in `data`, with `name`, `description`,
+  `params_schema` and `source: builtin|custom` (plus execution/result metadata).
+  Change name extraction from `.data[]` to `.data[].name`, or add
+  `--names-only` to retain the name array. Pre-envelope consumers must also
+  unwrap `data`. `--compact` retains `{name, description}`; plain text still
+  prints names. `tool schema` includes the same source metadata.
+
+### Features
+
+- Manage Editor lifecycle with project-aware discovery, safe startup, and shutdown
+  commands.
+- Connect MCP clients through the thin stdio adapter and configure them with
+  `mcp configure`; reuse the CLI's dynamic tool discovery and authentication.
+- Run tests in an existing or headless Editor and export NUnit/JUnit reports,
+  with stable failure exit codes for CI.
+- Register project-local Editor tools with public static methods marked
+  `[UnityCliBridge.Tools.UnityCliTool("name")]` and optional `[UnityCliArg]`
+  parameter descriptions. Discover them after recompilation via `list_tools`,
+  `tool list` and `tool schema`; call them with `raw` without rebuilding the CLI.
+- Validate custom parameters before execution, reject builtin/duplicate names,
+  execute on the main thread, and return structured errors for user exceptions.
+  See [custom tool authoring and migration](docs/tools.md#extending-with-project-local-tools).
+
+### Security
+
+- Require per-Editor authentication for TCP Bridge requests, including ping and
+  C# eval. Store a random 256-bit token in the discovery lockfile with POSIX 0600
+  permissions. CLI and unityd read it automatically; remote clients can use
+  `UNITY_CLI_AUTH_TOKEN_FILE` with a mounted lockfile.
+- Default the Bridge bind address to loopback, including failed settings loads,
+  and warn in the Editor Console for non-loopback listeners.
+- For this release only, `UNITY_CLI_ALLOW_UNAUTHENTICATED=1` in the Editor
+  environment permits legacy clients without a token. The CLI emits a stderr
+  deprecation warning when set. This opt-out will be removed in the next minor
+  release, when authentication becomes mandatory without exception.
+
+### Bug fixes
+
+- Keep unityd running when a client connection is malformed or disconnected.
+- Avoid inheriting the caller's stdout pipe when starting unityd on Windows.
+- Make Addressables optional in the Bridge package.
+- Preserve offline builtin discovery when project-local tools are unavailable.
+
+### Documentation
+
+- Publish the official Unity CLI comparison and measured latency benchmarks.
+- Document the Development Player connection design. Runtime Player connectivity
+  is not implemented by this release.
+
 ## [0.17.0] - 2026-10-01
 
 ### 🚀 Features

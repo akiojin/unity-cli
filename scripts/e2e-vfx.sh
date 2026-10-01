@@ -34,7 +34,7 @@ def call(tool,payload,expected_code=None,timeout_ms=120000):
         env={**os.environ,'UNITY_PROJECT_ROOT':args.project})
     (artifacts/f'{sequence:03}-{tool}.json').write_text(proc.stdout)
     (artifacts/f'{sequence:03}-{tool}.stderr').write_text(proc.stderr)
-    data=json.loads(proc.stdout)
+    data=json.loads(proc.stdout)["data"]
     if expected_code:
         def errors(value):
             if isinstance(value,dict):

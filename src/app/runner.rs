@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Context, Result};
-use clap::Parser;
+use clap::{CommandFactory, FromArgMatches};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
+use super::output::{self, FailureKind};
 use crate::cli::{
     BridgeCommand, Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand,
     LspCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat,
@@ -15,61 +16,110 @@ use crate::core::command_stats::{self, CliCommandTiming};
 use crate::core::contracts::BatchItem;
 use crate::core::editor_discovery::TargetError;
 use crate::instances::{list_instances, set_active_instance};
-use crate::tool_catalog::{get_tool_spec, is_known_tool, list_tool_specs};
+use crate::tool_catalog::{get_tool_spec, is_known_tool};
 use crate::tool_index::{filter_tools, ToolListFilter};
+use crate::tooling::discovery::{self, DiscoveredTool};
 use crate::tooling::os_capture;
 use crate::transport::{UnityClient, UnityCommandError};
 use crate::{local_tools, lsp_manager, lspd, unityd};
 
 pub async fn run() -> Result<()> {
-    let cli = Cli::parse();
-    run_with_cli(cli).await
+    let args: Vec<_> = std::env::args_os().collect();
+    let mut parser = Cli::command();
+    // The test subcommand uses --output for a report path. Disable propagation
+    // of the root presentation option only for this command.
+    if is_test_command(&args) {
+        parser = parser.mut_arg("output", |arg| arg.global(false));
+    }
+    let matches = match parser.try_get_matches_from(&args) {
+        Ok(matches) => matches,
+        Err(error) if error.use_stderr() => {
+            let json = args
+                .windows(2)
+                .any(|pair| pair[0] == "--output" && pair[1] == "json")
+                || args.iter().any(|arg| arg == "--output=json");
+            let error = anyhow!(error).context(FailureKind::Usage);
+            output::print_failure(
+                "",
+                &error,
+                if json {
+                    OutputFormat::Json
+                } else {
+                    OutputFormat::Text
+                },
+            )?;
+            return Err(error);
+        }
+        Err(error) => {
+            error.print()?;
+            return Ok(());
+        }
+    };
+    let mut names = Vec::new();
+    let mut current = &matches;
+    while let Some((name, child)) = current.subcommand() {
+        names.push(name.to_owned());
+        current = child;
+    }
+    if let Ok(Some(tool)) = current.try_get_one::<String>("tool_name") {
+        names.push(tool.clone());
+    }
+    let cli = Cli::from_arg_matches(&matches)?;
+    run_with_cli_named(cli, &names.join(" ")).await
 }
 
+#[cfg(test)]
 pub async fn run_with_cli(cli: Cli) -> Result<()> {
-    let output = cli.output;
-    let result = run_command(cli).await;
+    run_with_cli_named(cli, "test").await
+}
+
+async fn run_with_cli_named(cli: Cli, command: &str) -> Result<()> {
+    crate::unity::auth::warn_unauthenticated();
+    let format = if matches!(cli.command, Command::Setup { json: true, .. }) {
+        OutputFormat::Json
+    } else {
+        cli.output
+    };
+    let mcp_stdio = matches!(cli.command, Command::Mcp { command: None });
+    let result = run_command_named(cli, command).await;
     if let Err(error) = &result {
-        if let Some(target) = error
-            .chain()
-            .find_map(|cause| cause.downcast_ref::<TargetError>())
-        {
-            if matches!(output, OutputFormat::Json) {
-                print_value(&target.to_json(), output)?;
+        output::print_failure(
+            command,
+            error,
+            if mcp_stdio {
+                OutputFormat::Text
             } else {
-                for candidate in target.to_json()["data"]["candidates"]
-                    .as_array()
-                    .into_iter()
-                    .flatten()
-                {
-                    eprintln!(
-                        "  candidate: {} (pid {}, {}:{})",
-                        candidate["projectPath"].as_str().unwrap_or("?"),
-                        candidate["pid"],
-                        candidate["host"].as_str().unwrap_or("?"),
-                        candidate["port"]
-                    );
-                }
-            }
-        } else if matches!(output, OutputFormat::Json) {
-            if let Some(failure) = error
-                .chain()
-                .find_map(|cause| cause.downcast_ref::<UnityCommandError>())
-            {
-                print_value(&failure.response, output)?;
-            }
-        }
+                format
+            },
+        )?;
     }
     result
 }
 
+#[cfg(test)]
 async fn run_command(cli: Cli) -> Result<()> {
+    run_command_named(cli, "test").await
+}
+
+async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
+    let print_value = |value: &Value, format| output::print_result(command, value, format);
     init_tracing(cli.verbose)?;
 
     // `--project-path` and UNITY_PROJECT_ROOT are the same setting; local
     // tools (script read/search, index) read the project root from the env.
     if let Some(project_path) = &cli.project_path {
         std::env::set_var("UNITY_PROJECT_ROOT", project_path);
+    }
+
+    // Long-lived stdio must contain only JSON-RPC, and configure --dry-run
+    // must not start an update worker or create update-check stamps.
+    if let Command::Mcp { command } = &cli.command {
+        return match command {
+            None => crate::mcp::serve(&cli).await,
+            Some(crate::cli::McpCommand::Configure { client, local }) => {
+                crate::mcp::configure::run(*client, *local, cli.dry_run)
+            }
+        };
     }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
@@ -87,6 +137,8 @@ async fn run_command(cli: Cli) -> Result<()> {
     crate::core::self_update::warn_cargo_conflict();
 
     match &cli.command {
+        Command::Mcp { .. } => unreachable!("MCP handled before self-update"),
+        Command::Test(args) => return super::test_runner::run(&cli, args).await,
         Command::Editor { command } => {
             let (tool, params) = match command {
                 EditorCommand::Eval {
@@ -112,6 +164,21 @@ async fn run_command(cli: Cli) -> Result<()> {
                 EditorCommand::EvalStats { collect } => {
                     ("get_eval_stats", json!({"collect": collect}))
                 }
+                EditorCommand::Open {
+                    headless,
+                    wait_ready,
+                } => {
+                    let value = super::editor::open(&cli, *headless, *wait_ready).await?;
+                    return print_value(&value, cli.output);
+                }
+                EditorCommand::Close { force } => {
+                    let value = super::editor::close(&cli, *force).await?;
+                    return print_value(&value, cli.output);
+                }
+                EditorCommand::Status => {
+                    let value = super::editor::status(&cli).await?;
+                    return print_value(&value, cli.output);
+                }
             };
             let value = execute_tool(&cli, tool, params).await?;
             print_value(&value, cli.output)?;
@@ -122,26 +189,45 @@ async fn run_command(cli: Cli) -> Result<()> {
         }
         Command::Tool { command } => match command {
             ToolCommand::List(args) => {
-                let tools = filter_tools(&ToolListFilter {
-                    query: args.query.as_deref(),
-                    category: args.category.as_deref(),
-                    offset: args.offset,
-                    limit: args.limit,
-                })
-                .map_err(|message| anyhow!(message))?;
+                let tools = discovery::filter_discovered_tools(
+                    discover_for_cli(&cli).await?,
+                    &ToolListFilter {
+                        query: args.query.as_deref(),
+                        category: args.category.as_deref(),
+                        offset: args.offset,
+                        limit: args.limit,
+                    },
+                )
+                .map_err(|message| anyhow!(message))
+                .context(FailureKind::Usage)?;
+                let summaries =
+                    filter_tools(&ToolListFilter::default()).map_err(|message| anyhow!(message))?;
+                let compact = |tool: &DiscoveredTool| {
+                    json!({
+                        "name": tool.name,
+                        "description": summaries.iter().find(|entry| entry.name == tool.name)
+                            .map(|entry| entry.description).unwrap_or(&tool.description)
+                    })
+                };
                 if matches!(cli.output, OutputFormat::Json) {
                     let value = if args.compact {
-                        serde_json::to_value(&tools)?
-                    } else {
+                        json!(tools.iter().map(compact).collect::<Vec<_>>())
+                    } else if args.names_only {
                         serde_json::to_value(
-                            tools.iter().map(|tool| tool.name).collect::<Vec<_>>(),
+                            tools.iter().map(|tool| &tool.name).collect::<Vec<_>>(),
                         )?
+                    } else {
+                        serde_json::to_value(&tools)?
                     };
                     print_value(&value, cli.output)?;
                 } else {
                     for tool in &tools {
                         if args.compact {
-                            println!("{}\t{}", tool.name, tool.description);
+                            println!(
+                                "{}\t{}",
+                                tool.name,
+                                compact(tool)["description"].as_str().unwrap_or_default()
+                            );
                         } else {
                             println!("{}", tool.name);
                         }
@@ -150,16 +236,15 @@ async fn run_command(cli: Cli) -> Result<()> {
             }
             ToolCommand::Schema { tool_name } => {
                 let value = if let Some(name) = tool_name {
-                    let spec = get_tool_spec(name).ok_or_else(|| {
-                        anyhow!(
-                            "Unknown tool `{}`. Use `unity-cli tool list` to see supported names.",
-                            name
-                        )
-                    })?;
+                    let spec = if let Some(spec) = get_tool_spec(name) {
+                        DiscoveredTool::from(spec)
+                    } else {
+                        find_discovered_tool(&discover_for_cli(&cli).await?, name)?
+                    };
                     serde_json::to_value(spec)?
                 } else {
                     json!({
-                        "tools": list_tool_specs()
+                        "tools": discover_for_cli(&cli).await?
                     })
                 };
                 print_value(&value, cli.output)?;
@@ -169,13 +254,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                 print_value(&value, cli.output)?;
             }
             ToolCommand::External(args) => {
-                let raw = parse_external_tool_command(args)?;
-                if !is_known_tool(&raw.tool_name) {
-                    return Err(anyhow!(
-                        "Unknown tool `{}`. Use `unity-cli tool list` to see supported names.",
-                        raw.tool_name
-                    ));
-                }
+                let raw = parse_external_tool_command(args).context(FailureKind::Usage)?;
                 let value = execute_raw(&cli, &raw).await?;
                 print_value(&value, cli.output)?;
             }
@@ -219,7 +298,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                 host,
                 timeout_ms,
             } => {
-                let parsed = parse_ports_with_diagnostics(ports)?;
+                let parsed = parse_ports_with_diagnostics(ports).context(FailureKind::Usage)?;
                 if !parsed.duplicate_ports.is_empty() {
                     eprintln!(
                         "Warning: duplicate --ports values ignored: {}",
@@ -332,14 +411,19 @@ async fn run_command(cli: Cli) -> Result<()> {
                 local,
                 force,
             } => {
-                for path in crate::skills::distribution::distribute(
+                let paths = crate::skills::distribution::distribute(
                     Some(*client),
                     *local,
                     *force,
                     cli.dry_run,
                     false,
-                )? {
-                    println!("{}", path.display());
+                )?;
+                if matches!(cli.output, OutputFormat::Json) {
+                    print_value(&json!(paths), cli.output)?;
+                } else {
+                    for path in paths {
+                        println!("{}", path.display());
+                    }
                 }
             }
             SkillsCommand::Refresh {
@@ -347,25 +431,39 @@ async fn run_command(cli: Cli) -> Result<()> {
                 local,
                 force,
             } => {
-                for path in crate::skills::distribution::distribute(
+                let paths = crate::skills::distribution::distribute(
                     *client,
                     *local,
                     *force,
                     cli.dry_run,
                     true,
-                )? {
-                    println!("{}", path.display());
+                )?;
+                if matches!(cli.output, OutputFormat::Json) {
+                    print_value(&json!(paths), cli.output)?;
+                } else {
+                    for path in paths {
+                        println!("{}", path.display());
+                    }
                 }
             }
             SkillsCommand::Show { name } => {
-                println!("{}", crate::skills::distribution::show(name.as_deref())?);
+                print_value(
+                    &json!(crate::skills::distribution::show(name.as_deref())?),
+                    cli.output,
+                )?;
             }
             SkillsCommand::Lint {
                 root,
                 format,
                 severity,
             } => {
-                run_skills_lint(root.as_deref(), *format, *severity)?;
+                run_skills_lint_output(
+                    root.as_deref(),
+                    *format,
+                    *severity,
+                    cli.output,
+                    "skills lint",
+                )?;
             }
         },
         Command::Reference { command } => {
@@ -403,6 +501,14 @@ async fn run_command(cli: Cli) -> Result<()> {
                 dry_run: cli.dry_run,
             };
             let value = super::setup::run(&options, &config, &cwd).await?;
+            if value["ok"] != json!(true) {
+                let mut failure = value;
+                failure["code"] = json!("PRECONDITION_FAILED");
+                failure["error"] = json!(
+                    "setup incomplete: the Unity Editor bridge is not ready for this project"
+                );
+                return Err(UnityCommandError::new(failure).into());
+            }
             print_value(
                 &value,
                 if *json {
@@ -411,11 +517,6 @@ async fn run_command(cli: Cli) -> Result<()> {
                     cli.output
                 },
             )?;
-            if value["ok"] != json!(true) {
-                return Err(anyhow!(
-                    "setup incomplete: the Unity Editor bridge is not ready for this project"
-                ));
-            }
         }
         Command::Bridge { command } => {
             let value = run_bridge_command(command, cli.dry_run)?;
@@ -439,6 +540,27 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn is_test_command(args: &[std::ffi::OsString]) -> bool {
+    let mut args = args.iter().skip(1);
+    while let Some(arg) = args.next() {
+        let arg = arg.to_string_lossy();
+        if [
+            "--output",
+            "--host",
+            "--port",
+            "--project-path",
+            "--timeout-ms",
+        ]
+        .contains(&arg.as_ref())
+        {
+            args.next();
+        } else if !arg.starts_with('-') {
+            return arg == "test";
+        }
+    }
+    false
 }
 
 fn run_bridge_command(command: &BridgeCommand, dry_run: bool) -> Result<Value> {
@@ -703,12 +825,73 @@ async fn run_doctor(cli: &Cli, args: &DoctorArgs) -> Result<Value> {
 }
 
 async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
-    let params = load_params(args)?;
+    let params = load_params(args).context(FailureKind::Usage)?;
     execute_tool(cli, &args.tool_name, params).await
 }
 
-async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
-    validate_tool_params(tool_name, &params)?;
+async fn discover_for_cli(cli: &Cli) -> Result<Vec<DiscoveredTool>> {
+    let mut config = match RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli)) {
+        Err(error)
+            if matches!(
+                error.downcast_ref::<TargetError>(),
+                Some(TargetError::NotFound { .. })
+            ) =>
+        {
+            // An unopened, explicitly selected project still has the offline
+            // builtin catalog. Ambiguous selection and invalid config remain errors.
+            return Ok(discovery::builtin_tool_specs());
+        }
+        result => result?,
+    };
+    // Listing remains useful offline. Bound the optional discovery probe, but
+    // honor an explicit timeout for busy/remote Editors.
+    if cli.timeout_ms.is_none() {
+        config.timeout = config.timeout.min(std::time::Duration::from_secs(2));
+    }
+    match discovery::discover_tool_specs(&config).await {
+        Ok(tools) => Ok(tools),
+        Err(error)
+            if matches!(
+                error.downcast_ref::<FailureKind>(),
+                Some(FailureKind::Unreachable)
+            ) =>
+        {
+            Ok(discovery::builtin_tool_specs())
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn find_discovered_tool(tools: &[DiscoveredTool], name: &str) -> Result<DiscoveredTool> {
+    tools.iter().find(|tool| tool.name == name).cloned()
+        .ok_or_else(|| anyhow!("Unknown tool `{name}`. Use `unity-cli tool list` with the target Editor connected to see supported names."))
+        .context(FailureKind::Usage)
+}
+
+async fn execute_custom_tool(cli: &Cli, name: &str, params: Value) -> Result<Value> {
+    let spec = find_discovered_tool(&discover_for_cli(cli).await?, name)?;
+    validate_value_against_schema(&params, &spec.params_schema, "$")
+        .with_context(|| format!("Invalid parameters for tool `{name}`"))
+        .context(FailureKind::Usage)?;
+    if cli.dry_run && spec.mutating {
+        return Ok(json!({"dryRun":true, "executed":false, "tool":name,
+            "reason":"mutating_tool_blocked_by_dry_run", "params":params}));
+    }
+    let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    // User methods can have arbitrary side effects. A lost response must never
+    // cause the daemon fallback path to invoke the method a second time.
+    let (value, timing) = call_remote_tool_direct(&config, name, params).await?;
+    if let Some(timing) = timing {
+        command_stats::record_cli_tool_call(name, timing);
+    }
+    Ok(value)
+}
+
+pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
+    if !is_known_tool(tool_name) {
+        return execute_custom_tool(cli, tool_name, params).await;
+    }
+    validate_tool_params(tool_name, &params).context(FailureKind::Usage)?;
 
     if should_skip_for_dry_run(cli, tool_name) {
         return Ok(json!({
@@ -882,22 +1065,38 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
     } else if let Some(inline) = json_str {
         inline.to_string()
     } else {
-        return Err(anyhow!("Provide --json or --stdin for batch input"));
+        return Err(
+            anyhow!("Provide --json or --stdin for batch input").context(FailureKind::Usage)
+        );
     };
 
-    let commands: Vec<BatchItem> =
-        serde_json::from_str(&raw).context("Batch input must be a JSON array of {tool, params}")?;
+    let commands: Vec<BatchItem> = serde_json::from_str(&raw)
+        .context("Batch input must be a JSON array of {tool, params}")
+        .context(FailureKind::Usage)?;
 
     if commands.is_empty() {
         return Ok(json!([]));
     }
 
+    let has_custom = commands.iter().any(|item| !is_known_tool(&item.tool));
+    let custom_catalog = if has_custom {
+        discover_for_cli(cli).await?
+    } else {
+        Vec::new()
+    };
     for item in &commands {
-        validate_tool_params(&item.tool, &item.params)
-            .with_context(|| format!("Batch command validation failed for tool `{}`", item.tool))?;
+        let validation = if is_known_tool(&item.tool) {
+            validate_tool_params(&item.tool, &item.params)
+        } else {
+            let spec = find_discovered_tool(&custom_catalog, &item.tool)?;
+            validate_value_against_schema(&item.params, &spec.params_schema, "$")
+        };
+        validation
+            .with_context(|| format!("Batch command validation failed for tool `{}`", item.tool))
+            .context(FailureKind::Usage)?;
     }
 
-    if !cli.dry_run && !commands.iter().any(|item| item.tool == "eval_csharp") {
+    if !cli.dry_run && !has_custom && !commands.iter().any(|item| item.tool == "eval_csharp") {
         let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),
@@ -934,8 +1133,11 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
         }
 
         match execute_tool(cli, &item.tool, item.params).await {
+            Ok(value) if value["dryRun"] == true && value["executed"] == false => {
+                results.push(json!({ "ok": true, "skipped": true, "result": value }));
+            }
             Ok(value) => results.push(json!({ "ok": true, "result": value })),
-            Err(error) => results.push(json!({ "ok": false, "error": error.to_string() })),
+            Err(error) => results.push(crate::core::failure::batch_error(&error)),
         }
     }
 
@@ -952,7 +1154,7 @@ async fn execute_batch_direct(config: &RuntimeConfig, commands: Vec<BatchItem>) 
     for item in commands {
         match client.call_tool(&item.tool, item.params).await {
             Ok(value) => results.push(json!({ "ok": true, "result": value })),
-            Err(error) => results.push(json!({ "ok": false, "error": error.to_string() })),
+            Err(error) => results.push(crate::core::failure::batch_error(&error)),
         }
     }
 
@@ -973,7 +1175,7 @@ fn should_skip_for_dry_run(cli: &Cli, tool_name: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
+pub(crate) fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
     RuntimeOverrides {
         host: cli.host.clone(),
         port: cli.port,
@@ -1010,6 +1212,9 @@ fn validate_value_against_schema(value: &Value, schema: &Value, path: &str) -> R
             "boolean" if !value.is_boolean() => {
                 return Err(anyhow!("{path} must be a boolean"));
             }
+            "null" if !value.is_null() => {
+                return Err(anyhow!("{path} must be null"));
+            }
             "integer" => {
                 let is_integer = value.as_i64().is_some()
                     || value.as_u64().is_some()
@@ -1022,6 +1227,31 @@ fn validate_value_against_schema(value: &Value, schema: &Value, path: &str) -> R
                 return Err(anyhow!("{path} must be a number"));
             }
             _ => {}
+        }
+    }
+
+    if value.is_number() {
+        // Keep integral comparisons exact at i64/u64 boundaries rather than
+        // rounding both sides to the same f64 (e.g. i64::MAX and MAX+1).
+        let integer = |v: &Value| {
+            v.as_i64()
+                .map(i128::from)
+                .or_else(|| v.as_u64().map(i128::from))
+        };
+        for (key, minimum) in [("minimum", true), ("maximum", false)] {
+            if let Some(bound) = schema.get(key).filter(|bound| bound.is_number()) {
+                let order = match (integer(value), integer(bound)) {
+                    (Some(value), Some(bound)) => Some(value.cmp(&bound)),
+                    _ => value.as_f64().and_then(|value| {
+                        bound.as_f64().and_then(|bound| value.partial_cmp(&bound))
+                    }),
+                };
+                if matches!(order, Some(std::cmp::Ordering::Less) if minimum)
+                    || matches!(order, Some(std::cmp::Ordering::Greater) if !minimum)
+                {
+                    return Err(anyhow!("{path} violates {key} {bound}"));
+                }
+            }
         }
     }
 
@@ -1278,26 +1508,12 @@ fn parse_ports_with_diagnostics(raw: &Option<String>) -> Result<ParsedPorts> {
     })
 }
 
-fn print_value(value: &Value, format: OutputFormat) -> Result<()> {
-    match format {
-        OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(value)?);
-        }
-        OutputFormat::Text => {
-            if let Some(text) = value.as_str() {
-                println!("{text}");
-            } else {
-                println!("{}", serde_json::to_string_pretty(value)?);
-            }
-        }
-    }
-    Ok(())
-}
-
-fn run_skills_lint(
+fn run_skills_lint_output(
     root: Option<&std::path::Path>,
     format: SkillFormat,
     severity: SkillSeverity,
+    output_format: OutputFormat,
+    command: &str,
 ) -> Result<()> {
     use crate::skills::model::Severity;
     use crate::skills::report::{render, ReportFormat};
@@ -1338,6 +1554,13 @@ fn run_skills_lint(
         severity: sev,
     })?;
 
+    if matches!(output_format, OutputFormat::Json) {
+        let violations: Value = serde_json::from_str(&render(&outcome, ReportFormat::Json, sev))?;
+        if outcome.has_errors(sev) {
+            return Err(UnityCommandError::new(json!({"code":"GENERAL_ERROR", "error":"Skill lint failed", "violations":violations})).into());
+        }
+        return output::print_result(command, &violations, output_format);
+    }
     let fmt = match format {
         SkillFormat::Text => ReportFormat::Text,
         SkillFormat::Json => ReportFormat::Json,
@@ -1594,8 +1817,7 @@ mod tests {
     use super::{
         attach_ping_version_check, build_reference_call, execute_tool, init_tracing, load_params,
         parse_external_tool_command, parse_json_object, parse_ports, parse_ports_with_diagnostics,
-        print_value, run_bridge_command, run_with_cli, runtime_overrides_from_cli,
-        validate_tool_params,
+        run_bridge_command, run_with_cli, runtime_overrides_from_cli, validate_tool_params,
     };
     use crate::cli::{
         BridgeCommand, Cli, Command, InstancesCommand, LspdCommand, OutputFormat, RawArgs,
@@ -2921,9 +3143,9 @@ mod tests {
 
     #[test]
     fn print_value_text_handles_string_and_object() {
-        print_value(&serde_json::json!("hello"), OutputFormat::Text)
+        super::output::print_result("test", &serde_json::json!("hello"), OutputFormat::Text)
             .expect("string text output should succeed");
-        print_value(&serde_json::json!({"ok": true}), OutputFormat::Text)
+        super::output::print_result("test", &serde_json::json!({"ok": true}), OutputFormat::Text)
             .expect("object text output should succeed");
     }
 

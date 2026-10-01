@@ -229,13 +229,13 @@ run_lsp_case() {
     fi
 
     if jq -e 'type=="object" and ((has("error") and .error != null and (.error|tostring|length)>0) or (has("success") and .success == false) or (has("status") and ((.status|tostring|ascii_downcase)=="error")))' >/dev/null 2>&1 <<<"${out}"; then
-      failure_reason="$(jq -r '.error // .message // .status // "unknown error"' <<<"${out}" 2>/dev/null)"
+      failure_reason="$(jq -r '.errors[0].message // "unknown error"' <<<"${out}" 2>/dev/null)"
       CASE_FAIL_REASON="${case_name}: tool returned error (${failure_reason})"
       CASE_FAIL_OUTPUT="${out}"
       return 1
     fi
 
-    backend="$(jq -r '.backend // empty' <<<"${out}")"
+    backend="$(jq -r '.data.backend // empty' <<<"${out}")"
     if [[ "${backend}" != "lsp" ]]; then
       CASE_FAIL_REASON="${case_name}: backend is not lsp"
       CASE_FAIL_OUTPUT="${out}"
@@ -393,7 +393,7 @@ GIT_BRANCH="$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || e
 HOST_OS="$(uname -s 2>/dev/null || echo "unknown")"
 HOST_ARCH="$(uname -m 2>/dev/null || echo "unknown")"
 UNITY_CLI_VERSION="$("${UNITY_CLI}" --version 2>/dev/null || echo "unknown")"
-LSP_VERSION="$("${UNITY_CLI}" lspd status --output json 2>/dev/null | jq -r '.version // "unknown"' 2>/dev/null || echo "unknown")"
+LSP_VERSION="$("${UNITY_CLI}" lspd status --output json 2>/dev/null | jq -r '.data.version // "unknown"' 2>/dev/null || echo "unknown")"
 
 mkdir -p "$(dirname "${HISTORY_FILE}")"
 HISTORY_ENTRY="$(jq -nc \

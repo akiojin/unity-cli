@@ -78,8 +78,22 @@ C# ソースコードの静的解析を行う Language Server Protocol 実装で
 ### CLI → Unity Editor (TCP)
 
 - **プロトコル**: TCP (デフォルト `127.0.0.1:6400`)
-- **フォーマット**: JSON（改行区切り）
-- **認証**: なし（ローカル通信前提）
+- **フォーマット**: 4-byte big-endian 長さヘッダ + UTF-8 JSON
+- **認証**: Editor ごとの256-bitランダムトークン。CLI / unityd は
+  `~/.unity-cli/editors/<pid>.json` の `authToken` を各リクエストに付ける。
+  Bridge はメインスレッドのキューやバックグラウンド処理へ渡す前に検証し、
+  欠落・不一致は `UNAUTHORIZED` で拒否する（`ping` / `eval_csharp` も対象）。
+- **保存と更新**: lockfile は POSIX 0600。秘密を書き込む前に権限を設定し、
+  heartbeat でもアトミックに置換する。ドメインリロードで新しいトークンを生成し、
+  再接続時に読み直す。`instances list` や診断にはトークンを出力しない。
+- **待受**: 初期値と設定読込失敗時は loopback。非 loopback 設定では起動時に
+  Editor Console へ警告する。TCP は平文のため、リモート接続には信頼できる
+  ネットワークまたは暗号化トンネルを使う。同じOSユーザーのファイル読取権限を
+  持つプロセスからの隔離を提供するものではない。
+- **移行期間**: 本リリースに限り、Editor 起動時の
+  `UNITY_CLI_ALLOW_UNAUTHENTICATED=1` でトークン無しの旧クライアントを許容。
+  CLI に同じ値を設定すると stderr に非推奨警告を出す。不一致トークンは常に拒否。
+  次のマイナーリリースで opt-out を廃止し、認証を必須化する。
 
 ```
 CLI 側                        Unity Editor 側

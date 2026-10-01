@@ -2,6 +2,30 @@ use std::path::PathBuf;
 
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
+#[cfg(test)]
+mod test_command_tests {
+    use super::*;
+
+    #[test]
+    fn test_command_accepts_report_output_without_changing_global_output() {
+        use clap::{CommandFactory, FromArgMatches};
+        let matches = Cli::command()
+            .mut_arg("output", |arg| arg.global(false))
+            .try_get_matches_from([
+                "unity-cli",
+                "test",
+                "--mode",
+                "editmode",
+                "--report",
+                "junit",
+                "--output",
+                "r.xml",
+            ]);
+        assert!(matches.is_ok(), "{matches:?}");
+        assert!(Cli::from_arg_matches(&matches.unwrap()).is_ok());
+    }
+}
+
 #[derive(Debug, Clone, Copy, ValueEnum, Default)]
 pub enum OutputFormat {
     #[default]
@@ -46,6 +70,13 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Expose the existing CLI tools over MCP stdio, or configure a client.
+    Mcp {
+        #[command(subcommand)]
+        command: Option<McpCommand>,
+    },
+    /// Run tests in an existing Editor or an automatically started headless Editor.
+    Test(TestArgs),
     Raw(RawArgs),
     Editor {
         #[command(subcommand)]
@@ -121,6 +152,69 @@ pub enum Command {
     },
 }
 
+#[derive(Debug, Subcommand)]
+pub enum McpCommand {
+    /// Merge the unity-cli server into a client configuration atomically.
+    Configure {
+        #[arg(value_enum)]
+        client: McpClient,
+        /// Write project-scoped configuration (unsupported by Windsurf).
+        #[arg(long)]
+        local: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum McpClient {
+    ClaudeCode,
+    Cursor,
+    Vscode,
+    Windsurf,
+    Codex,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestMode {
+    Editmode,
+    Playmode,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestReport {
+    Junit,
+    Nunit,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestOutputFormat {
+    Text,
+    Github,
+}
+
+#[derive(Debug, Args)]
+pub struct TestArgs {
+    #[arg(long, value_enum, default_value = "editmode")]
+    pub mode: TestMode,
+    #[arg(long)]
+    pub filter: Option<String>,
+    #[arg(long, value_enum, default_value = "junit")]
+    pub report: TestReport,
+    #[arg(
+        long = "output",
+        id = "output",
+        value_name = "FILE",
+        default_value = "test-results.xml"
+    )]
+    pub report_output: PathBuf,
+    #[arg(long, default_value_t = 600, value_parser = clap::value_parser!(u64).range(1..))]
+    pub timeout: u64,
+    #[arg(long, value_enum, default_value = "text")]
+    pub output_format: TestOutputFormat,
+    /// Run PlayMode tests with Domain Reload disabled.
+    #[arg(long)]
+    pub disable_domain_reload: bool,
+}
+
 #[derive(Debug, Args)]
 pub struct DoctorArgs {
     /// Unity project root. Defaults to UNITY_PROJECT_ROOT or the nearest Unity project above the current directory.
@@ -149,9 +243,13 @@ pub struct ToolListArgs {
     #[arg(long, value_name = "NAME")]
     pub category: Option<String>,
 
-    /// Emit `{name, description}` entries instead of bare tool names.
-    #[arg(long)]
+    /// Emit only `{name, description}` entries instead of full tool descriptors.
+    #[arg(long, conflicts_with = "names_only")]
     pub compact: bool,
+
+    /// Emit only tool names (the JSON list format used before dynamic discovery).
+    #[arg(long)]
+    pub names_only: bool,
 
     /// Maximum number of tools to return after filtering.
     #[arg(long, value_name = "N")]
@@ -190,6 +288,22 @@ pub enum EvalMode {
 
 #[derive(Debug, Subcommand)]
 pub enum EditorCommand {
+    /// Launch the project's installed Unity Editor (installation is delegated to `unity install`).
+    Open {
+        /// Keep a batch-mode Editor running without a GUI.
+        #[arg(long)]
+        headless: bool,
+        /// Wait for this project's Bridge to answer, up to this many seconds.
+        #[arg(long, value_name = "SEC", default_value_t = 0)]
+        wait_ready: u64,
+    },
+    /// Quit the target Editor; refuses unsaved scenes unless --force is supplied.
+    Close {
+        #[arg(long)]
+        force: bool,
+    },
+    /// Report whether the project's Editor is stopped, starting, compiling, in Safe Mode or ready.
+    Status,
     /// Evaluate synchronous C# in the Editor. Timeout does not cancel execution.
     Eval {
         code: String,

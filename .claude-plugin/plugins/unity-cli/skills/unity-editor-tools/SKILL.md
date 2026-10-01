@@ -1,10 +1,10 @@
 ---
 name: unity-editor-tools
-description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows or capture profiler data. Do not use for package operations; use `unity-package-management`. For C# edits use `unity-csharp-edit`; for URP and Volume setup with visual verification use `unity-urp-setup`.
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to open or close an Editor, run a headless host, wait for readiness, build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows or capture profiler data. Do not use for package operations; use `unity-package-management`. For C# edits use `unity-csharp-edit`; for URP and Volume setup with visual verification use `unity-urp-setup`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: editor
   triggers:
     - editor
@@ -27,15 +27,19 @@ metadata:
 
 # Editor Tools
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Use this skill for editor-wide diagnostics and control: console, project settings, menu items, windows, selection, and profiler. Hand off to a domain skill once the request narrows to scene, asset, package, or code work.
 
 ## Use When
 
 - The user asks for editor health checks, console logs, or profiler data.
+- The user wants to launch or close a project's Editor, wait for readiness, or keep a headless Editor running.
 - The user wants a standalone Player build or lighting, NavMesh, NavMeshSurface, or occlusion bake and its job status.
 - The user wants to inspect or change a project setting.
 - The user wants to run a menu item, inspect windows, or manipulate the current selection.
 - The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
+- The user wants to expose a project-specific Editor operation as an attributed custom tool.
 
 ## Do Not Use When
 
@@ -52,7 +56,35 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 
 ## Preferred Flow
 
-1. Verify connectivity with `unity-cli system ping` and `get_editor_state`.
+### Start and stop a local Editor
+
+```bash
+unity-cli editor open --project-path /path/to/project --wait-ready 300
+unity-cli editor status --project-path /path/to/project --output json
+unity-cli editor close --project-path /path/to/project
+# To keep a batch host running:
+unity-cli editor open --project-path /path/to/project --headless --wait-ready 300
+unity-cli raw get_hierarchy --project-path /path/to/project --json '{}'
+unity-cli editor close --project-path /path/to/project
+```
+
+The project needs the Bridge installed. `open` selects the version in
+`ProjectSettings/ProjectVersion.txt` from Unity Hub's default path (or
+`UNITY_EDITOR_PATH`). Missing Editor: exit 4; follow the returned
+`unity install <version>` instruction. Installation/licensing belong to the
+official Unity CLI. `--wait-ready` waits for this project's lockfile and ping;
+without it, launch returns immediately. A timeout leaves the Editor running.
+Use `status` (`stopped`, `starting`, `compiling`, `safe_mode`, `ready`) and
+`Logs/unity-cli-editor.log` to diagnose startup.
+
+`--headless` runs `-batchmode -nographics` with the Bridge enabled and no `-quit`.
+`close` waits for process exit and refuses dirty scenes with `UNSAVED_SCENES`.
+Save the scenes first; use `close --force` only when discarding unsaved changes
+is intended. Legacy `raw quit_editor` without `force` does not provide this guard.
+
+### Connected Editor operations
+
+1. If the Editor is stopped, use `editor open --project-path <project> --wait-ready 300`; then verify connectivity with `unity-cli system ping` and `get_editor_state`.
 2. Read state before mutating it: console before clearing, settings before updating, profiler status before start/stop.
 3. Apply one editor-wide change at a time and verify the result immediately.
 4. Capture before/after state when project settings change.
@@ -67,6 +99,56 @@ unity-cli raw profiler_stop --json '{}'
 ```
 
 ## Examples
+
+### Register a project-local custom tool
+
+Use `unity-csharp-edit` to create `Assets/Editor/ProjectTools.cs` in the target
+project. In an asmdef, reference `UnityCliBridge.Editor` and restrict it to Editor.
+The public API is `UnityCliBridge.Tools`; no CLI release is required.
+
+```csharp
+using UnityEngine;
+using UnityCliBridge.Tools;
+
+public static class ProjectTools
+{
+    [UnityCliTool("spawn_light", Description = "Create a scene light")]
+    public static object SpawnLight([UnityCliArg("Object name")] string name)
+    {
+        var gameObject = new GameObject(name);
+        gameObject.AddComponent<Light>();
+        return new { name = gameObject.name };
+    }
+}
+```
+
+Refresh and wait for compilation before discovery. Use the same project/endpoint
+for every command. Verify the result through the hierarchy and component details.
+
+```bash
+unity-cli raw refresh_assets --json '{}'
+unity-cli raw get_compilation_state --json '{}'
+unity-cli tool list --category custom --output json
+unity-cli tool schema spawn_light --output json
+unity-cli raw spawn_light --json '{"name":"Sun"}' --output json
+unity-cli raw get_hierarchy --json '{}' --output json
+unity-cli raw get_gameobject_details --json '{"path":"/Sun","includeComponents":true}' --output json
+```
+
+JSON list items include `name`, `description`, `params_schema` and
+`source: builtin|custom`. Extract names with `.data[].name`, or use
+`tool list --names-only --output json` with `.data[]`. `--compact` remains a
+small `{name, description}` list. Offline listing contains only builtins.
+
+Methods must be public static, synchronous and non-generic. Supported arguments
+are string/bool/int/long/float/double and enum names; C# defaults make arguments
+optional. Missing, unknown and mistyped arguments return `INVALID_ARGUMENT`
+before invocation. `Mutating` defaults to true so `--dry-run` skips the method;
+set false only for side-effect-free reads. Duplicate/builtin names and unsupported
+signatures produce a Console warning and are not registered. Inspect `read_console`
+if a tool is missing after compilation. Method exceptions return
+`CUSTOM_TOOL_FAILED` without stopping the Editor. Do not automatically retry a
+timed-out method: it may already have run.
 
 ### Player build and scene bake jobs
 

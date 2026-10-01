@@ -87,7 +87,7 @@ impl TargetError {
     pub fn exit_code(&self) -> i32 {
         match self {
             Self::Ambiguous { .. } => AMBIGUOUS_EDITOR_EXIT_CODE,
-            Self::NotFound { .. } => 1,
+            Self::NotFound { .. } => 7,
         }
     }
 
@@ -227,7 +227,7 @@ fn lexical_clean(path: &Path) -> PathBuf {
 }
 
 #[cfg(unix)]
-fn pid_alive(pid: u32) -> bool {
+pub(crate) fn pid_alive(pid: u32) -> bool {
     let Ok(pid) = libc::pid_t::try_from(pid) else {
         return false;
     };
@@ -242,7 +242,7 @@ fn pid_alive(pid: u32) -> bool {
 }
 
 #[cfg(windows)]
-fn pid_alive(pid: u32) -> bool {
+pub(crate) fn pid_alive(pid: u32) -> bool {
     std::process::Command::new("tasklist")
         .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
         .output()

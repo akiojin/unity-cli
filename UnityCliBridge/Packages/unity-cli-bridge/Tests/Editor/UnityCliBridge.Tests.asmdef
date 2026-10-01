@@ -33,6 +33,11 @@
             "name": "com.unity.visualeffectgraph",
             "expression": "",
             "define": "UNITY_VFX_GRAPH"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "UNITY_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

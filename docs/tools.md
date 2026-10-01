@@ -2,6 +2,51 @@
 
 Snapshot date: `2026-09-28`
 
+## JSON Results and Exit Codes
+
+`--output json` writes one result envelope to stdout for both success and failure.
+Diagnostics go to stderr. Tool-specific fields in this catalog are relative to
+`data`; successful arrays (including `tool list` and `batch`) are also inside
+`data`. `--help` and `--version` retain their normal informational output.
+
+```json
+{"success":true,"command":"system ping","data":{"message":"pong"},"errors":[],"warnings":[]}
+```
+
+```json
+{"success":false,"command":"system ping","data":null,"errors":[{"code":"EDITOR_UNREACHABLE","message":"Could not connect to the Editor"}],"warnings":[]}
+```
+
+| Exit | Meaning | Automation action |
+| --- | --- | --- |
+| 0 | Success | Read `data` |
+| 1 | General failure | Inspect `errors` and diagnostics |
+| 2 | Invalid arguments (`INVALID_ARGUMENT`) | Correct the command or JSON; do not retry unchanged |
+| 3 | Authentication failure (`UNAUTHORIZED`) | Correct credentials before retrying |
+| 4 | Unmet precondition | Correct Editor/project settings or required capabilities |
+| 6 | Operation failed, potentially retryable | Inspect the preserved Bridge code; retry only when the operation is safe |
+| 7 | Editor unreachable (`EDITOR_UNREACHABLE`, `EDITOR_NOT_FOUND`) | Diagnose the target with `doctor`, then reconnect |
+| 8 | Completed test run failed (`TEST_FAILED`) | Inspect `data.failures` and fix the tests/product |
+| 130 | SIGINT | Interrupted |
+| 143 | SIGTERM | Terminated |
+
+Bridge failure codes are preserved verbatim in `errors[].code` and the original
+failure payload is retained in `data` (including `details`). Errors without a
+Bridge code use `OPERATION_FAILED`. Response timeouts use `TIMEOUT` (exit 6);
+connection failures use `EDITOR_UNREACHABLE` (exit 7). A timeout does not prove
+that an operation was not executed: poll its job/request ID before resubmitting.
+`AMBIGUOUS_EDITOR` retains exit 6 and lists candidates in `data.candidates`.
+
+`run_tests` starts an asynchronous job and normally exits 0. Poll
+`get_test_status` until `data.status == "completed"`: the final poll exits 8 if
+tests failed, or 0 if all tests passed. Starting a run is not evidence of a pass.
+The signal codes are the standard shell statuses for signal termination;
+abruptly terminated processes may not emit a result envelope.
+
+Migration: use `jq '.data'` or `json.loads(stdout)["data"]` at the CLI boundary,
+then read the existing tool fields. Check the exit status and `success` before
+using a result. Do not treat the absence of stderr text as success.
+
 ## Command Groups (Typed Subcommands)
 
 | Group       | Subcommands                           |
@@ -23,16 +68,28 @@ Use `raw` for full command coverage when no typed subcommand exists.
 
 Tool discovery:
 
-- `tool list [--query <text>] [--category <name>] [--compact] [--limit N] [--offset N]`
+- `tool list [--query <text>] [--category <name>] [--compact | --names-only] [--limit N] [--offset N]`
 - `--query` matches tool names and one-line descriptions case-insensitively.
 - `--category` accepts a `### ...` heading of this catalog (plus `Reference Cache`) or its slug: `scenes`, `gameobjects`, `components`, `animator`, `timeline`, `prefabs`, `assets`, `visual-effect-graph`, `addressables`, `code-lsp`, `input-system`, `ui`, `playback-testing`, `player-builds`, `profiler`, `editor`, `screenshots-video`, `system`, `reference-cache`.
-- `--compact` returns `{name, description}` entries instead of bare names. Without it, JSON output stays an array of names.
+- JSON `data` is an array of tool descriptors: `name`, `description`, `params_schema`, `response_schema`, `executor`, `mutating`, and `source` (`builtin` or `custom`). `params_schema` describes the argument object.
+- `--compact` returns only `{name, description}` entries. `--names-only` returns an array of names; the two flags are mutually exclusive. Text output remains one name per line, or name/description with `--compact`.
+- A connected Editor contributes its project-local tools. `--category custom` selects these tools. Filtering and pagination apply after merging; builtins keep catalog order, followed by custom names sorted alphabetically.
+- Offline discovery and older Bridges without `list_tools` retain the builtin catalog. Authentication errors and invalid discovery responses are reported, not silently hidden. Custom tools require the target Editor to be connected.
 - Category membership is checked against this file by `tool_index_matches_docs_headings`; keep the tool tables in sync when adding tools.
 
 ```bash
 unity-cli tool list --query screenshot --compact --output json
 unity-cli tool list --category scenes --output json
+unity-cli tool list --category custom --output json
+unity-cli tool list --names-only --output json | jq -r '.data[]'
 ```
+
+**Migration (next minor release, alongside the #441 JSON envelope change):**
+consumers that previously read a name from each `data[]` item must now read
+`.data[].name`, or add `--names-only` and keep `.data[]`. Consumers predating the
+envelope must first unwrap `data`. For MCP, map `params_schema` to `inputSchema`.
+`tool schema <name>` returns the same descriptor shape for builtin and custom
+tools; `tool schema` returns `{tools: [...]}` inside `data`.
 
 Managed binary notes:
 
@@ -51,9 +108,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 153 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 142 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 154 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 143 runtime/local tool APIs plus 11 Reference Cache tools. Project-local custom tools are discovered at runtime and are not included in this total.
 
-## Runtime Tool APIs (142 tools)
+## Runtime Tool APIs (143 tools)
 
 ### Scenes
 
@@ -425,6 +482,42 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 
 ### Editor
 
+Manage a **local** Unity Editor from a stopped project:
+
+```bash
+unity-cli editor open --project-path /path/to/project --wait-ready 300
+unity-cli system ping --project-path /path/to/project
+unity-cli editor status --project-path /path/to/project --output json
+unity-cli editor close --project-path /path/to/project
+
+# Keep an Editor running in batch mode, without a graphics device.
+unity-cli editor open --project-path /path/to/project --headless --wait-ready 300
+unity-cli raw get_hierarchy --project-path /path/to/project --json '{}'
+unity-cli editor close --project-path /path/to/project
+```
+
+`open` reads `ProjectSettings/ProjectVersion.txt` and resolves that exact Editor
+under Unity Hub's default macOS, Windows or Linux installation directory.
+`UNITY_EDITOR_PATH` overrides the executable location. An absent version returns
+exit code **4** and an instruction to run `unity install <version>`; Editor
+installation and licensing remain the official Unity CLI's responsibility.
+Install the Bridge in the project first (`unity-cli bridge install`).
+
+Without `--wait-ready`, `open` returns after launching. With it, the command waits
+for the target Editor's lockfile and a successful project-matching Bridge ping.
+An already running project is reused. A timeout leaves the Editor running for
+inspection; use `editor status` and `Logs/unity-cli-editor.log` to diagnose it.
+`--headless` adds `-batchmode -nographics`, enables the Bridge batch host, and does
+not add `-quit`. It remains running until closed.
+
+`status` returns `stopped`, `starting`, `compiling`, `safe_mode` or `ready`.
+`close` refuses dirty scenes with `UNSAVED_SCENES`; save them first or explicitly
+use `editor close --force` to discard unsaved changes. It waits until the local
+Editor process is absent (bounded by `--timeout-ms`, default 30000).
+`--dry-run` on `open` or `close` prints the intended action without launching or
+quitting an Editor. Legacy `raw quit_editor` without a `force` parameter retains
+its previous unconditional quit behavior; prefer `editor close` for scene protection.
+
 | Tool                      | Description                 |
 | ------------------------- | --------------------------- |
 | `clear_console`           | Clear the Console window    |
@@ -518,6 +611,78 @@ unity-cli raw capture_screenshot --json '{"captureMode":"game","osFallback":fals
 | `get_command_stats` | Get bridge command statistics and, via the CLI, merged local transport timing stats |
 | `ping`              | Check Unity Editor connectivity                                                     |
 | `list_packages`     | List installed packages                                                             |
+| `list_tools`        | Discover custom tools and argument schemas in the connected Editor                  |
+
+## Extending with project-local tools
+
+Create `Assets/Editor/ProjectTools.cs` in the target project (or use an
+Editor-only assembly referencing `UnityCliBridge.Editor`):
+
+```csharp
+using UnityEngine;
+using UnityCliBridge.Tools;
+
+public static class ProjectTools
+{
+    [UnityCliTool("spawn_light", Description = "Create a scene light")]
+    public static object SpawnLight([UnityCliArg("GameObject name")] string name,
+                                    float intensity = 1f)
+    {
+        var gameObject = new GameObject(name);
+        var light = gameObject.AddComponent<Light>();
+        light.intensity = intensity;
+        return new { name = gameObject.name, instanceId = gameObject.GetInstanceID() };
+    }
+}
+```
+
+Let the Editor recompile, then run from the project directory or select the
+project with `--project-path` / the endpoint with `--host` and `--port`:
+
+```bash
+unity-cli raw refresh_assets --json '{}'
+unity-cli raw get_compilation_state --json '{}'
+unity-cli tool list --category custom --output json
+unity-cli tool schema spawn_light --output json
+unity-cli raw spawn_light --json '{"name":"Sun"}' --output json
+unity-cli raw get_hierarchy --json '{}' --output json
+unity-cli raw get_gameobject_details --json '{"path":"/Sun","includeComponents":true}' --output json
+```
+
+No CLI rebuild or release is needed. The Editor rebuilds the registry after
+each domain load, and discovery reads that registry afresh. Renaming/removing
+an attribute takes effect after recompilation. Discovery does not execute user
+methods. The Bridge's `list_tools` returns `{tools: [...]}` for custom tools;
+the CLI merges these with its builtin catalog.
+
+The public API namespace is **`UnityCliBridge.Tools`**. Methods must be public,
+static, synchronous and non-generic. Names match `[a-z][a-z0-9_]*`. Supported
+parameter types are `string`, `bool`, `int`, `long`, `float`, `double`, and enums
+(case-sensitive named strings). A C# default makes a parameter optional;
+otherwise it is required. Only an optional `string` with a `null` default
+accepts JSON `null`. `[UnityCliArg]` adds an optional description; names, types
+and requiredness come from the method signature. Arrays, arbitrary objects,
+`ref`/`out`/`params`, async methods and coroutine methods are not supported.
+Return a JSON-serializable value or `void`; avoid returning Unity objects.
+
+Both the CLI and Bridge reject missing, unknown or incorrectly typed arguments
+and out-of-range numbers with `INVALID_ARGUMENT` before invoking the method.
+Methods run on the existing Unity main-thread queue. Exceptions and result
+serialization failures return `CUSTOM_TOOL_FAILED` (CLI exit 6) without
+terminating the Editor. A lost response is not automatically retried because
+the method may already have changed the project.
+
+`Mutating` defaults to `true`, so `--dry-run` discovers/validates the method but
+does not invoke it. Set `[UnityCliTool("read_stats", Mutating = false)]` only
+when the method has no side effects. Custom methods are responsible for their
+own Undo, persistence and Play Mode behavior, just like other Editor scripts.
+Batch commands validate every custom argument object before executing any item.
+
+Builtin names (including CLI-local tools such as `read`) cannot be overridden.
+Duplicate custom names reject all conflicting methods. The Editor Console
+reports rejected names/signatures with a `CustomTools` warning. For maintainers,
+the Bridge reservation list is generated from `TOOL_NAMES` by
+`python3 scripts/generate-builtin-tool-names.py`; a Rust test prevents drift.
 
 ## Numeric animation curves
 
@@ -684,7 +849,7 @@ companion skill and the `reference -> navigate -> edit` workflow.
 
 ```bash
 unity-cli --help
-unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
+unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].name'
 unity-cli tool schema create_scene --output json
 ```
 

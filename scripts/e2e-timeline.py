@@ -31,7 +31,7 @@ def call(tool, payload, error=None):
         print("PASS", tool, error, flush=True)
         return None
     assert result.returncode == 0, (tool, result.stdout, result.stderr)
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert not data.get("error") and data.get("success") is not False, (tool, data)
     passed += 1
     print("PASS", tool, json.dumps(data), flush=True)

@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 pub const TOOL_NAMES: &[&str] = &[
@@ -102,6 +102,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "analyze_screenshot",
     "capture_screenshot",
     "list_packages",
+    "list_tools",
     "read",
     "find_refs",
     "search",
@@ -157,7 +158,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "vfx_bake_sdf",
 ];
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ToolExecutor {
     Local,
@@ -234,6 +235,7 @@ fn tool_description(name: &str) -> &'static str {
             "Create and edit Timeline AnimationTracks, bind a director, or evaluate a time"
         }
         "list_packages" => "List installed packages",
+        "list_tools" => "Discover project-local tools registered in the connected Editor",
         "create_animator_controller" => {
             "Create an AnimatorController asset with parameters, states, and transitions"
         }
@@ -354,6 +356,7 @@ fn is_read_only_tool(name: &str) -> bool {
             | "list_scenes"
             | "analyze_screenshot"
             | "list_packages"
+            | "list_tools"
             | "read"
             | "find_refs"
             | "search"
@@ -693,7 +696,7 @@ fn tool_params_schema(name: &str) -> Value {
             &["pattern"],
             false,
         ),
-        "list_packages" => object_schema(&[], &[], false),
+        "list_packages" | "list_tools" => object_schema(&[], &[], false),
         "get_symbols" => object_schema(&[("path", string_schema())], &["path"], false),
         "build_index" => object_schema(
             &[
@@ -1263,8 +1266,9 @@ fn tool_params_schema(name: &str) -> Value {
             &[],
             false,
         ),
-        "clear_logs" | "refresh_assets" | "quit_editor" | "get_editor_info"
-        | "get_editor_state" | "get_command_stats" => object_schema(&[], &[], false),
+        "quit_editor" => object_schema(&[("force", boolean_schema())], &[], false),
+        "clear_logs" | "refresh_assets" | "get_editor_info" | "get_editor_state"
+        | "get_command_stats" => object_schema(&[], &[], false),
         "get_project_setting" => object_schema(&[("path", string_schema())], &["path"], false),
         "set_project_setting" => object_schema(
             &[
@@ -3080,6 +3084,15 @@ mod tests {
     use serde_json::{json, Value};
 
     #[test]
+    fn quit_editor_exposes_optional_scene_protection_parameter() {
+        let spec = get_tool_spec("quit_editor").unwrap();
+        assert_eq!(spec.params_schema["properties"]["force"]["type"], "boolean");
+        assert!(spec.params_schema["required"]
+            .as_array()
+            .is_none_or(|required| !required.contains(&json!("force"))));
+    }
+
+    #[test]
     fn hot_reload_tools_expose_explicit_preview_and_recovery_contract() {
         let status = get_tool_spec("hot_reload_status").expect("status tool exists");
         assert!(!status.mutating);
@@ -3102,7 +3115,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 153);
+        assert_eq!(TOOL_NAMES.len(), 154);
     }
 
     #[test]
