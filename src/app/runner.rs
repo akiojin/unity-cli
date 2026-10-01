@@ -25,7 +25,13 @@ use crate::{local_tools, lsp_manager, lspd, unityd};
 
 pub async fn run() -> Result<()> {
     let args: Vec<_> = std::env::args_os().collect();
-    let matches = match Cli::command().try_get_matches_from(&args) {
+    let mut parser = Cli::command();
+    // The test subcommand uses --output for a report path. Disable propagation
+    // of the root presentation option only for this command.
+    if is_test_command(&args) {
+        parser = parser.mut_arg("output", |arg| arg.global(false));
+    }
+    let matches = match parser.try_get_matches_from(&args) {
         Ok(matches) => matches,
         Err(error) if error.use_stderr() => {
             let json = args
@@ -111,6 +117,7 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
     crate::core::self_update::warn_cargo_conflict();
 
     match &cli.command {
+        Command::Test(args) => return super::test_runner::run(&cli, args).await,
         Command::Editor { command } => {
             let (tool, params) = match command {
                 EditorCommand::Eval {
@@ -512,6 +519,27 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn is_test_command(args: &[std::ffi::OsString]) -> bool {
+    let mut args = args.iter().skip(1);
+    while let Some(arg) = args.next() {
+        let arg = arg.to_string_lossy();
+        if [
+            "--output",
+            "--host",
+            "--port",
+            "--project-path",
+            "--timeout-ms",
+        ]
+        .contains(&arg.as_ref())
+        {
+            args.next();
+        } else if !arg.starts_with('-') {
+            return arg == "test";
+        }
+    }
+    false
 }
 
 fn run_bridge_command(command: &BridgeCommand, dry_run: bool) -> Result<Value> {

@@ -2,6 +2,30 @@ use std::path::PathBuf;
 
 use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
+#[cfg(test)]
+mod test_command_tests {
+    use super::*;
+
+    #[test]
+    fn test_command_accepts_report_output_without_changing_global_output() {
+        use clap::{CommandFactory, FromArgMatches};
+        let matches = Cli::command()
+            .mut_arg("output", |arg| arg.global(false))
+            .try_get_matches_from([
+                "unity-cli",
+                "test",
+                "--mode",
+                "editmode",
+                "--report",
+                "junit",
+                "--output",
+                "r.xml",
+            ]);
+        assert!(matches.is_ok(), "{matches:?}");
+        assert!(Cli::from_arg_matches(&matches.unwrap()).is_ok());
+    }
+}
+
 #[derive(Debug, Clone, Copy, ValueEnum, Default)]
 pub enum OutputFormat {
     #[default]
@@ -46,6 +70,8 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Run tests in an existing Editor or an automatically started headless Editor.
+    Test(TestArgs),
     Raw(RawArgs),
     Editor {
         #[command(subcommand)]
@@ -119,6 +145,48 @@ pub enum Command {
         #[arg(long)]
         stdin: bool,
     },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestMode {
+    Editmode,
+    Playmode,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestReport {
+    Junit,
+    Nunit,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum TestOutputFormat {
+    Text,
+    Github,
+}
+
+#[derive(Debug, Args)]
+pub struct TestArgs {
+    #[arg(long, value_enum, default_value = "editmode")]
+    pub mode: TestMode,
+    #[arg(long)]
+    pub filter: Option<String>,
+    #[arg(long, value_enum, default_value = "junit")]
+    pub report: TestReport,
+    #[arg(
+        long = "output",
+        id = "output",
+        value_name = "FILE",
+        default_value = "test-results.xml"
+    )]
+    pub report_output: PathBuf,
+    #[arg(long, default_value_t = 600, value_parser = clap::value_parser!(u64).range(1..))]
+    pub timeout: u64,
+    #[arg(long, value_enum, default_value = "text")]
+    pub output_format: TestOutputFormat,
+    /// Run PlayMode tests with Domain Reload disabled.
+    #[arg(long)]
+    pub disable_domain_reload: bool,
 }
 
 #[derive(Debug, Args)]

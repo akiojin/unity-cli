@@ -29,14 +29,14 @@ fn config(cli: &Cli, root: &Path) -> Result<RuntimeConfig> {
     })
 }
 
-fn running(root: &Path) -> Option<u32> {
+pub(super) fn running(root: &Path) -> Option<u32> {
     doctor::list_editor_processes()
         .iter()
         .find(|p| doctor::editor_matches_project(p, root))
         .map(|p| p.pid)
 }
 
-fn launch_command(editor: &Path, root: &Path, headless: bool) -> Command {
+pub(super) fn launch_command(editor: &Path, root: &Path, headless: bool) -> Command {
     let mut command = Command::new(editor);
     command
         .arg("-projectPath")

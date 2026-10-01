@@ -193,6 +193,89 @@ Keep test-first commit order whenever possible.
 
 ## Local Unity E2E
 
+### CI test command (headless or existing Editor)
+
+`unity-cli test` reuses the Editor for `--project-path` when it is already
+running. Otherwise it starts that project's installed Editor in batch mode and
+stops only the process it started, including on compilation errors and timeout.
+The project must contain the Unity CLI Bridge and Unity Test Framework packages.
+Editor selection uses `ProjectSettings/ProjectVersion.txt`; `UNITY_EDITOR_PATH`
+can select an installed binary explicitly.
+
+```bash
+unity-cli test --project-path ./UnityCliBridge --mode editmode \
+  --report junit --output ./artifacts/editmode.xml --timeout 600
+unity-cli test --project-path ./UnityCliBridge --mode playmode \
+  --filter MyPlayModeTests --report nunit --output ./artifacts/playmode.xml
+# Optional: exercise Enter Play Mode without Domain Reload
+unity-cli test --project-path ./UnityCliBridge --mode playmode \
+  --disable-domain-reload --output ./artifacts/playmode-no-reload.xml
+```
+
+For this subcommand, `--output` is the report filename, relative to the current
+directory; other commands retain their `--output text|json` presentation option.
+`--filter` follows `run_tests`: a dotted name selects an exact test, otherwise it
+selects a fixture. PlayMode preserves the project's Domain Reload configuration
+unless `--disable-domain-reload` is supplied. Reconnection polls the same run ID
+and never restarts the tests. NUnit reports use the NUnit 3 XML structure; JUnit
+reports include failures, skipped cases, durations and captured test output.
+
+Exit codes are `0` for success, `8` for failed tests, `6` for execution failures
+(including compilation errors), and `7` when the Editor cannot be reached.
+A test execution timeout after the run starts is `6`. The timeout covers startup
+and the test run; terminating an owned process can take up to 10 additional
+seconds. Failed tests still produce a report before exit `8`.
+`--output-format github` emits GitHub error annotations; file and line metadata
+are included when Unity's failure stack trace contains a source location.
+
+Example GitHub Actions workflow for an already provisioned self-hosted macOS
+Apple Silicon runner (this example is not run by this repository's CI):
+
+```yaml
+name: Unity tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  editmode:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --bin unity-cli
+      - name: Run Unity tests
+        env:
+          UNITY_CLI_NO_AUTO_UPDATE: '1'
+        run: |
+          target/release/unity-cli test --project-path UnityCliBridge \
+            --mode editmode --report junit --output artifacts/editmode.xml \
+            --timeout 600 --output-format github
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-test-results
+          path: artifacts/*.xml
+```
+
+Install the matching Editor and activate a valid Unity license for the runner's
+OS account before running the job. This command does not install or activate
+Unity. Configure license-server access or activation according to your Unity
+subscription; keep any activation credentials in Actions secrets, not in YAML
+or artifacts. A license failure is an infrastructure failure, not a failed test.
+Use an isolated runner/project checkout so concurrent jobs cannot open the same
+Unity project.
+
+Local acceptance verification (requires `xmllint` and the Jenkins xUnit
+[JUnit schema](https://github.com/jenkinsci/xunit-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/xunit/types/model/xsd/junit-10.xsd)):
+
+```bash
+python3 scripts/e2e-ci-tests.py --version 6000.3.25f1 \
+  --output /tmp/ci-tests-unity6 --port 6551 --junit-schema /path/to/junit-10.xsd
+python3 scripts/e2e-ci-tests.py --version 2022.3.62f3 \
+  --output /tmp/ci-tests-unity2022 --port 6552 --junit-schema /path/to/junit-10.xsd
+```
+
 Unity E2E is not executed in CI. Use it only for local validation against a running Unity Editor with the TCP listener active.
 
 ### Preparation
@@ -535,11 +618,11 @@ unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].
 failed operation, absolute limit violation, or relative regression fails the run.
 Percentiles use the nearest rank; failed operations never count as fast samples.
 
-| Gate | Environment | Samples per operation | Evidence |
-| ---- | ----------- | --------------------- | -------- |
-| CLI Latency (required) | Linux CI, deterministic loopback TCP Bridge | 50 after 3 warmups | `cli-latency` artifact: normal and injected-delay JSON |
-| Editor `perf` suite | macOS GUI, 6000.3.25f1 and 2022.3.62f3 | 30 after 3 complete warmup cycles, each focus condition | `matrix.json`, `perf.json`, `perf.log` |
-| `editor_eval` | macOS GUI, Editor frontmost | 100 after 3 warmups | `bench-eval.py --budget editor_eval` JSON |
+| Gate                   | Environment                                 | Samples per operation                                   | Evidence                                               |
+| ---------------------- | ------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| CLI Latency (required) | Linux CI, deterministic loopback TCP Bridge | 50 after 3 warmups                                      | `cli-latency` artifact: normal and injected-delay JSON |
+| Editor `perf` suite    | macOS GUI, 6000.3.25f1 and 2022.3.62f3      | 30 after 3 complete warmup cycles, each focus condition | `matrix.json`, `perf.json`, `perf.log`                 |
+| `editor_eval`          | macOS GUI, Editor frontmost                 | 100 after 3 warmups                                     | `bench-eval.py --budget editor_eval` JSON              |
 
 CI measures startup, tool list, and ping/state/batch-of-five over both direct TCP
 and a warm unityd connection. Direct mode exercises the existing daemon-unavailable
