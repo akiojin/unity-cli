@@ -1,0 +1,20 @@
+Unity Editor version:    2022.3.62f3 (96770f904ca7)
+Branch:                  2022.3/respin/2022.3.62f2-4af31df585-v2
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 26.5 (Build 25F71)
+Darwin version:          25.5.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        131072 MB
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (395ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (944ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (540ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (957ms)
+Begin MonoManager ReloadAssembly
+	BeginReloadAssembly (676ms)

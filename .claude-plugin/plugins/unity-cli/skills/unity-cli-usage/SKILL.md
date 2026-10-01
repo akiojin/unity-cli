@@ -16,6 +16,7 @@ metadata:
     - doctor
     - instance
   siblings:
+    - unity-package-management
     - unity-project-bootstrap
     - unity-scene-create
     - unity-csharp-edit

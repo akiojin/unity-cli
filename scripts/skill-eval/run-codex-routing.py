@@ -67,6 +67,11 @@ def parse_args() -> argparse.Namespace:
         help="Path to the plugin skills directory.",
     )
     parser.add_argument(
+        "--unity-cli",
+        default="unity-cli",
+        help="CLI binary used to read canonical tool schemas (no Editor required).",
+    )
+    parser.add_argument(
         "--model",
         default="gpt-5.4-mini",
         help="Codex model alias or full name.",
@@ -218,7 +223,40 @@ def format_skill_catalog(skills: list[SkillSummary]) -> str:
     return "\n".join(lines)
 
 
-def build_prompt(skill_catalog: str, user_prompt: str) -> str:
+def format_tool_catalog(specs: list[dict[str, object]]) -> str:
+    """Include every real tool, even when no skill has a command example.
+
+    Only collect top-level payload properties; variant schemas may add keys,
+    but nested object fields are not top-level arguments.
+    """
+    def properties(schema: dict) -> dict:
+        result = dict(schema.get("properties", {}))
+        for composition in ("oneOf", "anyOf", "allOf"):
+            for variant in schema.get(composition, []):
+                result.update(properties(variant))
+        return result
+
+    lines = []
+    for spec in sorted(specs, key=lambda item: item["name"]):
+        hints = []
+        for key, value in sorted(properties(spec["params_schema"]).items()):
+            hint = key
+            if "enum" in value:
+                hint += "=" + json.dumps(value["enum"], ensure_ascii=False)
+            hints.append(hint)
+        lines.append(f"- {spec['name']} | keys: {', '.join(hints) or '(none)'}")
+    return "\n".join(lines)
+
+
+def load_tool_catalog(binary: str) -> str:
+    result = subprocess.run(
+        [binary, "tool", "schema", "--output", "json"],
+        capture_output=True, text=True, check=True,
+    )
+    return format_tool_catalog(json.loads(result.stdout)["tools"])
+
+
+def build_prompt(skill_catalog: str, user_prompt: str, tool_catalog: str = "") -> str:
     return f"""You are evaluating skill routing for the unity-cli plugin.
 
 Choose the best matching skill or up to two skills from the catalog below.
@@ -242,9 +280,13 @@ Rules:
 - `predicted_payload_keys` must contain only the minimum top-level payload keys implied by that first tool call.
 - If the first tool likely needs no payload, return an empty array.
 - Return only skills and tools that appear in the catalog.
+- The canonical tool catalog lists available tools and allowed top-level keys, including tools omitted from the skill examples. Keys are options, not a requirement to send every key. Skill examples are illustrative, not exhaustive.
 
 Skill catalog:
 {skill_catalog}
+
+Canonical tool catalog:
+{tool_catalog}
 
 User prompt:
 {user_prompt}
@@ -485,7 +527,7 @@ def main() -> int:
 
     skills = load_skills(Path(args.skills_dir))
     catalog = format_skill_catalog(skills)
-    prompt = build_prompt(catalog, user_prompt)
+    prompt = build_prompt(catalog, user_prompt, load_tool_catalog(args.unity_cli))
     structured = invoke_codex(prompt, args.model)
     print(json.dumps(structured, ensure_ascii=False))
     return 0

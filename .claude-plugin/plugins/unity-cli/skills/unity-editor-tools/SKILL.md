@@ -1,6 +1,6 @@
 ---
 name: unity-editor-tools
-description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows, manage packages or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`.
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows or capture profiler data. Do not use for package installation, updates or scoped registries; use `unity-package-management`. For C# file edits use `unity-csharp-edit`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -19,11 +19,12 @@ metadata:
     - unity-csharp-edit
     - unity-asset-management
     - unity-playmode-testing
+    - unity-package-management
 ---
 
 # Editor Tools
 
-Use this skill for editor-wide diagnostics and control: console, project settings, menu items, windows, selection, package manager, and profiler. Hand off to a domain skill once the request narrows to scene, asset, or code work.
+Use this skill for editor-wide diagnostics and control: console, project settings, menu items, windows, selection, and profiler. Hand off to a domain skill once the request narrows to scene, asset, package, or code work.
 
 ## Use When
 
@@ -31,13 +32,12 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 - The user wants a standalone Player build or lighting, NavMesh, NavMeshSurface, or occlusion bake and its job status.
 - The user wants to inspect or change a project setting.
 - The user wants to run a menu item, inspect windows, or manipulate the current selection.
-- The user wants package manager or registry operations from the editor side.
 - The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
 
 ## Do Not Use When
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
-
+- The work is UPM package discovery/install/update/removal or scoped registries; use `unity-package-management`.
 - The task is scene creation or prefab editing (rather than a bake job); use `unity-scene-create` or `unity-prefab-workflow`.
 - The work is asset import or material edits; use `unity-asset-management`.
 - The work is a C# refactor; use `unity-csharp-edit`.
@@ -48,7 +48,7 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 1. Verify connectivity with `unity-cli system ping` and `get_editor_state`.
 2. Read state before mutating it: console before clearing, settings before updating, profiler status before start/stop.
 3. Apply one editor-wide change at a time and verify the result immediately.
-4. Capture before/after state when project settings or packages change.
+4. Capture before/after state when project settings change.
 
 ```bash
 unity-cli system ping
@@ -57,7 +57,6 @@ unity-cli raw read_console --json '{"count":20}'
 unity-cli raw update_project_settings --json '{"confirmChanges":true,"player":{"companyName":"MyStudio"}}'
 unity-cli raw profiler_start --json '{}'
 unity-cli raw profiler_stop --json '{}'
-unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity.inputsystem"}'
 ```
 
 ## Examples
@@ -129,4 +128,4 @@ shows the domain's emitted-assembly, cache and memory counters.
 ## References
 
 - [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
-- [editor-ops-checklist.md](references/editor-ops-checklist.md): safer sequence for settings, package, or profiler changes.
+- [editor-ops-checklist.md](references/editor-ops-checklist.md): safer sequence for settings or profiler changes.

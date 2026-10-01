@@ -1,0 +1,243 @@
+{
+  "timestamp": "2026-10-01T06:00:08.605767+00:00",
+  "model": "claude-opus-5-5",
+  "benchmark": "/private/tmp/issue376-evidence/acceptance-cases.jsonl",
+  "total": 9,
+  "missing_predictions": 0,
+  "metrics": {
+    "top1": 1.0,
+    "top2": 1.0,
+    "tool_correct": 1.0,
+    "payload_valid": 1.0
+  },
+  "thresholds": {
+    "top1": 0.9,
+    "top2": 0.98,
+    "tool_correct": 0.92,
+    "payload_valid": 0.95
+  },
+  "passed": {
+    "top1": true,
+    "top2": true,
+    "tool_correct": true,
+    "payload_valid": true
+  },
+  "all_passed": true,
+  "results": [
+    {
+      "id": "SR-171",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "package_manager",
+      "expected_payload_keys": [
+        "action",
+        "keyword"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "package_manager",
+      "predicted_payload_keys": [
+        "action",
+        "keyword"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-172",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "package_manager",
+      "expected_payload_keys": [
+        "action",
+        "packageId"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "package_manager",
+      "predicted_payload_keys": [
+        "action",
+        "packageId"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-173",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "package_manager",
+      "expected_payload_keys": [
+        "action",
+        "packageId",
+        "version"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "package_manager",
+      "predicted_payload_keys": [
+        "action",
+        "packageId",
+        "version"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-174",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "package_manager",
+      "expected_payload_keys": [
+        "action",
+        "packageName"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "package_manager",
+      "predicted_payload_keys": [
+        "action",
+        "packageName"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-175",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "registry_config",
+      "expected_payload_keys": [
+        "action",
+        "autoAddPopular",
+        "scopes"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "registry_config",
+      "predicted_payload_keys": [
+        "action",
+        "autoAddPopular",
+        "scopes"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-176",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-editor-tools"
+      ],
+      "expected_tool": "read_console",
+      "expected_payload_keys": [],
+      "predicted_skills": [
+        "unity-editor-tools"
+      ],
+      "predicted_tool": "read_console",
+      "predicted_payload_keys": [
+        "count"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-177",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-csharp-navigate"
+      ],
+      "expected_tool": "list_packages",
+      "expected_payload_keys": [],
+      "predicted_skills": [
+        "unity-csharp-navigate"
+      ],
+      "predicted_tool": "list_packages",
+      "predicted_payload_keys": [],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-178",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-addressables"
+      ],
+      "expected_tool": "addressables_build",
+      "expected_payload_keys": [
+        "action"
+      ],
+      "predicted_skills": [
+        "unity-addressables"
+      ],
+      "predicted_tool": "addressables_build",
+      "predicted_payload_keys": [
+        "action"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "SR-PKG-009",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-package-management"
+      ],
+      "expected_tool": "package_manager",
+      "expected_payload_keys": [
+        "action"
+      ],
+      "predicted_skills": [
+        "unity-package-management"
+      ],
+      "predicted_tool": "package_manager",
+      "predicted_payload_keys": [
+        "action"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    }
+  ]
+}

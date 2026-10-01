@@ -668,7 +668,12 @@ Run a local Codex-based routing check:
   --runner-cmd 'python3 scripts/skill-eval/run-codex-routing.py'
 ```
 
-This local runner requires `codex login` to be configured on the machine.
+This local runner requires `codex login` and `unity-cli` on PATH. It reads
+`unity-cli tool schema --output json` locally to supplement skill examples
+with every available tool and its top-level payload keys; no Editor is needed.
+For checkout-specific evaluation, build with `cargo build` and append
+`--unity-cli ./target/debug/unity-cli` to the runner command. Schema discovery
+errors fail the prediction rather than silently using an incomplete catalog.
 
 Current thresholds:
 
@@ -1226,7 +1231,12 @@ cargo run -- skills lint --severity error
   --runner-cmd 'python3 scripts/skill-eval/run-codex-routing.py'
 ```
 
-この local runner を使うには、事前に `codex login` が通っている必要があります。
+この local runner には `codex login` と PATH 上の `unity-cli` が必要です。
+`unity-cli tool schema --output json` をローカルで読み、スキルの例にない
+ツール名とトップレベル引数もカタログへ補完します（Editor 不要）。
+チェックアウトの実装を評価する場合は `cargo build` 後、runner command に
+`--unity-cli ./target/debug/unity-cli` を追加します。schema 取得失敗時は
+不完全なカタログで続行せず、その予測をエラーとして扱います。
 
 現在の閾値:
 

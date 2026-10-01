@@ -21,6 +21,5 @@
 
 ## Package Operations
 
-- List installed packages before installing or removing one.
-- Treat registry changes as project-wide mutations and call them out explicitly.
-- If package changes are part of a larger workflow, mention any restart or reimport implications.
+- Use `unity-package-management` for UPM discovery, dependency changes and scoped registries.
+- Keep standalone console/profiler diagnostics in this skill.

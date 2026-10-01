@@ -1,0 +1,65 @@
+[2026-10-01T06:05:23Z] (01-baseline/version) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json --version
+  -> exit=0
+[2026-10-01T06:05:23Z] (01-baseline/ping) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping
+  -> exit=0
+[2026-10-01T06:05:24Z] (01-baseline/editor-state) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw get_editor_state --json \{\}
+  -> exit=0
+[2026-10-01T06:05:26Z] (01-baseline/registry-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw registry_config --json \{\"action\":\"list\"\}
+  -> exit=0
+[2026-10-01T06:05:26Z] (01-baseline/package-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"list\"\,\"includeBuiltIn\":false\}
+  -> exit=0
+[2026-10-01T06:05:33Z] (01-baseline/console-errors) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":200\,\"logTypes\":\[\"Error\"\,\"Exception\"\]\,\"includeStackTrace\":true\}
+  -> exit=0
+[2026-10-01T06:05:33Z] (01-baseline/console-all) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":500\}
+  -> exit=0
+[2026-10-01T06:05:37Z] (01-baseline/editor-state-final) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw get_editor_state --json \{\}
+  -> exit=0
+[2026-10-01T06:05:38Z] (02-registry/add-openupm) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw registry_config --json \{\"action\":\"add_openupm\"\,\"scopes\":\[\"com.cysharp\"\]\,\"autoAddPopular\":false\}
+  -> exit=0
+[2026-10-01T06:05:47Z] (02-registry/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 180s
+[2026-10-01T06:06:00Z] (02-registry/registry-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw registry_config --json \{\"action\":\"list\"\}
+  -> exit=0
+[2026-10-01T06:06:00Z] (02-registry/package-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"list\"\,\"includeBuiltIn\":false\}
+  -> exit=0
+[2026-10-01T06:06:02Z] (02-registry/console-errors) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":200\,\"logTypes\":\[\"Error\"\,\"Exception\"\]\,\"includeStackTrace\":true\}
+  -> exit=0
+[2026-10-01T06:06:05Z] (02-registry/search-unitask) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"search\"\,\"keyword\":\"UniTask\"\,\"limit\":10\}
+  -> exit=0
+[2026-10-01T06:06:17Z] (03-install/install) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"install\"\,\"packageId\":\"com.cysharp.unitask\"\,\"version\":\"2.5.4\"\}
+  -> exit=0
+[2026-10-01T06:06:23Z] (03-install/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 240s
+[2026-10-01T06:06:51Z] (03-install/info) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"info\"\,\"packageName\":\"com.cysharp.unitask\"\}
+  -> exit=0
+[2026-10-01T06:06:53Z] (03-install/package-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"list\"\,\"includeBuiltIn\":false\}
+  -> exit=0
+[2026-10-01T06:06:57Z] (03-install/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 60s
+[2026-10-01T06:07:00Z] (03-install/console-errors) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":200\,\"logTypes\":\[\"Error\"\,\"Exception\"\]\,\"includeStackTrace\":true\}
+  -> exit=0
+[2026-10-01T06:07:00Z] (03-install/console-all) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":500\}
+  -> exit=0
+[2026-10-01T06:07:19Z] (04-update/install-2.5.5) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"install\"\,\"packageId\":\"com.cysharp.unitask\"\,\"version\":\"2.5.5\"\}
+  -> exit=0
+[2026-10-01T06:07:25Z] (04-update/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 240s
+[2026-10-01T06:07:54Z] (04-update/info) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"info\"\,\"packageName\":\"com.cysharp.unitask\"\}
+  -> exit=0
+[2026-10-01T06:07:55Z] (04-update/package-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"list\"\,\"includeBuiltIn\":false\}
+  -> exit=0
+[2026-10-01T06:07:57Z] (04-update/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 60s
+[2026-10-01T06:08:00Z] (04-update/console-errors) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":200\,\"logTypes\":\[\"Error\"\,\"Exception\"\]\,\"includeStackTrace\":true\}
+  -> exit=0
+[2026-10-01T06:08:01Z] (04-update/console-all) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":500\}
+  -> exit=0
+[2026-10-01T06:08:09Z] (05-remove/remove) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"remove\"\,\"packageName\":\"com.cysharp.unitask\"\}
+  -> exit=0
+[2026-10-01T06:08:09Z] (05-remove/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 240s
+[2026-10-01T06:08:34Z] (05-remove/info) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"info\"\,\"packageName\":\"com.cysharp.unitask\"\}
+  -> exit=0
+[2026-10-01T06:08:36Z] (05-remove/package-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw package_manager --json \{\"action\":\"list\"\,\"includeBuiltIn\":false\}
+  -> exit=0
+[2026-10-01T06:08:38Z] (05-remove/registry-list) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw registry_config --json \{\"action\":\"list\"\}
+  -> exit=0
+[2026-10-01T06:08:38Z] (05-remove/poll) loop: /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json system ping / raw get_editor_state --json '{}' every 3s, deadline 60s
+[2026-10-01T06:08:44Z] (05-remove/console-errors) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":200\,\"logTypes\":\[\"Error\"\,\"Exception\"\]\,\"includeStackTrace\":true\}
+  -> exit=0
+[2026-10-01T06:08:44Z] (05-remove/console-all) cwd=/private/tmp/issue376-unity-2022.3.62f3-final /Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli --project-path /private/tmp/issue376-unity-2022.3.62f3-final --port 6549 --output json raw read_console --json \{\"count\":500\}
+  -> exit=0
