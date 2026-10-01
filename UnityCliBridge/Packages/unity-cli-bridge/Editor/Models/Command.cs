@@ -21,6 +21,10 @@ namespace UnityCliBridge.Models
         /// </summary>
         [JsonProperty("type")]
         public string Type { get; set; }
+
+        // Never include credentials in ToString or command diagnostics.
+        [JsonProperty("authToken")]
+        public string AuthToken { get; set; }
         
         /// <summary>
         /// Parameters for the command as a JSON object
