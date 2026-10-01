@@ -42,6 +42,8 @@ def main():
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     started_at = datetime.now(timezone.utc).isoformat()
+    cli_hash = hashlib.sha256(args.cli.resolve().read_bytes()).hexdigest()
+    script_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     editor = Path(f'/Applications/Unity/Hub/Editor/{args.version}/Unity.app/Contents/MacOS/Unity')
     _, project, _ = matrix.prepare(editor, out)
     with socket.socket() as reservation:
@@ -97,16 +99,28 @@ def main():
 
     def wait_ready():
         deadline = time.monotonic() + 900
+        consecutive_ready = 0
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 raise RuntimeError('Editor exited; see editor.log')
             try:
+                # 2022 can answer a state probe in a gap during its initial
+                # imports, before executeMethod and deferred imports finish.
+                # Require the owned host's startup barrier and two idle probes.
+                log = out / 'editor.log'
+                if not log.exists() or 'Unity CLI batch host keep-alive started.' not in log.read_text(errors='replace'):
+                    time.sleep(2)
+                    continue
                 response = bridge('get_editor_state', {})
                 value = response.get('result', response.get('data', response))
                 if matrix.ready(value.get('state', value)):
-                    return
+                    consecutive_ready += 1
+                    if consecutive_ready >= 2:
+                        return
+                else:
+                    consecutive_ready = 0
             except (OSError, ValueError, RuntimeError):
-                pass
+                consecutive_ready = 0
             time.sleep(2)
         raise RuntimeError('Editor readiness timeout')
 
@@ -144,7 +158,8 @@ def main():
         hierarchy = raw('get_hierarchy')
         check('AC-2 Sun in hierarchy', contains_object(hierarchy['data'], 'Sun'))
         details = raw('get_gameobject_details', {'path': '/Sun', 'includeComponents': True})
-        check('AC-2 Sun has Light component', 'Light' in json.dumps(details['data']))
+        check('AC-2 Sun has Light component', details['data'].get('name') == 'Sun'
+              and any(component.get('type') == 'Light' for component in details['data'].get('components', [])))
         for params in ({}, {'name': 42}, {'name': 'Invalid', 'intensity': 'bright'}, {'name': 'Invalid', 'extra': True}):
             value = raw('spawn_light', params, 2)
             check('AC-3 CLI INVALID_ARGUMENT', value['errors'][0]['code'] == 'INVALID_ARGUMENT')
@@ -175,6 +190,9 @@ def main():
         nunit_result = ET.parse(out / 'results.xml').getroot().attrib
         check('AC-3/5 focused EditMode tests including Console collision warning', nunit.returncode == 0
               and nunit_result.get('result') == 'Passed' and int(nunit_result.get('passed', '0')) >= 21)
+        check('Verification inputs unchanged during run',
+              hashlib.sha256(args.cli.resolve().read_bytes()).hexdigest() == cli_hash
+              and hashlib.sha256(Path(__file__).read_bytes()).hexdigest() == script_hash)
         completed = True
     finally:
         matrix.stop_owned(process)
@@ -185,8 +203,7 @@ def main():
             'version': args.version, 'architecture': platform.machine(), 'started_at': started_at,
             'completed_at': datetime.now(timezone.utc).isoformat(), 'passed': completed,
             'checks': checks, 'nunit': nunit_result, 'source_hashes': source_hashes,
-            'cli_sha256': hashlib.sha256(args.cli.resolve().read_bytes()).hexdigest(),
-            'script_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            'cli_sha256': cli_hash, 'script_sha256': script_hash,
         }, indent=2) + '\n')
 
 

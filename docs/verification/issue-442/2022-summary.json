@@ -1,0 +1,282 @@
+{
+  "version": "2022.3.62f3",
+  "architecture": "arm64",
+  "started_at": "2026-10-01T18:47:30.461554+00:00",
+  "completed_at": "2026-10-01T18:49:20.703705+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "macOS Apple Silicon host",
+      "passed": true
+    },
+    {
+      "name": "CLI tool list --query",
+      "passed": true
+    },
+    {
+      "name": "Project tool absent before source import",
+      "passed": true
+    },
+    {
+      "name": "AC-1 schema after live compilation",
+      "passed": true
+    },
+    {
+      "name": "CLI tool list --query",
+      "passed": true
+    },
+    {
+      "name": "AC-1 list includes schema and source",
+      "passed": true
+    },
+    {
+      "name": "CLI tool list --query",
+      "passed": true
+    },
+    {
+      "name": "Names-only migration output",
+      "passed": true
+    },
+    {
+      "name": "CLI raw create_scene --json",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-2 custom invocation main thread",
+      "passed": true
+    },
+    {
+      "name": "CLI raw get_hierarchy --json",
+      "passed": true
+    },
+    {
+      "name": "AC-2 Sun in hierarchy",
+      "passed": true
+    },
+    {
+      "name": "CLI raw get_gameobject_details --json",
+      "passed": true
+    },
+    {
+      "name": "AC-2 Sun has Light component",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3 CLI INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "AC-3 Bridge INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3 CLI INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "AC-3 Bridge INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3 CLI INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "AC-3 Bridge INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3 CLI INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "AC-3 Bridge INVALID_ARGUMENT",
+      "passed": true
+    },
+    {
+      "name": "CLI raw custom_tool_stats --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3 rejected arguments have no side effects",
+      "passed": true
+    },
+    {
+      "name": "CLI --dry-run raw spawn_light",
+      "passed": true
+    },
+    {
+      "name": "Dry-run skips custom mutating method",
+      "passed": true
+    },
+    {
+      "name": "CLI raw custom_tool_stats --json",
+      "passed": true
+    },
+    {
+      "name": "Dry-run leaves invocation count unchanged",
+      "passed": true
+    },
+    {
+      "name": "CLI raw throw_custom --json",
+      "passed": true
+    },
+    {
+      "name": "AC-4 structured exception",
+      "passed": true
+    },
+    {
+      "name": "CLI system ping",
+      "passed": true
+    },
+    {
+      "name": "AC-4 Editor survives exception",
+      "passed": true
+    },
+    {
+      "name": "CLI tool list --query",
+      "passed": true
+    },
+    {
+      "name": "Domain reload replaces registry without stale entries",
+      "passed": true
+    },
+    {
+      "name": "CLI raw spawn_light --json",
+      "passed": true
+    },
+    {
+      "name": "AC-3/5 focused EditMode tests including Console collision warning",
+      "passed": true
+    },
+    {
+      "name": "Verification inputs unchanged during run",
+      "passed": true
+    }
+  ],
+  "nunit": {
+    "id": "2",
+    "testcasecount": "21",
+    "result": "Passed",
+    "total": "21",
+    "passed": "21",
+    "failed": "0",
+    "inconclusive": "0",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "2026-10-01 18:49:19Z",
+    "end-time": "2026-10-01 18:49:19Z",
+    "duration": "0.103941"
+  },
+  "source_hashes": {
+    "Packages/unity-cli-bridge/Editor/AssemblyInfo.cs": "f5bf2774b92d869f7ea2a3c87c6974a104a41d8002e99769ce30716ddad0100b",
+    "Packages/unity-cli-bridge/Editor/McpServerWindow.cs": "744bfb607ef1cb9ae97a5f53616e209898a0cb67a8fc66f3156bf9e92ebbd254",
+    "Packages/unity-cli-bridge/Editor/MenuItems.cs": "8c03f7a8b6e0787f968e388983e0c1f7044828e1b1899542c894626629336760",
+    "Packages/unity-cli-bridge/Editor/GUIStyles.cs": "82e300b967f31749029120992091d915182e79d9572fed8e4f453aa78785e26a",
+    "Packages/unity-cli-bridge/Editor/SampleWorkflows.cs": "4a8df2b077ecceafefefd1cb9c19e803eca051f08d36fecb4b8a7787b527bc1b",
+    "Packages/unity-cli-bridge/Editor/Settings/UnityCliBridgeProjectSettings.cs": "33769705a02e98e5bc78611f3ac125353984818897141bfd28891df7e5115c22",
+    "Packages/unity-cli-bridge/Editor/Settings/UnityCliBridgeSettingsProvider.cs": "41b3b721fec57e0bf29342e6093e2d63ac5418cbc896c9af6debe6a1dbb2a530",
+    "Packages/unity-cli-bridge/Editor/Tools/BuiltinToolNames.cs": "077f5a962b04cf7ad611b4365c3164922e26e4256bae7ea7066ea2a7f443cd34",
+    "Packages/unity-cli-bridge/Editor/Tools/UnityCliToolAttribute.cs": "4f46faa8b69039aeae371fb2586d6e71c5bec5a1868e046e638177200ed5e431",
+    "Packages/unity-cli-bridge/Editor/Tools/UnityCliArgAttribute.cs": "df7470aeb0d24c3d4db0d59fbaa7d0cec8196afdf22eae43c686373bd3622845",
+    "Packages/unity-cli-bridge/Editor/Tools/CustomToolParameter.cs": "f5d1ad1bad082ff4064ae1beacfed1378cc01d0ec0aff1b681f2d4b2760157c9",
+    "Packages/unity-cli-bridge/Editor/Tools/CustomToolRegistry.cs": "14f62c717e6a9925ede74cebbe008a40663057d5b36a5359d06ee8c7cde2bd39",
+    "Packages/unity-cli-bridge/Editor/Core/EditorLockfile.cs": "051d096a8d7c91aee149f52c6e51723e413569b882992b292687394e1f5cca30",
+    "Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs": "85e6512f55ce1f3aaaabeb932bb62427923e01294a02df4e676b0d1656878c45",
+    "Packages/unity-cli-bridge/Editor/Core/BridgeCommandStats.cs": "642395e4cd0ca2103c08a7c8285dc5c35374ccf8d39620ae2190d417d1b063dc",
+    "Packages/unity-cli-bridge/Editor/Core/BridgeAuthentication.cs": "871557b97a948ffdbec962315462973ff6c45b0f114f8a03fbd0afd97f2761d9",
+    "Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs": "ec7f46af4895b2193e54651cc1d4c1c37fe2952bcab2267d49d4f72dfce7322e",
+    "Packages/unity-cli-bridge/Editor/Core/Settings/UnityCliBridgeSettings.cs": "476915a60ac6098c16ec1f4cc399b9d902e07dd2f47c12ec413a1ec038d73c8d",
+    "Packages/unity-cli-bridge/Editor/HotReloadOptional/FastScriptReloadAdapter.cs": "51a864fb0e153972179a5d238725954c243786393db4222f6ac01b2dcc523009",
+    "Packages/unity-cli-bridge/Editor/HotReloadOptional/PreviewValidation.cs": "07a7054a89b78ba5588fabf4ffa25046d1db5cef8659357ce8fa897f6ec87ff7",
+    "Packages/unity-cli-bridge/Editor/Tests/InputSystemHandlerTests.cs": "5f4bb90814087e46cc8bfcab2ba8201746af2064e125963a7d37b79a6d8b1e5a",
+    "Packages/unity-cli-bridge/Editor/Tests/ComponentHandlerTests.cs": "9cb226cb1c43a2e9ac2b16d352b10fc40801f8e197d7fb134e7ed3afe6c8c7ee",
+    "Packages/unity-cli-bridge/Editor/Tests/AnimatorStateHandlerTests.cs": "01b7abf32d86a34307d899b96234411e657b999572ca00c0c06add65a5e6bab4",
+    "Packages/unity-cli-bridge/Editor/Tests/Helpers/EditorStateResponseTests.cs": "477935d54940e46c9433f1f63595eb659225354327c8b43ef77975597f417a7a",
+    "Packages/unity-cli-bridge/Editor/Models/Command.cs": "6b762db4d89510bf1e615f96805b6618ba36f782ed474cbfaa20aaabac517e10",
+    "Packages/unity-cli-bridge/Editor/Models/BridgeStatus.cs": "13892ed6d575c21a773448db4e4c195d44c8a70f1611ec97d4c363b7c054b4ab",
+    "Packages/unity-cli-bridge/Editor/Recorder/VideoCaptureBackend.cs": "8cb0d8194ada838c68ac7bbf13c55ad3bdf39393e5935392c0db1882564a44b8",
+    "Packages/unity-cli-bridge/Editor/Evaluation/EvalCompiler.cs": "9d79bfa84b6da3fc908d303c5827588382186d0f0b7fc30308d7d91d063feb95",
+    "Packages/unity-cli-bridge/Editor/Evaluation/EvalResultSerializer.cs": "abddbde10e2b353c2b8265cb6f079c5e55ebcf88691cac90b53fff21d0b81b0a",
+    "Packages/unity-cli-bridge/Editor/Evaluation/EvalResult.cs": "fc911481ccbba5fb4db6479bdd0efbc27c5424318da6198276673964769e4df6",
+    "Packages/unity-cli-bridge/Editor/Timeline/TimelineBackend.cs": "1777e39b70beb7ab35d02efdfdf563ee9f44af9064b1985c3ba6025f8485260e",
+    "Packages/unity-cli-bridge/Editor/Handlers/HotReloadHandler.cs": "cfcc666c1dda25ee6242197313840f8c329f9dd07c1a5ab186b686bcfc331cc1",
+    "Packages/unity-cli-bridge/Editor/Handlers/InputSystemHandlerFallback.cs": "4d088df2899c2b180d3304a5b31968ada6e8c3fbd68d46ec309d1a29813a9d8c",
+    "Packages/unity-cli-bridge/Editor/Handlers/ConsoleHandler.cs": "7bcc60e2fef08a7a2af99d6bf28ccd7c5b726f6f555087d860cf980e04135d11",
+    "Packages/unity-cli-bridge/Editor/Handlers/PackageManagerHandler.cs": "663329b71a1864825b37f974e9855c6d8f3b74bc2c96f25eeae2df42ebeab549",
+    "Packages/unity-cli-bridge/Editor/Handlers/PackageSettingsHandler.cs": "eafca859ca116708dfbca93e58ccbdfde0d6f26fb5819db2d375b296b7da1158",
+    "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs": "8f28d0974ddc61537f1be2db2bfc66fb2b55665c675b304546477e88a83454ec",
+    "Packages/unity-cli-bridge/Editor/Handlers/SelectionHandler.cs": "171a7b7d756fb0e72b866c65b86ef8d0384a943907b22ef21ba77f64f665ee8b",
+    "Packages/unity-cli-bridge/Editor/Handlers/EvalHandler.cs": "f266c1c41dfce38c29dfcd0717d5847c6e47f589d1adbb7d24b5669e3ebc6511",
+    "Packages/unity-cli-bridge/Editor/Handlers/UIInteractionHandler.cs": "9b50474c9b85b514012b24099ce7ec9fbd3149a5fafcdc6536e0f4a70dc0ccdc",
+    "Packages/unity-cli-bridge/Editor/Handlers/AnimationCurveHandler.cs": "c4bd7b64015693fea47202b2124363fb76abbf35bd4728a6cd123b8bb64b5183",
+    "Packages/unity-cli-bridge/Editor/Handlers/PlayerBuildHandler.cs": "1ffb4431b431ab3f35294233c5cb43dad42d95ac608efa198a77240f786d7849",
+    "Packages/unity-cli-bridge/Editor/Handlers/ComponentHandler.cs": "0fbd3e717fb9f5669bfd189167432af510b3cc39809ffb3a3452bb2f3c5b8f0b",
+    "Packages/unity-cli-bridge/Editor/Handlers/PlayModeHandler.cs": "545b79b500fb17d46da7040674b4d02b77851c8c66855938dfcef06a70326994",
+    "Packages/unity-cli-bridge/Editor/Handlers/AnimatorStateHandler.cs": "d17a6e56a23b686cbe9620ba3e120372c2b106e4cf95fb6b6d842302f0251ef0",
+    "Packages/unity-cli-bridge/Editor/Handlers/BakeHandler.cs": "807fcd62e6c9035e4dbe0da4823f4ab0ab494cbaba0ecc3d778b2890eadad69f",
+    "Packages/unity-cli-bridge/Editor/Handlers/AudioMixerHandler.cs": "d2769167d227dceb58a40dc72bef0b8d96849a8d86f155cb5d5b1b75b32e4088",
+    "Packages/unity-cli-bridge/Editor/Handlers/WindowManagementHandler.cs": "dff51d2a1a6948e0b41365a9ecb9bb94121b683c9a680ed522da29957dbe9cd8",
+    "Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs": "8a863341f242d10f7c650a3d5cb45ee71f4ed8b95bb89cefd79d6dde0d2920ae",
+    "Packages/unity-cli-bridge/Editor/Handlers/AssetDependencyHandler.cs": "910ef2b5b3db5eaeedfdc03a8bbd320aa2596c14d670cb47ee828c2e53379abb",
+    "Packages/unity-cli-bridge/Editor/Handlers/TagManagementHandler.cs": "605ce808926fc8ca155cbc2f8698dabb17a366ca2942d40dd5aa137430788b79",
+    "Packages/unity-cli-bridge/Editor/Handlers/ProfilerHandler.cs": "0049de955e03dd33f5c2d1c749d709b328c0f8b7262d1099c87fa42752e2cae8",
+    "Packages/unity-cli-bridge/Editor/Handlers/AddressablesHandler.cs": "a620255c5f07dba5ca578f33c8ee39ea2537cbea58c55de204628376c573ed83",
+    "Packages/unity-cli-bridge/Editor/Handlers/ToolManagementHandler.cs": "f710d6c62045a44add563f7551e96a8e9b95d3c4175be04d1bee4f68cf24275b",
+    "Packages/unity-cli-bridge/Editor/Handlers/RegistryConfigHandler.cs": "61ca153796ace082d5d6d4300a634564b6bef649f470bbd6643cb336d98d857d",
+    "Packages/unity-cli-bridge/Editor/Handlers/LayerManagementHandler.cs": "ab3e90c380081e1c1fc2d0e5cfdba34de275d91cff7fd54a69adb55173253f12",
+    "Packages/unity-cli-bridge/Editor/Handlers/MenuHandler.cs": "51a056681b5659d54a821964314a07ddefda622c90d2c313c673e2d66577c43b",
+    "Packages/unity-cli-bridge/Editor/Handlers/AssetManagementHandler.cs": "a2f71f476a5111dabab71ad933f7f29b4f898b93e1dd6cd337ff40e151f9f09d",
+    "Packages/unity-cli-bridge/Editor/Handlers/SceneHandler.cs": "47f446464bf67af7357c172d5b954523350a9b29228bbe5c42855f445406b155",
+    "Packages/unity-cli-bridge/Editor/Handlers/TestExecutionHandler.cs": "80dfc477215085b4bcf3a9fe683c64c4d772e6549681fae77764aadea5658e55",
+    "Packages/unity-cli-bridge/Editor/Handlers/PrefabWorkflowHandler.cs": "0106f679c66ae6181db436afc3e2aefbacc0450c632f680bdf13b00d03b12e11",
+    "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs": "e83186a128b9fee351c449ebb55cfb10c47bc69ff3b2530ea2fa7ae019c5ac3c",
+    "Packages/unity-cli-bridge/Editor/Handlers/CompilationHandler.cs": "27d951887017fc53d139429a0df969403990d44931e85024e23115581da4b816",
+    "Packages/unity-cli-bridge/Editor/Handlers/InputSystemHandler.cs": "7ac08b4f3d6ae849269707f7d7db32cbdbe287617003705272e767864e6b2434",
+    "Packages/unity-cli-bridge/Editor/Handlers/AssetDatabaseHandler.cs": "29595579250bb5617f9ddbd9b07d16abe988c7872ab452112958e8c113bcd3c6",
+    "Packages/unity-cli-bridge/Editor/Handlers/AssetImportSettingsHandler.cs": "8289b2026407470d48fc6298b6a565dd359eb2898b4e29b16bf807683660fe92",
+    "Packages/unity-cli-bridge/Editor/Handlers/VfxGraphHandler.cs": "c0f87ee1acf901f72d1c0bbb7d93cbe74a1db3c6b0ad5afd547be843c439b1f3",
+    "Packages/unity-cli-bridge/Editor/Handlers/VideoCaptureHandler.cs": "f14d051c31b879cd3580f769920a0f9f37c96fc7ee89397e3bdca7004e5495b2",
+    "Packages/unity-cli-bridge/Editor/Handlers/GameObjectHandler.cs": "7d9278b0c3aad0f7d465d7e53fa5a7b95d395967bca183b92f372d81d82290c5",
+    "Packages/unity-cli-bridge/Editor/Handlers/TimelineHandler.cs": "186ffcf7fb8488d710dc4a8228507d008c6f0e8d0ce0d26865b6588818465c24",
+    "Packages/unity-cli-bridge/Editor/Handlers/InputActionsHandler.cs": "82734155316ab4f04df81643556a1484139fac981c607305fa3f5332455e727b",
+    "Packages/unity-cli-bridge/Editor/Helpers/ObjectIdentity.cs": "2ff0c252e42103ae06fd878c72e65affab21b0fbfed7ff099ce94de06571a49e",
+    "Packages/unity-cli-bridge/Editor/Helpers/Response.cs": "6e61ea01ae889ac70929e7e2083d8320615dd72de36729c202224b53a376ecee",
+    "Packages/unity-cli-bridge/Editor/Helpers/DebouncedAssetRefresh.cs": "5b613ec81f4cad856d17e077e45390d9c326813f807d7b1297b4276b5b14a98b",
+    "Packages/unity-cli-bridge/Editor/Helpers/PathPolicy.cs": "64797fcdff122cecfba944e4a693628725c033b5bb9d266b021a82e07ee1db50",
+    "Packages/unity-cli-bridge/Editor/Helpers/CapturePathResolver.cs": "b2f8bc620ec86d0b1611c7525ed4fcb9197fc9173a63486a0b859e8b4adadddf",
+    "Packages/unity-cli-bridge/Editor/Helpers/CSharpTextFilter.cs": "6881161e74484ad58db6e2fa1bf38f644587473d3a5dd7942be54b01459d90c9",
+    "Packages/unity-cli-bridge/Editor/Helpers/RefreshController.cs": "e99c54c4eb246656920657c3945f5d9b01d2a1aaf8b4c213f34696ae40f13baf",
+    "Packages/unity-cli-bridge/Editor/Helpers/RuntimeChangeJournal.cs": "24ad65172665331336cdde230ef03168fa171f10425531843b96afd3b51218cf",
+    "Packages/unity-cli-bridge/Editor/Helpers/AssetEditingGuard.cs": "9fb4a2d2adc424fd091a9a148f818e64e5d74fe1e533c6ef9c7de33f694c10d4",
+    "Packages/unity-cli-bridge/Editor/Helpers/PlayModeChangeWarningHelper.cs": "34d89d8401114999062026ab785b209cf46f5b4310a9c148b2031ba8b290371c",
+    "Packages/unity-cli-bridge/Editor/Helpers/PlayModeCommandPolicy.cs": "e321b74cd8c6afd16fccaaa7b1e5b9ed65394dce73863ae46799826b33fbf5c6",
+    "Packages/unity-cli-bridge/Editor/Helpers/GlobMatcher.cs": "4650cefc8954e5104eba3661a6fe331df99f75ca760d264b2982da1afa01c03b",
+    "Packages/unity-cli-bridge/Editor/Logging/LogCapture.cs": "80ca6cae82afca1e969c21b39e84e2a58bee025d96bdab7f215545572a332c25",
+    "Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs": "a2480c2b300e8b9950e0ae84b9694fb57a6a1aa63b926e3555bc718f1721a430"
+  },
+  "cli_sha256": "160ec6550db4acc6e277281170c061153ee101b18d5fd3b97ac123ecadf1095c",
+  "script_sha256": "605d9336eb6d3a1d7056112f031a17acd3d9919cdd0370cbaeff3fbe7141d6f1"
+}

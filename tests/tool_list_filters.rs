@@ -69,6 +69,41 @@ fn query_returns_only_matching_tools() {
 }
 
 #[test]
+fn unopened_project_still_exposes_the_offline_builtin_catalog() {
+    let root = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
+        .args([
+            "--project-path",
+            root.path().to_str().unwrap(),
+            "tool",
+            "list",
+            "--limit",
+            "1",
+            "--output",
+            "json",
+        ])
+        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+        .env("UNITY_CLI_EDITORS_DIR", root.path().join("editors"))
+        .env(
+            "UNITY_CLI_REGISTRY_PATH",
+            root.path().join("instances.json"),
+        )
+        .env("UNITY_CLI_TOOLS_ROOT", root.path().join("tools"))
+        .env_remove("UNITY_CLI_HOST")
+        .env_remove("UNITY_CLI_PORT")
+        .env_remove("UNITY_CLI_AUTH_TOKEN_FILE")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(value["data"][0]["source"], "builtin");
+}
+
+#[test]
 fn compact_is_name_and_description_only_and_at_most_half_of_full_catalog() {
     let (compact, compact_bytes) = run_json(&["tool", "list", "--compact"]);
     let items = compact.as_array().unwrap();

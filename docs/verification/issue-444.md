@@ -1,5 +1,26 @@
 # Issue #444 — MCP stdio adapter
 
+## PR #453 マージ後の再検証
+
+PR #454 の head `ab4f6fb` に `origin/develop` (`6e7d62b`) をマージして再検証した。
+ローカルの merge は自動解決し、#442 の discovery API と未起動プロジェクトの
+オフライン一覧修正を保持している。MCP の追加機能変更はない。
+
+- Rust 664 tests、fmt / clippy、skills lint（23 skills、0 violations）が PASS。
+  [コマンド・テスト一覧](issue-444/revalidation/checks.json)。
+- Unity 6000.3.25f1 と 2022.3.62f3 は各 16/16 PASS。
+  Inspector と CLI の 159 ツール名一致、schema、custom call、create/hierarchy、
+  遅延接続通知、eval 認証を再確認した。
+  [6000 summary](issue-444/revalidation/6000.3.25f1/summary.json)、
+  [2022 summary](issue-444/revalidation/2022.3.62f3/summary.json)。
+- 各 summary と同じディレクトリに Inspector の実行コマンド、生の tools/list 出力、
+  CLI のツール名一覧を保存した。AC-1 の証跡は既存 PR #454 に添付済み。
+
+User Verification Result: n/a (autonomous)。
+Agent Visual Check: n/a (no UI surface)。
+
+## 初回実装の検証
+
 2026-10-02 JST、macOS / Apple Silicon。MCP Inspector 2.9.0 を使用し、
 隔離した Unity プロジェクトで実行した。検証ごとに CLI 実行ファイルをコピーして
 固定し、SHA-256 を `summary.json` に記録している。
