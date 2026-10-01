@@ -1,0 +1,14 @@
+{
+  "path": "/tmp/issue381/2022.3.62f3/integration-evidence/p2_24_play_en_fallback_screencapture.png",
+  "width": 1280,
+  "height": 720,
+  "sha256": "9a392ec7de40d15289dd4974aca62b9ec943c66f11036b52faca206bb3fb04a5",
+  "bytes": 28216,
+  "method": "FALLBACK: UnityEngine.ScreenCapture.CaptureScreenshot (Game view via Window/General/Game, Play Mode)",
+  "request": {
+    "state": "completed",
+    "exception": null,
+    "value": "requested menu=True gameView=1280x720 focused=null appActive=False frame=2"
+  },
+  "capturedAt": "2026-10-01T09:31:12Z"
+}

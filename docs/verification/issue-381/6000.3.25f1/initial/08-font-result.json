@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 17,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-27066-18da5c85cb9d6c78-0",
+  "state": "completed",
+  "value": "font=ArialUnicode dynamic=True path=Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf missingGlyphs=[]"
+}

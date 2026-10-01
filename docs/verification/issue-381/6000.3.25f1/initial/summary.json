@@ -1,0 +1,87 @@
+{
+  "editor": "6000.3.25f1",
+  "cli": "0.16.0",
+  "bridge": "0.16.0",
+  "packages": {
+    "com.unity.localization": "1.5.13",
+    "com.unity.addressables": "2.10.3",
+    "com.unity.ugui": "2.0.0"
+  },
+  "initialization": "isPlaying=True;isDone=True;status=Succeeded;error=none;selected=en;available=2",
+  "steps": [
+    {
+      "locale": "en",
+      "expected": "Hello, world!",
+      "actual": "Hello, world!",
+      "png": "/tmp/issue381/6000.3.25f1/evidence/greeting-en.png"
+    },
+    {
+      "locale": "ja",
+      "expected": "こんにちは、世界！",
+      "actual": "こんにちは、世界！",
+      "png": "/tmp/issue381/6000.3.25f1/evidence/greeting-ja.png"
+    },
+    {
+      "locale": "en",
+      "expected": "Hello, world!",
+      "actual": "Hello, world!",
+      "png": null
+    }
+  ],
+  "captureSize": "1280x720",
+  "captureMethod": "UnityEngine.ScreenCapture.CaptureScreenshot (Game view active); capture_screenshot game mode omitted overlay UI (#422), see 15-en-capture_screenshot-overlay-omitted.png",
+  "postPlayReload": {
+    "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+    "sceneDirty": false,
+    "labelPath": "/LocalizationCanvas/Greeting",
+    "font": "Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf",
+    "fontSize": 84,
+    "tableReference": "TableReference(5e97c0ff-0d89-5426-abb0-0eac0dde9f60 - DemoStrings)",
+    "tableEntryReference": "TableEntryReference(707780608)",
+    "resolvedCollection": "DemoStrings",
+    "resolvedCollectionPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset",
+    "resolvedKey": "greeting",
+    "sharedKeyId": 707780608,
+    "persistentListeners": [
+      {
+        "index": 0,
+        "targetType": "UnityEngine.UI.Text",
+        "targetObjectPath": "/LocalizationCanvas/Greeting",
+        "targetIsLabelText": true,
+        "method": "set_text",
+        "callState": "EditorAndRuntime"
+      }
+    ],
+    "activeSettingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+    "locales": [
+      {
+        "code": "en",
+        "name": "English (en)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/English (en).asset"
+      },
+      {
+        "code": "ja",
+        "name": "Japanese (ja)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/Japanese (ja).asset"
+      }
+    ],
+    "tables": [
+      {
+        "locale": "en",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset",
+        "keyId": 707780608,
+        "greeting": "Hello, world!"
+      },
+      {
+        "locale": "ja",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset",
+        "keyId": 707780608,
+        "greeting": "こんにちは、世界！"
+      }
+    ],
+    "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset"
+  },
+  "consoleExceptions": [
+    "ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. | Parameter name: index | System.Collections.Generic.List`1[T].get_Item (System.Int32 index) (at <4ac0ee785b7843ea944af6fc649f4ee5>:0) | UnityEditor.Search.SearchDatabase+<EnumerateAll>d__83.MoveNext () (at /Users/bokken/build/output/unity/unity/Modules/QuickSearch/Editor/Indexing/SearchDatabase.cs:453)"
+  ]
+}

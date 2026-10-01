@@ -4,7 +4,7 @@ description: Automate Unity UI inspection and interaction with unity-cli. Use wh
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: ui
   triggers:
     - ui
@@ -13,6 +13,7 @@ metadata:
     - click
     - input-field
   siblings:
+    - unity-localization
     - unity-ui-toolkit-build
     - unity-playmode-testing
     - unity-scene-create
@@ -29,6 +30,8 @@ Find, inspect, and interact with uGUI / UI Toolkit elements via `unity-cli`. Thi
 - The user wants to click UI elements, set values, or run a short UI input sequence.
 
 ## Do Not Use When
+
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 

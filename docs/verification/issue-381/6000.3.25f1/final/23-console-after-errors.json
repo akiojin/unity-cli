@@ -1,0 +1,13 @@
+{
+  "count": 0,
+  "logs": [],
+  "statistics": {
+    "asserts": 0,
+    "errors": 0,
+    "exceptions": 0,
+    "logs": 28,
+    "warnings": 2
+  },
+  "success": true,
+  "totalCaptured": 30
+}

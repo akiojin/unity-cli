@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 9,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-65976-18da5e27399c0c28-0",
+  "state": "completed",
+  "value": "isPlaying=True;isDone=True;status=Succeeded;error=none;selected=en;available=2"
+}

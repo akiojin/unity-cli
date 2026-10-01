@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 7,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-57748-18da5e16239f5328-0",
+  "state": "completed",
+  "value": "isFocused=False;appActive=False;runInBackground=False;playerSettingsRunInBackground=False;frameCount=1;isPaused=False"
+}

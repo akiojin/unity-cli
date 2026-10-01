@@ -1,0 +1,4 @@
+{
+  "code": "GAME_VIEW_NOT_FOCUSED",
+  "error": "Focus the Game View before capturing with includeUI=true."
+}

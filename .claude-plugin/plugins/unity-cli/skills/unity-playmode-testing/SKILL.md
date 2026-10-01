@@ -15,6 +15,7 @@ metadata:
     - capture
   siblings:
     - unity-audio-setup
+    - unity-localization
     - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -40,6 +41,7 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 - Configure AudioClip import, AudioMixer routing and AudioSource playback as one
   verified workflow: use `unity-audio-setup`.
 
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.

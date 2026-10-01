@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 12,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-2140-18da5c70ccec3088-0",
+  "state": "completed",
+  "value": "settings=null; locales=0; collections=0; addressablesSettingsExists=False; scene=[||dirty=False|roots=2]; playing=False; folderExists=False"
+}
