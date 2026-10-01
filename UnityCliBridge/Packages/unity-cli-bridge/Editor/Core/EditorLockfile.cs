@@ -2,6 +2,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Runtime.InteropServices;
+using System.ComponentModel;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityCliBridge.Logging;
@@ -75,6 +78,7 @@ namespace UnityCliBridge.Core
             return new JObject
             {
                 ["schemaVersion"] = SchemaVersion,
+                ["authToken"] = BridgeAuthentication.Token,
                 ["pid"] = pid,
                 ["projectPath"] = projectPath,
                 ["host"] = host,
@@ -265,16 +269,36 @@ namespace UnityCliBridge.Core
             var directory = DirectoryPath;
             Directory.CreateDirectory(directory);
             var target = FilePath;
-            var temp = target + ".tmp";
-            File.WriteAllText(temp, current.ToString(Formatting.Indented));
-            // Rename over the old file so readers never observe a missing or partial lockfile.
-            if (File.Exists(target))
+            WritePrivateFile(target, current.ToString(Formatting.Indented));
+        }
+
+        [DllImport("libc", SetLastError = true)]
+        private static extern int fchmod(int fd, uint mode);
+
+        internal static void WritePrivateFile(string target, string content)
+        {
+            var temp = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
             {
-                File.Replace(temp, target, null);
+                // CreateNew prevents symlink reuse. Set permissions on the open descriptor
+                // before writing any secret bytes, including on every heartbeat replacement.
+                using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    if (Environment.OSVersion.Platform != PlatformID.Win32NT &&
+                        fchmod(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), 384 /* 0600 */) != 0)
+                    {
+                        throw new Win32Exception(Marshal.GetLastWin32Error(), "Cannot restrict Editor token file permissions");
+                    }
+                    var bytes = Encoding.UTF8.GetBytes(content);
+                    stream.Write(bytes, 0, bytes.Length);
+                }
+                // Rename over the old file so readers never observe a missing or partial lockfile.
+                if (File.Exists(target)) File.Replace(temp, target, null);
+                else File.Move(temp, target);
             }
-            else
+            finally
             {
-                File.Move(temp, target);
+                if (File.Exists(temp)) File.Delete(temp);
             }
         }
 

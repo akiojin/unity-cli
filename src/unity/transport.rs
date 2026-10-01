@@ -19,6 +19,7 @@ pub struct UnityClient {
     stream: TcpStream,
     timeout: std::time::Duration,
     next_id: u64,
+    auth_token: Option<String>,
 }
 
 pub struct ToolCallResult {
@@ -48,6 +49,7 @@ impl UnityClient {
     }
 
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
+        let auth_token = super::auth::token_for(config)?;
         let stream = timeout(
             config.timeout,
             TcpStream::connect((config.host.as_str(), config.port)),
@@ -66,6 +68,7 @@ impl UnityClient {
             stream,
             timeout: config.timeout,
             next_id: 1,
+            auth_token,
         })
     }
 
@@ -83,11 +86,14 @@ impl UnityClient {
         }
 
         let total_started_at = Instant::now();
-        let request = json!({
+        let mut request = json!({
           "id": self.next_id.to_string(),
           "type": tool_name,
           "params": params,
         });
+        if let Some(token) = &self.auth_token {
+            request["authToken"] = Value::String(token.clone());
+        }
         self.next_id += 1;
 
         let send_started_at = Instant::now();
@@ -259,6 +265,45 @@ mod tests {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpListener;
     use tokio::task::JoinHandle;
+
+    #[test]
+    fn every_request_carries_token_from_private_lockfile() {
+        let lock = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&lock);
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let token = "test-instance-token-do-not-log";
+            let (port, server) = spawn_mock_server(move |request| {
+                assert_eq!(request["authToken"], token);
+                json!({"status": "success", "result": {"ok": true}})
+            })
+            .await;
+            let directory = crate::core::editor_discovery::editors_dir().unwrap();
+            std::fs::create_dir_all(&directory).unwrap();
+            std::fs::write(
+                directory.join("editor.json"),
+                json!({
+                    "pid": std::process::id(), "projectPath": "/test", "host": "127.0.0.1",
+                    "port": port, "heartbeatAt": std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH).unwrap().as_secs_f64(),
+                    "authToken": token
+                })
+                .to_string(),
+            )
+            .unwrap();
+            let mut client = UnityClient::connect(&RuntimeConfig {
+                host: "127.0.0.1".into(),
+                port,
+                timeout: Duration::from_secs(2),
+            })
+            .await
+            .unwrap();
+            let result = client.call_tool("ping", json!({})).await;
+            server.await.unwrap();
+            assert!(result.is_ok());
+        });
+    }
 
     #[test]
     fn normalize_failure_preserves_complete_error_envelope() {

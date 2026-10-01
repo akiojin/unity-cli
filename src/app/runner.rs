@@ -68,6 +68,7 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
 }
 
 async fn run_with_cli_named(cli: Cli, command: &str) -> Result<()> {
+    crate::unity::auth::warn_unauthenticated();
     let format = if matches!(cli.command, Command::Setup { json: true, .. }) {
         OutputFormat::Json
     } else {

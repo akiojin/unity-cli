@@ -60,7 +60,7 @@ namespace UnityCliBridge.Core
         private static int boundPort;
         // For logging only (what we bind/listen on)
         private static string currentHost = "localhost";
-        private static IPAddress bindAddress = IPAddress.Any; // default: 0.0.0.0
+        private static IPAddress bindAddress = IPAddress.Loopback;
         
         /// <summary>
         /// Static constructor - called when Unity loads
@@ -85,14 +85,25 @@ namespace UnityCliBridge.Core
         /// </summary>
         private static void TryLoadProjectSettingsAndApply()
         {
-            try
+            ApplyProjectSettings(() =>
             {
                 var settings = UnityCliBridgeProjectSettings.instance;
-                var configuredHost = settings != null ? settings.ResolvedUnityHost : "localhost";
-                var configuredPort = settings != null ? settings.ResolvedPort : DEFAULT_PORT;
+                return (settings != null ? settings.ResolvedUnityHost : "localhost",
+                    settings != null ? settings.ResolvedPort : DEFAULT_PORT);
+            });
+        }
+
+        internal static void ApplyProjectSettings(Func<(string host, int port)> load)
+        {
+            currentHost = "localhost";
+            currentPort = DEFAULT_PORT;
+            bindAddress = IPAddress.Loopback;
+            try
+            {
+                var settings = load();
                 var resolved = ResolveHostAndPortForTesting(
-                    configuredHost,
-                    configuredPort,
+                    settings.host,
+                    settings.port,
                     Environment.GetEnvironmentVariable("UNITY_CLI_HOST"),
                     Environment.GetEnvironmentVariable("UNITY_CLI_PORT"),
                     Environment.GetEnvironmentVariable("UNITY_CLI_PORT_OVERRIDE"));
@@ -110,6 +121,12 @@ namespace UnityCliBridge.Core
             {
                 BridgeLogger.LogWarning($"Project Settings load error: {ex.Message}. Using defaults.");
             }
+        }
+
+        internal static void WarnIfNonLoopback(IPAddress address)
+        {
+            if (!IPAddress.IsLoopback(address))
+                BridgeLogger.LogWarning($"TCP listener is bound to non-loopback address {address}. Authentication tokens travel in plaintext; use a trusted network or secure tunnel.");
         }
 
         internal static (string host, int port) ResolveHostAndPortForTesting(
@@ -335,6 +352,7 @@ namespace UnityCliBridge.Core
                     BridgeLogger.LogWarning($"Configured port {configuredPort} is in use; listening on {boundPort} instead.");
                 }
                 BridgeLogger.Log($"TCP listener binding on {bindAddress}:{boundPort} (host={currentHost})");
+                WarnIfNonLoopback(bindAddress);
 
                 if (publishLockfile)
                 {
@@ -500,7 +518,9 @@ namespace UnityCliBridge.Core
                                 // Handle special ping command
                                 if (json.Trim().ToLower() == "ping")
                                 {
-                                    var pongResponse = Response.Pong();
+                                    var pongResponse = BridgeAuthentication.IsAuthorized(null)
+                                        ? Response.Pong()
+                                        : Response.ErrorResult("Authentication required", "UNAUTHORIZED", (object)null);
                                     if (!await TrySendFramedMessage(stream, pongResponse, cancellationToken))
                                     {
                                         break;
@@ -512,6 +532,13 @@ namespace UnityCliBridge.Core
                                 var command = JsonConvert.DeserializeObject<Command>(json);
                                 if (command != null)
                                 {
+                                    if (!BridgeAuthentication.IsAuthorized(command.AuthToken))
+                                    {
+                                        var unauthorized = Response.ErrorResult(command.Id,
+                                            "Missing or invalid authentication token", "UNAUTHORIZED");
+                                        if (!await TrySendFramedMessage(stream, unauthorized, cancellationToken)) break;
+                                        continue;
+                                    }
                                     if (global::UnityCliBridge.Handlers.PlayerBuildHandler.TryHandleBackground(command, out var buildResponse))
                                     {
                                         if (!await TrySendFramedMessage(stream, buildResponse, cancellationToken)) break;
