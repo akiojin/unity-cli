@@ -122,7 +122,7 @@ namespace UnityCliBridge.Core
                 ["registry_config"] = command => Success(command, RegistryConfigHandler.HandleCommand(command.Parameters?["action"]?.ToString() ?? "list", command.Parameters)),
                 ["clear_console"] = command => Success(command, ConsoleHandler.ClearConsole(command.Parameters)),
                 ["read_console"] = command => Success(command, ConsoleHandler.ReadConsole(command.Parameters)),
-                ["capture_screenshot"] = command => Success(command, ScreenshotHandler.CaptureScreenshot(command.Parameters)),
+                ["capture_screenshot"] = async command => Response.SuccessResult(command.Id, await ScreenshotHandler.CaptureScreenshot(command.Parameters)),
                 ["analyze_screenshot"] = command => Success(command, ScreenshotHandler.AnalyzeScreenshot(command.Parameters)),
                 ["capture_video_start"] = command => Success(command, VideoCaptureHandler.Start(command.Parameters)),
                 ["capture_video_stop"] = command => Success(command, VideoCaptureHandler.Stop(command.Parameters)),

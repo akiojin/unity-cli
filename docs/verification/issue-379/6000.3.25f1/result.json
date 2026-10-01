@@ -1,0 +1,557 @@
+{
+ "skill": "unity-2d-sprite-tilemap",
+ "run": {
+  "kind": "focused final-skill recheck (fresh measured run after final skill changes)",
+  "date": "2026-10-01",
+  "originalRun": "evidence/ (preserved; not written by this recheck. evidence/result.json mtime 17:39 JST was written by the original run's own process before this recheck started writing)",
+  "evidenceDir": "/private/tmp/issue379-live/6000.3.25f1/evidence-recheck",
+  "projectPath": "/tmp/issue379-live/6000.3.25f1/Project (bridge reports /private/tmp/...)",
+  "port": 6579,
+  "portOnEveryCall": "every unity-cli call went through evidence-recheck/u.sh (--port 6579 --project-path <Project>, UNITY_CLI_PORT=6579); see commands.log",
+  "editorPid": 81589,
+  "editorLaunch": "PID 31815 was not running and doctor reported EDITOR_NOT_RUNNING with no Unity process for this project (raw/001, raw/002; the 2 grep hits are harness shells whose argv text contains the path). Launched directly with the exact command from the request: UNITY_CLI_PORT=6579 /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -projectPath /tmp/issue379-live/6000.3.25f1/Project -logFile evidence-recheck/editor.log. `unity-cli setup --launch-editor` was not tried first; direct launch was chosen to get an isolated -logFile (needed to read the capture source). No lock files were deleted (Project/Temp did not exist).",
+  "skillInvokedViaSkillTool": "unity-2d-sprite-tilemap (see recheck-stream.jsonl)"
+ },
+ "skillUnderTest": {
+  "canonicalDir": "/Users/akiojin/Workbench/unity-cli/work/issue-379/.claude-plugin/plugins/unity-cli/skills/unity-2d-sprite-tilemap",
+  "installedCopyLoadedBySkillTool": "/private/tmp/issue379-live/6000.3.25f1/.claude/skills/unity-2d-sprite-tilemap (symlink to canonicalDir)",
+  "installedCopyIdenticalToCanonical": true,
+  "sha256": {
+   "SKILL.md": "ff7394aae77beff6ca7a13c747630d3975bcfb78008e20cad02b28591ef682f1",
+   "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6",
+   "references/tilemap-recipe.md": "b1cfcc14b11e426d19c5b237d92aca19e31e74f6dadaa3474dd4bdec54557b4b"
+  },
+  "sha256After": {
+   "SKILL.md": "ff7394aae77beff6ca7a13c747630d3975bcfb78008e20cad02b28591ef682f1",
+   "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6",
+   "references/tilemap-recipe.md": "b1cfcc14b11e426d19c5b237d92aca19e31e74f6dadaa3474dd4bdec54557b4b"
+  },
+  "unchangedDuringRun": true,
+  "evidence": [
+   "hashes/skill-before.sha256",
+   "hashes/skill-after.sha256",
+   "hashes/skill-installed-symlink-before.sha256"
+  ]
+ },
+ "overall": {
+  "status": "passed",
+  "assertions": {
+   "skillFilesUnchangedDuringRun": true,
+   "importModifySuccess": true,
+   "recipePpuSingle16x16Point": true,
+   "newAtlasDidNotPreexist": true,
+   "atlasCreateSuccess": true,
+   "atlasReadbackPointNoMipNoRotationPackables": true,
+   "ruleTileDynamicMatchNonmatchPreSave": true,
+   "stateInitial": true,
+   "stateAfterSaveReload": true,
+   "stateInPlay": true,
+   "stateAfterStop": true,
+   "saveSceneSavedNotDirty": true,
+   "reloadedFromDisk": true,
+   "playStateConfirmed": true,
+   "captureRequestGameNoFallback": true,
+   "capturePixelExact": true,
+   "pixelPerfectRatio4InPlay": true,
+   "zeroConsoleErrorsInPlayAndAfterStop": true,
+   "zeroCompilationErrors": true,
+   "stoppedToEditMode": true,
+   "atlasOnlySpritesNotPacked": true,
+   "onlyNewAtlasAddedToProject": true,
+   "editorClosedPortFree": true
+  },
+  "failedAssertions": [],
+  "summary": "Corrected SKILL.md examples executed with only the atlas path adapted (import path already matched the example). import action:modify succeeded; recipe PPU/Single eval completed; create_sprite_atlas with packingSettings.allowRotation:false created a NEW atlas whose readback shows Point/no mips/no rotation. Save -> empty scene -> reload, Play, Stop state assertions 70/70 each; capture pixel-exact. Atlas verified as an asset only: Sprite Packer mode Disabled and Sprite.packed false.",
+  "versions": {
+   "unityEditor": "6000.3.25f1",
+   "renderPipeline": "Built-in",
+   "graphicsDevice": "Metal",
+   "unityCli": "0.16.0",
+   "bridge": "com.akiojin.unity-cli-bridge 0.16.0 (ping versionCheck match, raw/004)",
+   "packages": [
+    "com.akiojin.unity-cli-bridge@0.16.0",
+    "com.unity.2d.pixel-perfect@5.1.1",
+    "com.unity.2d.tilemap.extras@6.0.3",
+    "com.unity.modules.physics2d@1.0.0",
+    "com.unity.modules.tilemap@1.0.0",
+    "com.unity.2d.tilemap@1.0.0"
+   ],
+   "packagesChanged": false
+  }
+ },
+ "correctedExamples": {
+  "importModify": {
+   "sent": "{\"action\":\"modify\",\"assetPath\":\"Assets/Tiles/grass.png\",\"settings\":{\"textureType\":\"Sprite\",\"filterMode\":\"Point\",\"generateMipMaps\":false,\"compressionQuality\":100}}",
+   "pathAdapted": "none (fixture path equals the example)",
+   "result": {
+    "action": "modify",
+    "assetPath": "Assets/Tiles/grass.png",
+    "message": "Import settings modified for: Assets/Tiles/grass.png",
+    "newSettings": {
+     "compressionQuality": 100,
+     "filterMode": "Point",
+     "generateMipMaps": false,
+     "spriteImportMode": "Single",
+     "textureType": "Sprite"
+    },
+    "previousSettings": {
+     "compressionQuality": 100,
+     "filterMode": "Point",
+     "generateMipMaps": false,
+     "textureType": "Sprite"
+    },
+    "success": true
+   },
+   "note": "Values were already set (raw/011 get); grass.png.meta stayed byte-identical. Proves the corrected action is accepted, not that it changes values.",
+   "evidence": [
+    "raw/011-import-get-before.out",
+    "raw/012-import-modify-skill-example.out"
+   ]
+  },
+  "ppuRecipeEval": {
+   "state": "completed",
+   "measured": {
+    "filter": "Point",
+    "height": 16.0,
+    "mode": "Single",
+    "spritePixelsPerUnit": 16.0,
+    "width": 16.0
+   },
+   "evidence": "raw/013-recipe-ppu-single.out"
+  },
+  "atlasCreate": {
+   "sent": "{\"atlasPath\":\"Assets/Tiles/TerrainRecheck.spriteatlas\",\"packables\":[\"Assets/Tiles/grass.png\"],\"packingSettings\":{\"allowRotation\":false},\"textureSettings\":{\"filterMode\":\"Point\",\"generateMipMaps\":false}}",
+   "pathAdapted": "atlasPath Terrain.spriteatlas -> TerrainRecheck.spriteatlas (NEW; precheck raw/014 showed it absent); existing Assets/Tiles/Terrain.spriteatlas untouched",
+   "overwriteUsed": false,
+   "result": {
+    "atlasPath": "Assets/Tiles/TerrainRecheck.spriteatlas",
+    "guid": "d5dfa7153db2240a89d1d5c35bc699ea",
+    "message": "SpriteAtlas created successfully",
+    "packableCount": 1,
+    "success": true
+   },
+   "readback": {
+    "atlasCanBind": false,
+    "grassSpritePacked": false,
+    "guid": "d5dfa7153db2240a89d1d5c35bc699ea",
+    "isVariant": true,
+    "packables": [
+     "Assets/Tiles/grass.png"
+    ],
+    "packing": {
+     "blockOffset": 1,
+     "enableAlphaDilation": false,
+     "enableRotation": false,
+     "enableTightPacking": true,
+     "padding": 4
+    },
+    "path": "Assets/Tiles/TerrainRecheck.spriteatlas",
+    "platform": {
+     "compression": "Compressed",
+     "format": -1,
+     "maxTextureSize": 2048
+    },
+    "spriteCountInAtlas": 0,
+    "spritePackerMode": "Disabled",
+    "texture": {
+     "anisoLevel": 1,
+     "filter": "Point",
+     "generateMipMaps": false,
+     "readable": false,
+     "sRGB": true
+    }
+   },
+   "readbackNotes": [
+    "`isVariant` key in raw/016 is mislabeled by my snippet: it holds IsIncludeInBuild()==true; the YAML shows m_IsVariant: 0.",
+    "Defaults kept by the example: enableTightPacking true, padding 4; recipe only says 'appropriate padding', so not treated as a failure."
+   ],
+   "scope": "Asset-only atlas test. EditorSettings.spritePackerMode=Disabled, atlas.spriteCount=0, CanBindTo(grass)=false, Sprite.packed=false in every phase incl. Play. SpriteAtlasUtility.PackAtlases was deliberately NOT called (it crashed Unity natively in the original run).",
+   "evidence": [
+    "raw/014-atlas-precheck.out",
+    "raw/015-atlas-create-skill-example.out",
+    "raw/016-atlas-readback.out",
+    "snapshots/01-after-close/Assets/Tiles/TerrainRecheck.spriteatlas"
+   ]
+  },
+  "saveScene": {
+   "result": {
+    "isDirty": false,
+    "originalPath": null,
+    "saved": true,
+    "sceneName": "Tilemap379",
+    "scenePath": "Assets/Scenes/Generated/E2E/Tilemap379.unity",
+    "summary": "Saved scene \"Tilemap379\" to \"Assets/Scenes/Generated/E2E/Tilemap379.unity\""
+   },
+   "evidence": "raw/019-save-scene-skill-example.out"
+  },
+  "playGame": "raw/024-play-game-skill-example.out",
+  "getEditorState": "raw/026-get-editor-state-skill-example.out",
+  "captureScreenshot": "raw/027-capture-game-skill-example.out",
+  "readConsole": "raw/030-console-in-play-skill-example.out",
+  "stopGame": "raw/033-stop-game-skill-example.out"
+ },
+ "persistence": {
+  "assertionScript": "eval/assert-state.template.cs, generated by make_assert.py from the original evidence/eval/56b-assert-after-reload.cs plus: isPlaying expectation, new-atlas checks, Sprite.packed=false check, renderer/shader info",
+  "checks": "importer PPU16/Single/Point/no mips/Uncompressed/16x16 for grass+edge; original atlas packables/settings; new atlas packables/settings; Grass.asset + GrassRule.asset (rule (1,0,0) This -> edge); single Grid/Tilemap, Sprites/Default; cells (0,0),(1,0),(2,0)=Grass/grass, (0,2)=GrassRule/edge MATCH, (1,2)=GrassRule/grass NONMATCH, (1,1),(2,2) empty, 5 used cells; one ortho Main Camera at (1.5,1.5,-10); one UnityEngine.U2D.PixelPerfectCamera assetsPPU16 ref 320x180",
+  "initial": {
+   "state": "completed",
+   "total": 65,
+   "failed": 0,
+   "passed": true,
+   "failures": [],
+   "isPlaying": false,
+   "frameCount": 7,
+   "rendererVisible": true,
+   "shaderSupported": true,
+   "spritePacked": {
+    "edge": false,
+    "grass": false
+   },
+   "spritePackerMode": "Disabled",
+   "info": {
+    "camPixelHeight": 720,
+    "camPixelWidth": 1280,
+    "orthographicSize": 5.0,
+    "pixelRatio": -1,
+    "spriteTextureNames": "grass,edge"
+   },
+   "evidence": "raw/010-assert-initial.out",
+   "script": "eval/010-assert-initial.cs"
+  },
+  "ruleTileDynamicPreSave": {
+   "result": {
+    "leftAfterRemovingNeighbor": "grass",
+    "leftAfterRestoringNeighbor": "edge",
+    "leftWithRightNeighbor": "edge",
+    "pass": true,
+    "rightCellNoNeighbor": "grass"
+   },
+   "evidence": "raw/017-ruletile-toggle-presave.out",
+   "caveat": "raw/017 was overwritten by an unintended identical-label rerun after Stop (raw/017-NOTE.txt); both runs returned the same values; copy at raw/036-*. Scene was not dirty afterwards (raw/037)."
+  },
+  "save": {
+   "saveAssets": "raw/018-mark-dirty-save-assets.out",
+   "saveScene": "raw/019-save-scene-skill-example.out",
+   "sceneFileByteIdenticalToPreRun": true
+  },
+  "reload": {
+   "emptyScene": "raw/020-open-empty-scene.out (Grid no longer loaded)",
+   "loadScene": "raw/021-load-scene.out (Single)"
+  },
+  "afterReload": {
+   "state": "completed",
+   "total": 70,
+   "failed": 0,
+   "passed": true,
+   "failures": [],
+   "isPlaying": false,
+   "frameCount": 1,
+   "rendererVisible": true,
+   "shaderSupported": true,
+   "spritePacked": {
+    "edge": false,
+    "grass": false
+   },
+   "spritePackerMode": "Disabled",
+   "info": {
+    "camPixelHeight": 720,
+    "camPixelWidth": 1280,
+    "orthographicSize": 5.0,
+    "pixelRatio": -1,
+    "spriteTextureNames": "grass,edge"
+   },
+   "evidence": "raw/022-assert-after-reload.out",
+   "script": "eval/022-assert-after-reload.cs"
+  },
+  "afterStop": {
+   "state": "completed",
+   "total": 70,
+   "failed": 0,
+   "passed": true,
+   "failures": [],
+   "isPlaying": false,
+   "frameCount": 2,
+   "rendererVisible": true,
+   "shaderSupported": true,
+   "spritePacked": {
+    "edge": false,
+    "grass": false
+   },
+   "spritePackerMode": "Disabled",
+   "info": {
+    "camPixelHeight": 720,
+    "camPixelWidth": 1280,
+    "orthographicSize": 5.0,
+    "pixelRatio": -1,
+    "spriteTextureNames": "grass,edge"
+   },
+   "evidence": "raw/035-assert-after-stop.out",
+   "script": "eval/035-assert-after-stop.cs"
+  }
+ },
+ "play": {
+  "playGame": "raw/024 (scheduled)",
+  "isPlayingConfirmed": true,
+  "isPlayingEvidence": "raw/025-editor-state-play-poll-1.out, raw/026",
+  "inPlayAssertions": {
+   "state": "completed",
+   "total": 70,
+   "failed": 0,
+   "passed": true,
+   "failures": [],
+   "isPlaying": true,
+   "frameCount": 11451,
+   "rendererVisible": true,
+   "shaderSupported": true,
+   "spritePacked": {
+    "edge": false,
+    "grass": false
+   },
+   "spritePackerMode": "Disabled",
+   "info": {
+    "camPixelHeight": 720,
+    "camPixelWidth": 1280,
+    "orthographicSize": 5.625,
+    "pixelRatio": 4,
+    "spriteTextureNames": "grass,edge"
+   },
+   "evidence": "raw/028-assert-in-play.out",
+   "script": "eval/028-assert-in-play.cs"
+  },
+  "console": {
+   "beforePlayEditMode": {
+    "asserts": 0,
+    "errors": 1,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 22
+   },
+   "beforePlayNote": "The 1 Error is Unity 6's startup 'This project uses Input Manager, which is marked for deprecation' message, present at Editor launch (raw/008) before any recheck mutation; it is not in the Play or after-Stop console.",
+   "inPlay": {
+    "asserts": 0,
+    "errors": 0,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 13
+   },
+   "afterStop": {
+    "asserts": 0,
+    "errors": 0,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 19
+   },
+   "warningsAreBridgeLogsOnly": true
+  },
+  "compilation": {
+   "inPlay": {
+    "consoleErrorCount": 0,
+    "consoleWarningCount": 0,
+    "errorCount": 0,
+    "isCompiling": false,
+    "isMonitoring": false,
+    "isUpdating": false,
+    "lastCompilationTime": "2026-10-01T08:17:33.9350050Z",
+    "messageCount": 13,
+    "success": true,
+    "warningCount": 0
+   },
+   "afterStop": {
+    "consoleErrorCount": 0,
+    "consoleWarningCount": 0,
+    "errorCount": 0,
+    "isCompiling": false,
+    "isMonitoring": false,
+    "isUpdating": false,
+    "lastCompilationTime": "2026-10-01T08:17:33.9350050Z",
+    "messageCount": 19,
+    "success": true,
+    "warningCount": 0
+   }
+  },
+  "stop": "raw/033-stop-game-skill-example.out (message 'Exited play mode'; embedded state still showed isPlaying true at response time); raw/034-editor-state-after-stop-1.out isPlaying false, reason ready",
+  "inputSimulation": "not applicable (static art scene)"
+ },
+ "capture": {
+  "request": {
+   "captureMode": "game",
+   "width": 1280,
+   "height": 720,
+   "osFallback": false
+  },
+  "toolResult": {
+   "captureMode": "game",
+   "fileSize": 15013,
+   "height": 720,
+   "includeUI": true,
+   "message": "Screenshot captured successfully from Main Camera",
+   "path": "/private/tmp/issue379-live/6000.3.25f1/Project/.unity/capture/image_game_2026-10-01_17-41-23.png",
+   "width": 1280
+  },
+  "actualSource": "Main Camera rendered by the bridge in Play Mode (tool message 'Screenshot captured successfully from Main Camera'; editor.log: '[ScreenshotHandler] CaptureGameView called' then 'Using main camera in Play Mode'). This is a camera render, NOT the final Game-view backbuffer; it does not prove UI/post-processing/final composited output (unity-cli #422). The scene has no UI or post-processing.",
+  "path": "evidence-recheck/screenshots/game-play-1280x720.png",
+  "originalToolPath": "/private/tmp/issue379-live/6000.3.25f1/Project/.unity/capture/image_game_2026-10-01_17-41-23.png",
+  "sha256": "c7c56d56837b6b8f9d7817311b4777f1b29c219fafa2d9846db07b66ef25f773",
+  "identicalToOriginalRunCapture": true,
+  "inspectedWithReadTool": true,
+  "observedByEye": "Dark navy background; upper row: orange/brown vertically striped edge tile (RuleTile MATCH) with a green grass tile to its right (NONMATCH); lower row: three green grass tiles with dark border/dots; hard 4x pixel blocks, no blur, no seams, no magenta.",
+  "pixelAssertions": {
+   "width": 1280,
+   "height": 720,
+   "uniqueColourCount": 5,
+   "onlyExpectedColours": true,
+   "nonBackgroundBBox": [
+    544,
+    264,
+    736,
+    456
+   ],
+   "expectedBBox": [
+    544,
+    264,
+    736,
+    456
+   ],
+   "pixelScale": 4,
+   "nonBackgroundPixelsOutsideTiles": 0,
+   "backgroundPixelsInsideTiles(seams)": 0,
+   "allTilesPixelExact": true,
+   "tiles": [
+    {
+     "cell": [
+      0,
+      0
+     ],
+     "screenOrigin": [
+      544,
+      392
+     ],
+     "sizePx": 64,
+     "mismatchedPixels": 0,
+     "exact": true
+    },
+    {
+     "cell": [
+      1,
+      0
+     ],
+     "screenOrigin": [
+      608,
+      392
+     ],
+     "sizePx": 64,
+     "mismatchedPixels": 0,
+     "exact": true
+    },
+    {
+     "cell": [
+      2,
+      0
+     ],
+     "screenOrigin": [
+      672,
+      392
+     ],
+     "sizePx": 64,
+     "mismatchedPixels": 0,
+     "exact": true
+    },
+    {
+     "cell": [
+      0,
+      2
+     ],
+     "screenOrigin": [
+      544,
+      264
+     ],
+     "sizePx": 64,
+     "mismatchedPixels": 0,
+     "exact": true
+    },
+    {
+     "cell": [
+      1,
+      2
+     ],
+     "screenOrigin": [
+      608,
+      264
+     ],
+     "sizePx": 64,
+     "mismatchedPixels": 0,
+     "exact": true
+    }
+   ],
+   "uniqueColours": {
+    "(24, 28, 44)": 901120,
+    "(90, 197, 79)": 12032,
+    "(30, 111, 80)": 4352,
+    "(110, 60, 30)": 2048,
+    "(232, 160, 64)": 2048
+   }
+  },
+  "analysisScript": "analyze_screenshot.py (copied unchanged from evidence/)",
+  "evidence": [
+   "raw/027-capture-game-skill-example.out",
+   "raw/029-screenshot-analysis.json",
+   "editor.log"
+  ]
+ },
+ "failures": [
+  {
+   "id": "017-overwrite",
+   "kind": "evidence-handling slip (mine)",
+   "detail": "Reran eval 017 under the same label after Stop, overwriting the pre-save output file. Values identical; documented in raw/017-NOTE.txt. Not a skill defect."
+  }
+ ],
+ "failedCommands": [
+  {
+   "id": "000-ping",
+   "detail": "Connection refused before Editor launch (expected; Editor not running)"
+  }
+ ],
+ "projectChanges": {
+  "addedFiles": [
+   "Assets/Tiles/TerrainRecheck.spriteatlas",
+   "Assets/Tiles/TerrainRecheck.spriteatlas.meta"
+  ],
+  "modifiedFiles": [],
+  "hashDiff": [
+   "12a13,14",
+   "> 078f34ffa52302a13fc24517926b5d57d140b55c70bbc773d6d6be69ba67e397  Assets/Tiles/TerrainRecheck.spriteatlas",
+   "> d7c0b1a1afd9283fcc20aceec828f1647f3df7a12c2f045571ee7afadd15ff43  Assets/Tiles/TerrainRecheck.spriteatlas.meta"
+  ],
+  "userSettingsLayoutChanged": "UserSettings/Layouts/default-6000.dwlt (Editor window layout written on exit)",
+  "sceneByteIdenticalToPreRun": true,
+  "packagesManifestChanged": false,
+  "snapshots": [
+   "snapshots/00-before (Assets/Packages/ProjectSettings/UserSettings)",
+   "snapshots/01-after-close",
+   "snapshots/capture-dir"
+  ],
+  "evidence": [
+   "hashes/project-before.sha256",
+   "hashes/project-after.sha256",
+   "raw/043-project-hash-diff.txt",
+   "raw/044-snapshot-diff.txt"
+  ]
+ },
+ "cleanup": {
+  "editorClosedVia": "EditorApplication.Exit(0) via delayCall after scene verified not dirty and SaveAssets (raw/041)",
+  "editorPidExited": true,
+  "port6579FreeAfterExit": true,
+  "projectTempRemoved": true,
+  "otherEditorsUntouched": "raw/042-editor-closed.txt lists other projects' Editors still running",
+  "gitUsed": false,
+  "repositoryFilesEdited": false,
+  "serializedYamlHandEdited": false,
+  "previousEvidencePreserved": true,
+  "packAtlasesCalled": false
+ },
+ "observationsForSkill": [
+  "Corrected import (action:modify) and atlas (packingSettings.allowRotation:false) examples work as written on 6000.3.25f1 / bridge 0.16.0.",
+  "create_sprite_atlas leaves enableTightPacking=true and padding=4 by default; the recipe asks only for 'appropriate padding', which these satisfy, but a pixel-art example could state them explicitly.",
+  "SKILL.md step 7 still says 'capture the Game view'; on bridge 0.16.0 that is a Main Camera render. The recipe's #422 caveat covers this."
+ ]
+}

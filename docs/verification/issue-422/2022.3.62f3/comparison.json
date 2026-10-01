@@ -1,0 +1,89 @@
+{
+  "port": 6483,
+  "cases": {
+    "edit": {
+      "colors": [
+        {
+          "red": 0,
+          "green": 47671,
+          "blue": 28000,
+          "yellow": 0
+        },
+        {
+          "red": 47522,
+          "green": 0,
+          "blue": 0,
+          "yellow": 28000
+        }
+      ],
+      "ui_changed": true,
+      "camera_unchanged": true,
+      "focus_error": {
+        "code": "GAME_VIEW_NOT_FOCUSED",
+        "error": "Focus the Game View before capturing with includeUI=true."
+      },
+      "resize_and_base64": "pass"
+    },
+    "play": {
+      "colors": [
+        {
+          "red": 0,
+          "green": 47671,
+          "blue": 28000,
+          "yellow": 0
+        },
+        {
+          "red": 47522,
+          "green": 0,
+          "blue": 0,
+          "yellow": 28000
+        }
+      ],
+      "ui_changed": true,
+      "camera_unchanged": true,
+      "focus_error": {
+        "code": "GAME_VIEW_NOT_FOCUSED",
+        "error": "Focus the Game View before capturing with includeUI=true."
+      },
+      "resize_and_base64": "pass"
+    }
+  },
+  "source_sha256": {
+    "Editor/Handlers/ScreenshotHandler.cs": "8a863341f242d10f7c650a3d5cb45ee71f4ed8b95bb89cefd79d6dde0d2920ae",
+    "Editor/Core/BridgeCommandRouter.cs": "1a362f4a54f29c384a85cdcf7b32762f16060e7739c9673d8671389b6f437c4e",
+    "Tests/Editor/Handlers/ScreenshotHandlerTests.cs": "328dfdf4276c55ab06a2e1d6af212015383a9210b17b1cc6c158359f12ce5a2a"
+  },
+  "unity_version": "2022.3.62f3",
+  "User Verification Result": "n/a (autonomous)",
+  "console_errors": 0,
+  "console_warnings": 3,
+  "console_tool_diagnostics": {
+    "count": 3,
+    "logs": [
+      {
+        "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+        "logType": "Error",
+        "message": "Ignoring depth surface store action as it is memoryless\n"
+      },
+      {
+        "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+        "logType": "Error",
+        "message": "Ignoring depth surface load action as it is memoryless\n"
+      },
+      {
+        "formattedCompact": "[Error] [unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:57469\nUnityEngine.Debug:LogWarning (object)\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+        "logType": "Error",
+        "message": "[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:57469\nUnityEngine.Debug:LogWarning (object)\nUnityCliBridge.Logging.BridgeLogger:LogWarning (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:25)\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:564)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n"
+      }
+    ],
+    "statistics": {
+      "asserts": 0,
+      "errors": 3,
+      "exceptions": 0,
+      "logs": 0,
+      "warnings": 37
+    },
+    "success": true,
+    "totalCaptured": 40
+  }
+}

@@ -476,6 +476,20 @@ unrelated commands.
 | `capture_video_status` | Get video capture status |
 | `capture_video_stop`   | Stop video capture       |
 
+For `captureMode: "game"`, `includeUI: true` (the default) captures the final
+Game frame, including UI Toolkit and Screen Space Overlay canvases, in Edit or
+Play mode. Focus the Game View first. The bridge does not change focus or fall
+back to camera-only rendering: it returns `GAME_VIEW_NOT_FOCUSED` if the Game
+View is not focused, `GAME_CAPTURE_UNAVAILABLE` if graphics/capture is unavailable,
+`GAME_CAPTURE_BUSY` for overlapping requests, or `GAME_CAPTURE_TIMEOUT` if no
+completed frame arrives within five seconds. Requested `width` / `height` resize
+the complete frame; omitted dimensions use the native Game resolution.
+
+Use `includeUI: false` for the existing camera-only capture. It excludes UI
+Toolkit and Screen Space Overlay canvases; camera/world-space content keeps
+its existing rendering behavior. `scene`, `explorer`, and `window` modes are
+unchanged.
+
 When the Editor accepts `capture_screenshot` but does not answer before
 `--timeout-ms` (for example, its main thread is blocked by a modal dialog such
 as a save prompt or the API Updater), the CLI captures the whole desktop

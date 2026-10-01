@@ -1,0 +1,73 @@
+{
+  "failedTests": 0,
+  "failures": [],
+  "inconclusiveTests": 0,
+  "latestResult": {
+    "fileContent": null,
+    "generatedAt": "2026-10-01T07:56:29.4592540Z",
+    "path": "/private/tmp/issue422-evidence/2022.3.62f3/Project/.unity/test-results/TestResults_EditMode_20261001_075626.json",
+    "status": "available",
+    "summary": {
+      "durationSeconds": 1.2961302,
+      "failed": 0,
+      "failures": [],
+      "generatedAt": "2026-10-01T07:56:29.4587620Z",
+      "inconclusive": 0,
+      "passed": 5,
+      "runStartedAt": "2026-10-01T07:56:27.5552440Z",
+      "skipped": 0,
+      "status": "passed",
+      "testMode": "EditMode",
+      "totalTests": 5
+    }
+  },
+  "passedTests": 5,
+  "runId": "07e091f3-468e-4476-9deb-fc13e68ef88e",
+  "skippedTests": 0,
+  "status": "completed",
+  "success": true,
+  "testMode": "EditMode",
+  "tests": [
+    {
+      "duration": 0.2546856,
+      "fullName": "UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.CameraOnly_CapturesWithoutGameViewFocus",
+      "message": null,
+      "name": "CameraOnly_CapturesWithoutGameViewFocus",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.CameraOnly_CapturesWithoutGameViewFocus\n[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.CameraOnly_CapturesWithoutGameViewFocus\n[unity-cli-bridge][ScreenshotHandler] CaptureGameView called: path=/private/tmp/issue422-evidence/2022.3.62f3/Project/.unity/capture/image_game_2026-10-01_16-56-28-013_d548e5d99b914d06b7820fe9eb294d5a.png, width=32, height=24\n[unity-cli-bridge][ScreenshotHandler] Getting Game View window\n[unity-cli-bridge][ScreenshotHandler] Game View focused\n[unity-cli-bridge][ScreenshotHandler] Capture size: 32x24\n[unity-cli-bridge][ScreenshotHandler] Calling CaptureWindowImmediate\n[unity-cli-bridge][ScreenshotHandler] CaptureWindowImmediate called: 32x24\n[unity-cli-bridge][ScreenshotHandler] RenderTexture created\n[unity-cli-bridge][ScreenshotHandler] Using Camera.main: Main Camera\n[unity-cli-bridge][ScreenshotHandler] Camera rendered to texture\n[unity-cli-bridge][ScreenshotHandler] Pixels read and applied\n[unity-cli-bridge][ScreenshotHandler] PNG encoded successfully: 90 bytes\n[unity-cli-bridge][ScreenshotHandler] Image data captured: 90 bytes\n[unity-cli-bridge][ScreenshotHandler] Writing file to: /private/tmp/issue422-evidence/2022.3.62f3/Project/.unity/capture/image_game_2026-10-01_16-56-28-013_d548e5d99b914d06b7820fe9eb294d5a.png\n[unity-cli-bridge][ScreenshotHandler] File created successfully: /private/tmp/issue422-evidence/2022.3.62f3/Project/.unity/capture/image_game_2026-10-01_16-56-28-013_d548e5d99b914d06b7820fe9eb294d5a.png\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1762952,
+      "fullName": "UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.DefaultCapture_RequiresFocusedGameView",
+      "message": null,
+      "name": "DefaultCapture_RequiresFocusedGameView",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.DefaultCapture_RequiresFocusedGameView\n[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.DefaultCapture_RequiresFocusedGameView\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1900012,
+      "fullName": "UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsFocusLostDuringCapture",
+      "message": null,
+      "name": "IncludeUi_RejectsFocusLostDuringCapture",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsFocusLostDuringCapture\n[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsFocusLostDuringCapture\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1928391,
+      "fullName": "UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsOverlappingRequests",
+      "message": null,
+      "name": "IncludeUi_RejectsOverlappingRequests",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsOverlappingRequests\n[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsOverlappingRequests\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.2310364,
+      "fullName": "UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsUnfocusedGameViewWithoutChangingFocus",
+      "message": null,
+      "name": "IncludeUi_RejectsUnfocusedGameViewWithoutChangingFocus",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsUnfocusedGameViewWithoutChangingFocus\n[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.Handlers.ScreenshotHandlerTests.IncludeUi_RejectsUnfocusedGameViewWithoutChangingFocus\n",
+      "status": "Passed"
+    }
+  ],
+  "totalTests": 5
+}
