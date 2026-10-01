@@ -1,7 +1,8 @@
-# Skills (Claude Code / Codex)
+# Skills (plugins and CLI distribution)
 
-This document describes how the `unity-cli` repository ships skills to both
-Claude Code and Codex CLI, the contract that governs them, and how the
+This document describes how `unity-cli` distributes skills through Claude Code
+and Codex plugins and installs bundled skills for Claude Code, Cursor, Windsurf,
+and VS Code, the contract that governs them, and how the
 `unity-cli skills lint` subcommand enforces it. The full specification lives in
 GitHub Issue [#160](https://github.com/akiojin/unity-cli/issues/160).
 
@@ -25,6 +26,93 @@ The Claude Code and Codex plugins share a single skills source of truth.
 `.codex-plugin/plugin.json` references `../.claude-plugin/plugins/unity-cli/skills/`
 and `.agents/skills/` symlinks point to the same directory, so editing a
 SKILL.md updates both plugins atomically.
+
+## Install bundled skills
+
+The CLI embeds the canonical `unity-*` skill directories and their reference
+files at build time. Installation works outside a repository checkout and does
+not download skill content. The existing Claude Code and Codex plugin routes
+remain available.
+
+```bash
+# Preview project-local paths without creating files or directories.
+unity-cli skills install cursor --local --dry-run
+
+# Install for every Claude Code project under your home directory.
+unity-cli skills install claude-code
+
+# Install for this VS Code workspace.
+unity-cli skills install vscode --local
+
+# After upgrading the CLI, sync all globally installed clients.
+unity-cli skills refresh
+
+# Preview a single client's project-local update.
+unity-cli skills refresh windsurf --local --dry-run
+
+# Inspect the embedded names or an individual skill's instructions.
+unity-cli skills show
+unity-cli skills show unity-scene-create
+```
+
+| Client | `--local` (current directory) | Default (home directory) |
+| --- | --- | --- |
+| `claude-code` | `.claude/skills/` | `~/.claude/skills/` |
+| `cursor` | `.cursor/skills/` | `~/.cursor/skills/` |
+| `windsurf` | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| `vscode` | `.github/skills/` | `~/.copilot/skills/` |
+
+These clients read `SKILL.md` directories directly; reference files retain their
+relative paths. See the client documentation for
+[Claude Code](https://code.claude.com/docs/en/skills),
+[Cursor](https://cursor.com/docs/skills),
+[Windsurf](https://docs.windsurf.com/windsurf/cascade/skills), and
+[VS Code](https://code.visualstudio.com/docs/agent-customization/agent-skills).
+Restart the client session after installation. In Claude Code, invoke
+`/unity-scene-create` to use the scene creation workflow.
+
+Each destination holds a `.unity-cli-skills.json` ownership ledger containing
+the CLI version and SHA-256 hashes of installed files. Installation refuses an
+existing skill directory absent from that ledger. Refresh refuses locally
+edited owned files. `--force` permits replacing conflicting bundled files;
+unrelated files are preserved. Symlinks in client destination paths or target
+skill trees are refused even with `--force`, including dangling links. The
+current directory or home scope is resolved before checking client paths, so
+OS aliases such as macOS `/var` do not prevent installation.
+
+`refresh` updates only installations with a ledger in the selected scope. It
+restores missing owned files and removes obsolete owned files after checking
+their hashes. An absent or invalid ledger is an error, not permission to claim
+existing content. Explicitly use `install` for a new client. `refresh` without a
+client checks all four clients; use `--local` separately for each project.
+
+`install` and `refresh` print the paths they write or remove. `--dry-run`
+performs the same conflict checks and prints only planned paths, including a
+changed ledger, without writing anything. All selected destinations are
+validated before mutation. Individual files and the final ledger are replaced
+atomically; a filesystem error can still interrupt a multi-file update. Inspect
+the reported failure before retrying with `--force` if files changed meanwhile.
+
+Claude Desktop distribution and ZIP exports are outside this command's scope.
+Windows host verification is tracked separately in
+[#386](https://github.com/akiojin/unity-cli/issues/386).
+
+### Real-client acceptance check
+
+With an authenticated Claude Code and a dedicated running macOS Editor, run:
+
+```bash
+cargo build --bin unity-cli
+python3 scripts/e2e-skills-install.py --project-root /path/to/test-project --port 6489
+```
+
+This installs global skills without `--force`, opens a fresh Claude Code session
+with user skills enabled and hooks/plugins disabled for that invocation, invokes
+`/unity-scene-create`, then independently checks the saved scene through the
+Editor. Generated scenes stay under `Assets/Scenes/Generated/E2E/`. The script
+prints its evidence directory containing the session transcript, scene response,
+and binary/skill hashes. It does not record human visual confirmation or start
+or stop the Editor. Global installed skills remain available after the test.
 
 ## Skill Contract v1
 

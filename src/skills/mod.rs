@@ -4,6 +4,7 @@
 //! parses YAML frontmatter and SKILL.md body, and runs rule R01..R22 against
 //! each skill to enforce the Skill Contract v1.
 
+pub mod distribution;
 pub mod loader;
 pub mod model;
 pub mod report;
