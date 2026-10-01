@@ -118,6 +118,7 @@ No se admiten variables legacy con prefijo MCP. Usa solo `UNITY_CLI_*`.
 ## Documentacion
 
 - Catalogo completo de comandos y herramientas: [docs/tools.md](docs/tools.md)
+- Comparacion con el Unity CLI oficial (funciones, medicion de latencia, uso conjunto): [docs/comparison.md](docs/comparison.md)
 - Flujo de desarrollo y CI: [docs/development.md](docs/development.md)
 - Guia de contribucion: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Proceso de release: [RELEASE.md](RELEASE.md)
