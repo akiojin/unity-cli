@@ -4,7 +4,7 @@ description: Create and bootstrap Unity scenes with unity-cli. Use when the user
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: scenes
   triggers:
     - scene
@@ -23,6 +23,10 @@ metadata:
 # Scene Bootstrap
 
 Create scenes, add starter GameObjects, and attach initial components via `unity-cli`. This skill owns greenfield scene authoring; it hands off to `unity-gameobject-edit` or `unity-prefab-workflow` once objects already exist.
+
+## Bootstrap Prerequisite
+
+Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SKILL.md) and [toolchain checklist](../unity-cli-usage/references/runtime-checklist.md). If `unity-cli` is missing, install the release binary and run `setup --launch-editor` yourself; do not ask the user to install it. Use the current project and configured port. Inspect `create_gameobject` schema before creating a primitive; its enum values are lowercase.
 
 ## Use When
 
@@ -45,7 +49,7 @@ Create scenes, add starter GameObjects, and attach initial components via `unity
 
 ```bash
 unity-cli scene create MainMenu --path Assets/Scenes/
-unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"Cube"}'
+unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"cube"}'
 unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'
 unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/MainMenu.unity"}'
 ```

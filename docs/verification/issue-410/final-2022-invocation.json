@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/opt/homebrew/bin/claude",
+    "-p",
+    "--setting-sources",
+    "project",
+    "--settings",
+    "{\"disableAllHooks\": true, \"autoMemoryEnabled\": false}",
+    "--strict-mcp-config",
+    "--plugin-dir",
+    "/tmp/issue410-plugin-final",
+    "--allowedTools",
+    "Bash,Read,Write,Edit,Glob,Grep,Skill",
+    "--output-format",
+    "stream-json",
+    "--verbose"
+  ],
+  "cwd": "/tmp/issue410-final-2022",
+  "prompt": "シーンに Cube を追加して",
+  "env_overrides": {
+    "UNITY_CLI_VERSION": "v0.16.0",
+    "UNITY_CLI_PORT": "6545",
+    "PATH": "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  },
+  "precondition": "unity-cli missing from PATH; shared managed binary already exists"
+}
