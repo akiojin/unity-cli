@@ -22,6 +22,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "manage_asset_database",
     "analyze_asset_dependencies",
     "manage_asset_import_settings",
+    "manage_audio_mixer",
     "create_material",
     "modify_material",
     "create_prefab",
@@ -1990,6 +1991,61 @@ fn tool_params_schema(name: &str) -> Value {
                 ),
             ],
         ),
+        "manage_audio_mixer" => with_one_of(
+            object_schema(
+                &[
+                    (
+                        "action",
+                        enum_string_schema(&["create", "get", "add_group", "expose_parameter"]),
+                    ),
+                    ("assetPath", string_schema()),
+                    ("parentGroup", string_schema()),
+                    ("groupPath", string_schema()),
+                    ("name", string_schema()),
+                    ("parameter", enum_string_schema(&["Volume"])),
+                    ("parameterName", string_schema()),
+                ],
+                &["action", "assetPath"],
+                false,
+            ),
+            vec![
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["create", "get"])),
+                        ("assetPath", string_schema()),
+                    ],
+                    &["action", "assetPath"],
+                    false,
+                ),
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["add_group"])),
+                        ("assetPath", string_schema()),
+                        ("parentGroup", string_schema()),
+                        ("name", string_schema()),
+                    ],
+                    &["action", "assetPath", "parentGroup", "name"],
+                    false,
+                ),
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["expose_parameter"])),
+                        ("assetPath", string_schema()),
+                        ("groupPath", string_schema()),
+                        ("parameter", enum_string_schema(&["Volume"])),
+                        ("parameterName", string_schema()),
+                    ],
+                    &[
+                        "action",
+                        "assetPath",
+                        "groupPath",
+                        "parameter",
+                        "parameterName",
+                    ],
+                    false,
+                ),
+            ],
+        ),
         "manage_asset_import_settings" => with_one_of(
             object_schema(
                 &[
@@ -3046,7 +3102,7 @@ mod tests {
 
     #[test]
     fn tool_catalog_keeps_manifest_parity_count() {
-        assert_eq!(TOOL_NAMES.len(), 152);
+        assert_eq!(TOOL_NAMES.len(), 153);
     }
 
     #[test]

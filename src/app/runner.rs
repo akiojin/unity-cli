@@ -1931,6 +1931,30 @@ mod tests {
     }
 
     #[test]
+    fn audio_mixer_arguments_are_action_specific() {
+        for params in [
+            json!({"action":"create", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"get", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"add_group", "assetPath":"Assets/Test.mixer", "parentGroup":"Master", "name":"Music"}),
+            json!({"action":"expose_parameter", "assetPath":"Assets/Test.mixer", "groupPath":"Master/Music", "parameter":"Volume", "parameterName":"MusicVolume"}),
+        ] {
+            validate_tool_params("manage_audio_mixer", &params).expect("valid mixer operation");
+        }
+        for params in [
+            json!({}),
+            json!({"action":"delete", "assetPath":"Assets/Test.mixer"}),
+            json!({"action":"add_group", "assetPath":"Assets/Test.mixer", "name":"Music"}),
+            json!({"action":"expose_parameter", "assetPath":"Assets/Test.mixer", "groupPath":"Master", "parameter":"Unsupported", "parameterName":"Volume"}),
+            json!({"action":"get", "assetPath":"Assets/Test.mixer", "name":"unexpected"}),
+        ] {
+            assert!(
+                validate_tool_params("manage_audio_mixer", &params).is_err(),
+                "accepted {params}"
+            );
+        }
+    }
+
+    #[test]
     fn validate_tool_params_rejects_unknown_property_when_schema_is_strict() {
         let err = validate_tool_params("ping", &json!({ "unknown": true }))
             .expect_err("unknown key should fail for strict schema");

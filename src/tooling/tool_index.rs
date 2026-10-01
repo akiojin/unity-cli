@@ -52,6 +52,7 @@ const TOOL_INDEX: &[(&str, &str, &str)] = &[
     ("manage_asset_database", "Assets", "Manage AssetDatabase operations"),
     ("analyze_asset_dependencies", "Assets", "Analyze asset dependency graph"),
     ("manage_asset_import_settings", "Assets", "Manage asset import settings"),
+    ("manage_audio_mixer", "Assets", "Create and inspect AudioMixers, add groups and expose Volume parameters"),
     ("create_sprite_atlas", "Assets", "Create a SpriteAtlas asset with packables and packing settings"),
     ("create_material", "Assets", "Create a new Material"),
     ("modify_material", "Assets", "Modify Material properties"),

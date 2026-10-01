@@ -1,0 +1,307 @@
+{
+  "failedTests": 0,
+  "failures": [],
+  "inconclusiveTests": 0,
+  "latestResult": {
+    "fileContent": "{\n  \"generatedAt\": \"2026-10-01T09:11:20.1683330Z\",\n  \"runStartedAt\": \"2026-10-01T09:11:17.9446280Z\",\n  \"durationSeconds\": 2.2055322,\n  \"testMode\": \"EditMode\",\n  \"totalTests\": 16,\n  \"passed\": 16,\n  \"failed\": 0,\n  \"skipped\": 0,\n  \"inconclusive\": 0,\n  \"status\": \"passed\",\n  \"failures\": [],\n  \"tests\": [\n    {\n      \"name\": \"AudioImporterChangesPersist\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist\",\n      \"status\": \"Passed\",\n      \"duration\": 0.4185162,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"quality\\\",\\\"1.5\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"quality\\\",\\\"1.5\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.0688408,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"quality\\\",\\\"1.5\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"loadType\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"loadType\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.0668336,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"loadType\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"compressionFormat\\\",\\\"999\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"compressionFormat\\\",\\\"999\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.159291,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"compressionFormat\\\",\\\"999\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"forceToMono\\\",\\\"\\\\\\\"true\\\\\\\"\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"forceToMono\\\",\\\"\\\\\\\"true\\\\\\\"\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1096045,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"forceToMono\\\",\\\"\\\\\\\"true\\\\\\\"\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateSetting\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateSetting\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1244835,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateSetting\\\",\\\"\\\\\\\"Wrong\\\\\\\"\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateOverride\\\",\\\"0\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateOverride\\\",\\\"0\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1726368,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"sampleRateOverride\\\",\\\"0\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"typo\\\",\\\"true\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"typo\\\",\\\"true\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1293118,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\\\"typo\\\",\\\"true\\\")\\n\"\n    },\n    {\n      \"name\": \"AudioImporterSampleRateSettingsRoundTrip\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1630705,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip\\n\"\n    },\n    {\n      \"name\": \"MixerCanBeRecreatedAfterAssetDeletion\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1425779,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion\\n\"\n    },\n    {\n      \"name\": \"MixerHierarchyAndExposedVolumePersist\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1623053,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist\\n\"\n    },\n    {\n      \"name\": \"MixerRejectsDuplicatesAndMissingParentWithoutMutation\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation\",\n      \"status\": \"Passed\",\n      \"duration\": 0.131766,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation\\n\"\n    },\n    {\n      \"name\": \"MixerRejectsUnsafeAssetPaths(\\\"../Test.mixer\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"../Test.mixer\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.0717456,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"../Test.mixer\\\")\\n\"\n    },\n    {\n      \"name\": \"MixerRejectsUnsafeAssetPaths(\\\"Assets/../Test.mixer\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Assets/../Test.mixer\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.1000098,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Assets/../Test.mixer\\\")\\n\"\n    },\n    {\n      \"name\": \"MixerRejectsUnsafeAssetPaths(\\\"Packages/Test.mixer\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Packages/Test.mixer\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.0641344,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Packages/Test.mixer\\\")\\n\"\n    },\n    {\n      \"name\": \"MixerRejectsUnsafeAssetPaths(\\\"Assets/Test.asset\\\")\",\n      \"fullName\": \"UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Assets/Test.asset\\\")\",\n      \"status\": \"Passed\",\n      \"duration\": 0.0617512,\n      \"message\": null,\n      \"stackTrace\": null,\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\\\"Assets/Test.asset\\\")\\n\"\n    }\n  ]\n}",
+    "generatedAt": "2026-10-01T09:11:20.1734310Z",
+    "path": "/private/tmp/unity-cli-audio-e2e.AemEgC/Project/.unity/test-results/TestResults_EditMode_20261001_091117.json",
+    "status": "available",
+    "summary": {
+      "durationSeconds": 2.2055322,
+      "failed": 0,
+      "failures": [],
+      "generatedAt": "2026-10-01T09:11:20.1683330Z",
+      "inconclusive": 0,
+      "passed": 16,
+      "runStartedAt": "2026-10-01T09:11:17.9446280Z",
+      "skipped": 0,
+      "status": "passed",
+      "testMode": "EditMode",
+      "tests": [
+        {
+          "duration": 0.4185162,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist",
+          "message": null,
+          "name": "AudioImporterChangesPersist",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.0688408,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.0668336,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.159291,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1096045,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1244835,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1726368,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1293118,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")",
+          "message": null,
+          "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1630705,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip",
+          "message": null,
+          "name": "AudioImporterSampleRateSettingsRoundTrip",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1425779,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion",
+          "message": null,
+          "name": "MixerCanBeRecreatedAfterAssetDeletion",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1623053,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist",
+          "message": null,
+          "name": "MixerHierarchyAndExposedVolumePersist",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.131766,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation",
+          "message": null,
+          "name": "MixerRejectsDuplicatesAndMissingParentWithoutMutation",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.0717456,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")",
+          "message": null,
+          "name": "MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.1000098,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")",
+          "message": null,
+          "name": "MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.0641344,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")",
+          "message": null,
+          "name": "MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        },
+        {
+          "duration": 0.0617512,
+          "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")",
+          "message": null,
+          "name": "MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")",
+          "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")\n",
+          "stackTrace": null,
+          "status": "Passed"
+        }
+      ],
+      "totalTests": 16
+    }
+  },
+  "passedTests": 16,
+  "runId": "564f72c9-758d-48be-a757-41890870f3f9",
+  "skippedTests": 0,
+  "status": "completed",
+  "success": true,
+  "testMode": "EditMode",
+  "tests": [
+    {
+      "duration": 0.4185162,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist",
+      "message": null,
+      "name": "AudioImporterChangesPersist",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterChangesPersist\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.0688408,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"quality\",\"1.5\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.0668336,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"loadType\",\"\\\"Wrong\\\"\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.159291,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"compressionFormat\",\"999\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1096045,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"forceToMono\",\"\\\"true\\\"\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1244835,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateSetting\",\"\\\"Wrong\\\"\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1726368,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"sampleRateOverride\",\"0\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1293118,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")",
+      "message": null,
+      "name": "AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterRejectsInvalidBatchBeforeChangingFlags(\"typo\",\"true\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1630705,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip",
+      "message": null,
+      "name": "AudioImporterSampleRateSettingsRoundTrip",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.AudioImporterSampleRateSettingsRoundTrip\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1425779,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion",
+      "message": null,
+      "name": "MixerCanBeRecreatedAfterAssetDeletion",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerCanBeRecreatedAfterAssetDeletion\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1623053,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist",
+      "message": null,
+      "name": "MixerHierarchyAndExposedVolumePersist",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerHierarchyAndExposedVolumePersist\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.131766,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation",
+      "message": null,
+      "name": "MixerRejectsDuplicatesAndMissingParentWithoutMutation",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsDuplicatesAndMissingParentWithoutMutation\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.0717456,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")",
+      "message": null,
+      "name": "MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"../Test.mixer\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.1000098,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")",
+      "message": null,
+      "name": "MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/../Test.mixer\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.0641344,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")",
+      "message": null,
+      "name": "MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Packages/Test.mixer\")\n",
+      "status": "Passed"
+    },
+    {
+      "duration": 0.0617512,
+      "fullName": "UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")",
+      "message": null,
+      "name": "MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")",
+      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.AudioAuthoringTests.MixerRejectsUnsafeAssetPaths(\"Assets/Test.asset\")\n",
+      "status": "Passed"
+    }
+  ],
+  "totalTests": 16
+}
