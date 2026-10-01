@@ -1,10 +1,10 @@
 ---
 name: unity-scene-create
-description: Create and bootstrap Unity scenes with unity-cli. Use when the user asks to create a new scene, load or save a scene, add starter GameObjects, or attach initial components while bootstrapping a level or test scene. Do not use for editing existing GameObjects in place; use `unity-gameobject-edit`. Do not use inside prefab edit mode; use `unity-prefab-workflow` instead.
+description: Create and bootstrap Unity scenes with unity-cli. Use when the user asks to create a new scene, load or save a scene, add starter GameObjects, or attach initial components while bootstrapping a level or test scene. Do not use for editing existing GameObjects in place; use `unity-gameobject-edit`. Do not use inside prefab edit mode; use `unity-prefab-workflow` instead. For URP pipeline and Global Volume setup use `unity-urp-setup`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: scenes
   triggers:
     - scene
@@ -13,6 +13,7 @@ metadata:
     - gameobject
     - level
   siblings:
+    - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-project-bootstrap
     - unity-gameobject-edit

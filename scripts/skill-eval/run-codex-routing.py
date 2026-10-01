@@ -327,7 +327,10 @@ def route_by_keywords(user_prompt: str) -> dict[str, object] | None:
         return make_prediction(["unity-cli-usage"], "get_editor_state", [])
     if has_any("コマンド統計", "command stats"):
         return make_prediction(["unity-cli-usage"], "get_command_stats", [])
-    if has_any("packages一覧", "package一覧", "packages list", "package list", "パッケージ一覧"):
+    if (
+        has_any("packages一覧", "package一覧", "packages list", "package list", "パッケージ一覧")
+        and not has_any("upm", "package_manager")
+    ):
         return make_prediction(["unity-csharp-navigate"], "list_packages", [])
 
     # Explicit search/inspect-first workflows.

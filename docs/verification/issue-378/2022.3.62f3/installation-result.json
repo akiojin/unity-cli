@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "unityVersion": "2022.3.62f3",
+  "urpVersion": "14.0.12",
+  "scenePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URPBloom.unity",
+  "pipelinePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+  "rendererPath": "Assets/Scenes/Generated/E2E/URP/Issue378_UniversalRenderer.asset",
+  "profilePath": "Assets/Scenes/Generated/E2E/URP/Issue378_BloomProfile.asset",
+  "beforeScreenshot": "/private/tmp/unity-issue378/2022.3.62f3/.unity/capture/image_game_2026-10-01_14-54-55.png",
+  "afterScreenshot": "/private/tmp/unity-issue378/2022.3.62f3/.unity/capture/image_game_2026-10-01_14-55-11.png",
+  "observedDifference": "Both images were inspected: same 1280x720 framing, same Main Camera, same stationary emissive sphere on a black background. Before (Bloom intensity 0, threshold 1): hard-edged yellow disc with a pure black surround. After (intensity 2, threshold 1): the same disc with a soft yellow halo fading outward across much of the frame. Pixel check on the centre row: just outside the sphere edge (x=740) goes from RGB 0,0,0 to about 0.20,0.20,0.13, falling to about 0.03 at x=850; non-black pixels rise from 27,778 to 191,380 of 921,600. Live values confirmed the Volume stack's Bloom was inactive at intensity 0 and active at intensity 2.",
+  "consoleErrors": {
+    "finalErrorCount": 0,
+    "duringPlayAndCapture": 0,
+    "afterStopSaveReload": 0,
+    "earlier": "After the URP package install and its domain reload, the console showed 5 Error-type entries, all from the bridge: '[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:<port>'. They correspond to CLI requests that timed out while the Editor was reloading. There were no compile errors and no URP or rendering errors, and these entries were gone once Play started."
+  },
+  "qualityLevelsAssigned": [
+    "Very Low",
+    "Low",
+    "Medium",
+    "High",
+    "Very High",
+    "Ultra"
+  ],
+  "persistenceCheck": "After stopping Play, Bloom was set to intensity 2 / threshold 1 with overrides on, and assets and scene were saved. After opening an empty scene, force-reimporting the profile, pipeline and renderer, and reopening the scene: Graphics default and all 6 Quality levels point to the pipeline asset (active level Ultra unchanged); the pipeline has HDR on and references the saved renderer, which has the package's default post-process data; the Main Camera has HDR and post-processing on with volume layer mask 1; the Global Volume is global, weight 1, layer 0, and its shared profile is the saved profile; Bloom is a persistent subasset, active, intensity 2, threshold 1; the scene is not dirty. The files on disk show the same values.",
+  "notes": [
+    "Every eval counted as a step returned state 'completed'. Two attempts returned 'compile_error' before executing anything (an internal URP property and an ambiguous 'Object' reference); both were corrected and rerun under new request ids.",
+    "The package install call itself timed out at the transport level during the domain reload. It was not repeated; the installed version 14.0.12 was confirmed afterwards from the package list and the loaded assembly.",
+    "In Play, Time.frameCount stayed at 2 for the whole session, so the Editor was not advancing frames (probably because it was unfocused). Each capture reported 'Screenshot captured successfully from Main Camera' in game mode with osFallback false; the scene is static, so the comparison is unaffected.",
+    "URP auto-created Assets/UniversalRenderPipelineGlobalSettings.asset at the Assets root on install. I moved it to Assets/Scenes/Generated/E2E/URP/ with AssetDatabase.MoveAsset so that everything stays under the required folder; it is still the registered global settings asset.",
+    "One additional asset was created for the subject: Assets/Scenes/Generated/E2E/URP/Issue378_Emissive.mat (URP Lit, black base, HDR emission 4, 2.5, 0.5).",
+    "The profile was switched from intensity 0 to 2 while in Play by editing the saved shared profile, not a Play-mode clone.",
+    "No required capability was missing."
+  ]
+}

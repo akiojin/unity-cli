@@ -1,10 +1,10 @@
 ---
 name: unity-playmode-testing
-description: Drive Unity runtime verification with unity-cli. Use when the user asks to run PlayMode tests with Domain Reload, simulate keyboard, mouse, gamepad or touch input, inspect InputAction notifications in Play, record video or PNG frames, or preview method hot reload. Do not use for authoring input action assets; use `unity-input-system` instead.
+description: Drive Unity runtime verification with unity-cli. Use when the user asks to run PlayMode tests with Domain Reload, simulate keyboard, mouse, gamepad or touch input, inspect InputAction notifications in Play, record video or PNG frames, or preview method hot reload. Do not use for authoring input action assets; use `unity-input-system` instead. For URP and Bloom setup with before/after captures use `unity-urp-setup`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: testing
   triggers:
     - playmode
@@ -14,6 +14,7 @@ metadata:
     - screenshot
     - capture
   siblings:
+    - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-project-bootstrap
     - unity-input-system
