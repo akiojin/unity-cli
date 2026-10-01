@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 9,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-58039-18da5e18c205b730-0",
+  "state": "completed",
+  "value": "queued;frameCount=1"
+}

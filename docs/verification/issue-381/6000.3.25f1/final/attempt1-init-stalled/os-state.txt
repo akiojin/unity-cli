@@ -1,0 +1,10 @@
+frontmost: Google Chrome
+display power:
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    0
+   InternalPreventDisplaySleep    1
+   pid 356(powerd): [0x000000bd0009800e] 02:08:56 UserIsActive named: "com.apple.powerd.ws.initialize"  
+screen locked: 
+idle seconds: 306
+unity window occlusion/visibility:
+true, 2

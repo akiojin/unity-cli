@@ -1,0 +1,146 @@
+{
+  "kind": "Collected acceptance record for real Claude Code integration phase 2; raw original report retained as integration-report.json",
+  "startedAt": "2026-10-01T09:29:59Z",
+  "completedAt": "2026-10-01T09:32:32Z",
+  "skill": {
+    "sha256": {
+      "SKILL.md": "9dd254e13309eff2dffeda1b736eada374ec0b50d429c2c1c494b43d8dfae489",
+      "references/localization-workflow.md": "feb2d3d93fc4d42f0639299802ec94964edc21cee337a232d2e1b139b69e9c92",
+      "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6"
+    }
+  },
+  "versions": {
+    "unity": "2022.3.62f3",
+    "cli": "0.16.0",
+    "bridge": "0.16.0 (Embedded)",
+    "raw": "unity=2022.3.62f3;isPlaying=False;isCompiling=False;isUpdating=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity;dirty=False;sceneCount=1;com.unity.localization=1.5.13(Registry);com.unity.addressables=1.25.0(Registry);com.unity.ugui=1.0.0(BuiltIn);com.akiojin.unity-cli-bridge=0.16.0(Embedded);com.unity.nuget.newtonsoft-json=3.2.1(Registry);com.unity.scriptablebuildpipeline=1.22.4(Registry)"
+  },
+  "sourceReport": "integration-report.json",
+  "artifactMapping": {
+    "init.json": "p2_26_initialization_after_resume.json",
+    "en-state.json": "p2_27_play_en_state_after_resume.json",
+    "ja-state.json": "p2_30_play_ja_state.json",
+    "en-return-state.json": "p2_40_play_en_again_state.json",
+    "en.png": "p2_28_play_en_capture_screenshot_primary_frontmost.png",
+    "ja.png": "p2_31_play_ja_capture_screenshot_primary_frontmost.png",
+    "en-return.png": "p2_41_play_en_again_capture_screenshot_primary_frontmost.png"
+  },
+  "acceptedPhase": {
+    "skillHash": "feb2d3d9… (text as modified mid-run)",
+    "steps": [
+      {
+        "step": "p2_20_play_en_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "[unlocalized placeholder]",
+        "match": false,
+        "polls": 20,
+        "observedAt": "2026-10-01T09:31:06Z",
+        "note": "FAILED: Play loop frozen at frame 2 with the Editor in the background (initialization not done); see anomalies"
+      },
+      {
+        "step": "p2_27_play_en_state_after_resume",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:41Z",
+        "note": "poll only; SelectedLocale=en was set in p2_20 while the Play loop was stalled in the background; Editor re-activated so frames resume"
+      },
+      {
+        "step": "p2_30_play_ja_state",
+        "locale": "ja",
+        "expected": "こんにちは、世界！",
+        "actual": "こんにちは、世界！",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:52Z"
+      },
+      {
+        "step": "p2_40_play_en_again_state",
+        "locale": "en",
+        "expected": "Hello, world!",
+        "actual": "Hello, world!",
+        "match": true,
+        "polls": 1,
+        "observedAt": "2026-10-01T09:31:54Z"
+      }
+    ],
+    "initializationAfterResume": "isPlaying=True;frame=2;isDone=True;status=Succeeded;opException=null;available=en,ja,;selected=en;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity"
+  },
+  "console": {
+    "clearedByThisRun": false,
+    "preReload": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 30,
+      "warnings": 2
+    },
+    "beforePlay": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 11,
+      "warnings": 2
+    },
+    "duringPlayPhase1": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 56,
+      "warnings": 2
+    },
+    "afterStopPhase1": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 58,
+      "warnings": 2
+    },
+    "duringPlayPhase2": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 78,
+      "warnings": 2
+    },
+    "afterStopPhase2": {
+      "asserts": 0,
+      "errors": 0,
+      "exceptions": 0,
+      "logs": 80,
+      "warnings": 2
+    },
+    "errorExceptionAssertEntries": 0,
+    "warnings": {
+      "beforePlay": [
+        "Packages/com.akiojin.unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+        "Packages/com.akiojin.unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+      ],
+      "inPlay": [
+        "Ignoring depth surface store action as it is memoryless\n",
+        "Ignoring depth surface load action as it is memoryless\n"
+      ]
+    },
+    "searchIndexerException": {
+      "presentInConsole": false,
+      "presentInEditorLog": false,
+      "note": "No Search indexer exception exists in this Editor session: read_console (Error/Exception/Assert and filterText Search/index) returned 0 entries before and after, and editor.log has 0 matching non-import lines. Nothing was cleared; there was nothing to preserve separately.",
+      "files": [
+        "07_console_before_search_filter.json",
+        "72_console_after_stop_search_filter.json",
+        "p2_72_console_after_stop_search_filter.json",
+        "p2_72_editor_log_exception_grep_after.txt"
+      ]
+    },
+    "bufferNote": "The bridge console buffer restarts on domain reload / Play entry; the pre-reload buffer is kept in 02_console_prereload_all.json and the pre-Play buffer in 07_console_before_all.json."
+  },
+  "sideEffects": [
+    "43 bridge .cs.meta files normalised by Unity during the asset refresh",
+    "6 PNGs written by capture_screenshot under Project/.unity/capture/",
+    "Game view window opened/focused; macOS frontmost app switched to Unity twice and restored to Google Chrome",
+    "Editor process now pauses Play when in the background (see anomalies)"
+  ]
+}

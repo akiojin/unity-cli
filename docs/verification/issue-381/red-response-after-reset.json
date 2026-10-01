@@ -1,0 +1,12 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "session_id": "8a803315-ce73-4b11-b9e1-8726b51af57e",
+  "result": "```json\n{\n  \"predicted_skills\": [\"unity-asset-management\", \"unity-gameobject-edit\"],\n  \"predicted_tool\": \"add_component\",\n  \"predicted_payload_keys\": [\"gameObjectPath\", \"componentType\"]\n}\n```",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 10719,
+  "models": [
+    "claude-fable-5-1"
+  ]
+}

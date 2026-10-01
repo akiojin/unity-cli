@@ -1,0 +1,20 @@
+{
+  "message": "Play mode scheduled in 300ms",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": "2026-10-01T09:35:13.9422400Z",
+      "msSincePlayRequested": 5.0680000000000005,
+      "playRequested": true,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 2469.931682167
+  },
+  "status": "success"
+}

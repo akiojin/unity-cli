@@ -1,0 +1,9 @@
+{
+  "action": "install",
+  "displayName": "Localization",
+  "message": "Successfully installed Localization version 1.5.13",
+  "name": "com.unity.localization",
+  "packageId": "com.unity.localization@1.5.13",
+  "success": true,
+  "version": "1.5.13"
+}

@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 14,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-95321-18da5cabc86310a0-0",
+  "state": "completed",
+  "value": "requested=/tmp/issue381/6000.3.25f1/evidence/greeting-en.png;rendering=1280x720;locale=en"
+}

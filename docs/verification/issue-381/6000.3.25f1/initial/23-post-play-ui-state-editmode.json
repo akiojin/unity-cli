@@ -1,0 +1,19 @@
+{
+  "color": "#FFFFFFFF",
+  "components": [
+    "RectTransform",
+    "CanvasRenderer",
+    "Text",
+    "LocalizeStringEvent"
+  ],
+  "font": "ArialUnicode",
+  "fontSize": 84,
+  "isActive": true,
+  "isInteractable": true,
+  "layer": "Default",
+  "name": "Greeting",
+  "path": "/LocalizationCanvas/Greeting",
+  "raycastTarget": false,
+  "tag": "Untagged",
+  "text": ""
+}

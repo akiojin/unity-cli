@@ -4,7 +4,7 @@ description: Drive Unity runtime verification with unity-cli. Use when the user 
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: testing
   triggers:
     - playmode
@@ -14,6 +14,7 @@ metadata:
     - screenshot
     - capture
   siblings:
+    - unity-localization
     - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -36,6 +37,7 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 
 ## Do Not Use When
 
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.

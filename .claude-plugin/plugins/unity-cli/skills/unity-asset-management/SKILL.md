@@ -4,7 +4,7 @@ description: Manage Unity assets and import metadata with unity-cli. Use when th
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.3
+  version: 0.3.4
   category: assets
   triggers:
     - asset
@@ -14,6 +14,7 @@ metadata:
     - sprite
     - dependency
   siblings:
+    - unity-localization
     - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -37,6 +38,7 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 
 ## Do Not Use When
 
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.

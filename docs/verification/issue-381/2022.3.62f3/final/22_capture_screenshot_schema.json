@@ -1,0 +1,48 @@
+{
+  "description": "Unity CLI tool operation",
+  "executor": "remote",
+  "mutating": true,
+  "name": "capture_screenshot",
+  "params_schema": {
+    "additionalProperties": false,
+    "properties": {
+      "captureMode": {
+        "enum": [
+          "game",
+          "scene",
+          "window",
+          "explorer"
+        ],
+        "type": "string"
+      },
+      "encodeAsBase64": {
+        "type": "boolean"
+      },
+      "explorerSettings": {
+        "additionalProperties": true,
+        "properties": {},
+        "type": "object"
+      },
+      "height": {
+        "type": "integer"
+      },
+      "includeUI": {
+        "type": "boolean"
+      },
+      "osFallback": {
+        "type": "boolean"
+      },
+      "width": {
+        "type": "integer"
+      },
+      "windowName": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "response_schema": {
+    "additionalProperties": true,
+    "type": "object"
+  }
+}

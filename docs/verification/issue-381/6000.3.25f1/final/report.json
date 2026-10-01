@@ -1,0 +1,385 @@
+{
+  "kind": "agent verification (not human confirmation)",
+  "run": "final acceptance run after the GAME_VIEW_NOT_FOCUSED wording change in references/localization-workflow.md and after bridge #429 integration (develop ff3e2f3)",
+  "result": "PASS with a retained first-attempt failure: the accepted en -> ja -> en sequence passed with the target Editor holding OS focus; the first Play attempt with the Editor in the background stalled (see play.attempt1)",
+  "startedAt": "2026-10-01T09:28:21Z",
+  "completedAt": "2026-10-01T09:36:34Z",
+  "target": {
+    "projectPath": "/tmp/issue381/6000.3.25f1/Project",
+    "port": 6508,
+    "evidenceDir": "/tmp/issue381/6000.3.25f1/accepted-evidence",
+    "unityPid": 28526
+  },
+  "skill": {
+    "baseDir": "/Users/akiojin/Workbench/unity-cli/work/issue-381/.claude-plugin/plugins/unity-cli/skills/unity-localization",
+    "sha256": {
+      "SKILL.md": "9dd254e13309eff2dffeda1b736eada374ec0b50d429c2c1c494b43d8dfae489",
+      "references/localization-workflow.md": "feb2d3d93fc4d42f0639299802ec94964edc21cee337a232d2e1b139b69e9c92",
+      "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6"
+    },
+    "hashedBeforeActions": true,
+    "unchangedAtEnd": true,
+    "changedSinceIntegrationRun": [
+      "references/localization-workflow.md (was f9da5cad6bb5968c6c82bb0b3510064b7e8b45efa21f95e0c034e1a4d7761964)"
+    ]
+  },
+  "bridge": {
+    "package": "com.akiojin.unity-cli-bridge 0.16.0 (embedded)",
+    "csManifest": "/tmp/issue381/6000.3.25f1/accepted-evidence/bridge-cs-sha256.txt",
+    "csManifestSha256": "e13efbaae317a064bea94d14362fdcb4b68f419082395831e811d7d254f274d6",
+    "csFileCount": {
+      "Editor": 78,
+      "Runtime": 1
+    },
+    "identicalToIntegrationRunManifest": true,
+    "sourceCheckout": "develop ff3e2f3 (Merge pull request #429), compared in the integration run",
+    "compiledAssembly": "UnityCliBridge.Editor.dll built 2026-10-01T18:22:47+0900, lastCompilationTime 2026-10-01T09:22:47.996Z, 0 compile errors",
+    "unchangedAtEnd": true
+  },
+  "versions": {
+    "unityEditor": "6000.3.25f1",
+    "unityCli": "0.16.0",
+    "bridge": "0.16.0",
+    "ping": {
+      "bridgeVersion": "0.16.0",
+      "cliVersion": "0.16.0",
+      "message": "CLI and bridge are both 0.16.0",
+      "status": "match"
+    },
+    "packages": {
+      "com.unity.localization": "1.5.13 (registry, depth 0)",
+      "com.unity.addressables": "2.10.3 (registry, depth 1)",
+      "com.unity.scriptablebuildpipeline": "2.6.2 (registry, depth 2)",
+      "com.unity.ugui": "2.0.0 (builtin, depth 1)"
+    }
+  },
+  "constraintsObserved": {
+    "packagesReinstalled": false,
+    "assetsRecreated": false,
+    "labelTextAssigned": false,
+    "skillModified": false,
+    "bridgeModified": false,
+    "projectFilesModifiedDuringRun": 0,
+    "priorEvidenceFilesModified": 0,
+    "consoleClearedByAgent": false,
+    "repositoryGitHubGwtChanges": false,
+    "otherEditorsTouched": false,
+    "unrelatedApplicationsActivated": false,
+    "osFocus": {
+      "action": "OS foreground focus was given to the target Unity Editor process only (pid 28526), twice, via System Events; log: /tmp/issue381/6000.3.25f1/accepted-evidence/os-activation.log",
+      "why": "With the Editor unfocused and Player Settings Run In Background off, the Play loop was frozen (see play.attempt1); no in-Editor action advanced it.",
+      "stateLeft": "Unity Editor is still the frontmost application; no other application was activated to restore the previous one (Google Chrome)"
+    },
+    "note": "capture_screenshot wrote its own files to Project/.unity/capture/ (tool default, not assets); byte-identical copies are en.png, ja.png, en-return.png."
+  },
+  "editModePersistenceBeforePlay": {
+    "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+    "sceneDirty": false,
+    "labelPath": "/LocalizationCanvas/Greeting",
+    "font": "Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf",
+    "fontSize": 84,
+    "tableReference": "TableReference(5e97c0ff-0d89-5426-abb0-0eac0dde9f60 - DemoStrings)",
+    "tableEntryReference": "TableEntryReference(707780608)",
+    "resolvedCollection": "DemoStrings",
+    "resolvedCollectionPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset",
+    "resolvedKey": "greeting",
+    "sharedKeyId": 707780608,
+    "persistentListeners": [
+      {
+        "index": 0,
+        "targetType": "UnityEngine.UI.Text",
+        "targetObjectPath": "/LocalizationCanvas/Greeting",
+        "targetIsLabelText": true,
+        "method": "set_text",
+        "callState": "EditorAndRuntime"
+      }
+    ],
+    "activeSettingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+    "locales": [
+      {
+        "code": "en",
+        "name": "English (en)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/English (en).asset"
+      },
+      {
+        "code": "ja",
+        "name": "Japanese (ja)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/Japanese (ja).asset"
+      }
+    ],
+    "tables": [
+      {
+        "locale": "en",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset",
+        "keyId": 707780608,
+        "greeting": "Hello, world!"
+      },
+      {
+        "locale": "ja",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset",
+        "keyId": 707780608,
+        "greeting": "こんにちは、世界！"
+      }
+    ],
+    "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset"
+  },
+  "editModeLabelTextBeforePlay": "",
+  "play": {
+    "attempt1": {
+      "result": "FAIL (retained): background Editor, Play loop frozen",
+      "evidenceDir": "/tmp/issue381/6000.3.25f1/accepted-evidence/attempt1-init-stalled",
+      "initPolls": "40 polls over ~40 s: isPlaying=True;isDone=False;status=None",
+      "initResponse": "isPlaying=True;isDone=False;status=None;error=none;selected=null;available=-1",
+      "labelText": {
+        "afterSelectEn": "",
+        "afterSelectJa": "",
+        "afterSelectEnReturn": ""
+      },
+      "diagnosis": {
+        "playLoop": "isPlaying=True;isPaused=False;frameCount=1;time=0.00;realtime=134.64;timeScale=1;runInBackground=False;opValid=True;isDone=True;status=Succeeded;percent=1;debugName=Localization Settings Initialization;appActive=False;scene=Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+        "focusState": "isFocused=False;appActive=False;runInBackground=False;playerSettingsRunInBackground=False;frameCount=1;isPaused=False",
+        "manageWindowsFocusGameView": {
+          "action": "focus",
+          "message": "Focused window: GameView",
+          "previousFocus": null,
+          "success": true,
+          "windowType": "GameView"
+        },
+        "framesAfterFocusAction": "frameCount stayed 1 (play-diagnose-6..8.json)",
+        "queuePlayerLoopUpdate": "4 calls, frameCount stayed 1 (nudge-1..4.json)",
+        "afterOsFocusToTargetEditor": [
+          "isFocused=True;appActive=True;runInBackground=False;playerSettingsRunInBackground=False;frameCount=85;isPaused=False",
+          "isFocused=True;appActive=True;runInBackground=False;playerSettingsRunInBackground=False;frameCount=182;isPaused=False",
+          "isFocused=True;appActive=True;runInBackground=False;playerSettingsRunInBackground=False;frameCount=460;isPaused=False"
+        ],
+        "cause": "Application.isFocused=False with PlayerSettings.runInBackground=False: the Play loop does not advance while the Editor is not the active application. Frames resumed immediately once the Editor had OS focus, and the label then became Hello, world! through the binding.",
+        "differenceFromEarlierRuns": "The earlier background runs (evidence/, final-evidence/, background cycle of integration-evidence/) advanced frames while unfocused. Probable reason, not proven: the Editor had never held OS focus until the integration run activated it once; since losing focus afterwards it honours Run In Background=off."
+      },
+      "captureNotReached": "no capture was attempted in attempt 1 because no label reached its expected text",
+      "console": {
+        "statistics": {
+          "asserts": 0,
+          "errors": 0,
+          "exceptions": 0,
+          "logs": 93,
+          "warnings": 0
+        },
+        "errorsOrExceptions": 0
+      }
+    },
+    "attempt2Accepted": {
+      "result": "PASS",
+      "precondition": "target Editor frontmost: isFocused=True;appActive=True;runInBackground=False;playerSettingsRunInBackground=False;frameCount=356;isPaused=False | focusedWindow=UnityEditor.GameView;mouseOverWindow=UnityEditor.GameView;appActive=True;gameViews=1;gv[hasFocus=True,docked=True,pos=(x:285.00, y:97.00, width:867.00, height:485.50)]",
+      "initPath": "/tmp/issue381/6000.3.25f1/accepted-evidence/init.json",
+      "initialization": "isPlaying=True;isDone=True;status=Succeeded;error=none;selected=en;available=2",
+      "steps": [
+        {
+          "order": 1,
+          "selectedLocale": "en",
+          "setLocaleResponse": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-set-locale.json",
+          "expected": "Hello, world!",
+          "actualFromGetUiElementState": "Hello, world!",
+          "match": true,
+          "statePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-state.json",
+          "png": "/tmp/issue381/6000.3.25f1/accepted-evidence/en.png",
+          "pngSha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+          "size": "1280x720",
+          "captureMethod": "primary capture_screenshot (attempt 1)",
+          "captureResponsePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-capture-attempt1-primary.json",
+          "captureResponse": {
+            "captureMode": "game",
+            "fileSize": 23161,
+            "height": 720,
+            "includeUI": true,
+            "message": "Composited Game View screenshot captured successfully",
+            "path": "/private/tmp/issue381/6000.3.25f1/Project/.unity/capture/image_game_2026-10-01_18-35-25-261_84cdc1c59ab140a8b71b49d6d4b85fd5.png",
+            "width": 1280
+          }
+        },
+        {
+          "order": 2,
+          "selectedLocale": "ja",
+          "setLocaleResponse": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja-set-locale.json",
+          "expected": "こんにちは、世界！",
+          "actualFromGetUiElementState": "こんにちは、世界！",
+          "match": true,
+          "statePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja-state.json",
+          "png": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja.png",
+          "pngSha256": "c4811c333a12f8f1b81f9687017f64d2d032bd3f477c43966ac1aa5ae49f551e",
+          "size": "1280x720",
+          "captureMethod": "primary capture_screenshot (attempt 1)",
+          "captureResponsePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja-capture-attempt1-primary.json",
+          "captureResponse": {
+            "captureMode": "game",
+            "fileSize": 29260,
+            "height": 720,
+            "includeUI": true,
+            "message": "Composited Game View screenshot captured successfully",
+            "path": "/private/tmp/issue381/6000.3.25f1/Project/.unity/capture/image_game_2026-10-01_18-35-26-467_8f6e23a4b8f340ac901235192e42f096.png",
+            "width": 1280
+          }
+        },
+        {
+          "order": 3,
+          "selectedLocale": "en",
+          "setLocaleResponse": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return-set-locale.json",
+          "expected": "Hello, world!",
+          "actualFromGetUiElementState": "Hello, world!",
+          "match": true,
+          "statePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return-state.json",
+          "png": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return.png",
+          "pngSha256": "17eed410562e8157f168082b4549381118b9d2e23386dd0cd21ca20e59f83206",
+          "size": "1280x720",
+          "captureMethod": "primary capture_screenshot (attempt 1)",
+          "captureResponsePath": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return-capture-attempt1-primary.json",
+          "captureResponse": {
+            "captureMode": "game",
+            "fileSize": 23161,
+            "height": 720,
+            "includeUI": true,
+            "message": "Composited Game View screenshot captured successfully",
+            "path": "/private/tmp/issue381/6000.3.25f1/Project/.unity/capture/image_game_2026-10-01_18-35-28-011_a945d3627a094ad49405504ad9a3beb0.png",
+            "width": 1280
+          }
+        }
+      ],
+      "capture": {
+        "request": {
+          "captureMode": "game",
+          "includeUI": true,
+          "width": 1280,
+          "height": 720,
+          "osFallback": false
+        },
+        "methodUsed": "primary capture_screenshot, first attempt, for all three captures",
+        "gameViewNotFocusedOccurred": false,
+        "focusActionUsed": false,
+        "fallbackUsed": false,
+        "note": "The GAME_VIEW_NOT_FOCUSED -> manage_windows focus -> retry -> ScreenCapture fallback branch was not exercised in this run because the error did not occur. Its last exercise is the integration run (integration-evidence), with the previous wording of the reference."
+      },
+      "visualInspection": {
+        "en": "Hello, world! rendered, white on dark background, centered, legible",
+        "ja": "こんにちは、世界！ rendered with all 9 glyphs, no replacement boxes, same framing",
+        "enReturn": "byte-identical to en.png",
+        "sameAsEarlierRuns": "en and ja hashes equal the final-evidence and integration-evidence captures"
+      }
+    }
+  },
+  "editModePersistenceAfterPlay": {
+    "scenePath": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+    "sceneDirty": false,
+    "labelPath": "/LocalizationCanvas/Greeting",
+    "font": "Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf",
+    "fontSize": 84,
+    "tableReference": "TableReference(5e97c0ff-0d89-5426-abb0-0eac0dde9f60 - DemoStrings)",
+    "tableEntryReference": "TableEntryReference(707780608)",
+    "resolvedCollection": "DemoStrings",
+    "resolvedCollectionPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset",
+    "resolvedKey": "greeting",
+    "sharedKeyId": 707780608,
+    "persistentListeners": [
+      {
+        "index": 0,
+        "targetType": "UnityEngine.UI.Text",
+        "targetObjectPath": "/LocalizationCanvas/Greeting",
+        "targetIsLabelText": true,
+        "method": "set_text",
+        "callState": "EditorAndRuntime"
+      }
+    ],
+    "activeSettingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+    "locales": [
+      {
+        "code": "en",
+        "name": "English (en)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/English (en).asset"
+      },
+      {
+        "code": "ja",
+        "name": "Japanese (ja)",
+        "path": "Assets/Scenes/Generated/E2E/Localization/Japanese (ja).asset"
+      }
+    ],
+    "tables": [
+      {
+        "locale": "en",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset",
+        "keyId": 707780608,
+        "greeting": "Hello, world!"
+      },
+      {
+        "locale": "ja",
+        "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset",
+        "keyId": 707780608,
+        "greeting": "こんにちは、世界！"
+      }
+    ],
+    "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset"
+  },
+  "editModeLabelTextAfterPlay": "",
+  "persistenceIdenticalBeforeAndAfterPlay": true,
+  "console": {
+    "baseline": {
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 1,
+        "logs": 36,
+        "warnings": 2
+      },
+      "errorOrExceptionCount": 1
+    },
+    "duringPlayAccepted": {
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 0,
+        "logs": 26,
+        "warnings": 2
+      },
+      "errorOrExceptionCount": 0
+    },
+    "afterStop": {
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 0,
+        "logs": 28,
+        "warnings": 2
+      },
+      "errorOrExceptionCount": 0
+    },
+    "engineSearchIndexerException": {
+      "preservedIn": "/tmp/issue381/6000.3.25f1/accepted-evidence/02-baseline-search-indexer-exception.json",
+      "presentAtBaseline": true,
+      "occurredDuringThisRun": false,
+      "occurrencesInEditorLog": 2,
+      "origin": "UnityEditor.Search.SearchInit.IndexationOnStartup -> SearchDatabase.EnumerateAll (SearchDatabase.cs:453); engine Search module, left in the console by the integration run",
+      "note": "Not cleared by the agent. Entering Play cleared the console (Editor Clear on Play), so it is absent from the Play and after-Stop reads; those zero counts mean no new error in this run, not a clean Editor session."
+    },
+    "newLocalizationFailures": {
+      "errorsOrExceptions": 0,
+      "note": "No Localization, Addressables or bridge error or exception was logged in either Play attempt. The attempt-1 stall produced no console output; editor.log for this run (/tmp/issue381/6000.3.25f1/accepted-evidence/24-editor-log-this-run.log) has no exception lines."
+    },
+    "warnings": [
+      "Ignoring depth surface store action as it is memoryless",
+      "Ignoring depth surface load action as it is memoryless"
+    ],
+    "consoleClearedByAgent": false
+  },
+  "statePaths": {
+    "init": "/tmp/issue381/6000.3.25f1/accepted-evidence/init.json",
+    "en": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-state.json",
+    "ja": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja-state.json",
+    "enReturn": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return-state.json"
+  },
+  "screenshots": {
+    "en": "/tmp/issue381/6000.3.25f1/accepted-evidence/en.png",
+    "ja": "/tmp/issue381/6000.3.25f1/accepted-evidence/ja.png",
+    "enReturn": "/tmp/issue381/6000.3.25f1/accepted-evidence/en-return.png"
+  },
+  "followUps": [
+    "The skill does not mention that Play frames stop on an unfocused Editor when Run In Background is off; in that state label polling stalls and the ScreenCapture fallback cannot produce a frame either (fallback not tried in that state in this run). Skill untouched.",
+    "capture_screenshot game+includeUI still requires the Editor to be the active application (GAME_VIEW_NOT_FOCUSED otherwise, see integration-evidence). Bridge untouched."
+  ]
+}
