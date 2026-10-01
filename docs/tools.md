@@ -51,9 +51,9 @@ Global options:
 - `--output text|json`
 - `--dry-run` (skip mutating tools and return execution plan)
 
-Registered tool total: 152 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 141 runtime/local tool APIs plus 11 Reference Cache tools.
+Registered tool total: 153 (`TOOL_NAMES` in `src/tooling/tool_catalog.rs`): 142 runtime/local tool APIs plus 11 Reference Cache tools.
 
-## Runtime Tool APIs (141 tools)
+## Runtime Tool APIs (142 tools)
 
 ### Scenes
 
@@ -261,6 +261,7 @@ python3 scripts/e2e-prefab.py --launch --editmode --versions 6000.3.25f1,2022.3.
 | `manage_asset_database`        | Manage AssetDatabase operations                                |
 | `analyze_asset_dependencies`   | Analyze asset dependency graph                                 |
 | `manage_asset_import_settings` | Manage asset import settings                                   |
+| `manage_audio_mixer`           | Create/read AudioMixers, groups and exposed Volume parameters  |
 | `create_sprite_atlas`          | Create a SpriteAtlas asset with packables and packing settings |
 | `create_material`              | Create a new Material                                          |
 | `modify_material`              | Modify Material properties                                     |
@@ -553,6 +554,40 @@ bindings, events and clip settings are preserved.
 Run `scripts/test-animation-curves.sh` for Editor regression tests and
 `cargo build --release` followed by `scripts/e2e-animation-curves-batch-host.sh`
 for the CLI-to-Editor test (default dedicated port `6473`).
+
+## Audio authoring
+
+`manage_audio_mixer` uses an existing `Assets/` folder and a `.mixer` asset path.
+Mutations require Edit Mode; existing assets are never overwritten. Group paths
+are exact hierarchy paths, starting at `Master`. Duplicate sibling groups,
+duplicate exposed names, and exposing the same parameter twice return errors.
+
+```bash
+unity-cli raw manage_audio_mixer --json '{"action":"create","assetPath":"Assets/Game.mixer"}'
+unity-cli raw manage_audio_mixer --json '{"action":"add_group","assetPath":"Assets/Game.mixer","parentGroup":"Master","name":"Music"}'
+unity-cli raw manage_audio_mixer --json '{"action":"expose_parameter","assetPath":"Assets/Game.mixer","groupPath":"Master/Music","parameter":"Volume","parameterName":"MusicVolume"}'
+unity-cli raw manage_audio_mixer --json '{"action":"get","assetPath":"Assets/Game.mixer"}'
+```
+
+Every successful action returns `assetPath`, `groups` (`name`, `path`,
+`parentPath`) and `exposedParameters` (`name`, `guid`, `groupPath`, `parameter`).
+Only group `Volume` can be exposed by this tool. Parameters exposed elsewhere
+are also listed; their `groupPath` and `parameter` are null when they are not
+group Volume parameters. Internal Unity audio editor APIs are isolated in the
+bridge; unavailable APIs return `AUDIO_MIXER_API_ERROR`.
+
+`manage_asset_import_settings` supports AudioImporter `modify` and `get`:
+`loadType`, `compressionFormat`, `quality` (0–1), `forceToMono`,
+`loadInBackground`, `ambisonic`, `sampleRateSetting`, and `sampleRateOverride`
+(1–192000 Hz). Enum values use Unity's exact enum names. Settings target the
+default sample settings; existing platform overrides remain independent.
+All requested values are validated before assigning any importer settings,
+then `SaveAndReimport` persists them.
+
+```bash
+unity-cli raw manage_asset_import_settings --json '{"action":"modify","assetPath":"Assets/Music.wav","settings":{"loadType":"Streaming","compressionFormat":"Vorbis","quality":0.7,"forceToMono":false,"loadInBackground":true}}'
+unity-cli raw manage_asset_import_settings --json '{"action":"get","assetPath":"Assets/Music.wav"}'
+```
 
 ## Local Runtime Tools (No Unity Connection Required)
 

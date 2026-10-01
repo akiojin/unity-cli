@@ -157,6 +157,7 @@ namespace UnityCliBridge.Core
                 ["manage_windows"] = command => Success(command, WindowManagementHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["manage_tools"] = command => Success(command, ToolManagementHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["manage_asset_import_settings"] = command => Success(command, AssetImportSettingsHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
+                ["manage_audio_mixer"] = command => Success(command, AudioMixerHandler.HandleCommand(command.Parameters)),
                 ["manage_asset_database"] = command => Success(command, AssetDatabaseHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["analyze_asset_dependencies"] = command => Success(command, AssetDependencyHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["addressables_manage"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),

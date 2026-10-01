@@ -1,0 +1,11 @@
+{
+  "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/AudioMixerHandler.cs": "d2769167d227dceb58a40dc72bef0b8d96849a8d86f155cb5d5b1b75b32e4088",
+  "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/AssetImportSettingsHandler.cs": "8289b2026407470d48fc6298b6a565dd359eb2898b4e29b16bf807683660fe92",
+  "UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs": "aa95bc8a1a5784b178a965141257cbf1e4a8516fd1194f9178b77226f557ddcd",
+  "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/Handlers/AudioAuthoringTests.cs": "d7c9fe1c8fdf60781ccdb9aa7c55bbcbe82d81b249d5ccf2b86e2c02fefbd3d5",
+  "src/tooling/tool_catalog.rs": "5651760de119a1dae59105bcabcf442a3e09c17955640da6030a8b5afa9e42bb",
+  "src/tooling/tool_index.rs": "2a5c2a4cc4d439f9349011a7d3e7feb6a8eba8c0e2fd4720da10190dde440379",
+  "src/app/runner.rs": "9338aa57838ec178274fd9d09103f87cefb140b37a770768e26c2f85f5119434",
+  "scripts/e2e-audio.py": "5290449daa05091d95f8be6bd3d31d7db8883a30f395840ed0ffb18cfb5b03cc",
+  "scripts/e2e-audio-batch-host.sh": "0fe40d0edcb29d73e90b4d6b11899d3cc13027630e28a4836d362bff6785b816"
+}
