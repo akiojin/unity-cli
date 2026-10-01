@@ -1,0 +1,17 @@
+[
+  {
+    "session_id": "0de77e56-722f-4ecd-a5a1-ec9866fd7e50",
+    "timestamp": "2026-10-01T08:38:38.192Z",
+    "invocation": {
+      "type": "tool_use",
+      "id": "toolu_01Ybz9v9hyUa569hnhQcqk7x",
+      "name": "Skill",
+      "input": {
+        "skill": "unity-2d-sprite-tilemap"
+      },
+      "caller": {
+        "type": "direct"
+      }
+    }
+  }
+]
