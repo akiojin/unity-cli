@@ -39,9 +39,12 @@
   - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.
   - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.
   - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.
-  - `SANDBOX_BLOCKED`: the local socket was denied. Re-run outside the sandbox; do not conclude the Editor is missing.
+  - `SANDBOX_BLOCKED`: the local socket was denied. Retry in a permitted execution context according to the host's approval policy; do not bypass sandbox restrictions or conclude the Editor is missing. If reachability still cannot be verified, ask the user to confirm the running project and bridge connection before considering an offline fallback.
   - `BRIDGE_NOT_RESPONDING`: the Editor is still importing/compiling or the port differs from Project Settings > Unity CLI Bridge.
 - Re-run `unity-cli doctor` until `diagnosis` is `OK`, then continue the workflow.
+- An empty instance list or failed process probe inside a sandbox is also inconclusive. Confirm the project/host/port and the user's Editor state instead of treating restricted visibility as `EDITOR_NOT_RUNNING`.
+- When the target Editor is reachable, never hand-edit serialized `.unity`, `.prefab`, or `.asset` YAML. Bridge operations keep serialized references, prefab overrides, and the live Editor state in sync.
+- If recovery cannot restore the connection and offline work is appropriate, declare the fallback before editing: explain the verified limitation, affected files, alternative method, and how the result will be checked after reopening Unity. Without confirmation of an uncertain sandbox diagnosis, pause dependent edits. Do not silently substitute YAML edits for bridge calls.
 
 ## CI Notes
 

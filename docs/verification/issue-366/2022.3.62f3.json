@@ -1,0 +1,277 @@
+{
+  "recorded_at": "2026-10-01T04:50:01.186223+00:00",
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "editor": "2022.3.62f3",
+  "project": "/tmp/issue366-unity-2022.3.62f3",
+  "port": 6492,
+  "prompt": "Player に Rigidbody を付けて",
+  "model": "claude-opus-5-5",
+  "session_id": "739a5ca0-a1c4-4c6c-8c39-0e474a3c68f7",
+  "source_transcript_sha256": "1bf9c3e7cd8836350b665ea16ea8ed2e4e3fff6d6069b4e517379bcfba58e3fc",
+  "setup": [
+    {
+      "tool": "create_scene",
+      "payload": {
+        "sceneName": "Issue366",
+        "path": "Assets/Scenes/Generated/E2E/"
+      },
+      "result": {
+        "isLoaded": true,
+        "path": "Assets/Scenes/Generated/E2E/Issue366.unity",
+        "sceneIndex": -1,
+        "sceneName": "Issue366",
+        "summary": "Created and loaded scene \"Issue366\" at \"Assets/Scenes/Generated/E2E/Issue366.unity\""
+      }
+    },
+    {
+      "tool": "create_gameobject",
+      "payload": {
+        "name": "Player"
+      },
+      "result": {
+        "id": -31114,
+        "isActive": true,
+        "layer": 0,
+        "name": "Player",
+        "path": "/Player",
+        "position": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "rotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "tag": "Untagged"
+      }
+    },
+    {
+      "tool": "save_scene",
+      "payload": {
+        "scenePath": "Assets/Scenes/Generated/E2E/Issue366.unity"
+      },
+      "result": {
+        "isDirty": false,
+        "originalPath": null,
+        "saved": true,
+        "sceneName": "Issue366",
+        "scenePath": "Assets/Scenes/Generated/E2E/Issue366.unity",
+        "summary": "Saved scene \"Issue366\" to \"Assets/Scenes/Generated/E2E/Issue366.unity\""
+      }
+    },
+    {
+      "tool": "get_gameobject_details",
+      "payload": {
+        "gameObjectName": "Player"
+      },
+      "result": {
+        "components": [
+          {
+            "enabled": true,
+            "properties": {
+              "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+              },
+              "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+              }
+            },
+            "type": "Transform"
+          }
+        ],
+        "isActive": true,
+        "isStatic": false,
+        "layer": "Default",
+        "name": "Player",
+        "path": "/Player",
+        "prefabInfo": {
+          "isInstance": false,
+          "isPrefab": false
+        },
+        "summary": "GameObject \"Player\" with 1 component at /Player",
+        "tag": "Untagged",
+        "transform": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "rotation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "scale": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          },
+          "worldPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "tool_transcript": [
+    {
+      "request": {
+        "type": "tool_use",
+        "id": "toolu_01Urtgpnu12wt8uZBzsiaz1y",
+        "name": "Skill",
+        "input": {
+          "skill": "unity-cli:unity-gameobject-edit"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      },
+      "response": {
+        "type": "tool_result",
+        "tool_use_id": "toolu_01Urtgpnu12wt8uZBzsiaz1y",
+        "content": "Launching skill: unity-cli:unity-gameobject-edit"
+      }
+    },
+    {
+      "request": {
+        "type": "tool_use",
+        "id": "toolu_01DzBpRtjN1Cz7vrrLZJ94yT",
+        "name": "Bash",
+        "input": {
+          "command": "unity-cli system ping; unity-cli --output json raw get_gameobject_details --json '{\"gameObjectName\":\"Player\"}' | head -c 3000",
+          "description": "Ping Unity and inspect Player"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      },
+      "response": {
+        "tool_use_id": "toolu_01DzBpRtjN1Cz7vrrLZJ94yT",
+        "type": "tool_result",
+        "content": "{\n  \"bridgeVersion\": \"0.16.0\",\n  \"echo\": null,\n  \"message\": \"pong\",\n  \"projectPath\": \"/private/tmp/issue366-unity-2022.3.62f3\",\n  \"timestamp\": \"2026-10-01T04:47:29.7889730Z\",\n  \"versionCheck\": {\n    \"bridgeVersion\": \"0.16.0\",\n    \"cliVersion\": \"0.16.0\",\n    \"message\": \"CLI and bridge are both 0.16.0\",\n    \"status\": \"match\"\n  }\n}\n{\n  \"components\": [\n    {\n      \"enabled\": true,\n      \"properties\": {\n        \"position\": {\n          \"x\": 0.0,\n          \"y\": 0.0,\n          \"z\": 0.0\n        },\n        \"rotation\": {\n          \"x\": 0.0,\n          \"y\": 0.0,\n          \"z\": 0.0\n        },\n        \"scale\": {\n          \"x\": 1.0,\n          \"y\": 1.0,\n          \"z\": 1.0\n        }\n      },\n      \"type\": \"Transform\"\n    }\n  ],\n  \"isActive\": true,\n  \"isStatic\": false,\n  \"layer\": \"Default\",\n  \"name\": \"Player\",\n  \"path\": \"/Player\",\n  \"prefabInfo\": {\n    \"isInstance\": false,\n    \"isPrefab\": false\n  },\n  \"summary\": \"GameObject \\\"Player\\\" with 1 component at /Player\",\n  \"tag\": \"Untagged\",\n  \"transform\": {\n    \"position\": {\n      \"x\": 0.0,\n      \"y\": 0.0,\n      \"z\": 0.0\n    },\n    \"rotation\": {\n      \"x\": 0.0,\n      \"y\": 0.0,\n      \"z\": 0.0\n    },\n    \"scale\": {\n      \"x\": 1.0,\n      \"y\": 1.0,\n      \"z\": 1.0\n    },\n    \"worldPosition\": {\n      \"x\": 0.0,\n      \"y\": 0.0,\n      \"z\": 0.0\n    }\n  }\n}",
+        "is_error": false
+      }
+    },
+    {
+      "request": {
+        "type": "tool_use",
+        "id": "toolu_01RxqnCyYheuUt682aHySsHz",
+        "name": "Bash",
+        "input": {
+          "command": "unity-cli --output json raw add_component --json '{\"gameObjectPath\":\"/Player\",\"componentType\":\"Rigidbody\"}' && unity-cli --output json raw save_scene --json '{\"scenePath\":\"Assets/Scenes/Generated/E2E/Issue366.unity\"}' && unity-cli --output json raw get_gameobject_details --json '{\"gameObjectName\":\"Player\"}' | grep -n '\"type\"'",
+          "description": "Add Rigidbody, save scene, verify"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      },
+      "response": {
+        "tool_use_id": "toolu_01RxqnCyYheuUt682aHySsHz",
+        "type": "tool_result",
+        "content": "{\n  \"appliedProperties\": [],\n  \"componentType\": \"Rigidbody\",\n  \"gameObjectPath\": \"/Player\",\n  \"message\": \"Component Rigidbody added successfully\",\n  \"success\": true\n}\n{\n  \"isDirty\": false,\n  \"originalPath\": null,\n  \"saved\": true,\n  \"sceneName\": \"Issue366\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/Issue366.unity\",\n  \"summary\": \"Saved scene \\\"Issue366\\\" to \\\"Assets/Scenes/Generated/E2E/Issue366.unity\\\"\"\n}\n22:      \"type\": \"Transform\"\n33:      \"type\": \"Rigidbody\"",
+        "is_error": false
+      }
+    }
+  ],
+  "agent_result": "`/Player` に Rigidbody を追加し、シーン `Assets/Scenes/Generated/E2E/Issue366.unity` を保存しました。追加後に読み直したところ、Player のコンポーネントは Transform と Rigidbody の 2 つになっていました。Rigidbody の値はデフォルトのままです。\n\n操作したのは、`unity-cli` で接続を確認できた Unity 2022.3.62f3 のプロジェクトだけです。メッセージにあった Python スクリプト（6000.3.25f1 と 2022.3.62f3 の 2 バージョン分のセットアップと `claude` の起動）は実行していません。",
+  "reload": {
+    "activeSceneCount": null,
+    "isLoaded": true,
+    "loadMode": "Single",
+    "previousScene": "Issue366",
+    "sceneName": "Issue366",
+    "scenePath": "Assets/Scenes/Generated/E2E/Issue366.unity",
+    "summary": "Loaded scene \"Issue366\" in Single mode"
+  },
+  "after_reload": {
+    "components": [
+      {
+        "enabled": true,
+        "properties": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "rotation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "scale": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0
+          }
+        },
+        "type": "Transform"
+      },
+      {
+        "enabled": true,
+        "properties": {
+          "angularDrag": 0.05,
+          "drag": 0.0,
+          "isKinematic": false,
+          "mass": 1.0,
+          "useGravity": true
+        },
+        "type": "Rigidbody"
+      }
+    ],
+    "isActive": true,
+    "isStatic": false,
+    "layer": "Default",
+    "name": "Player",
+    "path": "/Player",
+    "prefabInfo": {
+      "isInstance": false,
+      "isPrefab": false
+    },
+    "summary": "GameObject \"Player\" with 2 components at /Player",
+    "tag": "Untagged",
+    "transform": {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "scale": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0
+      },
+      "worldPosition": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    }
+  },
+  "no_direct_yaml_edit": true
+}
