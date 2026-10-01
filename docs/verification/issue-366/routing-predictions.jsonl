@@ -1,0 +1,7 @@
+{"id":"SR-158","predicted_skills":["unity-gameobject-edit"],"predicted_tool":"add_component","predicted_payload_keys":["componentType","gameObjectPath"]}
+{"id":"SR-159","predicted_skills":["unity-gameobject-edit"],"predicted_tool":"add_component","predicted_payload_keys":["componentType","gameObjectPath"]}
+{"id":"SR-160","predicted_skills":["unity-scene-create"],"predicted_tool":"create_scene","predicted_payload_keys":["sceneName"]}
+{"id":"SR-161","predicted_skills":["unity-prefab-workflow"],"predicted_tool":"open_prefab","predicted_payload_keys":["prefabPath"]}
+{"id":"SR-162","predicted_skills":["unity-asset-management"],"predicted_tool":"create_material","predicted_payload_keys":["materialPath","shader"]}
+{"id":"SR-163","predicted_skills":["unity-cli-usage"],"predicted_tool":"ping","predicted_payload_keys":[]}
+{"id":"SR-164","predicted_skills":["unity-scene-inspect"],"predicted_tool":"get_component_values","predicted_payload_keys":["componentType","gameObjectName"]}
