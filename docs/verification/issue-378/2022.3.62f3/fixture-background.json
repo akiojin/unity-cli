@@ -1,0 +1,19 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue378-fixture-background-2022",
+  "state": "completed",
+  "value": {
+    "background": true,
+    "frames": 1
+  }
+}

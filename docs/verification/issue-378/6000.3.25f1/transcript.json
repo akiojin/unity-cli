@@ -1,0 +1,715 @@
+{
+  "session_id": "256fd27b-9af9-4f15-866a-37d387a8ce6b",
+  "model": "claude-fable-5-1",
+  "raw_sha256": "f01094aedc6a351d5f89bd4fda356f52a4a9dd04c011b12fb400f26ad9886882",
+  "duration_ms": 188751,
+  "num_turns": 22,
+  "permission_denials": [],
+  "messages": [
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01TyQWrm5Bm98iJtq9n14vtT",
+          "name": "Read",
+          "input": {
+            "file_path": "/Users/akiojin/Workbench/unity-cli/work/issue-378/.claude-plugin/plugins/unity-cli/skills/unity-urp-setup/references/runtime-checklist.md"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01TyQWrm5Bm98iJtq9n14vtT",
+          "type": "tool_result",
+          "content": "1\t# Runtime Checklist\n2\t\n3\t## Binary Selection\n4\t\n5\t- Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).\n6\t- If no binary is installed, run `scripts/install.sh` (macOS / Linux) or `scripts/install.ps1` (Windows, when published) instead of asking the user.\n7\t- Only inside a unity-cli source checkout, `cargo run -- <args>` is a development alternative.\n8\t\n9\t## Project Setup\n10\t\n11\t- `unity-cli setup` = binary check → `bridge install` → Editor `ping`; it prints one JSON report and exits non-zero until the Editor answers for this project.\n12\t- Tell the user before running it: it edits `Packages/manifest.json` and, when the project uses only the legacy Input Manager and the Editor is closed, sets `activeInputHandler: 2` (Both) in `ProjectSettings/ProjectSettings.asset` so the Input System dependency does not block the Editor with a restart dialog. `bridge install` is idempotent (a second run leaves both files byte-identical).\n13\t- If the Editor was already open, it may show \"enable the Input System backends? (restart)\"; bridge commands time out until someone answers it. Close the Editor and rerun `setup --launch-editor` instead.\n14\t- `--launch-editor` starts the Unity Hub Editor recorded in `ProjectSettings/ProjectVersion.txt` (`UNITY_EDITOR_PATH` overrides) and waits up to 900 s (`--wait-secs`).\n15\t- `editor.projectMatches: false` means another project's Editor owns the port; pass `--port`.\n16\t- `versionCheck.status: mismatch` (from `setup` or `system ping`) → `unity-cli bridge upgrade`, or update the CLI.\n17\t- Verify the binary with `unity-cli --version` before debugging higher-level workflows.\n18\t\n19\t## Instance Selection\n20\t\n21\t- Use `unity-cli system ping` when a single active target is expected.\n22\t- Use `unity-cli instances list` when multiple editors may be running.\n23\t- Prefer `--project-path <project>` (or running inside the project) to target one Editor; `AMBIGUOUS_EDITOR` lists candidates in `data.candidates`.\n24\t- Use `unity-cli instances set-active <host:port>` only after confirming the target is `up`.\n25\t\n26\t## Command Routing\n27\t\n28\t- The bootstrap-relevant typed subcommands are `system ping`, `scene create`, `instances list`, `instances set-active`. Use them when available. (`instances list` / `instances set-active` are local registry operations rather than bridge-tool wrappers.)\n29\t- The `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`) also has typed wrappers over the `reference_*` bridge tools — see the `unity-csharp-reference` skill. Beyond these, most bridge tools have no typed wrapper.\n30\t- For every tool without a typed wrapper, use `unity-cli raw <tool_name> --json '{...}'` (or its alias `unity-cli tool call <tool_name> --json '{...}'`). This is the primary invocation pattern, not a fallback — bridge tools such as `analyze_scene_contents`, `find_by_component`, `modify_component`, and `get_compilation_state` are all invoked this way.\n31\t- Discover tools with `unity-cli tool list --query <term> --compact`; add `--category <name>` (a `docs/tools.md` heading or slug such as `scenes`, `playback-testing`) and `--limit N` / `--offset N` to keep output small. Inspect a tool's expected JSON payload with `unity-cli tool schema <tool_name> --output json`.\n32\t- Use `--output json` when another tool or script will consume the result.\n33\t\n34\t## Connection Recovery\n35\t\n36\t- A failed `system ping` does not prove the Editor is closed. Run `unity-cli doctor --output json` (add `--project-path <dir>` outside the project) before any fallback such as hand-editing YAML.\n37\t- Act on the `diagnosis` code:\n38\t  - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) by editing the file directly, then let Unity recompile or restart the Editor.\n39\t  - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.\n40\t  - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.\n41\t  - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.\n42\t  - `SANDBOX_BLOCKED`: the local socket was denied. Retry in a permitted execution context according to the host's approval policy; do not bypass sandbox restrictions or conclude the Editor is missing. If reachability still cannot be verified, ask the user to confirm the running project and bridge connection before considering an offline fallback.\n43\t  - `BRIDGE_NOT_RESPONDING`: the Editor is still importing/compiling or the port differs from Project Settings > Unity CLI Bridge.\n44\t- Re-run `unity-cli doctor` until `diagnosis` is `OK`, then continue the workflow.\n45\t- An empty instance list or failed process probe inside a sandbox is also inconclusive. Confirm the project/host/port and the user's Editor state instead of treating restricted visibility as `EDITOR_NOT_RUNNING`.\n46\t- When the target Editor is reachable, never hand-edit serialized `.unity`, `.prefab`, or `.asset` YAML. Bridge operations keep serialized references, prefab overrides, and the live Editor state in sync.\n47\t- If recovery cannot restore the connection and offline work is appropriate, declare the fallback before editing: explain the verified limitation, affected files, alternative method, and how the result will be checked after reopening Unity. Without confirmation of an uncertain sandbox diagnosis, pause dependent edits. Do not silently substitute YAML edits for bridge calls.\n48\t\n49\t## CI Notes\n50\t\n51\t- Set `UNITY_CLI_HOST` and `UNITY_CLI_PORT` explicitly in CI.\n52\t- Keep JSON payloads quoted as a single shell argument.\n53\t- If connectivity fails in CI, report the resolved host and port before retrying.\n54\t"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01QgCkznBiH2z2ngV9Dx7sbc",
+          "name": "Read",
+          "input": {
+            "file_path": "/Users/akiojin/Workbench/unity-cli/work/issue-378/.claude-plugin/plugins/unity-cli/skills/unity-urp-setup/references/urp-workflow.md"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01QgCkznBiH2z2ngV9Dx7sbc",
+          "type": "tool_result",
+          "content": "1\t# URP asset and visual verification workflow\n2\t\n3\t## Package and pipeline\n4\t\n5\t- Inspect `package_manager` `list` / `info` and the installed package API before\n6\t  choosing a version. Unity 2022.3 uses URP 14; Unity 6000.3 uses URP 17.3.\n7\t  Resolve the patch from the Editor's supported package information. Do not install\n8\t  another Editor's package or hardcode one patch for every project.\n9\t- Install with `package_manager` `{\"action\":\"add\",\"packageId\":\"com.unity.render-pipelines.universal@<compatible-version>\"}`.\n10\t  Domain Reload may disconnect the bridge: wait and inspect state rather than\n11\t  blindly repeating the install. Read the actual installed version afterward.\n12\t- For an existing URP Asset, inspect its renderer and preserve Renderer Features.\n13\t  For a new asset use `UniversalRenderPipelineAsset.Create(rendererData)` with a\n14\t  `UniversalRendererData`. Initialize its post-processing resources using the\n15\t  installed package's default `PostProcessData` and Editor resource reloader;\n16\t  merely constructing a blank ScriptableObject may leave shaders unassigned.\n17\t  Save Renderer and pipeline as separate `.asset` files with `AssetDatabase`.\n18\t- `GraphicsSettings.defaultRenderPipeline` chooses the default. A non-null\n19\t  `QualitySettings.renderPipeline` overrides it. Inspect all Quality levels before\n20\t  choosing whether to replace their overrides; preserve the active level. Assign\n21\t  only the levels included in the request and report that scope.\n22\t- Enable HDR on the pipeline and Camera for a Bloom test with HDR emission.\n23\t  For a Built-in scene, incompatible materials can render pink; use a separate\n24\t  URP-compatible test material rather than automatically converting the project.\n25\t\n26\t## Persistent Volume and Camera\n27\t\n28\tUse `editor eval --mode statements` for small synchronous Editor API operations.\n29\tURP namespaces are not implicit; use fully qualified names. Evaluate only after\n30\tthe package has compiled. Check `state:\"completed\"` and diagnostics, even if the\n31\tCLI exit code is zero. Give mutations unique `--request-id` values; query\n32\t`editor eval-status` after a timeout before deciding to retry.\n33\t\n34\tCreate a `UnityEngine.Rendering.VolumeProfile` asset and add\n35\t`UnityEngine.Rendering.Universal.Bloom` via `profile.Add<T>(true)`. Add the returned\n36\tcomponent to the profile asset with `AssetDatabase.AddObjectToAsset`; mark both\n37\tdirty and save. Do the same for `ColorAdjustments` when requested. On an existing\n38\tprofile use `TryGet<T>` first; do not duplicate overrides or overwrite user values.\n39\t\n40\tFor Bloom, set `active`, `intensity.overrideState`, `intensity.value`,\n41\t`threshold.overrideState` and `threshold.value`. A test value such as intensity 2\n42\tand threshold 1 needs a visible subject brighter than threshold. Color Adjustments\n43\tcan use `postExposure.Override(...)`; avoid changing it during a Bloom-only A/B\n44\tcomparison. Keep all other variables fixed.\n45\t\n46\tAdd or reuse a `UnityEngine.Rendering.Volume` on the intended GameObject:\n47\t`isGlobal = true`, nonzero `weight`, and `sharedProfile = savedProfile`. Use a\n48\tdeliberate priority when other volumes overlap. Accessing `volume.profile` may\n49\tcreate an instance; edit `sharedProfile` for content that must persist.\n50\t\n51\tOn the target Camera, add or reuse `UniversalAdditionalCameraData`, enable\n52\t`renderPostProcessing`, and include the Volume object's layer in `volumeLayerMask`.\n53\tCheck camera stacking and renderer selection if the scene uses multiple cameras.\n54\tMark changed objects dirty, mark the scene dirty and save it through Editor APIs.\n55\t\n56\t## Before/after evidence\n57\t\n58\t1. Record paths and GUIDs for the pipeline, renderer and profile. Capture their\n59\t   assignment and values plus the active Camera and Quality level in JSON.\n60\t2. Save a stationary test scene. Repository E2E fixtures belong under\n61\t   `Assets/Scenes/Generated/E2E/`. Use the same scene for both images; do not\n62\t   compare a Built-in baseline with different geometry to a URP result.\n63\t3. Set only Bloom intensity to zero (or disable that override), enter Play, wait\n64\t   for stable rendered frames, and call `capture_screenshot` in `game` mode with\n65\t   fixed width/height and `osFallback:false`. Keep the returned image path.\n66\t4. Set the intended Bloom intensity, let frames settle and capture again. Inspect\n67\t   both images: the bright subject should gain a visible glow while framing stays\n68\t   fixed. A byte/hash difference alone could be animation or a capture artifact.\n69\t5. Read console errors and the live values. Stop Play, restore the desired saved\n70\t   value, save assets/scene, reload and confirm assignments and overrides survive.\n71\t   Include the assets and both images with the verification report.\n72\t\n73\tIf the images look identical, inspect in this order: effective Quality/Graphics\n74\tpipeline, Camera `renderPostProcessing`, assigned renderer/post-processing\n75\tresources, Volume layer mask and weight/priority, active override flags and\n76\tthreshold versus subject brightness. Confirm Game capture succeeded; an OS or\n77\tScene-view capture does not demonstrate the target Camera's post-processing.\n78\t\n79\t## API sources\n80\t\n81\t- Unity's URP package API, not third-party plugin skill text, defines the types:\n82\t  `UniversalRenderPipelineAsset`, `UniversalRendererData`, `PostProcessData`,\n83\t  `UniversalAdditionalCameraData`, `VolumeProfile`, `Bloom`, `ColorAdjustments`.\n84\t- Read installed package sources when an API differs between URP 14 and 17.\n85\t  Rendering resources and RenderGraph internals should not be guessed or replaced\n86\t  with custom reflection-based bridge extensions.\n87\t"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01L9K1Ahsi27w2i5CheHnWHa",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && /Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli --port 6494 system ping; echo \"exit=$?\"; ls -la; ls Assets Packages 2>/dev/null; cat Packages/manifest.json'",
+            "description": "Ping the Editor on port 6494 and list the project layout"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01L9K1Ahsi27w2i5CheHnWHa",
+          "type": "tool_result",
+          "content": "{\n  \"bridgeVersion\": \"0.16.0\",\n  \"echo\": null,\n  \"message\": \"pong\",\n  \"projectPath\": \"/private/tmp/unity-issue378/6000.3.25f1\",\n  \"timestamp\": \"2026-10-01T06:05:57.4742600Z\",\n  \"versionCheck\": {\n    \"bridgeVersion\": \"0.16.0\",\n    \"cliVersion\": \"0.16.0\",\n    \"message\": \"CLI and bridge are both 0.16.0\",\n    \"status\": \"match\"\n  }\n}\nexit=0\ntotal 0\ndrwxr-xr-x@ 10 akiojin  wheel   320 Oct  1 15:02 .\ndrwxr-xr-x@ 21 akiojin  wheel   672 Oct  1 15:05 ..\ndrwxr-xr-x@  3 akiojin  wheel    96 Oct  1 15:02 .unity\ndrwxr-xr-x@  4 akiojin  wheel   128 Oct  1 15:03 Assets\ndrwxr-xr-x@ 41 akiojin  wheel  1312 Oct  1 15:04 Library\ndrwxr-xr-x@ 20 akiojin  wheel   640 Oct  1 14:57 Logs\ndrwxr-xr-x@  4 akiojin  wheel   128 Oct  1 14:53 Packages\ndrwxr-xr-x@ 26 akiojin  wheel   832 Oct  1 15:00 ProjectSettings\ndrwxr-xr-x@  6 akiojin  wheel   192 Oct  1 15:04 Temp\ndrwxr-xr-x@  5 akiojin  wheel   160 Oct  1 14:54 UserSettings\nAssets:\nScenes\nScenes.meta\n\nPackages:\nmanifest.json\npackages-lock.json\n{\n  \"dependencies\": {\n    \"com.akiojin.unity-cli-bridge\": \"file:/Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge\",\n    \"com.unity.multiplayer.center\": \"1.0.1\",\n    \"com.unity.render-pipelines.universal\": \"17.3.0\",\n    \"com.unity.modules.accessibility\": \"1.0.0\",\n    \"com.unity.modules.adaptiveperformance\": \"1.0.0\",\n    \"com.unity.modules.ai\": \"1.0.0\",\n    \"com.unity.modules.androidjni\": \"1.0.0\",\n    \"com.unity.modules.animation\": \"1.0.0\",\n    \"com.unity.modules.assetbundle\": \"1.0.0\",\n    \"com.unity.modules.audio\": \"1.0.0\",\n    \"com.unity.modules.cloth\": \"1.0.0\",\n    \"com.unity.modules.director\": \"1.0.0\",\n    \"com.unity.modules.imageconversion\": \"1.0.0\",\n    \"com.unity.modules.imgui\": \"1.0.0\",\n    \"com.unity.modules.jsonserialize\": \"1.0.0\",\n    \"com.unity.modules.particlesystem\": \"1.0.0\",\n    \"com.unity.modules.physics\": \"1.0.0\",\n    \"com.unity.modules.physics2d\": \"1.0.0\",\n    \"com.unity.modules.screencapture\": \"1.0.0\",\n    \"com.unity.modules.terrain\": \"1.0.0\",\n    \"com.unity.modules.terrainphysics\": \"1.0.0\",\n    \"com.unity.modules.tilemap\": \"1.0.0\",\n    \"com.unity.modules.ui\": \"1.0.0\",\n    \"com.unity.modules.uielements\": \"1.0.0\",\n    \"com.unity.modules.umbra\": \"1.0.0\",\n    \"com.unity.modules.unityanalytics\": \"1.0.0\",\n    \"com.unity.modules.unitywebrequest\": \"1.0.0\",\n    \"com.unity.modules.unitywebrequestassetbundle\": \"1.0.0\",\n    \"com.unity.modules.unitywebrequestaudio\": \"1.0.0\",\n    \"com.unity.modules.unitywebrequesttexture\": \"1.0.0\",\n    \"com.unity.modules.unitywebrequestwww\": \"1.0.0\",\n    \"com.unity.modules.vectorgraphics\": \"1.0.0\",\n    \"com.unity.modules.vehicles\": \"1.0.0\",\n    \"com.unity.modules.video\": \"1.0.0\",\n    \"com.unity.modules.vr\": \"1.0.0\",\n    \"com.unity.modules.wind\": \"1.0.0\",\n    \"com.unity.modules.xr\": \"1.0.0\"\n  }\n}",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_014CkKZFuzJWqBnRD6w3Js5J",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli; $U --port 6494 raw get_editor_state --json \"{}\"; echo \"exit=$?\"; $U --port 6494 raw package_manager --json \"{\\\"action\\\":\\\"list\\\"}\" | head -c 6000; echo; find Assets -maxdepth 6 | head -50'",
+            "description": "Read Editor state, installed packages and existing assets"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_014CkKZFuzJWqBnRD6w3Js5J",
+          "type": "tool_result",
+          "content": "{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1092.014874542\n  },\n  \"status\": \"success\"\n}\nexit=0\n{\n  \"action\": \"list\",\n  \"message\": \"Found 37 installed packages\",\n  \"packages\": [\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Unity CLI Bridge\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.akiojin.unity-cli-bridge\",\n      \"packageId\": \"com.akiojin.unity-cli-bridge@file:/Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge\",\n      \"source\": \"Local\",\n      \"version\": \"0.16.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Accessibility\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.accessibility\",\n      \"packageId\": \"com.unity.modules.accessibility@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Testing\",\n      \"displayName\": \"Adaptive Performance\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.adaptiveperformance\",\n      \"packageId\": \"com.unity.modules.adaptiveperformance@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"AI\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.ai\",\n      \"packageId\": \"com.unity.modules.ai@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Mobile\",\n      \"displayName\": \"Android JNI\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.androidjni\",\n      \"packageId\": \"com.unity.modules.androidjni@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Animation\",\n      \"displayName\": \"Animation\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.animation\",\n      \"packageId\": \"com.unity.modules.animation@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Asset Bundle\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.assetbundle\",\n      \"packageId\": \"com.unity.modules.assetbundle@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Audio\",\n      \"displayName\": \"Audio\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.audio\",\n      \"packageId\": \"com.unity.modules.audio@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Cloth\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.cloth\",\n      \"packageId\": \"com.unity.modules.cloth@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Director\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.director\",\n      \"packageId\": \"com.unity.modules.director@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Image Conversion\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.imageconversion\",\n      \"packageId\": \"com.unity.modules.imageconversion@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"UI\",\n      \"displayName\": \"IMGUI\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.imgui\",\n      \"packageId\": \"com.unity.modules.imgui@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"JSONSerialize\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.jsonserialize\",\n      \"packageId\": \"com.unity.modules.jsonserialize@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"XR\",\n      \"displayName\": \"Particle System\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.particlesystem\",\n      \"packageId\": \"com.unity.modules.particlesystem@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Physics\",\n      \"displayName\": \"Physics\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.physics\",\n      \"packageId\": \"com.unity.modules.physics@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Physics\",\n      \"displayName\": \"Physics 2D\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.physics2d\",\n      \"packageId\": \"com.unity.modules.physics2d@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Screen Capture\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.screencapture\",\n      \"packageId\": \"com.unity.modules.screencapture@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Terrain\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.terrain\",\n      \"packageId\": \"com.unity.modules.terrain@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"Physics\",\n      \"displayName\": \"Terrain Physics\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.terrainphysics\",\n      \"packageId\": \"com.unity.modules.terrainphysics@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"General\",\n      \"displayName\": \"Tilemap\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.tilemap\",\n      \"packageId\": \"com.unity.modules.tilemap@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"UI\",\n      \"displayName\": \"UI\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.ui\",\n      \"packageId\": \"com.unity.modules.ui@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"category\": \"UI\",\n      \"displayName\": \"UIElements\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.modules.uielements\",\n      \"packageId\": \"com.unity.modules.uielements@1.0.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"1.0.0\"\n    },\n    {\n      \"categor\nAssets\nAssets/Scenes\nAssets/Scenes/Generated\nAssets/Scenes/Generated/E2E.meta\nAssets/Scenes/Generated/E2E\nAssets/Scenes/Generated/E2E/URP\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat.meta\nAssets/Scenes/Generated/E2E/URP/DefaultVolumeProfile.asset\nAssets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset\nAssets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset.meta\nAssets/Scenes/Generated/E2E/URP/DefaultVolumeProfile.asset.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat\nAssets/Scenes/Generated/E2E/URP.meta\nAssets/Scenes/Generated.meta\nAssets/Scenes.meta",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01BQ68YqCLT241FqTNqcnm5n",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli; $U --port 6494 raw package_manager --json \"{\\\"action\\\":\\\"list\\\"}\" | grep -B4 -A6 \"render-pipelines\\|shadergraph\"; $U --port 6494 editor eval --help | head -40; ls -la Assets/Scenes/Generated/E2E/URP/ .unity; $U --port 6494 raw read_console --json \"{\\\"count\\\":30}\" | head -c 4000'",
+            "description": "Check installed URP version, eval options, asset timestamps and console"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01BQ68YqCLT241FqTNqcnm5n",
+          "type": "tool_result",
+          "content": "    {\n      \"category\": \"Rendering\",\n      \"displayName\": \"Universal Render Pipeline\",\n      \"isDirectDependency\": true,\n      \"name\": \"com.unity.render-pipelines.universal\",\n      \"packageId\": \"com.unity.render-pipelines.universal@17.3.0\",\n      \"source\": \"BuiltIn\",\n      \"version\": \"17.3.0\"\n    }\n  ],\n  \"success\": true,\n  \"totalCount\": 37\nEvaluate synchronous C# in the Editor. Timeout does not cancel execution\n\nUsage: unity-cli editor eval [OPTIONS] <CODE>\n\nArguments:\n  <CODE>  \n\nOptions:\n      --mode <MODE>              [default: expression] [possible values: expression, statements]\n      --output <OUTPUT>          [default: text] [possible values: text, json]\n      --host <HOST>              \n      --request-id <REQUEST_ID>  Reuse this ID to query the result after a timeout. Never retry with a new ID\n      --port <PORT>              \n      --project-path <PATH>      Target the Unity Editor that has this project open (default: the project containing the current directory). Also read from UNITY_PROJECT_ROOT\n      --timeout-ms <MS>          \n  -v, --verbose...               \n      --dry-run                  \n  -h, --help                     Print help\n.unity:\ntotal 0\ndrwxr-xr-x@  3 akiojin  wheel   96 Oct  1 15:02 .\ndrwxr-xr-x@ 10 akiojin  wheel  320 Oct  1 15:02 ..\ndrwxr-xr-x@  4 akiojin  wheel  128 Oct  1 15:02 capture\n\nAssets/Scenes/Generated/E2E/URP/:\ntotal 184\ndrwxr-xr-x@ 16 akiojin  wheel    512 Oct  1 15:03 .\ndrwxr-xr-x@  4 akiojin  wheel    128 Oct  1 14:59 ..\n-rw-r--r--@  1 akiojin  wheel    497 Oct  1 14:57 DefaultVolumeProfile.asset\n-rw-r--r--@  1 akiojin  wheel    189 Oct  1 14:57 DefaultVolumeProfile.asset.meta\n-rw-r--r--@  1 akiojin  wheel  11325 Oct  1 15:03 Issue378_URP_Bloom.unity\n-rw-r--r--@  1 akiojin  wheel    155 Oct  1 15:00 Issue378_URP_Bloom.unity.meta\n-rw-r--r--@  1 akiojin  wheel   1669 Oct  1 15:03 Issue378_URP_BloomProfile.asset\n-rw-r--r--@  1 akiojin  wheel    189 Oct  1 15:00 Issue378_URP_BloomProfile.asset.meta\n-rw-r--r--@  1 akiojin  wheel   3809 Oct  1 15:00 Issue378_URP_Emissive.mat\n-rw-r--r--@  1 akiojin  wheel    188 Oct  1 15:00 Issue378_URP_Emissive.mat.meta\n-rw-r--r--@  1 akiojin  wheel   4700 Oct  1 14:59 Issue378_URP_Pipeline.asset\n-rw-r--r--@  1 akiojin  wheel    189 Oct  1 14:59 Issue378_URP_Pipeline.asset.meta\n-rw-r--r--@  1 akiojin  wheel   1954 Oct  1 14:59 Issue378_URP_Renderer.asset\n-rw-r--r--@  1 akiojin  wheel    189 Oct  1 14:59 Issue378_URP_Renderer.asset.meta\n-rw-r--r--@  1 akiojin  wheel  25441 Oct  1 14:57 UniversalRenderPipelineGlobalSettings.asset\n-rw-r--r--@  1 akiojin  wheel    189 Oct  1 14:57 UniversalRenderPipelineGlobalSettings.asset.meta\n{\n  \"count\": 30,\n  \"logs\": [\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:60074\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client connected from 127.0.0.1:60074\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client disconnected: 127.0.0.1:60046\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\",\n      \"logType\": \"Warning\",\n      \"message\": \"[unity-cli-bridge] Client disconnected: 127.0.0.1:60046\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<HandleClientAsync>d__35:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:578)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:60046\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01PCfYBkoAyY7mwhvuSEV5fP",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nvar names = QualitySettings.names;\nvar levels = new System.Collections.Generic.List<object>();\nfor (int i = 0; i < names.Length; i++) { var rp = QualitySettings.GetRenderPipelineAssetAt(i); levels.Add(new { index = i, name = names[i], pipeline = rp == null ? null : UnityEditor.AssetDatabase.GetAssetPath(rp) }); }\nvar scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();\nvar cams = new System.Collections.Generic.List<object>();\nforeach (var c in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)) cams.Add(new { name = c.name, hdr = c.allowHDR, pos = c.transform.position.ToString() });\nvar roots = new System.Collections.Generic.List<string>();\nforeach (var g in scene.GetRootGameObjects()) roots.Add(g.name);\nvar def = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;\nvar cur = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;\nreturn new { unity = Application.unityVersion, isPlaying = Application.isPlaying, scenePath = scene.path, sceneDirty = scene.isDirty, roots, cams, graphicsDefault = def == null ? null : UnityEditor.AssetDatabase.GetAssetPath(def), effective = cur == null ? null : UnityEditor.AssetDatabase.GetAssetPath(cur), activeQuality = QualitySettings.GetQualityLevel(), levels, urp = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(\"Packages/com.unity.render-pipelines.universal\")?.version };\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-inspect-01 \"$CODE\"; echo \"exit=$?\"'",
+            "description": "Evaluate C# to read pipeline, Quality levels, scene and cameras"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01PCfYBkoAyY7mwhvuSEV5fP",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 16,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-inspect-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"activeQuality\": 5,\n    \"cams\": [\n      {\n        \"hdr\": true,\n        \"name\": \"Main Camera\",\n        \"pos\": \"(0.00, 0.00, -6.00)\"\n      }\n    ],\n    \"effective\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"graphicsDefault\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"isPlaying\": false,\n    \"levels\": [\n      {\n        \"index\": 0,\n        \"name\": \"Very Low\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 1,\n        \"name\": \"Low\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 2,\n        \"name\": \"Medium\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 3,\n        \"name\": \"High\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 4,\n        \"name\": \"Very High\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 5,\n        \"name\": \"Ultra\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      }\n    ],\n    \"roots\": [\n      \"EmissiveSubject\",\n      \"Main Camera\",\n      \"Global Volume\"\n    ],\n    \"sceneDirty\": false,\n    \"scenePath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\",\n    \"unity\": \"6000.3.25f1\",\n    \"urp\": \"17.3.0\"\n  }\n}\nexit=0",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01C2SSCSkgce5zpNXx1gNdzw",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nvar dir = \"Assets/Scenes/Generated/E2E/URP/\";\nvar rp = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset>(dir + \"Issue378_URP_Pipeline.asset\");\nvar rd = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.Universal.UniversalRendererData>(dir + \"Issue378_URP_Renderer.asset\");\nvar prof = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(dir + \"Issue378_URP_BloomProfile.asset\");\nvar mat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(dir + \"Issue378_URP_Emissive.mat\");\nUnityEngine.Rendering.Universal.Bloom bloom = null;\nvar hasBloom = prof != null && prof.TryGet<UnityEngine.Rendering.Universal.Bloom>(out bloom);\nvar subs = new System.Collections.Generic.List<string>();\nforeach (var o in UnityEditor.AssetDatabase.LoadAllAssetsAtPath(dir + \"Issue378_URP_BloomProfile.asset\")) subs.Add(o.GetType().Name + \":\" + o.name);\nvar vol = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Rendering.Volume>();\nvar cam = Camera.main;\nvar cd = cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();\nvar subj = GameObject.Find(\"EmissiveSubject\");\nvar mr = subj.GetComponent<MeshRenderer>();\nvar gs = UnityEngine.Rendering.GraphicsSettings.GetSettingsForRenderPipeline<UnityEngine.Rendering.Universal.UniversalRenderPipeline>();\nvar lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Length;\nreturn new {\n  pipeline = new { guid = UnityEditor.AssetDatabase.AssetPathToGUID(dir + \"Issue378_URP_Pipeline.asset\"), hdr = rp.supportsHDR, renderScale = rp.renderScale, scriptableRenderer = rp.scriptableRenderer == null ? null : rp.scriptableRenderer.GetType().Name, rendererDataList = rp.rendererDataList.Length, renderer0 = UnityEditor.AssetDatabase.GetAssetPath(rp.rendererDataList[0]) },\n  renderer = new { guid = UnityEditor.AssetDatabase.AssetPathToGUID(dir + \"Issue378_URP_Renderer.asset\"), postProcessData = rd.postProcessData == null ? null : UnityEditor.AssetDatabase.GetAssetPath(rd.postProcessData), features = rd.rendererFeatures.Count },\n  profile = new { guid = UnityEditor.AssetDatabase.AssetPathToGUID(dir + \"Issue378_URP_BloomProfile.asset\"), components = prof.components.Count, subs, hasBloom, active = bloom?.active, intensity = bloom?.intensity.value, intensityOverride = bloom?.intensity.overrideState, threshold = bloom?.threshold.value, thresholdOverride = bloom?.threshold.overrideState, scatter = bloom?.scatter.value },\n  volume = new { go = vol.gameObject.name, layer = vol.gameObject.layer, isGlobal = vol.isGlobal, weight = vol.weight, priority = vol.priority, enabled = vol.enabled, sharedProfile = UnityEditor.AssetDatabase.GetAssetPath(vol.sharedProfile) },\n  camera = new { name = cam.name, hdr = cam.allowHDR, clearFlags = cam.clearFlags.ToString(), bg = cam.backgroundColor.ToString(), fov = cam.fieldOfView, pos = cam.transform.position.ToString(), rot = cam.transform.eulerAngles.ToString(), hasData = cd != null, renderPostProcessing = cd?.renderPostProcessing, volumeLayerMask = cd?.volumeLayerMask.value, cameraStack = cd?.cameraStack?.Count },\n  subject = new { pos = subj.transform.position.ToString(), scale = subj.transform.localScale.ToString(), mesh = subj.GetComponent<MeshFilter>().sharedMesh.name, mat = UnityEditor.AssetDatabase.GetAssetPath(mr.sharedMaterial), shader = mat.shader.name, emissionKeyword = mat.IsKeywordEnabled(\"_EMISSION\"), emission = mat.HasProperty(\"_EmissionColor\") ? mat.GetColor(\"_EmissionColor\").ToString() : null, baseColor = mat.HasProperty(\"_BaseColor\") ? mat.GetColor(\"_BaseColor\").ToString() : null, components = subj.GetComponents<Component>().Length },\n  lights, ambient = RenderSettings.ambientLight.ToString(), skybox = RenderSettings.skybox == null ? null : RenderSettings.skybox.name,\n  globalSettings = gs == null ? null : UnityEditor.AssetDatabase.GetAssetPath(gs),\n  colorSpace = PlayerSettings.colorSpace.ToString()\n};\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-inspect-02 \"$CODE\"; echo \"exit=$?\"'",
+            "description": "Evaluate C# to read pipeline, renderer, profile, Volume, Camera and subject values"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01C2SSCSkgce5zpNXx1gNdzw",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 32,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-inspect-02\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"ambient\": \"RGBA(0.000, 0.000, 0.000, 1.000)\",\n    \"camera\": {\n      \"bg\": \"RGBA(0.000, 0.000, 0.000, 1.000)\",\n      \"cameraStack\": 0,\n      \"clearFlags\": \"SolidColor\",\n      \"fov\": 60.0,\n      \"hasData\": true,\n      \"hdr\": true,\n      \"name\": \"Main Camera\",\n      \"pos\": \"(0.00, 0.00, -6.00)\",\n      \"renderPostProcessing\": true,\n      \"rot\": \"(0.00, 0.00, 0.00)\",\n      \"volumeLayerMask\": 1\n    },\n    \"colorSpace\": \"Gamma\",\n    \"globalSettings\": \"Assets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset\",\n    \"lights\": 0,\n    \"pipeline\": {\n      \"guid\": \"f3f81c79c68b14bd28c4ce4421aaf5ae\",\n      \"hdr\": true,\n      \"renderScale\": 1.0,\n      \"renderer0\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset\",\n      \"rendererDataList\": 1,\n      \"scriptableRenderer\": \"UniversalRenderer\"\n    },\n    \"profile\": {\n      \"active\": true,\n      \"components\": 1,\n      \"guid\": \"708a166255151485d829cc312924a654\",\n      \"hasBloom\": true,\n      \"intensity\": 2.0,\n      \"intensityOverride\": true,\n      \"scatter\": 0.7,\n      \"subs\": [\n        \"Bloom:Bloom\",\n        \"VolumeProfile:Issue378_URP_BloomProfile\"\n      ],\n      \"threshold\": 1.0,\n      \"thresholdOverride\": true\n    },\n    \"renderer\": {\n      \"features\": 0,\n      \"guid\": \"1abba3f3059364e85976247dca5c346c\",\n      \"postProcessData\": \"Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset\"\n    },\n    \"skybox\": null,\n    \"subject\": {\n      \"baseColor\": \"RGBA(0.000, 0.000, 0.000, 1.000)\",\n      \"components\": 4,\n      \"emission\": \"RGBA(8.000, 4.400, 1.200, 8.000)\",\n      \"emissionKeyword\": true,\n      \"mat\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat\",\n      \"mesh\": \"Sphere\",\n      \"pos\": \"(0.00, 0.00, 0.00)\",\n      \"scale\": \"(1.50, 1.50, 1.50)\",\n      \"shader\": \"Universal Render Pipeline/Lit\"\n    },\n    \"volume\": {\n      \"enabled\": true,\n      \"go\": \"Global Volume\",\n      \"isGlobal\": true,\n      \"layer\": 0,\n      \"priority\": 10.0,\n      \"sharedProfile\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\",\n      \"weight\": 1.0\n    }\n  }\n}\nexit=0",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01XCqtnzvgknhghhupAHs2i4",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli; $U --port 6494 tool schema capture_screenshot --output json; $U --port 6494 tool list --query play --compact; ls -la .unity/capture'",
+            "description": "Read the screenshot tool schema, play-mode tools and existing captures"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01XCqtnzvgknhghhupAHs2i4",
+          "type": "tool_result",
+          "content": "{\n  \"description\": \"Unity CLI tool operation\",\n  \"executor\": \"remote\",\n  \"mutating\": true,\n  \"name\": \"capture_screenshot\",\n  \"params_schema\": {\n    \"additionalProperties\": false,\n    \"properties\": {\n      \"captureMode\": {\n        \"enum\": [\n          \"game\",\n          \"scene\",\n          \"window\",\n          \"explorer\"\n        ],\n        \"type\": \"string\"\n      },\n      \"encodeAsBase64\": {\n        \"type\": \"boolean\"\n      },\n      \"explorerSettings\": {\n        \"additionalProperties\": true,\n        \"properties\": {},\n        \"type\": \"object\"\n      },\n      \"height\": {\n        \"type\": \"integer\"\n      },\n      \"includeUI\": {\n        \"type\": \"boolean\"\n      },\n      \"osFallback\": {\n        \"type\": \"boolean\"\n      },\n      \"width\": {\n        \"type\": \"integer\"\n      },\n      \"windowName\": {\n        \"type\": \"string\"\n      }\n    },\n    \"type\": \"object\"\n  },\n  \"response_schema\": {\n    \"additionalProperties\": true,\n    \"type\": \"object\"\n  }\n}\nget_timeline\tInspect a Timeline asset or PlayableDirector, tracks, clips, and bindings (read-only)\nhot_reload\tPreview methods or recover Play\npause_game\tPause Play mode\nplay_game\tEnter Play mode\nstop_game\tExit Play mode\nrun_tests\tRun EditMode/PlayMode tests\nbuild_player\tQueue a standalone player build on the Unity Editor host\nreference_view\tDisplay a slice of a file in the cached reference source by line range.\ntotal 192\ndrwxr-xr-x@ 4 akiojin  wheel    128 Oct  1 15:02 .\ndrwxr-xr-x@ 3 akiojin  wheel     96 Oct  1 15:02 ..\n-rw-r--r--@ 1 akiojin  wheel  13621 Oct  1 15:02 image_game_2026-10-01_15-02-12.png\n-rw-r--r--@ 1 akiojin  wheel  79290 Oct  1 15:02 image_game_2026-10-01_15-02-24.png",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01YMwXBxbTrbfoqdPDiEC5RB",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nif (Application.isPlaying) throw new System.InvalidOperationException(\"Play mode must be stopped before persistent edits\");\nvar path = \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\";\nvar prof = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(path);\nUnityEngine.Rendering.Universal.Bloom bloom;\nif (!prof.TryGet<UnityEngine.Rendering.Universal.Bloom>(out bloom)) throw new System.InvalidOperationException(\"Bloom override missing\");\nbloom.active = true;\nbloom.threshold.overrideState = true;\nbloom.threshold.value = 1f;\nbloom.intensity.overrideState = true;\nbloom.intensity.value = 0f;\nUnityEditor.EditorUtility.SetDirty(bloom);\nUnityEditor.EditorUtility.SetDirty(prof);\nUnityEditor.AssetDatabase.SaveAssets();\nreturn new { intensity = bloom.intensity.value, threshold = bloom.threshold.value, active = bloom.active };\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-bloom-zero-01 \"$CODE\"; echo \"exit=$?\"; $U --port 6494 raw play_game --json \"{}\"; echo \"exit=$?\"'",
+            "description": "Set saved Bloom intensity to zero, then enter Play mode"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01YMwXBxbTrbfoqdPDiEC5RB",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 19,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-bloom-zero-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"active\": true,\n    \"intensity\": 0.0,\n    \"threshold\": 1.0\n  }\n}\nexit=0\n{\n  \"message\": \"Play mode scheduled in 300ms\",\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": \"2026-10-01T06:06:46.3866420Z\",\n      \"msSincePlayRequested\": 4.9910000000000005,\n      \"playRequested\": true,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1138.127554459\n  },\n  \"status\": \"success\"\n}\nexit=0",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_018gwCe3pBsCoZiqjzhh3jHc",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nfor i in $(seq 1 40); do out=$($U --port 6494 editor eval --output json \"new { playing = Application.isPlaying, frame = Time.frameCount, t = Time.time }\" 2>&1); f=$(printf \"%s\" \"$out\" | python3 -c \"import sys,json\ntry:\n  d=json.load(sys.stdin); v=d.get(\\\"value\\\") or {}; print(1 if d.get(\\\"state\\\")==\\\"completed\\\" and v.get(\\\"playing\\\") and v.get(\\\"frame\\\",0)>60 else 0)\nexcept Exception: print(0)\"); if [ \"$f\" = \"1\" ]; then break; fi; done; echo \"iter=$i\"; echo \"$out\"'",
+            "description": "Poll until Play mode has rendered more than 60 frames"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_018gwCe3pBsCoZiqjzhh3jHc",
+          "type": "tool_result",
+          "content": "iter=40\nError: Evaluation may still be running (requestId=cli-43975-18da52c68597a298-0). Query `unity-cli editor eval-status cli-43975-18da52c68597a298-0` on the same endpoint; do not automatically rerun: Failed to connect to Unity at 127.0.0.1:6494. Run `unity-cli doctor --output json` to diagnose (Safe Mode / compile errors, bridge not installed, port in use, Editor not running, sandbox): Connection refused (os error 61)",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01TDjDDmStTX8xReRaQMDyNF",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nfor i in $(seq 1 200); do if $U --port 6494 system ping >/dev/null 2>&1; then break; fi; done; echo \"iter=$i\"; $U --port 6494 raw get_editor_state --json \"{}\"; echo \"exit=$?\"'",
+            "description": "Retry ping until the bridge reconnects, then read Editor state"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01TDjDDmStTX8xReRaQMDyNF",
+          "type": "tool_result",
+          "content": "iter=129\n{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": true,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"in_play_mode\"\n    },\n    \"timeSinceStartup\": 1161.7680575420002\n  },\n  \"status\": \"success\"\n}\nexit=0",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01X7nZKmG7y7yLr6qQb4d573",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nvar stack = UnityEngine.Rendering.VolumeManager.instance.stack;\nvar live = stack.GetComponent<UnityEngine.Rendering.Universal.Bloom>();\nvar vol = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Rendering.Volume>();\nUnityEngine.Rendering.Universal.Bloom saved;\nvol.sharedProfile.TryGet<UnityEngine.Rendering.Universal.Bloom>(out saved);\nvar cur = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;\nreturn new { playing = Application.isPlaying, frame = Time.frameCount, time = Time.time, scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path, effective = UnityEditor.AssetDatabase.GetAssetPath(cur), savedIntensity = saved.intensity.value, savedThreshold = saved.threshold.value, stackIntensity = live.intensity.value, stackThreshold = live.threshold.value, stackActive = live.IsActive(), sharedProfile = UnityEditor.AssetDatabase.GetAssetPath(vol.sharedProfile) };\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-live-before-01 \"$CODE\"; echo \"exit=$?\"'",
+            "description": "Read live Play-mode frame count and Bloom values before capture"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01X7nZKmG7y7yLr6qQb4d573",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 12,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-live-before-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"effective\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"frame\": 32,\n    \"playing\": true,\n    \"savedIntensity\": 0.0,\n    \"savedThreshold\": 1.0,\n    \"scene\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\",\n    \"sharedProfile\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\",\n    \"stackActive\": false,\n    \"stackIntensity\": 0.0,\n    \"stackThreshold\": 1.0,\n    \"time\": 6.190239\n  }\n}\nexit=0",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Play mode is running with Bloom intensity at 0 in the saved profile and the live volume stack; taking the \"before\" capture now."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01TsX7navDdf8vgMat62cvgx",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\n$U --port 6494 raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\"; echo \"exit=$?\"; ls -la .unity/capture'",
+            "description": "Capture the Game view with Bloom intensity zero"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01TsX7navDdf8vgMat62cvgx",
+          "type": "tool_result",
+          "content": "{\n  \"captureMode\": \"game\",\n  \"fileSize\": 13621,\n  \"height\": 720,\n  \"includeUI\": true,\n  \"message\": \"Screenshot captured successfully from Main Camera\",\n  \"path\": \"/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png\",\n  \"width\": 1280\n}\nexit=0\ntotal 224\ndrwxr-xr-x@ 5 akiojin  wheel    160 Oct  1 15:07 .\ndrwxr-xr-x@ 3 akiojin  wheel     96 Oct  1 15:02 ..\n-rw-r--r--@ 1 akiojin  wheel  13621 Oct  1 15:02 image_game_2026-10-01_15-02-12.png\n-rw-r--r--@ 1 akiojin  wheel  79290 Oct  1 15:02 image_game_2026-10-01_15-02-24.png\n-rw-r--r--@ 1 akiojin  wheel  13621 Oct  1 15:07 image_game_2026-10-01_15-07-20.png",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Now set only the intensity to 2 on the same saved profile while Play continues, then capture again."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Bh9t52gxVpJBxS8iZPoxJb",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nvar vol = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Rendering.Volume>();\nUnityEngine.Rendering.Universal.Bloom bloom;\nif (!vol.sharedProfile.TryGet<UnityEngine.Rendering.Universal.Bloom>(out bloom)) throw new System.InvalidOperationException(\"Bloom override missing\");\nbloom.intensity.value = 2f;\nUnityEditor.EditorUtility.SetDirty(bloom);\nUnityEditor.EditorUtility.SetDirty(vol.sharedProfile);\nreturn new { frame = Time.frameCount, intensity = bloom.intensity.value, threshold = bloom.threshold.value, profile = UnityEditor.AssetDatabase.GetAssetPath(vol.sharedProfile) };\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-bloom-two-01 \"$CODE\"; echo \"exit=$?\"\nCODE2=$(cat <<\"EOF\"\nvar live = UnityEngine.Rendering.VolumeManager.instance.stack.GetComponent<UnityEngine.Rendering.Universal.Bloom>();\nreturn new { playing = Application.isPlaying, frame = Time.frameCount, stackIntensity = live.intensity.value, stackThreshold = live.threshold.value, stackActive = live.IsActive() };\nEOF\n)\nfor i in $(seq 1 6); do $U --port 6494 editor eval --mode statements --output json --request-id i378-live-after-0$i \"$CODE2\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d[\\\"state\\\"], d[\\\"value\\\"])\"; done'",
+            "description": "Set Bloom intensity to 2 in Play and confirm the live stack picks it up"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01Bh9t52gxVpJBxS8iZPoxJb",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 12,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-bloom-two-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"frame\": 83,\n    \"intensity\": 2.0,\n    \"profile\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\",\n    \"threshold\": 1.0\n  }\n}\nexit=0\ncompleted {'frame': 84, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}\ncompleted {'frame': 85, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}\ncompleted {'frame': 86, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}\ncompleted {'frame': 87, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}\ncompleted {'frame': 88, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}\ncompleted {'frame': 89, 'playing': True, 'stackActive': True, 'stackIntensity': 2.0, 'stackThreshold': 1.0}",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_011ZataWgg44Tf9ENaGputqT",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\n$U --port 6494 raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\"; echo \"exit=$?\"; ls -la .unity/capture; $U --port 6494 raw read_console --json \"{\\\"count\\\":100}\" | python3 -c \"import sys,json; d=json.load(sys.stdin); import collections; print(collections.Counter(l[\\\"logType\\\"] for l in d[\\\"logs\\\"])); [print(l[\\\"logType\\\"], l[\\\"message\\\"][:300].replace(chr(10),\\\" | \\\")) for l in d[\\\"logs\\\"] if l[\\\"logType\\\"] not in (\\\"Warning\\\",\\\"Log\\\") or \\\"unity-cli-bridge\\\" not in l[\\\"message\\\"]]\"'",
+            "description": "Capture the Game view with Bloom intensity 2 and summarize console entries"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_011ZataWgg44Tf9ENaGputqT",
+          "type": "tool_result",
+          "content": "{\n  \"captureMode\": \"game\",\n  \"fileSize\": 79290,\n  \"height\": 720,\n  \"includeUI\": true,\n  \"message\": \"Screenshot captured successfully from Main Camera\",\n  \"path\": \"/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png\",\n  \"width\": 1280\n}\nexit=0\ntotal 384\ndrwxr-xr-x@ 6 akiojin  wheel    192 Oct  1 15:07 .\ndrwxr-xr-x@ 3 akiojin  wheel     96 Oct  1 15:02 ..\n-rw-r--r--@ 1 akiojin  wheel  13621 Oct  1 15:02 image_game_2026-10-01_15-02-12.png\n-rw-r--r--@ 1 akiojin  wheel  79290 Oct  1 15:02 image_game_2026-10-01_15-02-24.png\n-rw-r--r--@ 1 akiojin  wheel  13621 Oct  1 15:07 image_game_2026-10-01_15-07-20.png\n-rw-r--r--@ 1 akiojin  wheel  79290 Oct  1 15:07 image_game_2026-10-01_15-07-33.png\nCounter({'Warning': 29, 'Assert': 1})\nAssert ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. | Parameter name: index | System.Collections.Generic.List`1[T].get_Item (System.Int32 index) (at <4ac0ee785b7843ea944af6fc649f4ee5>:0) | UnityEditor.Search.SearchDatabase+<EnumerateAll>d__83",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01TEpKr2oqHtjHqjNknCbvJd",
+          "name": "Read",
+          "input": {
+            "file_path": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01TEpKr2oqHtjHqjNknCbvJd",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "[Image data omitted; see attached before.png and after.png.]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_017MR84Ki4cXYuPtKxryWZue",
+          "name": "Read",
+          "input": {
+            "file_path": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_017MR84Ki4cXYuPtKxryWZue",
+          "type": "tool_result",
+          "content": [
+            {
+              "type": "text",
+              "text": "[Image data omitted; see attached before.png and after.png.]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Unqmsz2LWvBxZCHh8zquxJ",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\n$U --port 6494 tool schema read_console --output json | python3 -c \"import sys,json; print(json.dumps(json.load(sys.stdin)[\\\"params_schema\\\"]))\"\n$U --port 6494 raw read_console --json \"{\\\"count\\\":300}\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print({k:v for k,v in d.items() if k!=\\\"logs\\\"}); [print(json.dumps({k:(v[:1500] if isinstance(v,str) else v) for k,v in l.items() if k!=\\\"formattedCompact\\\"}, indent=1)) for l in d[\\\"logs\\\"] if \\\"unity-cli-bridge] Client\\\" not in l[\\\"message\\\"]]\"\npython3 - <<\"EOF\"\nimport struct, zlib\ndef load(p):\n    b=open(p,\"rb\").read(); pos=8; idat=b\"\"\n    while pos<len(b):\n        n,t=struct.unpack(\">I4s\",b[pos:pos+8]); c=b[pos+8:pos+8+n]; pos+=12+n\n        if t==b\"IHDR\": w,h,bd,ct=struct.unpack(\">IIBB\",c[:10])\n        elif t==b\"IDAT\": idat+=c\n    raw=zlib.decompress(idat); ch={2:3,6:4}[ct]; st=w*ch; rows=[]; prev=bytearray(st); i=0\n    for y in range(h):\n        f=raw[i]; line=bytearray(raw[i+1:i+1+st]); i+=1+st\n        for x in range(st):\n            a=line[x-ch] if x>=ch else 0; bb=prev[x]; cc=prev[x-ch] if x>=ch else 0\n            if f==1: line[x]=(line[x]+a)&255\n            elif f==2: line[x]=(line[x]+bb)&255\n            elif f==3: line[x]=(line[x]+((a+bb)>>1))&255\n            elif f==4:\n                pp=a+bb-cc; pa=abs(pp-a); pb=abs(pp-bb); pc=abs(pp-cc)\n                line[x]=(line[x]+(a if pa<=pb and pa<=pc else bb if pb<=pc else cc))&255\n        rows.append(line); prev=line\n    return w,h,ch,rows\nfor name in [\"image_game_2026-10-01_15-07-20.png\",\"image_game_2026-10-01_15-07-33.png\"]:\n    w,h,ch,rows=load(\".unity/capture/\"+name)\n    lit=0; tot=0; xs=[]; ys=[]\n    for y in range(h):\n        r=rows[y]\n        for x in range(w):\n            m=max(r[x*ch],r[x*ch+1],r[x*ch+2]); tot+=m\n            if m>8: lit+=1; xs.append(x); ys.append(y)\n    def px(x,y): r=rows[y]; return tuple(r[x*ch:x*ch+3])\n    print(name,w,h,\"ch\",ch,\"litPixels(>8)\",lit,\"meanMax\",round(tot/(w*h),2),\"bbox\",(min(xs),min(ys),max(xs),max(ys)),\"center\",px(640,360),\"x=800\",px(800,360),\"x=850\",px(850,360),\"x=950\",px(950,360),\"corner\",px(5,5))\nEOF'",
+            "description": "Read full console entries and measure lit-pixel extent in both captures"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01Unqmsz2LWvBxZCHh8zquxJ",
+          "type": "tool_result",
+          "content": "{\"additionalProperties\": false, \"properties\": {\"count\": {\"type\": \"integer\"}, \"filterText\": {\"type\": \"string\"}, \"format\": {\"type\": \"string\"}, \"groupBy\": {\"type\": \"string\"}, \"includeStackTrace\": {\"type\": \"boolean\"}, \"logTypes\": {\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, \"sinceTimestamp\": {\"type\": \"string\"}, \"sortOrder\": {\"type\": \"string\"}, \"untilTimestamp\": {\"type\": \"string\"}}, \"type\": \"object\"}\n{'count': 30, 'statistics': {'asserts': 1, 'errors': 0, 'exceptions': 0, 'logs': 0, 'warnings': 29}, 'success': True, 'totalCaptured': 30}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge][ScreenshotHandler] Using main camera in Play Mode\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string,string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:20)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureGameView (string,int,int,bool,bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:131)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureScreenshot (Newtonsoft.Json.Linq.JObject) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:89)\\nUnityCliBridge.Core.BridgeCommandRouter/<>c:<.cctor>b__14_72 (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:125)\\nUnityCliBridge.Core.BridgeCommandRouter:Handle (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:189)\\nUnityCliBridge.Core.UnityCliBridge/<ProcessCommandInternal>d__39:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:705)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder:Start<UnityCliBridge.Core.UnityCliBridge/<ProcessCommandI\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge][ScreenshotHandler] CaptureGameView called: path=/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png, width=1280, height=720\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string,string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:20)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureGameView (string,int,int,bool,bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:126)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureScreenshot (Newtonsoft.Json.Linq.JObject) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:89)\\nUnityCliBridge.Core.BridgeCommandRouter/<>c:<.cctor>b__14_72 (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:125)\\nUnityCliBridge.Core.BridgeCommandRouter:Handle (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:189)\\nUnityCliBridge.Core.UnityCliBridge/<ProcessCommandInternal>d__39:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:705)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge][ScreenshotHandler] Using main camera in Play Mode\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string,string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:20)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureGameView (string,int,int,bool,bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:131)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureScreenshot (Newtonsoft.Json.Linq.JObject) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:89)\\nUnityCliBridge.Core.BridgeCommandRouter/<>c:<.cctor>b__14_72 (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:125)\\nUnityCliBridge.Core.BridgeCommandRouter:Handle (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:189)\\nUnityCliBridge.Core.UnityCliBridge/<ProcessCommandInternal>d__39:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:705)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder:Start<UnityCliBridge.Core.UnityCliBridge/<ProcessCommandI\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge][ScreenshotHandler] CaptureGameView called: path=/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png, width=1280, height=720\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string,string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:20)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureGameView (string,int,int,bool,bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:126)\\nUnityCliBridge.Handlers.ScreenshotHandler:CaptureScreenshot (Newtonsoft.Json.Linq.JObject) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/ScreenshotHandler.cs:89)\\nUnityCliBridge.Core.BridgeCommandRouter/<>c:<.cctor>b__14_72 (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:125)\\nUnityCliBridge.Core.BridgeCommandRouter:Handle (UnityCliBridge.Models.Command) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/BridgeCommandRouter.cs:189)\\nUnityCliBridge.Core.UnityCliBridge/<ProcessCommandInternal>d__39:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:705)\\n\"\n}\n{\n \"logType\": \"Assert\",\n \"message\": \"ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.\\nParameter name: index\\nSystem.Collections.Generic.List`1[T].get_Item (System.Int32 index) (at <4ac0ee785b7843ea944af6fc649f4ee5>:0)\\nUnityEditor.Search.SearchDatabase+<EnumerateAll>d__83.MoveNext () (at /Users/bokken/build/output/unity/unity/Modules/QuickSearch/Editor/Indexing/SearchDatabase.cs:453)\\nSystem.Linq.Enumerable.TryGetFirst[TSource] (System.Collections.Generic.IEnumerable`1[T] source, System.Boolean& found) (at <5eca27bd76e34b3f8e153e23d18e4c9d>:0)\\nSystem.Linq.Enumerable.First[TSource] (System.Collections.Generic.IEnumerable`1[T] source) (at <5eca27bd76e34b3f8e153e23d18e4c9d>:0)\\nUnityEditor.Search.SearchDatabase.GetDefaultSearchDatabase () (at /Users/bokken/build/output/unity/unity/Modules/QuickSearch/Editor/Indexing/SearchDatabase.cs:428)\\nUnityEditor.Search.SearchInit.IndexationOnStartup () (at /Users/bokken/build/output/unity/unity/Modules/QuickSearch/Editor/SearchInit.cs:109)\\nUnityEditor.EditorApplication.Internal_CallDelayFunctions () (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorApplication.cs:407)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Status changed to: Connected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] TCP listener binding on 127.0.0.1:6494 (host=127.0.0.1)\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Project Settings loaded: host=127.0.0.1, bind=127.0.0.1, port=6494\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Initializing...\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] TCP listener stopped\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:StopTcpListener () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:386)\\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1000)\\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Status changed to: Disconnected\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\\nUnityCliBridge.Core.UnityCliBridge:StopTcpListener () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:385)\\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1000)\\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\\n\"\n}\n{\n \"logType\": \"Warning\",\n \"message\": \"[unity-cli-bridge] Shutting down...\\nUnityEngine.Debug:Log (object)\\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\\nUnityCliBridge.Core.UnityCliBridge:Shutdown () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:999)\\nUnityCliBridge.Core.UnityCliBridge:OnBeforeAssemblyReload () (at /Users/akiojin/Workbench/unity-cli/work/issue-378/UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:1009)\\nUnityEditor.AssemblyReloadEvents:OnBeforeAssemblyReload () (at /Users/bokken/build/output/unity/unity/Editor/Mono/AssemblyReloadEvents.cs:31)\\n\"\n}\nimage_game_2026-10-01_15-07-20.png 1280 720 ch 3 litPixels(>8) 19104 meanMax 5.27 bbox (562, 282, 717, 437) center (254, 254, 254) x=800 (0, 0, 0) x=850 (0, 0, 0) x=950 (0, 0, 0) corner (0, 0, 0)\nimage_game_2026-10-01_15-07-33.png 1280 720 ch 3 litPixels(>8) 90056 meanMax 7.73 bbox (474, 192, 805, 527) center (254, 254, 254) x=800 (10, 10, 8) x=850 (5, 5, 4) x=950 (1, 1, 1) corner (0, 0, 0)",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01WUAnLwzWRKzAquWhNBpBw8",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\n$U --port 6494 raw stop_game --json \"{}\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"status\\\"), d.get(\\\"message\\\"))\"; echo \"exit=$?\"\nok=0; for i in $(seq 1 400); do out=$($U --port 6494 raw get_editor_state --json \"{}\" 2>/dev/null); if printf \"%s\" \"$out\" | python3 -c \"import sys,json\ntry:\n  s=json.load(sys.stdin)[\\\"state\\\"]; sys.exit(0 if (not s[\\\"isPlaying\\\"] and not s[\\\"isCompiling\\\"] and not s[\\\"isUpdating\\\"]) else 1)\nexcept Exception: sys.exit(1)\"; then ok=$((ok+1)); else ok=0; fi; if [ $ok -ge 5 ]; then break; fi; done; echo \"iter=$i ok=$ok\"; echo \"$out\"'",
+            "description": "Stop Play mode and poll until the Editor is idle in Edit mode"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01WUAnLwzWRKzAquWhNBpBw8",
+          "type": "tool_result",
+          "content": "success Exited play mode\nexit=0\niter=5 ok=5\n{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1213.3661229170002\n  },\n  \"status\": \"success\"\n}",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Play is stopped. Now restoring the final Bloom-enabled value explicitly, saving, and reloading the scene to check persistence."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_012BYyQPK6y4FMEnXwk73PzV",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nif (Application.isPlaying) throw new System.InvalidOperationException(\"Play mode must be stopped before persistent edits\");\nvar path = \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\";\nvar prof = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(path);\nUnityEngine.Rendering.Universal.Bloom bloom;\nif (!prof.TryGet<UnityEngine.Rendering.Universal.Bloom>(out bloom)) throw new System.InvalidOperationException(\"Bloom override missing\");\nvar intensityAfterStop = bloom.intensity.value;\nbloom.active = true;\nbloom.threshold.overrideState = true;\nbloom.threshold.value = 1f;\nbloom.intensity.overrideState = true;\nbloom.intensity.value = 2f;\nUnityEditor.EditorUtility.SetDirty(bloom);\nUnityEditor.EditorUtility.SetDirty(prof);\nUnityEditor.AssetDatabase.SaveAssets();\nvar scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();\nvar saved = UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);\nreturn new { intensityAfterStop, intensity = bloom.intensity.value, threshold = bloom.threshold.value, active = bloom.active, scene = scene.path, sceneSaved = saved, sceneDirty = scene.isDirty };\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-bloom-final-01 \"$CODE\"; echo \"exit=$?\"\ngrep -n \"intensity\\|threshold\" -A3 Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset | head -20'",
+            "description": "Set final Bloom intensity 2, save assets and scene, then read the saved file values"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_012BYyQPK6y4FMEnXwk73PzV",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 22,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-bloom-final-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"active\": true,\n    \"intensity\": 2.0,\n    \"intensityAfterStop\": 2.0,\n    \"scene\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\",\n    \"sceneDirty\": false,\n    \"sceneSaved\": true,\n    \"threshold\": 1.0\n  }\n}\nexit=0\n19:  threshold:\n20-    m_OverrideState: 1\n21-    m_Value: 1\n22:  intensity:\n23-    m_OverrideState: 1\n24-    m_Value: 2\n25-  scatter:",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01GfSnUVqLxSMi8TH57VkK4e",
+          "name": "Bash",
+          "input": {
+            "command": "bash -lc 'cd /private/tmp/unity-issue378/6000.3.25f1 && U=/Users/akiojin/Workbench/unity-cli/work/issue-378/target/debug/unity-cli\nCODE=$(cat <<\"EOF\"\nif (Application.isPlaying) throw new System.InvalidOperationException(\"Play mode must be stopped\");\nvar dir = \"Assets/Scenes/Generated/E2E/URP/\";\nvar scenePath = dir + \"Issue378_URP_Bloom.unity\";\nUnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);\nvar interim = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;\nvar scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(scenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);\nvar names = QualitySettings.names;\nvar levels = new System.Collections.Generic.List<object>();\nvar allAssigned = true;\nvar expected = dir + \"Issue378_URP_Pipeline.asset\";\nfor (int i = 0; i < names.Length; i++) { var q = QualitySettings.GetRenderPipelineAssetAt(i); var p = q == null ? null : UnityEditor.AssetDatabase.GetAssetPath(q); if (p != expected) allAssigned = false; levels.Add(new { index = i, name = names[i], pipeline = p }); }\nvar rp = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;\nvar cur = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;\nvar rd = rp.rendererDataList[0] as UnityEngine.Rendering.Universal.UniversalRendererData;\nvar vol = UnityEngine.Object.FindFirstObjectByType<UnityEngine.Rendering.Volume>();\nUnityEngine.Rendering.Universal.Bloom bloom;\nvar hasBloom = vol.sharedProfile.TryGet<UnityEngine.Rendering.Universal.Bloom>(out bloom);\nvar cam = Camera.main;\nvar cd = cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();\nvar subj = GameObject.Find(\"EmissiveSubject\");\nvar mat = subj.GetComponent<MeshRenderer>().sharedMaterial;\nreturn new {\n  interimScenePath = interim, scenePath = scene.path, sceneDirty = scene.isDirty, isPlaying = Application.isPlaying,\n  graphicsDefault = UnityEditor.AssetDatabase.GetAssetPath(rp), effective = UnityEditor.AssetDatabase.GetAssetPath(cur), activeQuality = names[QualitySettings.GetQualityLevel()], allQualityLevelsAssigned = allAssigned, levels,\n  pipelineHdr = rp.supportsHDR, renderer = UnityEditor.AssetDatabase.GetAssetPath(rd), rendererIsPersistent = UnityEditor.EditorUtility.IsPersistent(rd), postProcessData = UnityEditor.AssetDatabase.GetAssetPath(rd.postProcessData),\n  volume = new { go = vol.gameObject.name, isGlobal = vol.isGlobal, weight = vol.weight, priority = vol.priority, layer = vol.gameObject.layer, sharedProfile = UnityEditor.AssetDatabase.GetAssetPath(vol.sharedProfile), profileIsPersistent = UnityEditor.EditorUtility.IsPersistent(vol.sharedProfile) },\n  bloom = new { hasBloom, isSubAsset = UnityEditor.AssetDatabase.IsSubAsset(bloom), active = bloom.active, intensity = bloom.intensity.value, intensityOverride = bloom.intensity.overrideState, threshold = bloom.threshold.value, thresholdOverride = bloom.threshold.overrideState },\n  camera = new { name = cam.name, hdr = cam.allowHDR, renderPostProcessing = cd.renderPostProcessing, volumeLayerMask = cd.volumeLayerMask.value, pos = cam.transform.position.ToString() },\n  subject = new { material = UnityEditor.AssetDatabase.GetAssetPath(mat), shader = mat.shader.name, emission = mat.GetColor(\"_EmissionColor\").ToString(), emissionKeyword = mat.IsKeywordEnabled(\"_EMISSION\"), pos = subj.transform.position.ToString() }\n};\nEOF\n)\n$U --port 6494 editor eval --mode statements --output json --request-id i378-reload-verify-01 \"$CODE\"; echo \"exit=$?\"\n$U --port 6494 raw read_console --json \"{\\\"count\\\":300}\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"statistics\\\"), d.get(\\\"totalCaptured\\\")); [print(l[\\\"logType\\\"], \\\"::\\\", l[\\\"message\\\"][:400].replace(chr(10),\\\" | \\\")) for l in d[\\\"logs\\\"] if \\\"[unity-cli-bridge]\\\" not in l[\\\"message\\\"]]\"\n$U --port 6494 raw read_console --json \"{\\\"count\\\":300,\\\"logTypes\\\":[\\\"Error\\\",\\\"Exception\\\",\\\"Assert\\\"]}\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"statistics\\\"), len(d[\\\"logs\\\"])); [print(l[\\\"logType\\\"], \\\"::\\\", l[\\\"message\\\"][:200].replace(chr(10),\\\" | \\\")) for l in d[\\\"logs\\\"]]\"\nfind Assets -newer Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset -type f | sort; find Assets -type f -not -path \"Assets/Scenes/Generated/E2E/URP/*\" -not -name \"*.meta\"'",
+            "description": "Reload the scene, read back persisted assignments, and read console errors"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_01GfSnUVqLxSMi8TH57VkK4e",
+          "type": "tool_result",
+          "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 35,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"i378-reload-verify-01\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"activeQuality\": \"Ultra\",\n    \"allQualityLevelsAssigned\": true,\n    \"bloom\": {\n      \"active\": true,\n      \"hasBloom\": true,\n      \"intensity\": 2.0,\n      \"intensityOverride\": true,\n      \"isSubAsset\": false,\n      \"threshold\": 1.0,\n      \"thresholdOverride\": true\n    },\n    \"camera\": {\n      \"hdr\": true,\n      \"name\": \"Main Camera\",\n      \"pos\": \"(0.00, 0.00, -6.00)\",\n      \"renderPostProcessing\": true,\n      \"volumeLayerMask\": 1\n    },\n    \"effective\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"graphicsDefault\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"interimScenePath\": \"\",\n    \"isPlaying\": false,\n    \"levels\": [\n      {\n        \"index\": 0,\n        \"name\": \"Very Low\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 1,\n        \"name\": \"Low\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 2,\n        \"name\": \"Medium\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 3,\n        \"name\": \"High\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 4,\n        \"name\": \"Very High\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      },\n      {\n        \"index\": 5,\n        \"name\": \"Ultra\",\n        \"pipeline\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\"\n      }\n    ],\n    \"pipelineHdr\": true,\n    \"postProcessData\": \"Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset\",\n    \"renderer\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset\",\n    \"rendererIsPersistent\": true,\n    \"sceneDirty\": false,\n    \"scenePath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\",\n    \"subject\": {\n      \"emission\": \"RGBA(8.000, 4.400, 1.200, 8.000)\",\n      \"emissionKeyword\": true,\n      \"material\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat\",\n      \"pos\": \"(0.00, 0.00, 0.00)\",\n      \"shader\": \"Universal Render Pipeline/Lit\"\n    },\n    \"volume\": {\n      \"go\": \"Global Volume\",\n      \"isGlobal\": true,\n      \"layer\": 0,\n      \"priority\": 10.0,\n      \"profileIsPersistent\": true,\n      \"sharedProfile\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\",\n      \"weight\": 1.0\n    }\n  }\n}\nexit=0\n{'asserts': 1, 'errors': 0, 'exceptions': 0, 'logs': 0, 'warnings': 33} 34\nAssert :: ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. | Parameter name: index | System.Collections.Generic.List`1[T].get_Item (System.Int32 index) (at <4ac0ee785b7843ea944af6fc649f4ee5>:0) | UnityEditor.Search.SearchDatabase+<EnumerateAll>d__83.MoveNext () (at /Users/bokken/build/output/unity/unity/Modules/QuickSearch/Editor/Indexing/SearchDa\n{'asserts': 1, 'errors': 0, 'exceptions': 0, 'logs': 0, 'warnings': 33} 1\nAssert :: ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. | Parameter name: index | System.Collections.Generic.List`1[T].get_Item (System.Int32 in\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat.meta\nAssets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+          "is_error": false
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"status\": \"success\",\n  \"unityVersion\": \"6000.3.25f1\",\n  \"urpVersion\": \"17.3.0\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity\",\n  \"pipelinePath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n  \"rendererPath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset\",\n  \"profilePath\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\",\n  \"beforeScreenshot\": \"/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png\",\n  \"afterScreenshot\": \"/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png\",\n  \"observedDifference\": \"Both 1280x720 Game-view captures were inspected, with the same camera, framing and scene; only Bloom intensity changed (threshold 1 in both). Before (intensity 0): a hard-edged white disc on pure black, with lit pixels confined to x 562-717, y 282-437 (19,104 pixels) and RGB (0,0,0) at x=800. After (intensity 2): the same disc with a soft glow around it, with lit pixels spreading to x 474-805, y 192-527 (90,056 pixels) and RGB (10,10,8) at x=800. The disc centre is (254,254,254) in both, so the subject did not move. The live volume stack read intensity 0 with Bloom inactive before, and intensity 2 with Bloom active after.\",\n  \"consoleErrors\": {\n    \"errors\": 0,\n    \"exceptions\": 0,\n    \"asserts\": 1,\n    \"entries\": [\n      \"Assert: ArgumentOutOfRangeException: Index was out of range. at UnityEditor.Search.SearchDatabase.EnumerateAll (SearchDatabase.cs:453), via SearchDatabase.GetDefaultSearchDatabase and SearchInit.IndexationOnStartup, called from EditorApplication.Internal_CallDelayFunctions\"\n    ],\n    \"assessment\": \"The one Assert-type entry is from the Editor's built-in Search indexer, logged around the domain reload when entering Play. Its stack has no URP, Volume, scene or unity-cli-bridge frames. The remaining 33 entries are bridge connection and screenshot log lines at Warning level.\"\n  },\n  \"reusedExistingSetup\": \"URP 17.3.0 was already installed, and the pipeline, renderer, Bloom profile, emissive material and scene already existed under Assets/Scenes/Generated/E2E/URP/ from an earlier run (files dated 14:57-15:03 today). Graphics and all six Quality levels were already assigned. As the skill directs, I reused them instead of reinstalling or recreating, so the install, asset creation and assignment steps were verified by read-back, not performed in this run. What this run did: set Bloom intensity to 0 and saved, captured in Play, set intensity to 2, captured again, stopped Play, saved the final state, reloaded the scene and read everything back.\",\n  \"qualityLevels\": {\n    \"graphicsDefault\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"effective\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset\",\n    \"activeLevel\": \"Ultra\",\n    \"assignedToPipeline\": [\"Very Low\", \"Low\", \"Medium\", \"High\", \"Very High\", \"Ultra\"],\n    \"changedInThisRun\": []\n  },\n  \"persistenceAfterStopAndReload\": {\n    \"method\": \"Stopped Play, set intensity 2 and threshold 1, saved assets and scene, opened an empty scene, then reopened the scene and read values back.\",\n    \"isPlaying\": false,\n    \"sceneDirty\": false,\n    \"pipelineHdr\": true,\n    \"rendererPostProcessData\": \"Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset\",\n    \"volume\": { \"gameObject\": \"Global Volume\", \"isGlobal\": true, \"weight\": 1.0, \"priority\": 10.0, \"sharedProfile\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset\" },\n    \"bloom\": { \"active\": true, \"intensity\": 2.0, \"intensityOverride\": true, \"threshold\": 1.0, \"thresholdOverride\": true },\n    \"camera\": { \"name\": \"Main Camera\", \"allowHDR\": true, \"renderPostProcessing\": true, \"volumeLayerMask\": 1, \"background\": \"solid black\" },\n    \"subject\": { \"gameObject\": \"EmissiveSubject\", \"mesh\": \"Sphere\", \"material\": \"Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat\", \"shader\": \"Universal Render Pipeline/Lit\", \"emissionColor\": \"(8.0, 4.4, 1.2)\", \"sceneLights\": 0 }\n  },\n  \"evalStates\": \"Every eval that changed state, and every eval used as evidence, returned state completed with no exception. The only diagnostic was compiler warning CS0162 (unreachable code) on each statements-mode eval. While the bridge was down for the domain reload on entering Play, read-only frame-count polls failed with connection refused; the last one warned the evaluation might still be running, and I did not query eval-status for it. Nothing that changed state was retried, and the bridge reconnected on its own.\",\n  \"otherNotes\": [\n    \"The profile was edited through the Volume's sharedProfile, not a Play-mode clone, so the intensity of 2 set during Play was already on the saved asset after stopping.\",\n    \"The project colour space is Gamma; I left it unchanged.\",\n    \"Two older captures from the earlier run (15-02-12 and 15-02-24) remain in .unity/capture/.\",\n    \"No files exist under Assets/ outside Assets/Scenes/Generated/E2E/URP/. That folder also holds DefaultVolumeProfile.asset and UniversalRenderPipelineGlobalSettings.asset from the earlier run.\"\n  ]\n}"
+        }
+      ]
+    }
+  ],
+  "result": {
+    "status": "success",
+    "unityVersion": "6000.3.25f1",
+    "urpVersion": "17.3.0",
+    "scenePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity",
+    "pipelinePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+    "rendererPath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset",
+    "profilePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset",
+    "beforeScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png",
+    "afterScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png",
+    "observedDifference": "Both 1280x720 Game-view captures were inspected, with the same camera, framing and scene; only Bloom intensity changed (threshold 1 in both). Before (intensity 0): a hard-edged white disc on pure black, with lit pixels confined to x 562-717, y 282-437 (19,104 pixels) and RGB (0,0,0) at x=800. After (intensity 2): the same disc with a soft glow around it, with lit pixels spreading to x 474-805, y 192-527 (90,056 pixels) and RGB (10,10,8) at x=800. The disc centre is (254,254,254) in both, so the subject did not move. The live volume stack read intensity 0 with Bloom inactive before, and intensity 2 with Bloom active after.",
+    "consoleErrors": {
+      "errors": 0,
+      "exceptions": 0,
+      "asserts": 1,
+      "entries": [
+        "Assert: ArgumentOutOfRangeException: Index was out of range. at UnityEditor.Search.SearchDatabase.EnumerateAll (SearchDatabase.cs:453), via SearchDatabase.GetDefaultSearchDatabase and SearchInit.IndexationOnStartup, called from EditorApplication.Internal_CallDelayFunctions"
+      ],
+      "assessment": "The one Assert-type entry is from the Editor's built-in Search indexer, logged around the domain reload when entering Play. Its stack has no URP, Volume, scene or unity-cli-bridge frames. The remaining 33 entries are bridge connection and screenshot log lines at Warning level."
+    },
+    "reusedExistingSetup": "URP 17.3.0 was already installed, and the pipeline, renderer, Bloom profile, emissive material and scene already existed under Assets/Scenes/Generated/E2E/URP/ from an earlier run (files dated 14:57-15:03 today). Graphics and all six Quality levels were already assigned. As the skill directs, I reused them instead of reinstalling or recreating, so the install, asset creation and assignment steps were verified by read-back, not performed in this run. What this run did: set Bloom intensity to 0 and saved, captured in Play, set intensity to 2, captured again, stopped Play, saved the final state, reloaded the scene and read everything back.",
+    "qualityLevels": {
+      "graphicsDefault": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "effective": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "activeLevel": "Ultra",
+      "assignedToPipeline": [
+        "Very Low",
+        "Low",
+        "Medium",
+        "High",
+        "Very High",
+        "Ultra"
+      ],
+      "changedInThisRun": []
+    },
+    "persistenceAfterStopAndReload": {
+      "method": "Stopped Play, set intensity 2 and threshold 1, saved assets and scene, opened an empty scene, then reopened the scene and read values back.",
+      "isPlaying": false,
+      "sceneDirty": false,
+      "pipelineHdr": true,
+      "rendererPostProcessData": "Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset",
+      "volume": {
+        "gameObject": "Global Volume",
+        "isGlobal": true,
+        "weight": 1.0,
+        "priority": 10.0,
+        "sharedProfile": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset"
+      },
+      "bloom": {
+        "active": true,
+        "intensity": 2.0,
+        "intensityOverride": true,
+        "threshold": 1.0,
+        "thresholdOverride": true
+      },
+      "camera": {
+        "name": "Main Camera",
+        "allowHDR": true,
+        "renderPostProcessing": true,
+        "volumeLayerMask": 1,
+        "background": "solid black"
+      },
+      "subject": {
+        "gameObject": "EmissiveSubject",
+        "mesh": "Sphere",
+        "material": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "emissionColor": "(8.0, 4.4, 1.2)",
+        "sceneLights": 0
+      }
+    },
+    "evalStates": "Every eval that changed state, and every eval used as evidence, returned state completed with no exception. The only diagnostic was compiler warning CS0162 (unreachable code) on each statements-mode eval. While the bridge was down for the domain reload on entering Play, read-only frame-count polls failed with connection refused; the last one warned the evaluation might still be running, and I did not query eval-status for it. Nothing that changed state was retried, and the bridge reconnected on its own.",
+    "otherNotes": [
+      "The profile was edited through the Volume's sharedProfile, not a Play-mode clone, so the intensity of 2 set during Play was already on the saved asset after stopping.",
+      "The project colour space is Gamma; I left it unchanged.",
+      "Two older captures from the earlier run (15-02-12 and 15-02-24) remain in .unity/capture/.",
+      "No files exist under Assets/ outside Assets/Scenes/Generated/E2E/URP/. That folder also holds DefaultVolumeProfile.asset and UniversalRenderPipelineGlobalSettings.asset from the earlier run."
+    ]
+  }
+}

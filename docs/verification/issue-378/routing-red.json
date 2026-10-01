@@ -1,0 +1,8 @@
+{
+  "session_id": "0abab1c3-76e4-4ac6-8d69-3818b57c4aa9",
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "result": "unity-editor-tools",
+  "prompt": "Install URP, create its pipeline and Global Volume with Bloom and verify before/after screenshots. Select one skill from the pre-change catalog."
+}

@@ -1,0 +1,32 @@
+{
+  "status": "success",
+  "unityVersion": "2022.3.62f3",
+  "urpVersion": "14.0.12",
+  "scenePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URPBloom.unity",
+  "pipelinePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+  "rendererPath": "Assets/Scenes/Generated/E2E/URP/Issue378_UniversalRenderer.asset",
+  "profilePath": "Assets/Scenes/Generated/E2E/URP/Issue378_BloomProfile.asset",
+  "beforeScreenshot": "/private/tmp/unity-issue378/2022.3.62f3/.unity/capture/image_game_2026-10-01_15-05-29.png",
+  "afterScreenshot": "/private/tmp/unity-issue378/2022.3.62f3/.unity/capture/image_game_2026-10-01_15-05-39.png",
+  "observedDifference": "Both 1280x720 Game-view captures (osFallback false, same Main Camera and framing) were inspected. Before (Bloom intensity 0, threshold 1): a hard-edged yellow emissive sphere on pure black, with pixels just outside the sphere at RGB (0,0,0). After (intensity 2, threshold 1): the same sphere with a soft yellow halo fading outward, e.g. (35,35,22) at 110 px from centre and (8,8,4) at 200 px; corners stay black. Non-black pixels rose from 27,778 to 126,390, and 191,380 of 921,600 pixels differ. Only Bloom intensity changed between the captures.",
+  "consoleErrors": [],
+  "reusedExistingSetup": true,
+  "qualityLevelsAssigned": [
+    "Very Low",
+    "Low",
+    "Medium",
+    "High",
+    "Very High",
+    "Ultra"
+  ],
+  "persistenceCheck": "After stopping Play, saving, opening an empty scene, force-reimporting the three assets and reopening the scene: Graphics default and all 6 Quality levels point to Issue378_URPAsset (HDR on, renderer list holds Issue378_UniversalRenderer with the package PostProcessData); the Global Volume (global, weight 1, layer 0) references Issue378_BloomProfile; Bloom is stored inside the profile asset with active true, intensity 2 and threshold 1, both overridden; Main Camera has post-processing and HDR on with volume mask 1. The on-disk settings and profile files show the same values.",
+  "notes": [
+    "This run did not install URP or create the assets. URP 14.0.12 (the Editor's built-in version), the pipeline, renderer, profile, emissive material, scene, and the Graphics and Quality assignments were already present from an earlier run. Following the skill's reuse rule, I inspected and verified them instead of recreating them, so the install and create steps were not exercised here.",
+    "Assets/Scenes/Generated/E2E/URP/ also contains Issue378_Emissive.mat and UniversalRenderPipelineGlobalSettings.asset; nothing was written outside that folder apart from the screenshots.",
+    "On entering Play, Time.frameCount stayed at 1 because the Editor was unfocused with Run In Background off. I set Application.runInBackground to true for the Play session only so frames would advance (about 2,000 frames before the first capture, more than 60 between the two). It was back to false after Play stopped.",
+    "An earlier capture at /private/tmp/unity-issue378/2022.3.62f3/.unity/capture/image_game_2026-10-01_15-04-47.png was taken while frames were stalled and was replaced by the listed before image.",
+    "One read-only inspection eval returned state compile_error because scriptableRendererData is not public in URP 14; I corrected it and reran under a new request ID. Every mutating eval returned state completed with no exception.",
+    "Console: 0 errors, 0 exceptions, 0 asserts in the 256 captured entries; all are warning-level bridge connection and screenshot log lines.",
+    "The project colour space is Gamma and was left unchanged."
+  ]
+}

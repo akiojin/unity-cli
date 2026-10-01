@@ -1,10 +1,10 @@
 ---
 name: unity-editor-tools
-description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows, manage packages or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`.
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows, manage packages or capture profiler data. Do not use for C# file edits; use `unity-csharp-edit`. For URP and Volume setup with visual verification use `unity-urp-setup`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: editor
   triggers:
     - editor
@@ -14,6 +14,7 @@ metadata:
     - package
     - setting
   siblings:
+    - unity-urp-setup
     - unity-cli-usage
     - unity-csharp-edit
     - unity-asset-management
