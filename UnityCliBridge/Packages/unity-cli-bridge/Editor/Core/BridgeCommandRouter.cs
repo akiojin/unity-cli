@@ -160,9 +160,15 @@ namespace UnityCliBridge.Core
                 ["manage_audio_mixer"] = command => Success(command, AudioMixerHandler.HandleCommand(command.Parameters)),
                 ["manage_asset_database"] = command => Success(command, AssetDatabaseHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["analyze_asset_dependencies"] = command => Success(command, AssetDependencyHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
+#if UNITY_ADDRESSABLES
                 ["addressables_manage"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["addressables_build"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
                 ["addressables_analyze"] = command => Success(command, AddressablesHandler.HandleCommand(command.Parameters["action"]?.ToString(), command.Parameters)),
+#else
+                ["addressables_manage"] = AddressablesUnavailable,
+                ["addressables_build"] = AddressablesUnavailable,
+                ["addressables_analyze"] = AddressablesUnavailable,
+#endif
                 ["get_project_setting"] = command => Success(command, ProjectSettingsHandler.GetProjectSetting(command.Parameters)),
                 ["set_project_setting"] = command => Success(command, ProjectSettingsHandler.SetProjectSetting(command.Parameters)),
                 ["get_project_settings"] = command => Success(command, ProjectSettingsHandler.GetProjectSettings(command.Parameters)),
@@ -200,6 +206,18 @@ namespace UnityCliBridge.Core
 
         private static Task<string> Success(Command command, object result) =>
             Task.FromResult(Response.SuccessResult(command.Id, result));
+
+#if !UNITY_ADDRESSABLES
+        // com.unity.addressables is optional (UNITY_ADDRESSABLES comes from the asmdef versionDefines).
+        // The command types stay registered so `tool list` is stable across projects and a caller
+        // gets an actionable error instead of UNKNOWN_COMMAND.
+        private static Task<string> AddressablesUnavailable(Command command) =>
+            Task.FromResult(Response.ErrorResult(
+                command.Id,
+                "Addressables tools require the com.unity.addressables package, which is not installed in this project",
+                "ADDRESSABLES_NOT_INSTALLED",
+                new { package = "com.unity.addressables", commandType = command.Type }));
+#endif
 
         private static Task<string> PrefabResult(Command command, object result)
         {

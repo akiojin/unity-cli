@@ -61,6 +61,35 @@ namespace UnityCliBridge.Tests.Editor.Core
         }
 
         [Test]
+        public void RegisteredCommandTypes_ExposesAddressablesWithoutRequiringOptionalPackage()
+        {
+            var commandTypes = BridgeCommandRouter.RegisteredCommandTypes.ToArray();
+            Assert.Contains("addressables_manage", commandTypes);
+            Assert.Contains("addressables_build", commandTypes);
+            Assert.Contains("addressables_analyze", commandTypes);
+        }
+
+#if !UNITY_ADDRESSABLES
+        [UnityTest]
+        public IEnumerator Handle_AddressablesWithoutPackage_ReturnsNotInstalledError() => TaskTestUtility.Await(async () =>
+        {
+            var response = await BridgeCommandRouter.Handle(new Command
+            {
+                Id = "cmd-addr",
+                Type = "addressables_manage",
+                Parameters = JObject.FromObject(new { action = "list_groups" })
+            });
+
+            var json = JObject.Parse(response);
+
+            Assert.AreEqual("cmd-addr", json["id"]?.Value<string>());
+            Assert.AreEqual("error", json["status"]?.Value<string>());
+            Assert.AreEqual("ADDRESSABLES_NOT_INSTALLED", json["code"]?.Value<string>());
+            Assert.AreEqual("com.unity.addressables", json["details"]?["package"]?.Value<string>());
+        });
+#endif
+
+        [Test]
         public void RegisteredCommandTypes_ExposesDelegateRegistry()
         {
             var commandTypes = BridgeCommandRouter.RegisteredCommandTypes.ToArray();
