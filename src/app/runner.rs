@@ -73,8 +73,10 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
-    // which manage the binary themselves.
-    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. }) {
+    // which manage the binary themselves, and offline skill operations. In
+    // particular, a skills dry-run must not create an update-check stamp.
+    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. } | Command::Skills { .. })
+    {
         crate::core::self_update::maybe_self_update()
     } else {
         None
@@ -323,6 +325,39 @@ async fn run_command(cli: Cli) -> Result<()> {
             }
         },
         Command::Skills { command } => match command {
+            SkillsCommand::Install {
+                client,
+                local,
+                force,
+            } => {
+                for path in crate::skills::distribution::distribute(
+                    Some(*client),
+                    *local,
+                    *force,
+                    cli.dry_run,
+                    false,
+                )? {
+                    println!("{}", path.display());
+                }
+            }
+            SkillsCommand::Refresh {
+                client,
+                local,
+                force,
+            } => {
+                for path in crate::skills::distribution::distribute(
+                    *client,
+                    *local,
+                    *force,
+                    cli.dry_run,
+                    true,
+                )? {
+                    println!("{}", path.display());
+                }
+            }
+            SkillsCommand::Show { name } => {
+                println!("{}", crate::skills::distribution::show(name.as_deref())?);
+            }
             SkillsCommand::Lint {
                 root,
                 format,
