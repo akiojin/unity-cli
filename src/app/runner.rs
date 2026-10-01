@@ -74,9 +74,18 @@ async fn run_with_cli_named(cli: Cli, command: &str) -> Result<()> {
     } else {
         cli.output
     };
+    let mcp_stdio = matches!(cli.command, Command::Mcp { command: None });
     let result = run_command_named(cli, command).await;
     if let Err(error) = &result {
-        output::print_failure(command, error, format)?;
+        output::print_failure(
+            command,
+            error,
+            if mcp_stdio {
+                OutputFormat::Text
+            } else {
+                format
+            },
+        )?;
     }
     result
 }
@@ -96,6 +105,17 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
         std::env::set_var("UNITY_PROJECT_ROOT", project_path);
     }
 
+    // Long-lived stdio must contain only JSON-RPC, and configure --dry-run
+    // must not start an update worker or create update-check stamps.
+    if let Command::Mcp { command } = &cli.command {
+        return match command {
+            None => crate::mcp::serve(&cli).await,
+            Some(crate::cli::McpCommand::Configure { client, local }) => {
+                crate::mcp::configure::run(*client, *local, cli.dry_run)
+            }
+        };
+    }
+
     // Background self-update (non-blocking). Skipped for `cli` subcommands
     // which manage the binary themselves, offline skill operations, and setup
     // previews, which must not access the network or write an update-check stamp.
@@ -111,6 +131,7 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
     crate::core::self_update::warn_cargo_conflict();
 
     match &cli.command {
+        Command::Mcp { .. } => unreachable!("MCP handled before self-update"),
         Command::Editor { command } => {
             let (tool, params) = match command {
                 EditorCommand::Eval {
@@ -772,7 +793,7 @@ async fn execute_raw(cli: &Cli, args: &RawArgs) -> Result<Value> {
     execute_tool(cli, &args.tool_name, params).await
 }
 
-async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
+pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) -> Result<Value> {
     validate_tool_params(tool_name, &params).context(FailureKind::Usage)?;
 
     if should_skip_for_dry_run(cli, tool_name) {
@@ -1042,7 +1063,7 @@ fn should_skip_for_dry_run(cli: &Cli, tool_name: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
+pub(crate) fn runtime_overrides_from_cli(cli: &Cli) -> RuntimeOverrides {
     RuntimeOverrides {
         host: cli.host.clone(),
         port: cli.port,

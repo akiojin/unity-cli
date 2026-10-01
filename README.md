@@ -236,6 +236,7 @@ Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 ## Documentation
 
 - Full command and tool catalog: [docs/tools.md](docs/tools.md)
+- MCP thin adapter and client configuration: [docs/mcp.md](docs/mcp.md)
 - Development workflow and CI: [docs/development.md](docs/development.md)
 - Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Release process: [RELEASE.md](RELEASE.md)
