@@ -128,7 +128,7 @@ def main():
             result = subprocess.run(cli + list(command), env=env, capture_output=True, text=True, timeout=40)
             check('CLI ' + ' '.join(command), result.returncode == 0)
             if command[0] == 'editor':
-                check('CLI eval result is 3', json.loads(result.stdout).get('value') == 3)
+                check('CLI eval result is 3', json.loads(result.stdout)['data'].get('value') == 3)
             if args.opt_out:
                 check('CLI next minor deprecation warning', 'next minor' in result.stderr)
         # A separate daemon process must resolve the same lockfile and authenticate.

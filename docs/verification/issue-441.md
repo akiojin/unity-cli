@@ -1,7 +1,31 @@
 # Issue #441 — CLI JSON envelope と終了コード
 
-2026-10-02 JST、macOS 26.5 / Apple Silicon。Rust 実装の検証対象は `aa726e7`。
+2026-10-02 JST、macOS 26.5 / Apple Silicon。初回の Rust 検証対象は `aa726e7`。
 Editor はすべて隔離プロジェクトで起動し、検証が所有するプロセスだけを終了した。
+
+## develop 統合後の再検証
+
+`origin/develop` の `03545ea`（#447 の認証、#448 のライフサイクル）を
+`9c6a065` で統合した。以下は初回検証とは別に実行した結果で、
+詳細は [post-merge.json](issue-441/post-merge.json) に記録する。
+
+- Rust 623 tests PASS、fmt / clippy PASS。Python 55 tests（既存の 1 skip）、
+  .NET 53 tests PASS、skills lint 23 skills / 0 violations。
+- 両 Editor で smoke、Domain Reload、all-tools、screenshot が PASS。
+  AC-3/4 の実 Bridge 応答、認証の EditMode テスト、daemon の認証、
+  各 5 cycles / 16 checks の再起動検証も PASS。自動検出は 19/19 checks PASS。
+- 直接 TCP を使用する E2E は、所有する Editor の private lockfile から認証情報を取得する。
+  検証結果には token を保存せず、Editor 検出ログも token を除外する。
+  自動検出 E2E の daemon も専用 tools root で起動・終了し、
+  既存 daemon が別の認証 registry を参照する状態を避けた。
+- 認証必須化後、`instances list` / `set-active` のヘルスチェックだけが token を
+  送信せず、稼働中 Editor を停止中と判定する問題を再現した。
+  通常の通信と同じ token resolver を使用する修正と、一覧・選択の回帰テストを追加した。
+- 認証 E2E の eval 結果参照を `data.value` に更新した。
+  screenshot の一時的な通信失敗では既存リトライが動くよう、
+  `CalledProcessError` を維持した。
+- opt-out の検証は専用 fixture に限定し、次 minor の廃止警告も確認した。
+  その他の統合後検証は認証を有効にしたまま実行した。
 
 ## 受け入れ基準
 
@@ -20,6 +44,8 @@ Editor はすべて隔離プロジェクトで起動し、検証が所有する�
 後者の `source_report` / `source_log` は実行ホストの詳細ログを指す。
 
 ## 検証範囲
+
+以下は develop 統合前の全 consumer 検証記録。
 
 - Rust: 607 tests PASS（うちプロセス単位の新規 JSON 契約テスト 15 件）。
   `cargo fmt --all -- --check`、`cargo clippy --all-targets -- -D warnings` PASS。

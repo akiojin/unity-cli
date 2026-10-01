@@ -41,7 +41,7 @@ def main():
             assert process.returncode == 6 and envelope["success"] is False, envelope
             assert envelope["errors"][0]["code"] == expected_error, envelope
         else:
-            assert process.returncode == 0, envelope
+            process.check_returncode()
             assert envelope["success"] is True, envelope
         return envelope["data"]
 

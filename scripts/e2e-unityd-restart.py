@@ -30,9 +30,11 @@ def load_prepare():
     return module.prepare, module.ready
 
 
-def direct_call(port, tool, params=None, timeout=5):
+def direct_call(port, tool, params=None, timeout=5, pid=None):
     """One request on its own socket; never touches the unityd pool."""
-    payload = json.dumps({"id": "probe", "type": tool, "params": params or {}}).encode()
+    from bridge_auth import auth_fields
+    payload = json.dumps({"id": "probe", "type": tool, "params": params or {},
+                          **auth_fields(port, pid=pid)}).encode()
     with socket.create_connection(("127.0.0.1", port), timeout=timeout) as stream:
         stream.sendall(struct.pack(">i", len(payload)) + payload)
         header = stream.recv(4, socket.MSG_WAITALL)
@@ -126,7 +128,7 @@ def main():
             if editor.poll() is not None:
                 raise RuntimeError(f"Unity exited {editor.returncode}; see {log}")
             try:
-                state = direct_call(args.port, "get_editor_state")
+                state = direct_call(args.port, "get_editor_state", pid=editor.pid)
                 if ready(state.get("state", state)):
                     return
             except (OSError, ValueError):

@@ -101,7 +101,10 @@ def cli(args: list[str], cwd: Path, env: dict[str, str]) -> tuple[int, str, str]
 def lockfile_for(editors_dir: Path, pid: int) -> dict | None:
     path = editors_dir / f"{pid}.json"
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text())
+        # Diagnostics print this metadata; credentials must remain file-private.
+        value.pop("authToken", None)
+        return value
     except (OSError, json.JSONDecodeError):
         return None
 
@@ -138,6 +141,8 @@ def main() -> int:
 
     cli_env = {k: v for k, v in os.environ.items() if not k.startswith("UNITY_CLI_") and k != "UNITY_PROJECT_ROOT"}
     cli_env["UNITY_CLI_REGISTRY_PATH"] = str(work / "instances.json")
+    # A shared daemon retains its launch environment and may read another registry.
+    cli_env["UNITY_CLI_TOOLS_ROOT"] = str(work / "tools")
     cli_env["UNITY_CLI_NO_AUTO_UPDATE"] = "1"
     if "UNITY_CLI_EDITORS_DIR" in os.environ:
         cli_env["UNITY_CLI_EDITORS_DIR"] = os.environ["UNITY_CLI_EDITORS_DIR"]
@@ -323,6 +328,7 @@ def main() -> int:
         # The killed Editor's lockfile is expected to remain; remove it so it does not linger.
         for proc in hosts.values():
             (editors_dir / f"{proc.pid}.json").unlink(missing_ok=True)
+        cli([unity_cli, "unityd", "stop"], work, cli_env)
         if not args.keep:
             shutil.rmtree(work, ignore_errors=True)
 

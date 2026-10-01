@@ -38,9 +38,9 @@ def load_matrix():
     return module
 
 
-def wire_call(port, tool, params):
+def wire_call(port, tool, params, auth):
     with socket.create_connection(("127.0.0.1", port), timeout=30) as connection:
-        request = json.dumps({"id": "envelope-audit", "type": tool, "params": params}).encode()
+        request = json.dumps({"id": "envelope-audit", "type": tool, "params": params, **auth}).encode()
         connection.sendall(struct.pack(">I", len(request)) + request)
 
         def read(size):
@@ -115,7 +115,10 @@ def verify(args, matrix, version, destination, env):
 
         # Compare the actual wire code with the CLI error, using a stable missing-job error.
         params = {"jobId": "issue-441-does-not-exist"}
-        wire = wire_call(args.port, "get_scene_bake_status", params)
+        from bridge_auth import auth_fields
+        auth = auth_fields(args.port, env["UNITY_CLI_EDITORS_DIR"], pid=host.pid)
+        assert auth, "Owned Editor authentication file is missing"
+        wire = wire_call(args.port, "get_scene_bake_status", params, auth)
         (destination / "bridge-error-wire.json").write_text(json.dumps(wire, indent=2))
         code, error = call("get_scene_bake_status", params)
         wire_code = wire.get("code") or wire.get("result", {}).get("code")
@@ -169,7 +172,10 @@ def main():
     output = args.output or Path(tempfile.mkdtemp(prefix="unity-cli-envelope-"))
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, UNITY_CLI_TOOLS_ROOT=str(output / "tools"), UNITY_CLI_NO_AUTO_UPDATE="1")
+    env = dict(os.environ, UNITY_CLI_TOOLS_ROOT=str(output / "tools"), UNITY_CLI_NO_AUTO_UPDATE="1",
+               UNITY_CLI_EDITORS_DIR=str(output / "editors"))
+    env.pop("UNITY_CLI_ALLOW_UNAUTHENTICATED", None)
+    env.pop("UNITY_CLI_AUTH_TOKEN_FILE", None)
     report = {"started_at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
               "architecture": platform.machine(), "editors": []}
     print("Artifacts:", output, flush=True)

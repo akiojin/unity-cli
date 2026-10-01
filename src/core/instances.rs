@@ -218,12 +218,20 @@ async fn can_connect(host: &str, port: u16, timeout_duration: Duration) -> bool 
 }
 
 async fn bridge_ping(host: &str, port: u16, timeout_duration: Duration) -> Result<bool> {
+    let token = crate::unity::auth::token_for(&crate::config::RuntimeConfig {
+        host: host.to_owned(),
+        port,
+        timeout: timeout_duration,
+    })?;
     let mut stream = timeout(timeout_duration, TcpStream::connect((host, port))).await??;
-    let request = json!({
+    let mut request = json!({
         "id": "health",
         "type": "ping",
         "params": {},
     });
+    if let Some(token) = token {
+        request["authToken"] = Value::String(token);
+    }
     let payload = serde_json::to_vec(&request)?;
     let payload_len = i32::try_from(payload.len()).context("Health check payload too large")?;
 
@@ -359,6 +367,13 @@ mod tests {
     }
 
     async fn spawn_mock_bridge(accept_count: usize) -> (u16, tokio::task::JoinHandle<()>) {
+        spawn_mock_bridge_with_token(accept_count, None).await
+    }
+
+    async fn spawn_mock_bridge_with_token(
+        accept_count: usize,
+        token: Option<&'static str>,
+    ) -> (u16, tokio::task::JoinHandle<()>) {
         let listener = TcpListener::bind(("127.0.0.1", 0))
             .await
             .expect("listener should bind");
@@ -382,10 +397,12 @@ mod tests {
                     .await
                     .expect("request payload should be readable");
 
-                let response = json!({
-                    "status": "success",
-                    "result": {"pong": true}
-                });
+                let request: serde_json::Value = serde_json::from_slice(&payload).unwrap();
+                let response = if token.is_some() && request["authToken"].as_str() != token {
+                    json!({"status":"error", "code":"UNAUTHORIZED", "error":"Missing credential"})
+                } else {
+                    json!({"status": "success", "result": {"pong": true}})
+                };
                 let response_bytes =
                     serde_json::to_vec(&response).expect("response should serialize");
                 socket
@@ -400,6 +417,39 @@ mod tests {
         });
 
         (port, task)
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn authenticated_health_checks_support_listing_and_selection() {
+        let guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&guard);
+        let directory = tempfile::tempdir().unwrap();
+        std::env::set_var(
+            "UNITY_CLI_REGISTRY_PATH",
+            directory.path().join("instances.json"),
+        );
+        std::env::set_var("UNITY_CLI_EDITORS_DIR", directory.path().join("editors"));
+        let credential = directory.path().join("credential.json");
+        std::fs::write(&credential, r#"{"authToken":"private-health-token"}"#).unwrap();
+        std::env::set_var("UNITY_CLI_AUTH_TOKEN_FILE", credential);
+        let (port, task) = spawn_mock_bridge_with_token(2, Some("private-health-token")).await;
+
+        let statuses = list_instances("127.0.0.1", &[port], 1000).await.unwrap();
+        assert_eq!(statuses[0].status, "up");
+        assert!(!serde_json::to_string(&statuses)
+            .unwrap()
+            .contains("private-health-token"));
+        let selected = set_active_instance(&format!("127.0.0.1:{port}"), 1000)
+            .await
+            .unwrap();
+        assert_eq!(selected.active_id, format!("127.0.0.1:{port}"));
+        tokio::time::timeout(Duration::from_secs(2), task)
+            .await
+            .unwrap()
+            .unwrap();
     }
 
     #[test]
