@@ -1162,6 +1162,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1186,6 +1187,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1208,6 +1210,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1306,6 +1309,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1332,6 +1336,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1389,6 +1394,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1410,6 +1416,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1432,6 +1439,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "42");
         assert_eq!(idle_timeout_secs(), 42);
         drop(_timeout);
@@ -1444,6 +1452,7 @@ mod tests {
     #[test]
     fn serve_refuses_a_second_lifetime_lock_holder() {
         let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().unwrap();
         let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
         let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "1");
@@ -1470,6 +1479,7 @@ mod tests {
     #[test]
     fn startup_lock_times_out_and_is_reusable_after_release() {
         let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().unwrap();
         let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
         let first = startup_lock(Instant::now() + Duration::from_secs(1)).unwrap();
@@ -1487,6 +1497,7 @@ mod tests {
     fn spawned_daemon_retains_failure_diagnostics() {
         use std::os::unix::fs::PermissionsExt;
         let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().unwrap();
         let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
         let executable = home.path().join("failing-daemon");
@@ -1517,6 +1528,7 @@ mod tests {
     #[test]
     fn serve_refuses_to_replace_a_live_socket() {
         let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().unwrap();
         let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
         let _timeout = EnvVarGuard::set("UNITY_CLI_UNITYD_IDLE_TIMEOUT", "1");
@@ -1538,6 +1550,7 @@ mod tests {
     #[test]
     fn missing_daemon_attempts_automatic_start_without_spawning_test_binary() {
         let _guard = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().unwrap();
         let _home = EnvVarGuard::set("HOME", home.path().to_str().unwrap());
         let runtime = tokio::runtime::Builder::new_current_thread()
@@ -1561,6 +1574,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
@@ -1590,6 +1604,7 @@ mod tests {
         let _guard = env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let home = tempdir().expect("tempdir should succeed");
         let _home = EnvVarGuard::set(
             "HOME",
