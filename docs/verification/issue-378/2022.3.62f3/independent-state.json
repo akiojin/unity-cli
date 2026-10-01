@@ -1,0 +1,49 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 30,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-46302-18da52cf778b1910-0",
+  "state": "completed",
+  "value": {
+    "bloomActive": true,
+    "bloomPersistent": true,
+    "cameraHDR": true,
+    "cameraPostProcessing": true,
+    "cameraSeesVolume": true,
+    "dirty": false,
+    "effective": "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+    "graphics": "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+    "hdr": true,
+    "intensity": 2.0,
+    "intensityOverride": true,
+    "pipelineGuid": "4ee22fef514bf461ead7629a7eebe0e4",
+    "playing": false,
+    "profileGuid": "75d733c50e14d4031924d55e3fa47395",
+    "qualities": [
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset"
+    ],
+    "renderer": "Assets/Scenes/Generated/E2E/URP/Issue378_UniversalRenderer.asset",
+    "rendererGuid": "06b3e0506509c44959529b38c91e6181",
+    "rendererResources": true,
+    "scene": "Assets/Scenes/Generated/E2E/URP/Issue378_URPBloom.unity",
+    "threshold": 1.0,
+    "thresholdOverride": true,
+    "unityVersion": "2022.3.62f3",
+    "volumeGlobal": true,
+    "volumeProfile": "Assets/Scenes/Generated/E2E/URP/Issue378_BloomProfile.asset",
+    "volumeWeight": 1.0
+  }
+}

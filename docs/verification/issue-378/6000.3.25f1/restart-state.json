@@ -1,0 +1,56 @@
+{
+  "diagnostics": [
+    {
+      "column": 14,
+      "id": "CS0618",
+      "line": 10,
+      "message": "'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindFirstObjectByType instead or if finding any instance is acceptable the faster Object.FindAnyObjectByType'",
+      "severity": "warning"
+    },
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 30,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-19046-18da5349cd9134c8-0",
+  "state": "completed",
+  "value": {
+    "bloomActive": true,
+    "bloomPersistent": true,
+    "cameraHDR": true,
+    "cameraPostProcessing": true,
+    "cameraSeesVolume": true,
+    "dirty": false,
+    "effective": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+    "graphics": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+    "hdr": true,
+    "intensity": 2.0,
+    "intensityOverride": true,
+    "pipelineGuid": "f3f81c79c68b14bd28c4ce4421aaf5ae",
+    "playing": false,
+    "profileGuid": "708a166255151485d829cc312924a654",
+    "qualities": [
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+      "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset"
+    ],
+    "renderer": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset",
+    "rendererGuid": "1abba3f3059364e85976247dca5c346c",
+    "rendererResources": true,
+    "scene": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity",
+    "threshold": 1.0,
+    "thresholdOverride": true,
+    "unityVersion": "6000.3.25f1",
+    "volumeGlobal": true,
+    "volumeProfile": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset",
+    "volumeWeight": 1.0
+  }
+}

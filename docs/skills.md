@@ -133,6 +133,7 @@ or stop the Editor. Global installed skills remain available after the test.
 | `unity-csharp-reference` | Read official UnityCsReference sources |
 | `unity-editor-tools` | Editor state, console, builds, baking and profiling |
 | `unity-package-management` | UPM discovery/install/update/removal, scoped registries and compilation checks |
+| `unity-urp-setup` | URP pipeline/renderer and Global Volume setup → persistent assets → before/after Game captures |
 | `unity-input-system` | Input action asset authoring |
 | `unity-playmode-testing` | Runtime tests, input simulation and media capture |
 | `unity-ui-toolkit-build` | UXML/USS, UIDocument, C# binding and Play-mode UI verification |

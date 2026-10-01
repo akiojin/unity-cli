@@ -1,0 +1,79 @@
+{
+  "status": "success",
+  "unityVersion": "6000.3.25f1",
+  "urpVersion": "17.3.0",
+  "scenePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Bloom.unity",
+  "pipelinePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+  "rendererPath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Renderer.asset",
+  "profilePath": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset",
+  "beforeScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-20.png",
+  "afterScreenshot": "/private/tmp/unity-issue378/6000.3.25f1/.unity/capture/image_game_2026-10-01_15-07-33.png",
+  "observedDifference": "Both 1280x720 Game-view captures were inspected, with the same camera, framing and scene; only Bloom intensity changed (threshold 1 in both). Before (intensity 0): a hard-edged white disc on pure black, with lit pixels confined to x 562-717, y 282-437 (19,104 pixels) and RGB (0,0,0) at x=800. After (intensity 2): the same disc with a soft glow around it, with lit pixels spreading to x 474-805, y 192-527 (90,056 pixels) and RGB (10,10,8) at x=800. The disc centre is (254,254,254) in both, so the subject did not move. The live volume stack read intensity 0 with Bloom inactive before, and intensity 2 with Bloom active after.",
+  "consoleErrors": {
+    "errors": 0,
+    "exceptions": 0,
+    "asserts": 1,
+    "entries": [
+      "Assert: ArgumentOutOfRangeException: Index was out of range. at UnityEditor.Search.SearchDatabase.EnumerateAll (SearchDatabase.cs:453), via SearchDatabase.GetDefaultSearchDatabase and SearchInit.IndexationOnStartup, called from EditorApplication.Internal_CallDelayFunctions"
+    ],
+    "assessment": "The one Assert-type entry is from the Editor's built-in Search indexer, logged around the domain reload when entering Play. Its stack has no URP, Volume, scene or unity-cli-bridge frames. The remaining 33 entries are bridge connection and screenshot log lines at Warning level."
+  },
+  "reusedExistingSetup": "URP 17.3.0 was already installed, and the pipeline, renderer, Bloom profile, emissive material and scene already existed under Assets/Scenes/Generated/E2E/URP/ from an earlier run (files dated 14:57-15:03 today). Graphics and all six Quality levels were already assigned. As the skill directs, I reused them instead of reinstalling or recreating, so the install, asset creation and assignment steps were verified by read-back, not performed in this run. What this run did: set Bloom intensity to 0 and saved, captured in Play, set intensity to 2, captured again, stopped Play, saved the final state, reloaded the scene and read everything back.",
+  "qualityLevels": {
+    "graphicsDefault": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+    "effective": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Pipeline.asset",
+    "activeLevel": "Ultra",
+    "assignedToPipeline": [
+      "Very Low",
+      "Low",
+      "Medium",
+      "High",
+      "Very High",
+      "Ultra"
+    ],
+    "changedInThisRun": []
+  },
+  "persistenceAfterStopAndReload": {
+    "method": "Stopped Play, set intensity 2 and threshold 1, saved assets and scene, opened an empty scene, then reopened the scene and read values back.",
+    "isPlaying": false,
+    "sceneDirty": false,
+    "pipelineHdr": true,
+    "rendererPostProcessData": "Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset",
+    "volume": {
+      "gameObject": "Global Volume",
+      "isGlobal": true,
+      "weight": 1.0,
+      "priority": 10.0,
+      "sharedProfile": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_BloomProfile.asset"
+    },
+    "bloom": {
+      "active": true,
+      "intensity": 2.0,
+      "intensityOverride": true,
+      "threshold": 1.0,
+      "thresholdOverride": true
+    },
+    "camera": {
+      "name": "Main Camera",
+      "allowHDR": true,
+      "renderPostProcessing": true,
+      "volumeLayerMask": 1,
+      "background": "solid black"
+    },
+    "subject": {
+      "gameObject": "EmissiveSubject",
+      "mesh": "Sphere",
+      "material": "Assets/Scenes/Generated/E2E/URP/Issue378_URP_Emissive.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "emissionColor": "(8.0, 4.4, 1.2)",
+      "sceneLights": 0
+    }
+  },
+  "evalStates": "Every eval that changed state, and every eval used as evidence, returned state completed with no exception. The only diagnostic was compiler warning CS0162 (unreachable code) on each statements-mode eval. While the bridge was down for the domain reload on entering Play, read-only frame-count polls failed with connection refused; the last one warned the evaluation might still be running, and I did not query eval-status for it. Nothing that changed state was retried, and the bridge reconnected on its own.",
+  "otherNotes": [
+    "The profile was edited through the Volume's sharedProfile, not a Play-mode clone, so the intensity of 2 set during Play was already on the saved asset after stopping.",
+    "The project colour space is Gamma; I left it unchanged.",
+    "Two older captures from the earlier run (15-02-12 and 15-02-24) remain in .unity/capture/.",
+    "No files exist under Assets/ outside Assets/Scenes/Generated/E2E/URP/. That folder also holds DefaultVolumeProfile.asset and UniversalRenderPipelineGlobalSettings.asset from the earlier run."
+  ]
+}

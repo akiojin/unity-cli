@@ -19,6 +19,21 @@ SPEC.loader.exec_module(routing)
 
 
 class SkillRoutingTests(unittest.TestCase):
+    def test_upm_list_is_not_forced_to_source_package_navigation(self):
+        prompts = [
+            "URPを導入してGlobal VolumeのBloomを設定し、適用前後のGame画像で検証したい。"
+            "まずpackage_managerでインストール済みパッケージ一覧を確認して。",
+            "UPM のパッケージ一覧とバージョンを確認して。",
+        ]
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                self.assertIsNone(routing.route_by_keywords(prompt))
+
+    def test_source_package_list_keeps_navigation_override(self):
+        prediction = routing.route_by_keywords("C# packages一覧を確認したい")
+        self.assertEqual(prediction["predicted_tool"], "list_packages")
+        self.assertEqual(prediction["predicted_skills"], ["unity-csharp-navigate"])
+
     def test_built_cli_catalog_covers_benchmark_tools_and_keys(self):
         binary = next((p for p in (ROOT / "target/release/unity-cli",
                                   ROOT / "target/debug/unity-cli") if p.is_file()), None)

@@ -1,0 +1,19 @@
+{
+  "Assets/Scenes/Generated/E2E/URP/Issue378_BloomProfile.asset": "7375a94aad6f7dd7288326f132be3301898ba9475e25d9a291eb20b43455eb1a",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_BloomProfile.asset.meta": "bf33cca079993fb15bd8af7ea64ee27f993d61ca8a025f30fea09dd7afbacfa3",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_Emissive.mat": "0bb9e1057e8009446cadc50656faced5c3e20529b09a112c29f2f5adc2678780",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_Emissive.mat.meta": "059515ee5441dced3693fea216026d43acccd7b0a7cef6fa56ce53acdb9d1df6",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset": "fa8a8492a04a5f0ee53295ed24d146d85f2484c243af17618e9f9635b2a8204a",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URPAsset.asset.meta": "461c08bb2d781aeaa9d13775a7c32f58061241b61158220109502bc326389ab4",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URPBloom.unity": "cf2de6fc030e7829546c6464ada1e43a71b3ee0040526b1e89edf87755e788ff",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_URPBloom.unity.meta": "2c69c962732eb833c86ac298b7945af262310cdcc834f99959c9e48c4b044e7d",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_UniversalRenderer.asset": "af0822c4ad3d1ab7e3054bd95563bdf27faaac9d9c6bf625f7cdb0343fea2466",
+  "Assets/Scenes/Generated/E2E/URP/Issue378_UniversalRenderer.asset.meta": "dafc7ac27d20b40594e36821a1a5368e8b1928dc37a2af0dd1501548eaf5ef88",
+  "Assets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset": "bdac5e6c90cf14fc41a2ee0152632b26464873a2c46926eff322ba060f4dd5c5",
+  "Assets/Scenes/Generated/E2E/URP/UniversalRenderPipelineGlobalSettings.asset.meta": "686c69bf2bdb20a4b4b0dbaa379f6ee94a75f84e53e930127f51dca441adc0ae",
+  "Packages/manifest.json": "3236c365e709196aa7a47d97d9d731773be584657bd20f16a4196d71e93349e5",
+  "Packages/packages-lock.json": "4180a055bff892e9e8357aed8d93e8d3fab92208692ad0e88fcd05fefad494c6",
+  "ProjectSettings/GraphicsSettings.asset": "2da604bb16298638646b0a9c2cf5fd80f2d02a77a8e44cdb1bd1e84c830fea93",
+  "ProjectSettings/ProjectVersion.txt": "b51164d22c4d2716ba8aee7f0b59d6b7dd0efa8552fd1db2a8c3b123fae3a1ec",
+  "ProjectSettings/QualitySettings.asset": "491ddc29be7bab88ed3e63925ca9bd2f6f6f47c73f1ba13ceeeb7637321dc809"
+}

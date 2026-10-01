@@ -1,10 +1,10 @@
 ---
 name: unity-asset-management
-description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to inspect or edit Timeline tracks/clips/bindings, create materials, animation clips or sprite atlases, refresh assets, update imports, or analyze dependencies. Do not use for Addressables builds; use `unity-addressables`. For Player builds or scene baking, use `unity-editor-tools`. For scene object edits, use `unity-gameobject-edit`.
+description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to inspect or edit Timeline tracks/clips/bindings, create materials, animation clips or sprite atlases, refresh assets, update imports, or analyze dependencies. Do not use for Addressables builds; use `unity-addressables`. For Player builds or scene baking, use `unity-editor-tools`. For scene object edits, use `unity-gameobject-edit`. For URP pipeline and Volume setup use `unity-urp-setup`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: assets
   triggers:
     - asset
@@ -14,6 +14,7 @@ metadata:
     - sprite
     - dependency
   siblings:
+    - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-addressables
     - unity-prefab-workflow
