@@ -13,6 +13,7 @@ metadata:
     - click
     - input-field
   siblings:
+    - unity-ui-toolkit-build
     - unity-playmode-testing
     - unity-scene-create
 ---
@@ -28,6 +29,8 @@ Find, inspect, and interact with uGUI / UI Toolkit elements via `unity-cli`. Thi
 - The user wants to click UI elements, set values, or run a short UI input sequence.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The task is general Play Mode setup with no UI targeting requirement; use `unity-playmode-testing`.
 - The request authors UI prefabs or scene hierarchy; use `unity-scene-create` or `unity-prefab-workflow`.

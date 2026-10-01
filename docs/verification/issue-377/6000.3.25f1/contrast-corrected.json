@@ -1,0 +1,6 @@
+{
+  "code": "System.IO.File.WriteAllText(System.IO.Path.Combine(UnityEngine.Application.dataPath, \"UI/ToolkitDemo/Screen.uss\"), \".form {\\n    padding-top: 32px;\\n    padding-left: 32px;\\n    padding-right: 32px;\\n    padding-bottom: 32px;\\n    width: 480px;\\n    background-color: rgb(28, 35, 48);\\n    color: rgb(240, 243, 250);\\n    font-size: 24px;\\n}\\n#status { margin-bottom: 20px; }\\n#player-name .unity-base-text-field__input { color: rgb(28, 35, 48); }\\n#submit { margin-top: 16px; height: 48px; color: rgb(28, 35, 48); }\\n\"); UnityEditor.AssetDatabase.Refresh(UnityEditor.ImportAssetOptions.ForceSynchronousImport); return \"style imported\";",
+  "stdout": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-contrast-corrected-6000.3.25f1\",\n  \"state\": \"completed\",\n  \"value\": \"style imported\"\n}\n",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -14,6 +14,7 @@ metadata:
     - sprite
     - dependency
   siblings:
+    - unity-ui-toolkit-build
     - unity-addressables
     - unity-prefab-workflow
     - unity-gameobject-edit
@@ -33,6 +34,8 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 - The user needs import settings or dependency analysis before file changes.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The task is Addressables groups or content builds; use `unity-addressables`.
 - The request is about scene-instance edits; use `unity-gameobject-edit`.

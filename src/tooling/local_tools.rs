@@ -3,8 +3,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
-use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
@@ -12,9 +11,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use walkdir::{DirEntry, WalkDir};
 
-use crate::config::RuntimeConfig;
+use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::transport::UnityClient;
-use crate::unityd;
 
 const INDEX_REL_PATH: &str = ".unity/cache/unity-cli/symbol-index.json";
 const INDEX_VERSION: u32 = 1;
@@ -720,10 +718,14 @@ fn local_lsp_write(tool_name: &str, params: &Value) -> Result<Value> {
         return Ok(result);
     }
 
-    run_csharp_post_write_pipeline(result, params)
+    Ok(result)
 }
 
-fn run_csharp_post_write_pipeline(mut result: Value, params: &Value) -> Result<Value> {
+pub async fn run_csharp_post_write_pipeline(
+    mut result: Value,
+    params: &Value,
+    overrides: &RuntimeOverrides,
+) -> Result<Value> {
     let success = result
         .get("success")
         .and_then(Value::as_bool)
@@ -753,40 +755,70 @@ fn run_csharp_post_write_pipeline(mut result: Value, params: &Value) -> Result<V
     if update_index {
         let changed_files = changed_files_from_result(&result);
         if !changed_files.is_empty() {
-            let update_result = local_update_index(&json!({ "paths": changed_files }))?;
-            result["indexUpdate"] = update_result;
-            if !result["indexUpdate"]["success"].as_bool().unwrap_or(false) {
-                mark_post_write_failure(&mut result, "index_update_failed");
+            match local_update_index(&json!({ "paths": changed_files })) {
+                Ok(update_result) => {
+                    result["indexUpdate"] = update_result;
+                    if !result["indexUpdate"]["success"].as_bool().unwrap_or(false) {
+                        mark_post_write_failure(
+                            &mut result,
+                            "index_update_failed",
+                            "Index update failed",
+                        );
+                    }
+                }
+                Err(error) => {
+                    mark_post_write_failure(
+                        &mut result,
+                        "index_update_failed",
+                        &format!("{error:#}"),
+                    );
+                }
             }
         }
     }
 
     if refresh {
-        match call_remote_tool_sync("refresh_assets", json!({})) {
+        let config = match RuntimeConfig::from_overrides(overrides) {
+            Ok(config) => config,
+            Err(error) => {
+                mark_post_write_failure(
+                    &mut result,
+                    "endpoint_resolution_failed",
+                    &format!("{error:#}"),
+                );
+                return Ok(result);
+            }
+        };
+        match call_remote_tool(&config, "refresh_assets", json!({})).await {
             Ok(refresh_result) => {
                 result["refresh"] = refresh_result;
             }
-            Err(_) => {
-                mark_post_write_failure(&mut result, "refresh_failed");
+            Err(error) => {
+                mark_post_write_failure(&mut result, "refresh_failed", &format!("{error:#}"));
                 return Ok(result);
             }
         }
-    }
 
-    if wait_for_compile {
-        match wait_for_compile_state() {
-            Ok(compile_result) => {
-                if let Some(messages) = compile_result.get("messages").and_then(Value::as_array) {
-                    if !result["diagnostics"].is_array() {
-                        result["diagnostics"] = json!([]);
+        if wait_for_compile {
+            match wait_for_compile_state(&config).await {
+                Ok(compile_result) => {
+                    if let Some(messages) = compile_result.get("messages").and_then(Value::as_array)
+                    {
+                        if !result["diagnostics"].is_array() {
+                            result["diagnostics"] = json!([]);
+                        }
+                        let diagnostics = result["diagnostics"].as_array_mut().unwrap();
+                        diagnostics.extend(messages.iter().cloned());
                     }
-                    let diagnostics = result["diagnostics"].as_array_mut().unwrap();
-                    diagnostics.extend(messages.iter().cloned());
+                    result["compileState"] = compile_result;
                 }
-                result["compileState"] = compile_result;
-            }
-            Err(_) => {
-                mark_post_write_failure(&mut result, "compile_wait_failed");
+                Err(error) => {
+                    mark_post_write_failure(
+                        &mut result,
+                        "compile_wait_failed",
+                        &format!("{error:#}"),
+                    );
+                }
             }
         }
     }
@@ -794,9 +826,10 @@ fn run_csharp_post_write_pipeline(mut result: Value, params: &Value) -> Result<V
     Ok(result)
 }
 
-fn mark_post_write_failure(result: &mut Value, reason: &str) {
+fn mark_post_write_failure(result: &mut Value, reason: &str, message: &str) {
     result["success"] = Value::Bool(false);
     result["reason"] = Value::String(reason.to_string());
+    result["error"] = json!({"code": reason, "message": message});
 }
 
 fn changed_files_from_result(result: &Value) -> Vec<String> {
@@ -810,56 +843,45 @@ fn changed_files_from_result(result: &Value) -> Vec<String> {
         .collect()
 }
 
-fn default_runtime_config() -> RuntimeConfig {
-    let host = env::var("UNITY_CLI_HOST")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| crate::config::DEFAULT_HOST.to_string());
-    let port = env::var("UNITY_CLI_PORT")
-        .ok()
-        .and_then(|value| value.trim().parse::<u16>().ok())
-        .filter(|port| *port > 0)
-        .unwrap_or(6400);
-    let timeout_ms = env::var("UNITY_CLI_TIMEOUT_MS")
-        .ok()
-        .and_then(|value| value.trim().parse::<u64>().ok())
-        .filter(|timeout| *timeout > 0)
-        .unwrap_or(30_000);
-    RuntimeConfig {
-        host,
-        port,
-        timeout: Duration::from_millis(timeout_ms),
-    }
+async fn call_remote_tool(config: &RuntimeConfig, tool_name: &str, params: Value) -> Result<Value> {
+    // Post-write calls use the already selected endpoint and the caller's
+    // runtime. Do not replay the write if a refresh loses its connection.
+    let mut client = UnityClient::connect(config)
+        .await
+        .with_context(|| crate::core::doctor::connect_failure_message(&config.host, config.port))?;
+    client.call_tool(tool_name, params).await
 }
 
-fn call_remote_tool_sync(tool_name: &str, params: Value) -> Result<Value> {
-    let config = default_runtime_config();
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .context("Failed to create tokio runtime for post-write pipeline")?;
-    runtime.block_on(async move {
-        match unityd::try_call_tool(tool_name, &params, &config).await {
-            Ok(value) => Ok(value),
-            Err(error) if error.is_transport() => {
-                let mut client = UnityClient::connect(&config).await.with_context(|| {
-                    crate::core::doctor::connect_failure_message(&config.host, config.port)
-                })?;
-                client.call_tool(tool_name, params).await
-            }
-            Err(error) => Err(error.into()),
-        }
-    })
+async fn wait_for_compile_state(config: &RuntimeConfig) -> Result<Value> {
+    tokio::time::timeout(Duration::from_secs(60), poll_compile_state(config))
+        .await
+        .context("Timed out waiting for Unity compilation after saving files")?
 }
 
-fn wait_for_compile_state() -> Result<Value> {
-    let deadline = Instant::now() + Duration::from_secs(60);
+async fn poll_compile_state(config: &RuntimeConfig) -> Result<Value> {
     loop {
-        let state = call_remote_tool_sync(
+        let state = call_remote_tool(
+            config,
             "get_compilation_state",
             json!({ "includeMessages": true, "maxMessages": 100 }),
-        )?;
+        )
+        .await;
+        let state = match state {
+            Ok(state) => state,
+            Err(error)
+                if error
+                    .downcast_ref::<crate::transport::UnityCommandError>()
+                    .is_some() =>
+            {
+                return Err(error);
+            }
+            Err(_) => {
+                // Domain Reload drops TCP connections. Only retry the read;
+                // the saved files and refresh must never be replayed here.
+                tokio::time::sleep(Duration::from_millis(250)).await;
+                continue;
+            }
+        };
         let is_compiling = state
             .get("isCompiling")
             .and_then(Value::as_bool)
@@ -871,10 +893,7 @@ fn wait_for_compile_state() -> Result<Value> {
         if !(is_compiling || is_updating) {
             return Ok(state);
         }
-        if Instant::now() >= deadline {
-            return Ok(state);
-        }
-        thread::sleep(Duration::from_millis(250));
+        tokio::time::sleep(Duration::from_millis(250)).await;
     }
 }
 
@@ -1508,6 +1527,33 @@ mod tests {
         std::fs::write(path, content).expect("file should be written");
     }
 
+    #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)]
+    async fn post_write_refresh_failure_preserves_applied_files_without_runtime_panic() {
+        let guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&guard);
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        std::env::set_var(
+            "UNITY_CLI_PORT",
+            listener.local_addr().unwrap().port().to_string(),
+        );
+        std::env::set_var("UNITY_CLI_TIMEOUT_MS", "20");
+        drop(listener);
+        let result = super::run_csharp_post_write_pipeline(
+            json!({"success":true,"applied":true,"changedFiles":["Assets/Test.cs"]}),
+            &json!({"refresh":true}),
+            &crate::config::RuntimeOverrides::default(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(result["success"], false);
+        assert_eq!(result["applied"], true);
+        assert_eq!(result["changedFiles"], json!(["Assets/Test.cs"]));
+        assert_eq!(result["reason"], "refresh_failed");
+    }
+
     #[test]
     fn default_runtime_config_falls_back_to_ipv4_loopback() {
         let _guard = crate::test_env::env_lock()
@@ -1515,7 +1561,7 @@ mod tests {
             .unwrap_or_else(|poison| poison.into_inner());
         let saved = std::env::var("UNITY_CLI_HOST").ok();
         std::env::remove_var("UNITY_CLI_HOST");
-        let host = super::default_runtime_config().host;
+        let host = crate::config::default_host();
         if let Some(value) = saved {
             std::env::set_var("UNITY_CLI_HOST", value);
         }
