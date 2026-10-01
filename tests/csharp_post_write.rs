@@ -39,6 +39,8 @@ impl Fixture {
     fn call(&self, tool: &str, params: &Value, port: u16) -> Value {
         let output = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
             .args([
+                "--output",
+                "json",
                 "--host",
                 "127.0.0.1",
                 "--port",
@@ -62,13 +64,17 @@ impl Fixture {
             .env_remove("UNITY_CLI_LSP_MODE")
             .output()
             .unwrap();
-        assert!(
-            output.status.success(),
+        let envelope: Value = serde_json::from_slice(&output.stdout).unwrap();
+        let payload = envelope["data"].clone();
+        assert_eq!(
+            output.status.code(),
+            Some(if payload["success"] == false { 6 } else { 0 }),
             "{}\n{}",
             String::from_utf8_lossy(&output.stdout),
             String::from_utf8_lossy(&output.stderr)
         );
-        serde_json::from_slice(&output.stdout).unwrap()
+        assert_eq!(envelope["success"], output.status.success());
+        payload
     }
 
     fn writes(&self) -> usize {

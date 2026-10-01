@@ -16,8 +16,9 @@ fn run_json(args: &[&str]) -> (Value, usize) {
         "unity-cli {args:?} failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let value = serde_json::from_slice(&output.stdout).expect("stdout should be JSON");
-    (value, output.stdout.len())
+    let value: Value = serde_json::from_slice(&output.stdout).expect("stdout should be JSON");
+    assert_eq!(value["success"], true);
+    (value["data"].clone(), output.stdout.len())
 }
 
 fn names(value: &Value) -> Vec<String> {

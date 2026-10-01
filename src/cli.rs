@@ -190,6 +190,22 @@ pub enum EvalMode {
 
 #[derive(Debug, Subcommand)]
 pub enum EditorCommand {
+    /// Launch the project's installed Unity Editor (installation is delegated to `unity install`).
+    Open {
+        /// Keep a batch-mode Editor running without a GUI.
+        #[arg(long)]
+        headless: bool,
+        /// Wait for this project's Bridge to answer, up to this many seconds.
+        #[arg(long, value_name = "SEC", default_value_t = 0)]
+        wait_ready: u64,
+    },
+    /// Quit the target Editor; refuses unsaved scenes unless --force is supplied.
+    Close {
+        #[arg(long)]
+        force: bool,
+    },
+    /// Report whether the project's Editor is stopped, starting, compiling, in Safe Mode or ready.
+    Status,
     /// Evaluate synchronous C# in the Editor. Timeout does not cancel execution.
     Eval {
         code: String,

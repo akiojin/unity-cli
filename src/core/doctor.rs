@@ -377,7 +377,7 @@ fn default_editor_log_path() -> Option<PathBuf> {
     }
 }
 
-fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
+pub(crate) fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
     let Some(path) = editor.project_path.as_deref() else {
         return false;
     };
@@ -396,7 +396,7 @@ fn editor_matches_project(editor: &EditorProcess, project: &Path) -> bool {
     normalize(Path::new(path)) == normalize(project)
 }
 
-fn list_editor_processes() -> Vec<EditorProcess> {
+pub(crate) fn list_editor_processes() -> Vec<EditorProcess> {
     process_command_lines()
         .into_iter()
         .filter_map(|(pid, command_line)| parse_editor_command_line(pid, &command_line))

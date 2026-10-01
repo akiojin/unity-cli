@@ -87,12 +87,14 @@ fn check_failed_build_status(daemon: bool) {
         .output()
         .unwrap();
     server.join().unwrap();
-    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.status.code(), Some(6));
     let actual: Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
         panic!(
             "missing error JSON: {error}; stderr={}",
             String::from_utf8_lossy(&output.stderr)
         )
     });
-    assert_eq!(actual, expected);
+    assert_eq!(actual["success"], false);
+    assert_eq!(actual["errors"][0]["code"], "BUILD_FAILED");
+    assert_eq!(actual["data"], expected);
 }

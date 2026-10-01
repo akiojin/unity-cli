@@ -166,12 +166,14 @@ fn parse_success(output: Output) -> Value {
         "CLI failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
+    let envelope: Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|error| {
         panic!(
             "stdout is not JSON: {error}: {}",
             String::from_utf8_lossy(&output.stdout)
         )
-    })
+    });
+    assert_eq!(envelope["success"], true);
+    envelope["data"].clone()
 }
 
 #[test]

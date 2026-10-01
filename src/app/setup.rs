@@ -170,18 +170,24 @@ pub fn project_unity_version(root: &Path) -> Result<String> {
 
 /// Default Unity Hub install location of an Editor version.
 pub fn hub_editor_path(version: &str) -> PathBuf {
-    if cfg!(target_os = "macos") {
+    hub_editor_path_for_os(
+        version,
+        std::env::consts::OS,
+        &dirs::home_dir().unwrap_or_default(),
+    )
+}
+
+fn hub_editor_path_for_os(version: &str, os: &str, home: &Path) -> PathBuf {
+    if os == "macos" {
         PathBuf::from(format!(
             "/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity"
         ))
-    } else if cfg!(windows) {
+    } else if os == "windows" {
         PathBuf::from(format!(
             r"C:\Program Files\Unity\Hub\Editor\{version}\Editor\Unity.exe"
         ))
     } else {
-        dirs::home_dir()
-            .unwrap_or_default()
-            .join(format!("Unity/Hub/Editor/{version}/Editor/Unity"))
+        home.join(format!("Unity/Hub/Editor/{version}/Editor/Unity"))
     }
 }
 
@@ -231,6 +237,24 @@ fn launch_editor(root: &Path, port: u16) -> Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hub_paths_for_windows_and_linux_do_not_depend_on_test_host() {
+        assert_eq!(
+            hub_editor_path_for_os("2022.3.62f3", "windows", Path::new("/home/test")),
+            PathBuf::from(r"C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe")
+        );
+        assert_eq!(
+            hub_editor_path_for_os("6000.3.25f1", "linux", Path::new("/home/test")),
+            PathBuf::from("/home/test/Unity/Hub/Editor/6000.3.25f1/Editor/Unity")
+        );
+        assert_eq!(
+            hub_editor_path_for_os("6000.3.25f1", "macos", Path::new("/home/test")),
+            PathBuf::from(
+                "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity"
+            )
+        );
+    }
     use tempfile::TempDir;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 

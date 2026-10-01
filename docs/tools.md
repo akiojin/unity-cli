@@ -425,6 +425,42 @@ build survives Editor restart; up to 16 recent jobs are retained during a sessio
 
 ### Editor
 
+Manage a **local** Unity Editor from a stopped project:
+
+```bash
+unity-cli editor open --project-path /path/to/project --wait-ready 300
+unity-cli system ping --project-path /path/to/project
+unity-cli editor status --project-path /path/to/project --output json
+unity-cli editor close --project-path /path/to/project
+
+# Keep an Editor running in batch mode, without a graphics device.
+unity-cli editor open --project-path /path/to/project --headless --wait-ready 300
+unity-cli raw get_hierarchy --project-path /path/to/project --json '{}'
+unity-cli editor close --project-path /path/to/project
+```
+
+`open` reads `ProjectSettings/ProjectVersion.txt` and resolves that exact Editor
+under Unity Hub's default macOS, Windows or Linux installation directory.
+`UNITY_EDITOR_PATH` overrides the executable location. An absent version returns
+exit code **4** and an instruction to run `unity install <version>`; Editor
+installation and licensing remain the official Unity CLI's responsibility.
+Install the Bridge in the project first (`unity-cli bridge install`).
+
+Without `--wait-ready`, `open` returns after launching. With it, the command waits
+for the target Editor's lockfile and a successful project-matching Bridge ping.
+An already running project is reused. A timeout leaves the Editor running for
+inspection; use `editor status` and `Logs/unity-cli-editor.log` to diagnose it.
+`--headless` adds `-batchmode -nographics`, enables the Bridge batch host, and does
+not add `-quit`. It remains running until closed.
+
+`status` returns `stopped`, `starting`, `compiling`, `safe_mode` or `ready`.
+`close` refuses dirty scenes with `UNSAVED_SCENES`; save them first or explicitly
+use `editor close --force` to discard unsaved changes. It waits until the local
+Editor process is absent (bounded by `--timeout-ms`, default 30000).
+`--dry-run` on `open` or `close` prints the intended action without launching or
+quitting an Editor. Legacy `raw quit_editor` without a `force` parameter retains
+its previous unconditional quit behavior; prefer `editor close` for scene protection.
+
 | Tool                      | Description                 |
 | ------------------------- | --------------------------- |
 | `clear_console`           | Clear the Console window    |
