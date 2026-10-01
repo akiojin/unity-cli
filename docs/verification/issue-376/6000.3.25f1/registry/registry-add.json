@@ -1,0 +1,9 @@
+{
+  "action": "add_openupm",
+  "message": "Successfully added OpenUPM registry",
+  "registryUrl": "https://package.openupm.com",
+  "scopes": [
+    "com.cysharp"
+  ],
+  "success": true
+}

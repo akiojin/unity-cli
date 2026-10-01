@@ -1,0 +1,13 @@
+{
+  "bridgeVersion": "0.16.0",
+  "echo": null,
+  "message": "pong",
+  "projectPath": "/private/tmp/issue376-unity-6000.3.25f1-final",
+  "timestamp": "2026-10-01T06:04:23.7422120Z",
+  "versionCheck": {
+    "bridgeVersion": "0.16.0",
+    "cliVersion": "0.16.0",
+    "message": "CLI and bridge are both 0.16.0",
+    "status": "match"
+  }
+}

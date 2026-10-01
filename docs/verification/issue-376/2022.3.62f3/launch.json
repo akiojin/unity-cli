@@ -1,0 +1,16 @@
+{
+  "pid": 17482,
+  "project": "/private/tmp/issue376-unity-2022.3.62f3-final",
+  "port": 6549,
+  "command": [
+    "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+    "-projectPath",
+    "/private/tmp/issue376-unity-2022.3.62f3-final",
+    "-logFile",
+    "/private/tmp/issue376-evidence/2022.3.62f3-final/editor.log",
+    "-batchmode",
+    "-nographics",
+    "-executeMethod",
+    "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run"
+  ]
+}

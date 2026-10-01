@@ -1,0 +1,144 @@
+{
+  "count": 26,
+  "logs": [
+    {
+      "formattedCompact": "[Warning] Unity CLI batch host keep-alive started. Shutdown file: /private/tmp/issue376-evidence/6000.3.25f1-final/stop\nUnityEngine.Debug:Log (object)\nUnityCliBridge.TestScenes.UnityCliInputBatchHost:Run () (at Assets/Editor/UnityCliInputBatchHost.cs:31)\n",
+      "logType": "Warning",
+      "message": "Unity CLI batch host keep-alive started. Shutdown file: /private/tmp/issue376-evidence/6000.3.25f1-final/stop\nUnityEngine.Debug:Log (object)\nUnityCliBridge.TestScenes.UnityCliInputBatchHost:Run () (at Assets/Editor/UnityCliInputBatchHost.cs:31)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Client connected from 127.0.0.1:59679\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Client connected from 127.0.0.1:59679\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:408)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Status changed to: Connected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Status changed to: Connected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge/<AcceptConnectionsAsync>d__33:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:407)\nSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Net.Sockets.TcpClient>:SetResult (System.Net.Sockets.TcpClient)\nUnityCliBridge.Core.UnityCliBridge/<AcceptClientAsync>d__34:MoveNext () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:445)\nSystem.Threading._ThreadPoolWaitCallback:PerformWaitCallback ()\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] TCP listener binding on 127.0.0.1:6548 (host=localhost)\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] TCP listener binding on 127.0.0.1:6548 (host=localhost)\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:337)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Status changed to: Disconnected\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:set_Status (UnityCliBridge.Models.BridgeStatus) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:49)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListenerOnCurrentEndpoint (bool) (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:332)\nUnityCliBridge.Core.UnityCliBridge:StartTcpListener () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:225)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:78)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6548\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Project Settings loaded: host=localhost, bind=127.0.0.1, port=6548\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:TryLoadProjectSettingsAndApply () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:107)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:77)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n"
+    },
+    {
+      "formattedCompact": "[Warning] [unity-cli-bridge] Initializing...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n",
+      "logType": "Warning",
+      "message": "[unity-cli-bridge] Initializing...\nUnityEngine.Debug:Log (object)\nUnityCliBridge.Logging.BridgeLogger:Log (string) (at ./Packages/unity-cli-bridge/Editor/Logging/BridgeLogger.cs:15)\nUnityCliBridge.Core.UnityCliBridge:.cctor () (at ./Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs:71)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[]) (at /Users/bokken/build/output/unity/unity/Editor/Mono/EditorAssemblies.cs:124)\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105: The using directive for 'Newtonsoft.Json.Linq' appeared previously in this namespace\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1148,27): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1148,27): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1090,40): warning CS0618: 'ShaderUtil.GetPropertyName(Shader, int)' is obsolete: 'Use Shader.GetPropertyName instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1090,40): warning CS0618: 'ShaderUtil.GetPropertyName(Shader, int)' is obsolete: 'Use Shader.GetPropertyName instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,62): warning CS0618: 'ShaderUtil.ShaderPropertyType.TexEnv' is obsolete: 'Use UnityEngine.Rendering.ShaderPropertyType.Texture instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,62): warning CS0618: 'ShaderUtil.ShaderPropertyType.TexEnv' is obsolete: 'Use UnityEngine.Rendering.ShaderPropertyType.Texture instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,62): warning CS0618: 'ShaderUtil.ShaderPropertyType' is obsolete: 'Use UnityEngine.Rendering.ShaderPropertyType instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,62): warning CS0618: 'ShaderUtil.ShaderPropertyType' is obsolete: 'Use UnityEngine.Rendering.ShaderPropertyType instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,21): warning CS0618: 'ShaderUtil.GetPropertyType(Shader, int)' is obsolete: 'Use Shader.GetPropertyType instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1088,21): warning CS0618: 'ShaderUtil.GetPropertyType(Shader, int)' is obsolete: 'Use Shader.GetPropertyType instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1085,33): warning CS0618: 'ShaderUtil.GetPropertyCount(Shader)' is obsolete: 'Use Shader.GetPropertyCount instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(1085,33): warning CS0618: 'ShaderUtil.GetPropertyCount(Shader)' is obsolete: 'Use Shader.GetPropertyCount instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(525,23): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/SceneAnalysisHandler.cs(525,23): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/UIInteractionHandler.cs(837,19): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/UIInteractionHandler.cs(837,19): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618: 'Physics.autoSimulation' is obsolete: 'Physics.autoSimulation has been replaced by Physics.simulationMode'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(305,40): warning CS0618: 'PlayerSettings.GetScriptingBackend(BuildTargetGroup)' is obsolete: 'Use GetScriptingBackend(NamedBuildTarget buildTarget) instead'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(305,40): warning CS0618: 'PlayerSettings.GetScriptingBackend(BuildTargetGroup)' is obsolete: 'Use GetScriptingBackend(NamedBuildTarget buildTarget) instead'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(304,45): warning CS0618: 'PlayerSettings.GetApiCompatibilityLevel(BuildTargetGroup)' is obsolete: 'Use GetApiCompatibilityLevel(NamedBuildTarget buildTarget) instead'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(304,45): warning CS0618: 'PlayerSettings.GetApiCompatibilityLevel(BuildTargetGroup)' is obsolete: 'Use GetApiCompatibilityLevel(NamedBuildTarget buildTarget) instead'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(298,40): warning CS0618: 'PlayerSettings.GetApplicationIdentifier(BuildTargetGroup)' is obsolete: 'Use GetApplicationIdentifier(NamedBuildTarget buildTarget) instead'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(298,40): warning CS0618: 'PlayerSettings.GetApplicationIdentifier(BuildTargetGroup)' is obsolete: 'Use GetApplicationIdentifier(NamedBuildTarget buildTarget) instead'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/UIInteractionHandler.cs(51,27): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/UIInteractionHandler.cs(51,27): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/GameObjectHandler.cs(427,34): warning CS0618: 'Object.FindObjectsOfType<T>(bool)' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/GameObjectHandler.cs(427,34): warning CS0618: 'Object.FindObjectsOfType<T>(bool)' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/PrefabWorkflowHandler.cs(104,30): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/PrefabWorkflowHandler.cs(104,30): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/LayerManagementHandler.cs(210,38): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/LayerManagementHandler.cs(210,38): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Handlers/AssetManagementHandler.cs(168,47): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Handlers/AssetManagementHandler.cs(168,47): warning CS0618: 'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\n"
+    },
+    {
+      "formattedCompact": "[Exception] Packages/unity-cli-bridge/Editor/Helpers/ObjectIdentity.cs(32,20): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'\n",
+      "logType": "Exception",
+      "message": "Packages/unity-cli-bridge/Editor/Helpers/ObjectIdentity.cs(32,20): warning CS0618: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 0,
+    "exceptions": 19,
+    "logs": 0,
+    "warnings": 7
+  },
+  "success": true,
+  "totalCaptured": 26
+}

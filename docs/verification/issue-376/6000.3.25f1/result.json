@@ -1,0 +1,116 @@
+{
+  "overall": "PASS",
+  "editor": {
+    "version": "6000.3.25f1",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "platform": "macOS Apple Silicon (native), batchmode isolated batch-host (-executeMethod UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run)",
+    "pid": 17045,
+    "stoppedByAgent": false
+  },
+  "project": "/private/tmp/issue376-unity-6000.3.25f1-final",
+  "port": 6548,
+  "cli": {
+    "path": "/Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli",
+    "version": "0.16.0",
+    "bridgeVersion": "0.16.0",
+    "versionCheck": "match",
+    "explicitProjectPathAndPortOnEveryCall": true
+  },
+  "skill": "unity-package-management",
+  "phases": [
+    {
+      "phase": "00-baseline",
+      "status": "success",
+      "scopedRegistries": [],
+      "resolvedPackageCount": 37,
+      "unitask": "absent",
+      "editorIdle": true,
+      "console": {"errors": 0, "exceptionsReported": 19, "note": "All 19 'Exception'-typed entries are pre-existing CS0105/CS0618 compiler WARNINGS in Packages/unity-cli-bridge; no compiler errors."}
+    },
+    {
+      "phase": "01-registry",
+      "status": "success",
+      "operation": "registry_config add_openupm scopes=[com.cysharp] autoAddPopular=false",
+      "verifiedRegistry": {"name": "OpenUPM", "url": "https://package.openupm.com", "scopes": ["com.cysharp"]},
+      "verifiedIn": ["registry_config list", "Packages/manifest.json scopedRegistries"],
+      "noOtherScopesAdded": true,
+      "resolvedPackageCount": 37,
+      "editorIdle": true,
+      "console": {"errors": 0, "exceptionsReported": 19, "note": "unchanged from baseline (same pre-existing warnings)"},
+      "search": {
+        "status": "success",
+        "keyword": "UniTask",
+        "results": [
+          {"name": "com.cysharp.unitask", "version": "2.5.11"},
+          {"name": "com.cysharp.unitask.compatible", "version": "2.3.1"}
+        ],
+        "limitation": "Search returns only the latest version per package; 2.5.4/2.5.5 were not listed and their availability was established by the install operations themselves."
+      }
+    },
+    {
+      "phase": "02-install",
+      "status": "success",
+      "operation": "package_manager install com.cysharp.unitask version=2.5.4",
+      "responseVersion": "2.5.4",
+      "observedVersion": {"info": "2.5.4", "list": "2.5.4", "manifest": "2.5.4", "packagesLock": "2.5.4"},
+      "source": "Registry (https://package.openupm.com)",
+      "isDirectDependency": true,
+      "resolvedPackageCount": 38,
+      "compilation": "UniTask, UniTask.Editor, UniTask.Linq, UniTask.Addressables, UniTask.DOTween, UniTask.TextMeshPro compiled into Library/ScriptAssemblies; domain reload observed; 0 'error CS' in Editor log excerpt",
+      "editorIdle": true,
+      "console": {
+        "errors": 1,
+        "exceptions": 0,
+        "compilerErrors": 0,
+        "note": "Console reset by Unity domain reload (not cleared by agent). The single 'Error'-typed entry is '[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:59679', emitted via Debug.LogWarning (stack trace) during reload when the agent's read-only poll connection was dropped. Not a package/compile error. Observation: read_console logType labels appear shifted on this Editor (Debug.Log reported as 'Warning', Debug.LogWarning as 'Error', compiler warnings as 'Exception')."
+      }
+    },
+    {
+      "phase": "03-update",
+      "status": "success",
+      "operation": "package_manager install com.cysharp.unitask version=2.5.5",
+      "responseVersion": "2.5.5",
+      "observedVersion": {"info": "2.5.5", "list": "2.5.5", "manifest": "2.5.5", "packagesLock": "2.5.5"},
+      "source": "Registry (https://package.openupm.com)",
+      "isDirectDependency": true,
+      "resolvedPackageCount": 38,
+      "compilation": "UniTask recompiled, domain reload observed; 0 'error CS' in Editor log excerpt",
+      "editorIdle": true,
+      "console": {"errors": 0, "exceptions": 0, "warnings": 9, "compilerErrors": 0}
+    },
+    {
+      "phase": "04-remove",
+      "status": "success",
+      "operation": "package_manager remove com.cysharp.unitask",
+      "observed": {
+        "info": "error: Package 'com.cysharp.unitask' not found in installed packages",
+        "listContainsUnitask": false,
+        "manifestDirectDependency": false,
+        "packagesLockEntry": false,
+        "libraryPackageCache": "absent",
+        "scriptAssemblies": "no UniTask*.dll"
+      },
+      "resolvedPackageCount": 37,
+      "registryRetained": {"name": "OpenUPM", "url": "https://package.openupm.com", "scopes": ["com.cysharp"]},
+      "compilation": "domain reload observed; 0 'error CS' in Editor log excerpt",
+      "editorIdle": true,
+      "console": {"errors": 0, "exceptions": 0, "warnings": 9, "compilerErrors": 0}
+    }
+  ],
+  "manifestDiffs": {
+    "baseline->registry": "+ scopedRegistries [OpenUPM https://package.openupm.com scopes [com.cysharp]]",
+    "registry->install": "+ dependencies.com.cysharp.unitask 2.5.4 (Unity also re-sorted dependency keys)",
+    "install->update": "com.cysharp.unitask 2.5.4 -> 2.5.5",
+    "update->remove": "- dependencies.com.cysharp.unitask",
+    "baseline->final": "Only scopedRegistries added; dependencies set semantically identical to baseline (key order changed by Unity serialization)",
+    "files": "diffs/manifest.*.diff (raw), diffs/manifest-semantic.*.diff (key-sorted), diffs/packages-lock.*.diff; packages-lock baseline->final has 0 changed lines"
+  },
+  "finalConfiguration": "OpenUPM scoped registry (com.cysharp) retained as requested; no other packages changed; UniTask removed.",
+  "failures": [],
+  "notes": [
+    "No manual manifest/lock edits, no console clearing, no mutation retries; every mutation returned success on first call and was then verified via read-only checks.",
+    "The first baseline idle poll timed out because of a jq false-handling bug in the agent's wait-idle.sh helper (not an Editor issue). It was fixed and re-run successfully; recorded in 00-baseline/poll.log.",
+    "During each reload the first read-only poll attempt failed to connect (expected while the domain reloads); the Editor recovered within 11-17s each time.",
+    "Pre-existing harness files in the evidence root (editor.log, launch.json, etc.) were left untouched."
+  ]
+}
