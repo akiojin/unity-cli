@@ -1,0 +1,688 @@
+
+===== 2026-10-01T06:14:34Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 system ping
+{
+  "bridgeVersion": "0.16.0",
+  "echo": null,
+  "message": "pong",
+  "projectPath": "/private/tmp/issue377-unity-2022.3.62f3",
+  "timestamp": "2026-10-01T06:14:34.6167450Z",
+  "versionCheck": {
+    "bridgeVersion": "0.16.0",
+    "cliVersion": "0.16.0",
+    "message": "CLI and bridge are both 0.16.0",
+    "status": "match"
+  }
+}
+[exit 0]
+
+===== 2026-10-01T06:14:34Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1106.673949583
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:38Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 tool list --query scene --compact --limit 20
+analyze_scene_contents	Analyze scene asset contents
+instantiate_prefab	Instantiate a Prefab in the scene
+get_hierarchy	Get scene hierarchy tree
+create_scene	Create a new scene
+get_scene_info	Get scene metadata
+start_scene_bake	Start Lighting, legacy NavMesh, NavMeshSurface, or Occlusion baking
+get_scene_bake_status	Poll bake progress, terminal failure, and verified saved artifacts
+list_scenes	List all scenes
+load_scene	Load a scene
+save_scene	Save the current scene
+[exit 0]
+
+===== 2026-10-01T06:14:38Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval var\ s=UnityEngine.SceneManagement.SceneManager.GetActiveScene\(\)\;\ return\ s.path+\"\ dirty=\"+s.isDirty\; --mode statements --request-id issue377-scene-pre-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-scene-pre-accepted",
+  "state": "completed",
+  "value": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity dirty=False"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:41Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw load_scene --json \{\"scenePath\":\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\"\,\"loadMode\":\"Single\"\}
+{
+  "activeSceneCount": null,
+  "isLoaded": true,
+  "loadMode": "Single",
+  "previousScene": "ToolkitDemo",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Loaded scene \"ToolkitDemo\" in Single mode"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:41Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_scene_info --json \{\}
+{
+  "buildIndex": -1,
+  "fileSize": 10004,
+  "isActive": true,
+  "isDirty": false,
+  "isLoaded": true,
+  "lastModified": "2026-10-01T06:03:34.4428204Z",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Scene \"ToolkitDemo\" - Loaded and active, not in build settings, 9.8 KB"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:42Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":50\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 25
+  },
+  "success": true,
+  "totalCaptured": 27
+}
+[exit 0]
+
+===== 2026-10-01T06:14:47Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw clear_console --json \{\}
+{
+  "clearOnBuild": false,
+  "clearOnPlay": false,
+  "clearOnRecompile": false,
+  "clearedCount": 27,
+  "message": "Console cleared successfully",
+  "remainingCount": 0,
+  "settingsUpdated": false,
+  "success": true,
+  "timestamp": "2026-10-01T06:14:47.6953590Z"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:47Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval return\ UnityEngine.Application.runInBackground\; --mode statements --request-id issue377-rib-read-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-rib-read-accepted",
+  "state": "completed",
+  "value": false
+}
+[exit 0]
+
+===== 2026-10-01T06:14:48Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw play_game --json \{\}
+{
+  "message": "Play mode scheduled in 300ms",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": "2026-10-01T06:14:48.1914740Z",
+      "msSincePlayRequested": 0.8570000000000001,
+      "playRequested": true,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1120.003189792
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:14:51Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+Error: unityd request failed: Failed to connect to Unity at 127.0.0.1:6518: Connection refused (os error 61). Run `unity-cli doctor --output json` to diagnose (Safe Mode / compile errors, bridge not installed, port in use, Editor not running, sandbox)
+[exit 1]
+
+===== 2026-10-01T06:14:54Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+Error: unityd request failed: Failed to connect to Unity at 127.0.0.1:6518: Connection refused (os error 61). Run `unity-cli doctor --output json` to diagnose (Safe Mode / compile errors, bridge not installed, port in use, Editor not running, sandbox)
+[exit 1]
+
+===== 2026-10-01T06:14:56Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1135.534197917
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:07Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1139.033484333
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:07Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw find_ui_elements --json \{\"uiSystem\":\"uitk\"\}
+{
+  "count": 6,
+  "elements": [
+    {
+      "classes": [
+        "unity-ui-document__root"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "TemplateContainer",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "ToolkitDemo-container",
+      "path": "uitk:/ToolkitDemo#ToolkitDemo-container",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "form"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "VisualElement",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "form",
+      "path": "uitk:/ToolkitDemo#form",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-text-element",
+        "unity-button"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "Button",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "submit",
+      "path": "uitk:/ToolkitDemo#submit",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-base-field",
+        "unity-base-text-field",
+        "unity-text-field"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "TextField",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "player-name",
+      "path": "uitk:/ToolkitDemo#player-name",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-base-text-field__input",
+        "unity-base-text-field__input--single-line",
+        "unity-base-field__input",
+        "unity-text-field__input"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "TextInput",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "unity-text-input",
+      "path": "uitk:/ToolkitDemo#unity-text-input",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-text-element",
+        "unity-label"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "Label",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "status",
+      "path": "uitk:/ToolkitDemo#status",
+      "uiSystem": "uitk"
+    }
+  ]
+}
+[exit 0]
+
+===== 2026-10-01T06:15:10Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#status\"\}
+{
+  "elementType": "Label",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "status",
+  "path": "uitk:/ToolkitDemo#status",
+  "text": "Welcome",
+  "uiSystem": "uitk"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:10Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\}
+{
+  "elementType": "TextField",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "player-name",
+  "path": "uitk:/ToolkitDemo#player-name",
+  "uiSystem": "uitk",
+  "value": ""
+}
+[exit 0]
+
+===== 2026-10-01T06:15:15Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval UnityEngine.Application.runInBackground\ =\ true\;\ return\ UnityEngine.Application.runInBackground\; --mode statements --request-id issue377-rib-enable-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-rib-enable-accepted",
+  "state": "completed",
+  "value": true
+}
+[exit 0]
+
+===== 2026-10-01T06:15:15Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval UnityEditor.EditorWindow.GetWindow\(typeof\(UnityEditor.Editor\).Assembly.GetType\(\"UnityEditor.GameView\"\)\).Focus\(\)\;\ var\ captureDir\ =\ System.IO.Path.Combine\(System.IO.Path.GetDirectoryName\(UnityEngine.Application.dataPath\)\,\ \".unity/capture\"\)\;\ System.IO.Directory.CreateDirectory\(captureDir\)\;\ var\ path\ =\ System.IO.Path.Combine\(captureDir\,\ \"toolkit-before-accepted.png\"\)\;\ if\ \(System.IO.File.Exists\(path\)\)\ throw\ new\ System.InvalidOperationException\(\"Use\ a\ new\ capture\ filename\"\)\;\ UnityEngine.ScreenCapture.CaptureScreenshot\(path\)\;\ return\ path\; --mode statements --request-id issue377-capture-before-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-capture-before-accepted",
+  "state": "completed",
+  "value": "/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-before-accepted.png"
+}
+[exit 0]
+/private/tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png
+  pixelWidth: 1280
+  pixelHeight: 720
+
+===== 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw set_ui_element_value --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\,\"value\":\"Ada\"\}
+{
+  "elementPath": "uitk:/ToolkitDemo#player-name",
+  "newValue": "Ada",
+  "success": true,
+  "uiSystem": "uitk"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\}
+{
+  "elementType": "TextField",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "player-name",
+  "path": "uitk:/ToolkitDemo#player-name",
+  "uiSystem": "uitk",
+  "value": "Ada"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw click_ui_element --json \{\"elementPath\":\"uitk:/ToolkitDemo#submit\"\}
+{
+  "elementPath": "uitk:/ToolkitDemo#submit",
+  "message": "Successfully clicked submit",
+  "success": true,
+  "uiSystem": "uitk",
+  "warnings": null
+}
+[exit 0]
+
+===== 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#status\"\}
+{
+  "elementType": "Label",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "status",
+  "path": "uitk:/ToolkitDemo#status",
+  "text": "Hello, Ada!",
+  "uiSystem": "uitk"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:35Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval UnityEditor.EditorWindow.GetWindow\(typeof\(UnityEditor.Editor\).Assembly.GetType\(\"UnityEditor.GameView\"\)\).Focus\(\)\;\ var\ captureDir\ =\ System.IO.Path.Combine\(System.IO.Path.GetDirectoryName\(UnityEngine.Application.dataPath\)\,\ \".unity/capture\"\)\;\ System.IO.Directory.CreateDirectory\(captureDir\)\;\ var\ path\ =\ System.IO.Path.Combine\(captureDir\,\ \"toolkit-after-accepted.png\"\)\;\ if\ \(System.IO.File.Exists\(path\)\)\ throw\ new\ System.InvalidOperationException\(\"Use\ a\ new\ capture\ filename\"\)\;\ UnityEngine.ScreenCapture.CaptureScreenshot\(path\)\;\ return\ path\; --mode statements --request-id issue377-capture-after-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-capture-after-accepted",
+  "state": "completed",
+  "value": "/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-after-accepted.png"
+}
+[exit 0]
+/private/tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png
+  pixelWidth: 1280
+  pixelHeight: 720
+
+===== 2026-10-01T06:15:44Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval var\ root\ =\ UnityEngine.Object.FindObjectOfType\<UnityEngine.UIElements.UIDocument\>\(\).rootVisualElement\;\ var\ input\ =\ root.Q\(\"player-name\"\).Q\(className:\ \"unity-base-text-field__input\"\)\;\ var\ submit\ =\ root.Q\<UnityEngine.UIElements.Button\>\(\"submit\"\)\;\ var\ status\ =\ root.Q\<UnityEngine.UIElements.Label\>\(\"status\"\)\;\ return\ \"input\ color=\"\ +\ input.resolvedStyle.color\ +\ \"\ bg=\"\ +\ input.resolvedStyle.backgroundColor\ +\ \"\ \|\ submit\ color=\"\ +\ submit.resolvedStyle.color\ +\ \"\ bg=\"\ +\ submit.resolvedStyle.backgroundColor\ +\ \"\ \|\ status\ text=\"\ +\ status.text\ +\ \"\ color=\"\ +\ status.resolvedStyle.color\; --mode statements --request-id issue377-resolvedstyle-accepted
+{
+  "diagnostics": [
+    {
+      "column": 121,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 202,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 264,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-resolvedstyle-accepted",
+  "state": "compile_error",
+  "value": null
+}
+[exit 0]
+
+===== 2026-10-01T06:15:44Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":50\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 17
+  },
+  "success": true,
+  "totalCaptured": 19
+}
+[exit 0]
+
+===== 2026-10-01T06:15:45Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval UnityEngine.Application.runInBackground\ =\ false\;\ return\ UnityEngine.Application.runInBackground\; --mode statements --request-id issue377-rib-restore-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-rib-restore-accepted",
+  "state": "completed",
+  "value": false
+}
+[exit 0]
+
+===== 2026-10-01T06:15:50Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 editor eval var\ root\ =\ UnityEngine.Object.FindObjectOfType\<UnityEngine.UIElements.UIDocument\>\(\).rootVisualElement\;\ var\ field\ =\ UnityEngine.UIElements.UQueryExtensions.Q\(root\,\ \"player-name\"\)\;\ var\ input\ =\ UnityEngine.UIElements.UQueryExtensions.Q\(field\,\ null\,\ \"unity-base-text-field__input\"\)\;\ var\ submit\ =\ UnityEngine.UIElements.UQueryExtensions.Q\(root\,\ \"submit\"\)\;\ var\ status\ =\ UnityEngine.UIElements.UQueryExtensions.Q\<UnityEngine.UIElements.Label\>\(root\,\ \"status\"\)\;\ return\ \"input\ color=\"\ +\ input.resolvedStyle.color\ +\ \"\ bg=\"\ +\ input.resolvedStyle.backgroundColor\ +\ \"\ \|\ submit\ color=\"\ +\ submit.resolvedStyle.color\ +\ \"\ bg=\"\ +\ submit.resolvedStyle.backgroundColor\ +\ \"\ \|\ status\ text=\"\ +\ status.text\ +\ \"\ color=\"\ +\ status.resolvedStyle.color\; --mode statements --request-id issue377-resolvedstyle2-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-resolvedstyle2-accepted",
+  "state": "completed",
+  "value": "input color=RGBA(0.110, 0.137, 0.188, 1.000) bg=RGBA(0.941, 0.941, 0.941, 1.000) | submit color=RGBA(0.110, 0.137, 0.188, 1.000) bg=RGBA(0.737, 0.737, 0.737, 1.000) | status text=Hello, Ada! color=RGBA(0.941, 0.953, 0.980, 1.000)"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:54Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw stop_game --json \{\}
+{
+  "message": "Exited play mode",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1186.859479042
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:55Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1187.835621375
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:56Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1187.835621375
+  },
+  "status": "success"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:56Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw get_scene_info --json \{\}
+{
+  "buildIndex": -1,
+  "fileSize": 10004,
+  "isActive": true,
+  "isDirty": false,
+  "isLoaded": true,
+  "lastModified": "2026-10-01T06:03:34.4428204Z",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Scene \"ToolkitDemo\" - Loaded and active, not in build settings, 9.8 KB"
+}
+[exit 0]
+
+===== 2026-10-01T06:15:56Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":50\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 21
+  },
+  "success": true,
+  "totalCaptured": 23
+}
+[exit 0]
