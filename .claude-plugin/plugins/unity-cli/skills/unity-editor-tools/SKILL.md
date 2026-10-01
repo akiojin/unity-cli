@@ -4,7 +4,7 @@ description: Inspect and control Unity Editor state with unity-cli. Use when the
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: editor
   triggers:
     - editor
@@ -14,6 +14,7 @@ metadata:
     - package
     - setting
   siblings:
+    - unity-localization
     - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-cli-usage
@@ -36,6 +37,8 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 - The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
 
 ## Do Not Use When
+
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 - The work is UPM package discovery/install/update/removal or scoped registries; use `unity-package-management`.

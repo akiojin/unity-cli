@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 19,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-93338-18da5dae3eebffe0-0",
+  "state": "completed",
+  "value": "selected=ja;labelText=Hello, world!;lseEnabled=True;goActive=True;loadingOpValid=True;loadingOpDone=False;loadingOpStatus=None;loadingOpException=null;initDone=True;initStatus=Succeeded;frame=10726;timeScale=1;paused=False;appActive=False;runInBackground=False"
+}

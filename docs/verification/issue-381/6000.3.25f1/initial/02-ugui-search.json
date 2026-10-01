@@ -1,0 +1,29 @@
+{
+  "action": "search",
+  "keyword": "com.unity.ugui",
+  "message": "Found 1 packages matching 'com.unity.ugui'",
+  "packages": [
+    {
+      "author": "",
+      "category": "UI",
+      "description": "uGUI (Unity UI) is a set of tools for developing user interfaces for games and applications. It is a GameObject-based UI system that uses Components and the Game View to arrange, position, and style user interfaces. ​ You cannot use Unity UI to create or change user interfaces in the Unity Editor.",
+      "displayName": "uGUI",
+      "keywords": [
+        "UI",
+        "ugui",
+        "Unity UI",
+        "Canvas",
+        "TextMeshPro",
+        "TextMesh Pro",
+        "Text",
+        "TMP",
+        "SDF"
+      ],
+      "name": "com.unity.ugui",
+      "packageId": "com.unity.ugui@2.0.0",
+      "version": "2.0.0"
+    }
+  ],
+  "success": true,
+  "totalCount": 1
+}

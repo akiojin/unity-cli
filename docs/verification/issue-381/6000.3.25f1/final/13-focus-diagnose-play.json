@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 13,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-66020-18da5e2740545a98-0",
+  "state": "completed",
+  "value": "focusedWindow=UnityEditor.GameView;mouseOverWindow=UnityEditor.GameView;appActive=True;gameViews=1;gv[hasFocus=True,docked=True,pos=(x:285.00, y:97.00, width:867.00, height:485.50)]"
+}

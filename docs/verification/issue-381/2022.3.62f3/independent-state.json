@@ -1,0 +1,42 @@
+{
+  "collectionPath": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings.asset",
+  "fontPath": "Assets/Scenes/Generated/E2E/Localization/Fonts/ArialUnicode.ttf",
+  "isPlaying": false,
+  "keyId": 951050240,
+  "listenerCount": 1,
+  "listenerMethod": "set_text",
+  "listenerState": "EditorAndRuntime",
+  "listenerTargetsLabel": true,
+  "locales": [
+    {
+      "code": "en",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Locales/English.asset"
+    },
+    {
+      "code": "ja",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Locales/Japanese.asset"
+    }
+  ],
+  "project": "/private/tmp/issue381/2022.3.62f3/Project/Assets",
+  "savedLabelText": "[unlocalized placeholder]",
+  "scene": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+  "sceneDirty": false,
+  "settingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+  "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings Shared Data.asset",
+  "tableReference": "TableReference(9ede7073-fd0a-d4de-49b8-b572bcc11acb - DemoStrings)",
+  "tables": [
+    {
+      "keyId": 951050240,
+      "locale": "en",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_en.asset",
+      "text": "Hello, world!"
+    },
+    {
+      "keyId": 951050240,
+      "locale": "ja",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_ja.asset",
+      "text": "こんにちは、世界！"
+    }
+  ],
+  "unity": "2022.3.62f3"
+}

@@ -1,0 +1,6 @@
+18:25:53 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=1106
+18:25:54 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=2044
+18:25:55 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=2731
+18:25:56 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=3060
+18:25:57 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=3963
+18:25:58 frontmost=40:96: execution error: {"loginwindow", 418} whose frontmost = trueを取り出すことはできません。 (-1728) :: focusedWindow=UnityEditor.GameView;appActive=True;isPlaying=True;frame=4753

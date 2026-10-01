@@ -1,0 +1,19 @@
+{
+  "message": "Exited play mode",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": "2026-10-01T09:06:35.7171860Z",
+      "playRequested": true,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 872.362015
+  },
+  "status": "success"
+}

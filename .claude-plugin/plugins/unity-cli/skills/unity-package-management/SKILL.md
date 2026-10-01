@@ -4,13 +4,14 @@ description: Manage Unity UPM packages and scoped registries with unity-cli. Use
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.1.0
+  version: 0.1.1
   category: editor
   triggers:
     - package
     - upm
     - registry
   siblings:
+    - unity-localization
     - unity-editor-tools
     - unity-csharp-navigate
     - unity-project-bootstrap
@@ -29,6 +30,8 @@ resolved package state and compilation in the same project.
 - Add or inspect supported scoped registries and their package scopes.
 
 ## Do Not Use When
+
+- Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 
 - Only read console, build a Player, change Editor settings or profile:
   `unity-editor-tools`. Only inspect C# package sources: `unity-csharp-navigate`.

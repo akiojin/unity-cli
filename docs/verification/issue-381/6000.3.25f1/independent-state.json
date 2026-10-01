@@ -1,0 +1,42 @@
+{
+  "collectionPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings.asset",
+  "fontPath": "Assets/Scenes/Generated/E2E/Localization/ArialUnicode.ttf",
+  "isPlaying": false,
+  "keyId": 707780608,
+  "listenerCount": 1,
+  "listenerMethod": "set_text",
+  "listenerState": "EditorAndRuntime",
+  "listenerTargetsLabel": true,
+  "locales": [
+    {
+      "code": "en",
+      "path": "Assets/Scenes/Generated/E2E/Localization/English (en).asset"
+    },
+    {
+      "code": "ja",
+      "path": "Assets/Scenes/Generated/E2E/Localization/Japanese (ja).asset"
+    }
+  ],
+  "project": "/private/tmp/issue381/6000.3.25f1/Project/Assets",
+  "savedLabelText": "",
+  "scene": "Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity",
+  "sceneDirty": false,
+  "settingsPath": "Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset",
+  "sharedDataPath": "Assets/Scenes/Generated/E2E/Localization/DemoStrings Shared Data.asset",
+  "tableReference": "TableReference(5e97c0ff-0d89-5426-abb0-0eac0dde9f60 - DemoStrings)",
+  "tables": [
+    {
+      "keyId": 707780608,
+      "locale": "en",
+      "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_en.asset",
+      "text": "Hello, world!"
+    },
+    {
+      "keyId": 707780608,
+      "locale": "ja",
+      "path": "Assets/Scenes/Generated/E2E/Localization/DemoStrings_ja.asset",
+      "text": "こんにちは、世界！"
+    }
+  ],
+  "unity": "6000.3.25f1"
+}

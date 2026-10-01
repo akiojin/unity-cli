@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 51,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "cli-53566-18da5dfd9203c498-0",
+  "state": "completed",
+  "value": "{\"isPlaying\":false,\"scenePath\":\"Assets/Scenes/Generated/E2E/Localization/LocalizationE2E.unity\",\"sceneDirty\":false,\"canvasRenderMode\":\"ScreenSpaceOverlay\",\"labelPath\":\"/LocalizationCanvas/Greeting\",\"labelComponent\":\"UnityEngine.UI.Text\",\"labelSerializedText\":\"[unlocalized placeholder]\",\"fontAsset\":\"Assets/Scenes/Generated/E2E/Localization/Fonts/ArialUnicode.ttf\",\"fontSize\":84,\"localizeStringEventCount\":1,\"localizeStringEventEnabled\":true,\"stringReference\":{\"tableReference\":\"TableReference(9ede7073-fd0a-d4de-49b8-b572bcc11acb - DemoStrings)\",\"tableCollectionName\":\"DemoStrings\",\"entryReference\":\"TableEntryReference(951050240)\",\"keyId\":951050240,\"resolvedKey\":\"greeting\"},\"persistentListenerCount\":1,\"persistentListeners\":[{\"index\":0,\"targetType\":\"UnityEngine.UI.Text\",\"targetObject\":\"Greeting\",\"targetIsLabelText\":true,\"method\":\"set_text\",\"callState\":\"EditorAndRuntime\"}],\"localizationSettings\":\"Assets/Scenes/Generated/E2E/Localization/Localization Settings.asset\",\"addressablesSettings\":\"Assets/Scenes/Generated/E2E/Localization/AddressableAssetsData/AddressableAssetSettings.asset\",\"locales\":[{\"code\":\"en\",\"name\":\"English\",\"path\":\"Assets/Scenes/Generated/E2E/Localization/Locales/English.asset\"},{\"code\":\"ja\",\"name\":\"Japanese\",\"path\":\"Assets/Scenes/Generated/E2E/Localization/Locales/Japanese.asset\"}],\"collection\":{\"name\":\"DemoStrings\",\"path\":\"Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings.asset\",\"sharedDataPath\":\"Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings Shared Data.asset\",\"greetingKeyId\":951050240,\"tables\":[{\"locale\":\"en\",\"path\":\"Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_en.asset\",\"entryCount\":1,\"greeting\":\"Hello, world!\",\"entryKeyId\":951050240},{\"locale\":\"ja\",\"path\":\"Assets/Scenes/Generated/E2E/Localization/Tables/DemoStrings_ja.asset\",\"entryCount\":1,\"greeting\":\"こんにちは、世界！\",\"entryKeyId\":951050240}]}}"
+}
