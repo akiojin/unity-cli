@@ -118,16 +118,42 @@ boundaries (capture, material, package-only, scene-only, object movement).
 
 PM subsequently assigned package-only requests to #376's
 `unity-package-management`. SR-URP-006 and the description reflect that ruling;
-the final combined catalog must be checked after integration.
+after merging #424 and #419 from develop, the final eight cases pass all four
+metrics at 100% with fresh Claude Opus 5.5 predictions. Expected answers were
+excluded from the prompt. The [prompt](issue-378/routing/routing-prompt.txt),
+[raw response](issue-378/routing/routing-green-raw.json),
+[predictions](issue-378/routing/routing-predictions.jsonl) and
+[score report](issue-378/routing/routing-summary.json) record this final catalog.
 
-- Initial `cargo run -- skills lint --severity error`: 18 skills, 0 violations.
+The integrated 187-case benchmark also passes: top-1/top-2 100%, tool 98.93%,
+payload 97.33%. This fresh Claude Opus 5.5 batch uses #419's complete catalog.
+It exposed an existing package-list keyword override that replaced the correct
+URP prediction with source-package navigation. The override now defers to the
+model when the prompt explicitly names UPM or `package_manager`. Two regression
+tests cover these requests and preservation of source-package navigation; the
+same raw model predictions were rescored after this deterministic boundary fix.
+All eight URP cases pass through the complete runner as well as direct inference.
+Thresholds and expected answers were not changed.
+The [full report](issue-378/full-routing/summary.json) retains
+individual errors; the sibling files contain the exact prompt, raw response,
+model predictions, final predictions and cases. Passing the benchmark thresholds
+does not mean every legacy case is correct.
+
+- Final `cargo run -- skills lint --severity error`: 19 skills, 0 violations.
 - `python3 -m unittest discover -s tests/scripts -p test_skill_routing.py -v`:
-  all 3 existing routing-runner regressions pass.
+  all 10 routing-runner regressions pass after #419 integration and the UPM fix.
 - `cargo fmt --all -- --check`: pass.
 - `cargo clippy --all-targets -- -D warnings`: pass.
-- `cargo test --all-targets -- --test-threads=1`: all 580 tests pass.
-- Remaining canonical matrix and final routing results will be recorded after
-  integration and cleanup of Editor-generated importer metadata.
+- `cargo test --all-targets -- --test-threads=1`: all 582 tests pass after
+  integrating develop's setup dry-run fix.
+- `python3 docs/verification/issue-378/check-evidence.py`: both Editors' asset
+  hashes, saved/restarted state, distinct PNG pairs and current skill hashes pass.
+  This validates recorded evidence; it does not substitute for the real runs above.
+- Canonical verification is subject to the shared host lease. PM ruling
+  `4f999923-f520-4f53-bcff-5286ae5cec19` directs #378 to run local checks, push
+  the evidence, and hand Ready/merge settlement to PM without waiting for another
+  project's lease. The PR CI is the final delivery gate; no canonical PASS is
+  claimed here.
 
 ## Originality review (D6)
 
