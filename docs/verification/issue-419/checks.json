@@ -1,0 +1,38 @@
+[
+  {
+    "command": "python3 -m unittest discover -s tests/scripts -p test_*.py",
+    "exit_code": 0,
+    "stdout": "editor_state: focus changed (Editor 123, before 321, after 123)\neditor_state: focus changed (Editor 123, before 321, after 456)\neditor_state: focus changed (Editor 123, before 321, after None)\nscreenshot: focus changed (Editor 123, before 321, after 456)\nscreenshot: focus changed (Editor 123, before 321, after None)\neditor_state: focus changed (Editor 123, before 123, after 321)\n",
+    "stderr": ".s...............................................\n----------------------------------------------------------------------\nRan 49 tests in 0.951s\n\nOK (skipped=1)\n"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "cargo run --quiet -- skills lint --severity error",
+    "exit_code": 0,
+    "stdout": "\n17 skills checked, 0 violations\n",
+    "stderr": ""
+  },
+  {
+    "command": "npx --yes markdownlint-cli docs/development.md docs/verification/issue-419.md --config .markdownlint.json --ignore-path .markdownlintignore",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "bash scripts/skill-eval/llm-routing-eval.sh --benchmark docs/verification/issue-419/cases.jsonl --predictions docs/verification/issue-419/predictions.jsonl --model claude-opus-5-5-with-existing-overrides",
+    "exit_code": 0,
+    "stdout": "[LLM ROUTING EVAL]\n  model: claude-opus-5-5-with-existing-overrides\n  total: 178\n  top1: 1.0000 (>= 0.9)\n  top2: 1.0000 (>= 0.98)\n  tool_correct: 0.9888 (>= 0.92)\n  payload_valid: 0.9663 (>= 0.95)\n  summary: /Users/akiojin/Workbench/unity-cli/work/issue-419/.unity/skill-eval/skill-routing-summary.json\n  history: /Users/akiojin/Workbench/unity-cli/work/issue-419/.unity/skill-eval/skill-routing-history.jsonl\n",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]
