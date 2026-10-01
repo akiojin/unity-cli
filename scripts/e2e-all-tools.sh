@@ -187,7 +187,7 @@ invoke_tool() {
     --host "${HOST}" \
     --port "${PORT}" \
     --timeout-ms "${TIMEOUT_MS}" \
-    --output json
+    --output json | jq -c '.data'
 }
 
 record_failure() {
@@ -313,7 +313,7 @@ if [[ ${SKIP_LSP_PERF} -eq 0 ]]; then
   echo "" | tee -a "${LOG}"
 fi
 
-tool_list_raw="$("${UNITY_CLI}" tool list --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json | jq -r '.[]')"
+tool_list_raw="$("${UNITY_CLI}" tool list --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json | jq -r '.data[]')"
 while IFS= read -r line; do
   [[ -z "${line}" ]] && continue
   TOOL_LIST+=("${line}")

@@ -20,6 +20,8 @@ metadata:
 
 # Localization
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Create persistent localization assets and prove that switching locale changes
 the actual UI label, using existing unity-cli tools and public Unity APIs.
 

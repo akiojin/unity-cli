@@ -19,6 +19,8 @@ metadata:
 
 # Prefab Workflow
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Create, open, edit, and instantiate prefab assets via `unity-cli`. This skill owns Prefab edit mode, Variant inheritance, override apply/revert, and unpacking; ordinary scene-instance field edits belong to `unity-gameobject-edit`.
 
 ## Use When

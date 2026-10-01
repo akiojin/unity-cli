@@ -23,6 +23,8 @@ metadata:
 
 # GameObject Edit
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Modify existing GameObjects and their components in an already-prepared scene. This skill is the destructive sibling of `unity-scene-inspect`.
 
 ## Use When

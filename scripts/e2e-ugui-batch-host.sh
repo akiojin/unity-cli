@@ -100,7 +100,7 @@ def call(tool,payload):
                       "--timeout-ms","120000","--output","json"],text=True,capture_output=True,
                      env={**os.environ,"UNITY_PROJECT_ROOT":project},timeout=150)
     assert r.returncode==0,(tool,r.stdout,r.stderr)
-    data=json.loads(r.stdout)
+    data=json.loads(r.stdout)["data"]
     assert not data.get("error") and data.get("success") is not False,(tool,data)
     return data
 info=call("get_editor_info",{})

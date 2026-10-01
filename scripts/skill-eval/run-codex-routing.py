@@ -253,7 +253,7 @@ def load_tool_catalog(binary: str) -> str:
         [binary, "tool", "schema", "--output", "json"],
         capture_output=True, text=True, check=True,
     )
-    return format_tool_catalog(json.loads(result.stdout)["tools"])
+    return format_tool_catalog(json.loads(result.stdout)["data"]["tools"])
 
 
 def build_prompt(skill_catalog: str, user_prompt: str, tool_catalog: str = "") -> str:

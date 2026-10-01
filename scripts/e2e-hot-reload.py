@@ -35,7 +35,7 @@ def call(tool, payload, error=None):
               tool + " rejects: " + error + " / " + result.stderr.strip())
         return None
     assert result.returncode == 0, (tool, result.stdout, result.stderr)
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert not data.get("error") and data.get("success") is not False, (tool, data)
     return data
 

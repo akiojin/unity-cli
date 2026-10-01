@@ -154,7 +154,7 @@ def main() -> int:
         before = frontmost_pid()
         elapsed_ms, stdout = run_once(argv, env, args.timeout)
         after = frontmost_pid()
-        data = json.loads(stdout)
+        data = json.loads(stdout)["data"]
         if data.get("state") != "completed" or data.get("value") != expected:
             raise ValueError(f"unexpected eval result at call {calls}: {stdout[:300]}")
         calls += 1
@@ -172,7 +172,7 @@ def main() -> int:
         if editor_pid is not None:
             frontmost["editor" if (before, after) == (editor_pid, editor_pid) else "other"] += 1
 
-    info = json.loads(run_once(base + ["raw", "get_editor_info", "--json", "{}"], env, args.timeout)[1])
+    info = json.loads(run_once(base + ["raw", "get_editor_info", "--json", "{}"], env, args.timeout)[1])["data"]
     version = subprocess.run([args.unity_cli, "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
     summary = summarize(samples)
     violations = over_budget(summary, budget) if budget else []

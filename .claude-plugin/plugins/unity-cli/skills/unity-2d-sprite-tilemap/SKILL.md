@@ -18,6 +18,8 @@ metadata:
 
 # 2D Sprite and Tilemap
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Take sprite art through import, atlas and tile authoring, then verify the saved
 scene in Play with a Pixel Perfect Camera. Use existing tools and Editor APIs.
 

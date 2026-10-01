@@ -21,7 +21,7 @@ def call(tool, payload):
                        "stderr": result.stderr, "exitCode": result.returncode})
     Path(output, "transcript.json").write_text(json.dumps(transcript, indent=2))
     assert result.returncode == 0, transcript[-1]
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert not data.get("error") and data.get("success") is not False, data
     return data
 

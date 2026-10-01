@@ -18,6 +18,8 @@ metadata:
 
 # Input System
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Author Input Action Assets: action maps, actions, bindings, control schemes, and composites. This skill owns asset authoring; runtime input simulation belongs to `unity-playmode-testing`.
 
 ## Use When

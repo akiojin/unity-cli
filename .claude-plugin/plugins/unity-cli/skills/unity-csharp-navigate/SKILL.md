@@ -21,6 +21,8 @@ metadata:
 
 # Unity C# Navigate
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Navigate and search C# source via `unity-cli` local tools. This is the read-only sibling of `unity-csharp-edit`; hand off as soon as the request implies a write.
 
 ## Use When

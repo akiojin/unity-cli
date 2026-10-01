@@ -22,6 +22,8 @@ metadata:
 
 # UI Toolkit Build
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Take a runtime screen from UXML/USS through a saved UIDocument and C# binding
 to observed input, state changes, and Game-view captures. Use the existing
 tools and delegated skills; no separate UI authoring backend is required.

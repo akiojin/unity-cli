@@ -63,6 +63,7 @@ def valid_artifacts(target, output, report):
 
 
 def main(argv=None):
+    from bridge_auth import auth_fields
     global PROJECT
     args = parse_args(argv)
     PROJECT = args.project_path.resolve()
@@ -99,7 +100,8 @@ def main(argv=None):
 
     def tcp(tool, params):
         request_id = uuid.uuid4().hex
-        data = json.dumps({"id": request_id, "type": tool, "params": params}).encode()
+        data = json.dumps({"id": request_id, "type": tool, "params": params,
+                           **auth_fields(args.port)}).encode()
         with socket.create_connection(("127.0.0.1", args.port), timeout=5) as conn:
             conn.settimeout(5)
             conn.sendall(struct.pack(">I", len(data)) + data)
@@ -123,7 +125,7 @@ def main(argv=None):
                               env=dict(os.environ, UNITY_PROJECT_ROOT=str(PROJECT)))
         (run / f"{len(checks)}-{tool}.json").write_text(proc.stdout + proc.stderr)
         assert (proc.returncode == 0) == success, proc.stdout + proc.stderr
-        return json.loads(proc.stdout) if proc.stdout.strip() else None
+        return json.loads(proc.stdout)["data"] if proc.stdout.strip() else None
 
     def settings():
         return {str(p.relative_to(PROJECT)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -189,7 +191,8 @@ public class PlayerBuildFailure : IPreprocessBuildWithReport {
                 request_id = f"pipeline-{index}"
                 expected_ids.add(request_id)
                 wire = json.dumps({"id": request_id, "type": "ping" if index % 2 else "get_build_status",
-                                   "params": {"buildId": "missing", "message": "x" * 20000}}).encode()
+                                   "params": {"buildId": "missing", "message": "x" * 20000},
+                                   **auth_fields(args.port)}).encode()
                 conn.sendall(struct.pack(">I", len(wire)) + wire)
             def read_frame_bytes(n):
                 data = b""

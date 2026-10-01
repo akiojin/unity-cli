@@ -1,0 +1,880 @@
+{
+  "base_commit": "03545ea",
+  "merge_commit": "9c6a065",
+  "source": "merge commit plus authentication health-check and E2E integration fixes in the containing commit",
+  "binary_sha256": "c6ac8fa21e5d16214ac855aeade7c686ea401b50f13abdb1266b89aae5e91622",
+  "authentication": "required except the explicit opt-out fixture",
+  "native": {
+    "rust": {
+      "passed": 623,
+      "log": "/tmp/issue-441-merge-rust-final.log"
+    },
+    "python": {
+      "total": 55,
+      "skipped": 1,
+      "log": "/tmp/issue-441-merge-python-final.log"
+    },
+    "dotnet": {
+      "passed": 53,
+      "log": "/tmp/issue-441-merge-dotnet.log"
+    },
+    "fmt": "PASS",
+    "clippy": "PASS",
+    "skills": {
+      "count": 23,
+      "violations": 0
+    }
+  },
+  "matrices": [
+    {
+      "source_report": "/tmp/issue-441-merge-final-main/matrix.json",
+      "editors": [
+        {
+          "version": "6000.3.25f1",
+          "status": "PASS",
+          "suites": [
+            {
+              "name": "compile",
+              "status": "PASS"
+            },
+            {
+              "name": "smoke",
+              "status": "PASS",
+              "command": [
+                [
+                  "env",
+                  "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+                  "bash",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+                  "--port",
+                  "6615"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "env",
+                    "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+                    "bash",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+                    "--port",
+                    "6615"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/6000.3.25f1-6lepylg6/smoke.log"
+            },
+            {
+              "name": "reload",
+              "status": "PASS",
+              "command": [
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--output",
+                  "/private/tmp/issue-441-merge-final-main/6000.3.25f1-6lepylg6/reload.json"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--output",
+                    "/private/tmp/issue-441-merge-final-main/6000.3.25f1-6lepylg6/reload.json"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/6000.3.25f1-6lepylg6/reload.log"
+            },
+            {
+              "name": "all-tools",
+              "status": "PASS",
+              "command": [
+                [
+                  "bash",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+                  "--unity-cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--skip-quit"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "bash",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+                    "--unity-cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--skip-quit"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/6000.3.25f1-6lepylg6/all-tools.log"
+            }
+          ]
+        },
+        {
+          "version": "2022.3.62f3",
+          "status": "PASS",
+          "suites": [
+            {
+              "name": "compile",
+              "status": "PASS"
+            },
+            {
+              "name": "smoke",
+              "status": "PASS",
+              "command": [
+                [
+                  "env",
+                  "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+                  "bash",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+                  "--port",
+                  "6615"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "env",
+                    "PATH=/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug:/Users/akiojin/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/codex-path:/Users/akiojin/.grok/bin:/Users/akiojin/.local/bin:/Users/akiojin/.bun/bin:/Users/akiojin/.codex/tmp/arg0/codex-arg0xwK54l:/Applications/GWT.app/Contents/MacOS:/Users/akiojin/.cargo/bin:/Users/akiojin/.lmstudio/bin",
+                    "bash",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test.sh",
+                    "--port",
+                    "6615"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/2022.3.62f3-yws_xu9y/smoke.log"
+            },
+            {
+              "name": "reload",
+              "status": "PASS",
+              "command": [
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--output",
+                  "/private/tmp/issue-441-merge-final-main/2022.3.62f3-yws_xu9y/reload.json"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-test-domain-reload.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--output",
+                    "/private/tmp/issue-441-merge-final-main/2022.3.62f3-yws_xu9y/reload.json"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/2022.3.62f3-yws_xu9y/reload.log"
+            },
+            {
+              "name": "all-tools",
+              "status": "PASS",
+              "command": [
+                [
+                  "bash",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+                  "--unity-cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--skip-quit"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "bash",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-all-tools.sh",
+                    "--unity-cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--skip-quit"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-main/2022.3.62f3-yws_xu9y/all-tools.log"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_report": "/tmp/issue-441-merge-final-gui/matrix.json",
+      "editors": [
+        {
+          "version": "6000.3.25f1",
+          "status": "PASS",
+          "suites": [
+            {
+              "name": "compile",
+              "status": "PASS"
+            },
+            {
+              "name": "screenshot",
+              "status": "PASS",
+              "command": [
+                [
+                  "/tmp/issue-441-python/bin/python",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+                  "--unity-cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6631",
+                  "--project",
+                  "/tmp/issue-441-prefab/6000.3.25f1/project",
+                  "--output",
+                  "/private/tmp/issue-441-merge-final-gui/6000.3.25f1-_opws09t/screenshots",
+                  "--activate",
+                  "--run-tests"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "/tmp/issue-441-python/bin/python",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+                    "--unity-cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6631",
+                    "--project",
+                    "/tmp/issue-441-prefab/6000.3.25f1/project",
+                    "--output",
+                    "/private/tmp/issue-441-merge-final-gui/6000.3.25f1-_opws09t/screenshots",
+                    "--activate",
+                    "--run-tests"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-gui/6000.3.25f1-_opws09t/screenshot.log"
+            }
+          ]
+        },
+        {
+          "version": "2022.3.62f3",
+          "status": "PASS",
+          "suites": [
+            {
+              "name": "compile",
+              "status": "PASS"
+            },
+            {
+              "name": "screenshot",
+              "status": "PASS",
+              "command": [
+                [
+                  "/tmp/issue-441-python/bin/python",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+                  "--unity-cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6631",
+                  "--project",
+                  "/tmp/issue-441-prefab/2022.3.62f3/project",
+                  "--output",
+                  "/private/tmp/issue-441-merge-final-gui/2022.3.62f3-qhywlp_u/screenshots",
+                  "--activate",
+                  "--run-tests"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "/tmp/issue-441-python/bin/python",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-screenshot.py",
+                    "--unity-cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6631",
+                    "--project",
+                    "/tmp/issue-441-prefab/2022.3.62f3/project",
+                    "--output",
+                    "/private/tmp/issue-441-merge-final-gui/2022.3.62f3-qhywlp_u/screenshots",
+                    "--activate",
+                    "--run-tests"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-final-gui/2022.3.62f3-qhywlp_u/screenshot.log"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source_report": "/tmp/issue-441-merge-main-pass/matrix.json",
+      "editors": [
+        {
+          "version": "6000.3.25f1",
+          "status": "UNSUPPORTED",
+          "suites": [
+            {
+              "name": "player-build",
+              "status": "UNSUPPORTED",
+              "command": [
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--project-path",
+                  "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+                ],
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--target",
+                  "StandaloneWindows64",
+                  "--port",
+                  "6615",
+                  "--project-path",
+                  "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--project-path",
+                    "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                },
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--target",
+                    "StandaloneWindows64",
+                    "--port",
+                    "6615",
+                    "--project-path",
+                    "/tmp/issue-441-compat-first/6000.3.25f1-cadf127s/project"
+                  ],
+                  "returncode": 2,
+                  "status": "UNSUPPORTED"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-main-pass/6000.3.25f1-5zmxqkvd/player-build.log"
+            }
+          ]
+        },
+        {
+          "version": "2022.3.62f3",
+          "status": "UNSUPPORTED",
+          "suites": [
+            {
+              "name": "player-build",
+              "status": "UNSUPPORTED",
+              "command": [
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--port",
+                  "6615",
+                  "--project-path",
+                  "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+                ],
+                [
+                  "python3",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                  "--cli",
+                  "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                  "--target",
+                  "StandaloneWindows64",
+                  "--port",
+                  "6615",
+                  "--project-path",
+                  "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+                ]
+              ],
+              "steps": [
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--port",
+                    "6615",
+                    "--project-path",
+                    "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+                  ],
+                  "returncode": 0,
+                  "status": "PASS"
+                },
+                {
+                  "command": [
+                    "python3",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/scripts/e2e-player-build.py",
+                    "--cli",
+                    "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+                    "--target",
+                    "StandaloneWindows64",
+                    "--port",
+                    "6615",
+                    "--project-path",
+                    "/tmp/issue-441-compat-first/2022.3.62f3-_x_a12rz/project"
+                  ],
+                  "returncode": 2,
+                  "status": "UNSUPPORTED"
+                }
+              ],
+              "log": "/private/tmp/issue-441-merge-main-pass/2022.3.62f3-14nzhokt/player-build.log"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "authentication_checks": [
+    {
+      "source_report": "/tmp/issue-441-merge-auth-6000.3.25f1/summary.json",
+      "version": "6000.3.25f1",
+      "status": "PASS",
+      "opt_out": false,
+      "checks": [
+        {
+          "name": "ping token=missing",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=missing",
+          "passed": true
+        },
+        {
+          "name": "ping token=wrong",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=wrong",
+          "passed": true
+        },
+        {
+          "name": "legacy raw ping",
+          "passed": true
+        },
+        {
+          "name": "persistent socket authenticated ping",
+          "passed": true
+        },
+        {
+          "name": "each request requires its own token",
+          "passed": true
+        },
+        {
+          "name": "eval side effect absent",
+          "passed": true
+        },
+        {
+          "name": "POSIX token file mode 0600",
+          "passed": true
+        },
+        {
+          "name": "256-bit token",
+          "passed": true
+        },
+        {
+          "name": "CLI system ping",
+          "passed": true
+        },
+        {
+          "name": "CLI editor eval 1+2",
+          "passed": true
+        },
+        {
+          "name": "CLI eval result is 3",
+          "passed": true
+        },
+        {
+          "name": "unityd authenticated ping",
+          "passed": true
+        },
+        {
+          "name": "EditMode authentication and connection tests",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "source_report": "/tmp/issue-441-merge-auth-2022.3.62f3/summary.json",
+      "version": "2022.3.62f3",
+      "status": "PASS",
+      "opt_out": false,
+      "checks": [
+        {
+          "name": "ping token=missing",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=missing",
+          "passed": true
+        },
+        {
+          "name": "ping token=wrong",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=wrong",
+          "passed": true
+        },
+        {
+          "name": "legacy raw ping",
+          "passed": true
+        },
+        {
+          "name": "persistent socket authenticated ping",
+          "passed": true
+        },
+        {
+          "name": "each request requires its own token",
+          "passed": true
+        },
+        {
+          "name": "eval side effect absent",
+          "passed": true
+        },
+        {
+          "name": "POSIX token file mode 0600",
+          "passed": true
+        },
+        {
+          "name": "256-bit token",
+          "passed": true
+        },
+        {
+          "name": "CLI system ping",
+          "passed": true
+        },
+        {
+          "name": "CLI editor eval 1+2",
+          "passed": true
+        },
+        {
+          "name": "CLI eval result is 3",
+          "passed": true
+        },
+        {
+          "name": "unityd authenticated ping",
+          "passed": true
+        },
+        {
+          "name": "EditMode authentication and connection tests",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "source_report": "/tmp/issue-441-merge-auth-opt-out/summary.json",
+      "version": "6000.3.25f1",
+      "status": "PASS",
+      "opt_out": true,
+      "checks": [
+        {
+          "name": "ping token=missing",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=missing",
+          "passed": true
+        },
+        {
+          "name": "ping token=wrong",
+          "passed": true
+        },
+        {
+          "name": "eval_csharp token=wrong",
+          "passed": true
+        },
+        {
+          "name": "legacy raw ping",
+          "passed": true
+        },
+        {
+          "name": "opt-out eval executed",
+          "passed": true
+        },
+        {
+          "name": "POSIX token file mode 0600",
+          "passed": true
+        },
+        {
+          "name": "256-bit token",
+          "passed": true
+        },
+        {
+          "name": "CLI system ping",
+          "passed": true
+        },
+        {
+          "name": "CLI next minor deprecation warning",
+          "passed": true
+        },
+        {
+          "name": "CLI editor eval 1+2",
+          "passed": true
+        },
+        {
+          "name": "CLI eval result is 3",
+          "passed": true
+        },
+        {
+          "name": "CLI next minor deprecation warning",
+          "passed": true
+        },
+        {
+          "name": "unityd authenticated ping",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "restart_checks": [
+    {
+      "version": "6000.3.25f1",
+      "source_report": "/tmp/issue-441-restart-6000.3.25f1/run-20261002-014618/result.json",
+      "result": {
+        "cli": "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+        "unity_path": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+        "port": 6627,
+        "cycles": [
+          {
+            "cycle": 1,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 57086
+          },
+          {
+            "cycle": 2,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 57086
+          },
+          {
+            "cycle": 3,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 57086
+          },
+          {
+            "cycle": 4,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 57086
+          },
+          {
+            "cycle": 5,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 57086
+          }
+        ],
+        "passed": 16,
+        "failed": 0
+      }
+    },
+    {
+      "version": "2022.3.62f3",
+      "source_report": "/tmp/issue-441-restart-2022.3.62f3/run-20261002-014730/result.json",
+      "result": {
+        "cli": "/Users/akiojin/Workbench/unity-cli/work/issue-441/target/debug/unity-cli",
+        "unity_path": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+        "port": 6627,
+        "cycles": [
+          {
+            "cycle": 1,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 76077
+          },
+          {
+            "cycle": 2,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 76077
+          },
+          {
+            "cycle": 3,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 76077
+          },
+          {
+            "cycle": 4,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 76077
+          },
+          {
+            "cycle": 5,
+            "mutating_ok": true,
+            "objects": 1,
+            "daemon_pid": 76077
+          }
+        ],
+        "passed": 16,
+        "failed": 0
+      }
+    }
+  ],
+  "acceptance": {
+    "source_report": "/tmp/issue-441-merge-envelope/results.json",
+    "editors": [
+      {
+        "version": "6000.3.25f1",
+        "status": "PASS",
+        "bridge_error": {
+          "exit": 6,
+          "wire_code": "JOB_NOT_FOUND",
+          "envelope": {
+            "command": "raw get_scene_bake_status",
+            "data": {
+              "code": "JOB_NOT_FOUND",
+              "error": "No bake job exists for this jobId in this Editor session.",
+              "reason": "No bake job exists for this jobId in this Editor session.",
+              "status": "error",
+              "unityVersion": "6000.3.25f1"
+            },
+            "errors": [
+              {
+                "code": "JOB_NOT_FOUND",
+                "message": "No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"
+              }
+            ],
+            "success": false,
+            "warnings": []
+          }
+        },
+        "test_exits": [
+          {
+            "fixture": "Mixed",
+            "exit": 8
+          },
+          {
+            "fixture": "Passing",
+            "exit": 0
+          }
+        ]
+      },
+      {
+        "version": "2022.3.62f3",
+        "status": "PASS",
+        "bridge_error": {
+          "exit": 6,
+          "wire_code": "JOB_NOT_FOUND",
+          "envelope": {
+            "command": "raw get_scene_bake_status",
+            "data": {
+              "code": "JOB_NOT_FOUND",
+              "error": "No bake job exists for this jobId in this Editor session.",
+              "reason": "No bake job exists for this jobId in this Editor session.",
+              "status": "error",
+              "unityVersion": "2022.3.62f3"
+            },
+            "errors": [
+              {
+                "code": "JOB_NOT_FOUND",
+                "message": "No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"
+              }
+            ],
+            "success": false,
+            "warnings": []
+          }
+        },
+        "test_exits": [
+          {
+            "fixture": "Mixed",
+            "exit": 8
+          },
+          {
+            "fixture": "Passing",
+            "exit": 0
+          }
+        ]
+      }
+    ]
+  },
+  "discovery": {
+    "source_log": "/tmp/issue-441-merge-discovery-isolated.log",
+    "status": "PASS",
+    "passed": 19,
+    "checks": [
+      "AC-2 A listens on the configured port",
+      "AC-2 B falls back to another port",
+      "lockfile records Unity versions",
+      "heartbeat is refreshed in the background",
+      "AC-2 instances list (no --ports) lists both Editors with project paths",
+      "AC-1 --project-path ProjectA returns its own scene",
+      "AC-1 --project-path ProjectB returns its own scene",
+      "AC-3 cwd ProjectA/Assets selects its Editor",
+      "AC-3 cwd ProjectB/Assets selects its Editor",
+      "AC-4 AMBIGUOUS_EDITOR with exit 6 and candidates (projectPath, port, pid)",
+      "AC-4 nothing executed in ProjectA",
+      "AC-4 nothing executed in ProjectB",
+      "compat instances list --ports",
+      "compat set-active host:port",
+      "compat active instance is used outside projects",
+      "AC-5 force-killed Editor is listed as unreachable",
+      "stale lockfile does not cause ambiguity",
+      "domain reload marks the lockfile reloading, then ready on the same port",
+      "graceful quit deletes the lockfile"
+    ]
+  }
+}

@@ -57,7 +57,7 @@ class Runner:
             log.write(f"{tool} {json.dumps(params or {})}\n{result.stdout}\n{result.stderr}\n")
         if result.returncode:
             raise RuntimeError(f"{tool}: {result.stderr or result.stdout}")
-        response = json.loads(result.stdout)
+        response = json.loads(result.stdout)["data"]
         if response.get("error") or response.get("success") is False:
             raise RuntimeError(f"{tool}: {response}")
         return response

@@ -1,5 +1,22 @@
 # Runtime Checklist
 
+## Structured Results
+
+Use `--output json` for automation. Stdout is one envelope on success and failure:
+`{success, command, data, errors:[{code,message}], warnings}`. Unless explicitly
+qualified, tool/report fields below are relative to `data`. Check `success` and
+the process exit status first; parse failure codes from `errors[0].code`, not
+stderr text. Bridge errors preserve their original code and payload in `data`.
+
+Exit codes: 0 success; 1 general error; 2 invalid arguments; 3 authentication;
+4 unmet precondition; 6 operation failure/response timeout; 7 unreachable Editor;
+8 failed tests; 130 SIGINT; 143 SIGTERM (standard shell statuses).
+Fix arguments, credentials or prerequisites before retrying. On exit 6, retry
+only a safe operation; after timeout, query its job/request ID first. On exit 7,
+follow Connection Recovery. On exit 8, inspect the test failures in `data`.
+`run_tests` accepting a run is not a test pass: poll `get_test_status` through
+completion and inspect that call's exit code.
+
 ## Binary Selection
 
 - Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).

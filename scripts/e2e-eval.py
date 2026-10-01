@@ -35,7 +35,7 @@ def command(*parts):
                                env=environment, timeout=int(args.timeout_ms) / 1000 + 30)
     if completed.returncode:
         raise AssertionError(completed.stderr + completed.stdout)
-    return json.loads(completed.stdout)
+    return json.loads(completed.stdout)["data"]
 
 
 def raw(tool, **params):

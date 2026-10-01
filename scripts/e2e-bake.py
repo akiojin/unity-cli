@@ -41,7 +41,7 @@ def call(tool, payload, error=None, busy_deadline=None):
     except ValueError:
         envelope = {}
     # Fixture creation triggers imports that may outlive ExecuteMenuItem.
-    if envelope.get("code") == "EDITOR_BUSY" and time.monotonic() < busy_deadline:
+    if (envelope.get("errors") or [{}])[0].get("code") == "EDITOR_BUSY" and time.monotonic() < busy_deadline:
         time.sleep(0.5)
         return call(tool, payload, error, busy_deadline)
     if error:
@@ -50,7 +50,7 @@ def call(tool, payload, error=None, busy_deadline=None):
         check(error in output, f"{tool} rejects with {error}: {output}")
         return None
     assert result.returncode == 0, (tool, output)
-    data = json.loads(result.stdout)
+    data = json.loads(result.stdout)["data"]
     assert not data.get("error") and data.get("status") != "error" and data.get("success") is not False, (tool, data)
     print(tool, json.dumps(data), flush=True)
     return data

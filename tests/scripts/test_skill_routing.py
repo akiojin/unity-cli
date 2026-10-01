@@ -51,7 +51,9 @@ class SkillRoutingTests(unittest.TestCase):
 
     def test_main_supplies_cli_schema_to_model(self):
         schema = [{"name": "clear_console", "params_schema": {"properties": {}}}]
-        response = subprocess.CompletedProcess([], 0, json.dumps({"tools": schema}), "")
+        response = subprocess.CompletedProcess([], 0, json.dumps({
+            "success": True, "command": "tool schema", "data": {"tools": schema},
+            "errors": [], "warnings": []}), "")
         with (patch.object(sys, "argv", ["routing", "--unity-cli", "/custom/unity-cli",
                                        "--skills-dir", str(ROOT / ".claude-plugin/plugins/unity-cli/skills")]),
               patch.object(sys, "stdin", io.StringIO("Clear the console")),
