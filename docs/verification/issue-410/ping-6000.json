@@ -1,0 +1,13 @@
+{
+  "bridgeVersion": "0.16.0",
+  "echo": null,
+  "message": "pong",
+  "projectPath": "/private/tmp/issue410-bridge-6000",
+  "timestamp": "2026-10-01T04:45:48.3314650Z",
+  "versionCheck": {
+    "bridgeVersion": "0.16.0",
+    "cliVersion": "0.16.0",
+    "message": "CLI and bridge are both 0.16.0",
+    "status": "match"
+  }
+}
