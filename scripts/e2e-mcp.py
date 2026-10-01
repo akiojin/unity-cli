@@ -64,6 +64,8 @@ def main():
     parser.add_argument("--cli", type=Path, default=ROOT / "target/debug/unity-cli")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--port", type=int, default=6550)
+    parser.add_argument("--custom-tools", action="store_true",
+                        help="Also verify project tools from #442 through MCP")
     args = parser.parse_args()
     started = datetime.now(timezone.utc).isoformat()
     out = args.output.resolve()
@@ -74,6 +76,15 @@ def main():
     shutil.copy2(args.cli.resolve(), cli)
     editor = Path(f"/Applications/Unity/Hub/Editor/{args.version}/Unity.app/Contents/MacOS/Unity")
     _, project, _ = matrix.prepare(editor, out)
+    if args.custom_tools:
+        (project / "Assets/Editor/McpProbe444.cs").write_text('''
+using UnityCliBridge.Tools;
+public static class McpProbe444
+{
+    [UnityCliTool("mcp_probe_444")]
+    public static string Probe() { return "mcp-dynamic-ok"; }
+}
+''')
     # Check ownership of the port before starting either peer.
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", args.port))
@@ -158,11 +169,57 @@ def main():
                 pass
         check("real Editor late-connect notification", notification is not None)
 
+        # The bridge can accept a connection before initial asset import ends.
+        # Preserve the late-connect proof above, but run acceptance calls only
+        # once the Editor is no longer compiling/updating.
+        compilation = None
+        while time.monotonic() < deadline:
+            if host.poll() is not None:
+                raise RuntimeError("Editor exited during import; inspect editor.log")
+            state = subprocess.run([str(cli), "--timeout-ms", "2000", "--output", "json",
+                                    "raw", "get_compilation_state", "--json", "{}"],
+                                   env=env, capture_output=True, text=True, timeout=15)
+            if state.returncode == 0:
+                compilation = json.loads(state.stdout)["data"]
+                if matrix.ready(compilation):
+                    break
+            time.sleep(2)
+        check("Editor import and compilation ready", matrix.ready(compilation))
+        (out / "compilation.json").write_text(json.dumps(compilation, indent=2) + "\n")
+
         catalog = inspector("tools-list", "tools/list")
-        listed = subprocess.run([str(cli), "tool", "list"], env=env, capture_output=True, text=True, check=True)
+        listed = subprocess.run([str(cli), "tool", "list"], env=env, capture_output=True, text=True, timeout=15)
         (out / "cli-tool-list.txt").write_text(listed.stdout)
+        (out / "cli-tool-list.stderr.txt").write_text(listed.stderr)
+        listed.check_returncode()
         names = sorted(tool["name"] for tool in catalog["tools"])
         check("Inspector and CLI tool names identical", names == sorted(listed.stdout.splitlines()))
+        if args.custom_tools:
+            described = subprocess.run([str(cli), "tool", "list", "--output", "json"],
+                                       env=env, capture_output=True, text=True, check=True)
+            (out / "cli-tool-descriptors.json").write_text(described.stdout)
+            descriptors = {tool["name"]: tool for tool in json.loads(described.stdout)["data"]}
+            # Inspector parses JSON through JavaScript Number, which rounds
+            # int64 bounds. Compare its projection at that precision, then
+            # independently prove exact schemas on the raw stdio transport.
+            def inspector_numbers(value):
+                return json.loads(json.dumps(value), parse_int=float)
+            check("Inspector schema projection matches CLI", all(
+                tool["description"] == descriptors[tool["name"]]["description"]
+                and inspector_numbers(tool["inputSchema"]) == inspector_numbers(descriptors[tool["name"]]["params_schema"])
+                for tool in catalog["tools"]))
+            session.send({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})
+            while True:
+                raw = session.receive()
+                if raw.get("id") == 3:
+                    break
+            check("raw MCP and CLI schemas exactly identical", all(
+                tool["inputSchema"] == descriptors[tool["name"]]["params_schema"]
+                for tool in raw["result"]["tools"]))
+            check("project custom tool is published", "mcp_probe_444" in names)
+            result, envelope = inspector("custom-tool", "tools/call", "mcp_probe_444")
+            check("MCP calls project custom tool", not result.get("isError") and envelope["success"]
+                  and "mcp-dynamic-ok" in json.dumps(envelope["data"]))
 
         marker = f"McpInspector444_{args.version}"
         result, envelope = inspector("create", "tools/call", "create_gameobject", {"name": marker})

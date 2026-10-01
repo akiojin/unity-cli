@@ -27,8 +27,11 @@ to stdout; diagnostics use stderr. It exits on stdin EOF. Start it through an MC
 client, not as a detached background daemon.
 
 An Editor is not required at startup. The catalog is available immediately.
-After initialization the adapter probes the selected endpoint every two seconds
-and sends `notifications/tools/list_changed` when connectivity changes. Endpoint
+After initialization the adapter polls the shared tool discovery every two seconds
+and sends `notifications/tools/list_changed` when connectivity or the published
+catalog changes. Project tools from `[UnityCliBridge.Tools.UnityCliTool]` use the
+same descriptions, parameter schemas and execution path as `tool list` / `raw`.
+An unavailable Editor leaves the builtin catalog available. Endpoint
 resolution runs again for each tool call, so an Editor started later can be
 discovered. `--project-path`, `--host`, `--port`, and the normal `UNITY_CLI_*`
 settings apply. Multiple Editors require an unambiguous target.
@@ -90,19 +93,23 @@ and is not configured by this command.
 
 ## Verification
 
-`cargo test --test mcp -- --test-threads=1` checks catalog parity, error results,
-and five-client configuration behavior in temporary directories. For isolated
+`cargo test --test mcp --test mcp_dynamic -- --test-threads=1` checks catalog
+parity, error results, live custom-tool removal, and five-client configuration
+behavior in temporary directories. For isolated
 real-Editor acceptance runs (macOS Apple Silicon):
 
 ```bash
 cargo build
-python3 scripts/e2e-mcp.py --version 6000.3.25f1 --output /tmp/mcp-6000 --port 6550
-python3 scripts/e2e-mcp.py --version 2022.3.62f3 --output /tmp/mcp-2022 --port 6551
+python3 scripts/e2e-mcp.py --version 6000.3.25f1 --output /tmp/mcp-6000 --port 6550 --custom-tools
+python3 scripts/e2e-mcp.py --version 2022.3.62f3 --output /tmp/mcp-2022 --port 6551 --custom-tools
 ```
 
 The runner pins MCP Inspector, starts MCP before the Editor, checks the live
 notification, compares tool names, creates a GameObject, reads its hierarchy,
 and verifies authenticated eval plus a rejected token with no scene side effect.
+`--custom-tools` adds a project tool fixture and verifies its publication and call.
+It also compares CLI and MCP schemas exactly on raw stdio; Inspector's JavaScript
+JSON parser rounds integer bounds beyond its safe integer range.
 Use new output directories for each run. They contain raw Inspector output and a
 summary; Editor lockfiles contain private tokens and must not be published.
 

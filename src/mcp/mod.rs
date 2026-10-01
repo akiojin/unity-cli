@@ -5,8 +5,8 @@ use crate::{
     app::{output, runner},
     cli::Cli,
     config::RuntimeConfig,
+    discovery::{builtin_tool_specs, discover_tool_specs, DiscoveredTool},
     tool_catalog,
-    transport::UnityClient,
 };
 use anyhow::Result;
 use serde_json::{json, Value};
@@ -17,9 +17,9 @@ fn rpc_error(id: Value, code: i32, message: &str) -> Value {
     json!({"jsonrpc":"2.0","id":id,"error":{"code":code,"message":message}})
 }
 
-fn catalog() -> Value {
-    let tools: Vec<_> = tool_catalog::list_tool_specs()
-        .into_iter()
+fn project_catalog(specs: &[DiscoveredTool]) -> Value {
+    let tools: Vec<_> = specs
+        .iter()
         .map(|spec| {
             json!({
                 "name":spec.name, "description":spec.description,
@@ -31,29 +31,45 @@ fn catalog() -> Value {
     json!({"tools":tools})
 }
 
-async fn connected(cli: &Cli) -> bool {
+async fn snapshot(cli: &Cli) -> (bool, Vec<DiscoveredTool>) {
     let Ok(mut config) = RuntimeConfig::from_overrides(&runner::runtime_overrides_from_cli(cli))
     else {
-        return false;
+        return (false, builtin_tool_specs());
     };
     config.timeout = Duration::from_millis(500);
-    let probe = async {
-        let mut client = UnityClient::connect(&config).await?;
-        client.call_tool("ping", json!({})).await
-    };
-    matches!(
-        tokio::time::timeout(Duration::from_millis(600), probe).await,
-        Ok(Ok(_))
-    )
+    match tokio::time::timeout(Duration::from_millis(600), discover_tool_specs(&config)).await {
+        Ok(Ok(tools)) => (true, tools),
+        _ => (false, builtin_tool_specs()),
+    }
 }
 
-#[derive(Default)]
 struct Session {
     negotiated: bool,
     initialized: bool,
+    available: bool,
+    published_catalog: Value,
+}
+
+impl Default for Session {
+    fn default() -> Self {
+        Self {
+            negotiated: false,
+            initialized: false,
+            available: false,
+            published_catalog: project_catalog(&builtin_tool_specs()),
+        }
+    }
 }
 
 impl Session {
+    fn update_catalog(&mut self, available: bool, tools: &[DiscoveredTool]) -> bool {
+        let catalog = project_catalog(tools);
+        let changed = self.available != available || self.published_catalog != catalog;
+        self.available = available;
+        self.published_catalog = catalog;
+        changed
+    }
+
     async fn handle(&mut self, cli: &Cli, request: Value) -> Option<Value> {
         let id = request.get("id").cloned();
         let method = request["method"].as_str();
@@ -112,14 +128,19 @@ impl Session {
                 if params.get("cursor").is_some() {
                     return Some(rpc_error(id, -32602, "Pagination cursor is not supported"));
                 }
-                catalog()
+                let (available, tools) = snapshot(cli).await;
+                self.update_catalog(available, &tools);
+                self.published_catalog.clone()
             }
             "tools/call" => {
                 let Some(name) = params["name"].as_str() else {
                     return Some(rpc_error(id, -32602, "Missing tool name"));
                 };
                 if !tool_catalog::is_known_tool(name) {
-                    return Some(rpc_error(id, -32602, "Unknown tool"));
+                    let (_, tools) = snapshot(cli).await;
+                    if !tools.iter().any(|tool| tool.name == name) {
+                        return Some(rpc_error(id, -32602, "Unknown tool"));
+                    }
                 }
                 let args = params
                     .get("arguments")
@@ -165,7 +186,6 @@ pub async fn serve(cli: &Cli) -> Result<()> {
     let mut lines = BufReader::new(tokio::io::stdin()).lines();
     let mut out = tokio::io::stdout();
     let mut session = Session::default();
-    let mut available = false;
     let mut interval = tokio::time::interval(Duration::from_secs(2));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
@@ -181,13 +201,39 @@ pub async fn serve(cli: &Cli) -> Result<()> {
                 }
             }
             _ = interval.tick(), if session.initialized => {
-                let now = connected(cli).await;
-                if now != available {
-                    available = now;
+                let (available, tools) = snapshot(cli).await;
+                if session.update_catalog(available, &tools) {
                     send(&mut out, json!({"jsonrpc":"2.0","method":"notifications/tools/list_changed"})).await?;
                 }
             }
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::discovery::{DiscoveredTool, ToolSource};
+    use crate::tool_catalog::ToolExecutor;
+
+    #[test]
+    fn projects_owned_custom_descriptor_without_an_mcp_specific_schema() {
+        let schema =
+            json!({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]});
+        let tool = DiscoveredTool {
+            name: "spawn_light".into(),
+            description: "Create project light".into(),
+            mutating: true,
+            executor: ToolExecutor::Remote,
+            params_schema: schema.clone(),
+            response_schema: json!({"type":"object"}),
+            source: ToolSource::Custom,
+        };
+        let value = project_catalog(&[tool]);
+        assert_eq!(value["tools"][0]["name"], "spawn_light");
+        assert_eq!(value["tools"][0]["description"], "Create project light");
+        assert_eq!(value["tools"][0]["inputSchema"], schema);
+        assert_eq!(value["tools"][0]["annotations"]["readOnlyHint"], false);
+    }
 }
