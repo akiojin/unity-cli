@@ -15,6 +15,7 @@ metadata:
     - dependency
   siblings:
     - unity-localization
+    - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-addressables
@@ -38,6 +39,7 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 ## Do Not Use When
 
 - Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 

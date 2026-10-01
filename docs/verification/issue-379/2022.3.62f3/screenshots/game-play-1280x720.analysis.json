@@ -1,0 +1,111 @@
+{
+  "image": "evidence-recheck/screenshots/game-play-1280x720.png",
+  "width": 1280,
+  "height": 720,
+  "integerScale": 4,
+  "distinctColors": 5,
+  "colorHistogram": {
+    "(25, 25, 41)": 897024,
+    "(63, 163, 77)": 13920,
+    "(30, 91, 42)": 6560,
+    "(224, 138, 30)": 2800,
+    "(90, 45, 12)": 1296
+  },
+  "cells": [
+    {
+      "cell": [
+        0,
+        0
+      ],
+      "sprite": "grass379",
+      "screenRect": [
+        512,
+        392,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    },
+    {
+      "cell": [
+        1,
+        0
+      ],
+      "sprite": "grass379",
+      "screenRect": [
+        576,
+        392,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    },
+    {
+      "cell": [
+        2,
+        0
+      ],
+      "sprite": "grass379",
+      "screenRect": [
+        640,
+        392,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    },
+    {
+      "cell": [
+        0,
+        2
+      ],
+      "sprite": "edge379",
+      "screenRect": [
+        512,
+        264,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    },
+    {
+      "cell": [
+        1,
+        2
+      ],
+      "sprite": "grass379",
+      "screenRect": [
+        576,
+        264,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    },
+    {
+      "cell": [
+        3,
+        2
+      ],
+      "sprite": "grass379",
+      "screenRect": [
+        704,
+        264,
+        64,
+        64
+      ],
+      "mismatchedPixels": 0
+    }
+  ],
+  "background": {
+    "color": [
+      25,
+      25,
+      41
+    ],
+    "pixels": 897024
+  },
+  "nonBackgroundPixels": 24576,
+  "expectedTilePixels": 24576,
+  "passed": true
+}

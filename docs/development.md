@@ -210,6 +210,10 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# AudioMixer hierarchy/exposed Volume and AudioImporter persistence (isolated Editor)
+bash scripts/e2e-audio-batch-host.sh --unity-version 2022.3.62f3 --port 6481
+bash scripts/e2e-audio-batch-host.sh --unity-version 6000.3.25f1 --port 6482
+
 # Reference fetch regression (live Editor; isolated cache; downloads UnityCsReference)
 # Run cargo build first, or set UNITY_CLI_BIN to the binary under test.
 scripts/e2e-reference-fetch.sh --port 6400

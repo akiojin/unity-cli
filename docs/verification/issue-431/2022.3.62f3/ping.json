@@ -1,0 +1,13 @@
+{
+  "bridgeVersion": "0.16.0",
+  "echo": null,
+  "message": "pong",
+  "projectPath": "/private/tmp/unity-cli-audio-e2e.lHu1AK/Project",
+  "timestamp": "2026-10-01T09:11:19.3826490Z",
+  "versionCheck": {
+    "bridgeVersion": "0.16.0",
+    "cliVersion": "0.16.0",
+    "message": "CLI and bridge are both 0.16.0",
+    "status": "match"
+  }
+}

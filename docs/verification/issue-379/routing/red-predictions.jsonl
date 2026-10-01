@@ -1,0 +1,9 @@
+{"id": "SPR379-01", "prediction": {"skills": ["unity-asset-management", "unity-scene-create"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}}
+{"id": "SPR379-02", "prediction": {"skills": ["unity-asset-management", "unity-scene-create"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}}
+{"id": "SPR379-03", "prediction": {"skills": ["unity-asset-management", "unity-scene-create"], "predicted_tool": "create_sprite_atlas", "predicted_payload_keys": ["atlasPath", "packables"]}}
+{"id": "SPR379-04", "prediction": {"skills": ["unity-asset-management"], "predicted_tool": "create_sprite_atlas", "predicted_payload_keys": ["atlasPath", "packables"]}}
+{"id": "SPR379-05", "prediction": {"skills": ["unity-asset-management"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}}
+{"id": "SPR379-06", "prediction": {"skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}}
+{"id": "SPR379-07", "prediction": {"skills": ["unity-playmode-testing"], "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode"]}}
+{"id": "SPR379-08", "prediction": {"skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}}
+{"id": "SPR379-09", "prediction": {"skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}}
