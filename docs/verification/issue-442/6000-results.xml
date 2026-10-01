@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="21" result="Passed" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.1593401">
+  <test-suite type="TestSuite" id="1000" name="UnityCliBridge" fullname="UnityCliBridge" runstate="Runnable" testcasecount="709" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.159340" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1817" name="UnityCliBridge.Tests.dll" fullname="/private/tmp/unity-cli-442-final2-6000/project/Library/ScriptAssemblies/UnityCliBridge.Tests.dll" runstate="Runnable" testcasecount="654" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.151318" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="55862" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1818" name="UnityCliBridge" fullname="UnityCliBridge" runstate="Runnable" testcasecount="654" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.138320" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1819" name="Tests" fullname="UnityCliBridge.Tests" runstate="Runnable" testcasecount="654" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.129374" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1824" name="Editor" fullname="UnityCliBridge.Tests.Editor" runstate="Runnable" testcasecount="121" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.102930" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1699" name="CustomToolRegistryTests" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" testcasecount="21" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.099289" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1710" name="BackgroundInvocationIsRefused" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.BackgroundInvocationIsRefused" methodname="BackgroundInvocationIsRefused" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1303762147" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.036247" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1715" name="BuiltinNamesAreRefusedWithConsoleWarning" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.BuiltinNamesAreRefusedWithConsoleWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.004228" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1713" name="BuiltinNamesAreRefusedWithConsoleWarning(&quot;Collision&quot;,&quot;ping&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.BuiltinNamesAreRefusedWithConsoleWarning(&quot;Collision&quot;,&quot;ping&quot;)" methodname="BuiltinNamesAreRefusedWithConsoleWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1152091785" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.002157" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'ping': name is reserved by a builtin tool
+]]></output>
+                </test-case>
+                <test-case id="1714" name="BuiltinNamesAreRefusedWithConsoleWarning(&quot;LocalCollision&quot;,&quot;read&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.BuiltinNamesAreRefusedWithConsoleWarning(&quot;LocalCollision&quot;,&quot;read&quot;)" methodname="BuiltinNamesAreRefusedWithConsoleWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="883072069" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000718" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'read': name is reserved by a builtin tool
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1716" name="DuplicateNamesRefuseBothMethods" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.DuplicateNamesRefuseBothMethods" methodname="DuplicateNamesRefuseBothMethods" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1565650651" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000625" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_duplicate': multiple methods declare the same name
+]]></output>
+              </test-case>
+              <test-case id="1712" name="ExceptionsAndSerializationFailuresAreStructured" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.ExceptionsAndSerializationFailuresAreStructured" methodname="ExceptionsAndSerializationFailuresAreStructured" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1704070531" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.018749" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1708" name="InvalidArgumentsAreRejectedBeforeInvocation" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.004805" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1702" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1721729635" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.001224" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1703" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:7}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:7}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="956914402" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000493" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1704" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:null}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:null}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1775523107" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000392" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1705" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;intensity\&quot;:\&quot;bright\&quot;}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;intensity\&quot;:\&quot;bright\&quot;}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="865992697" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000524" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1706" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;intensity\&quot;:1e40}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;intensity\&quot;:1e40}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="559492347" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000644" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1707" name="InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;extra\&quot;:true}&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidArgumentsAreRejectedBeforeInvocation(&quot;{\&quot;name\&quot;:\&quot;Sun\&quot;,\&quot;extra\&quot;:true}&quot;)" methodname="InvalidArgumentsAreRejectedBeforeInvocation" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1700775767" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000341" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-suite type="ParameterizedMethod" id="1722" name="InvalidSignaturesAreRefusedWithWarning" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.003750" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1717" name="InvalidSignaturesAreRefusedWithWarning(&quot;Instance&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning(&quot;Instance&quot;)" methodname="InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="810320652" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000739" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_instance': method must be public static, synchronous and non-generic
+]]></output>
+                </test-case>
+                <test-case id="1718" name="InvalidSignaturesAreRefusedWithWarning(&quot;Private&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning(&quot;Private&quot;)" methodname="InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1574069317" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000518" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_private': method must be public static, synchronous and non-generic
+]]></output>
+                </test-case>
+                <test-case id="1719" name="InvalidSignaturesAreRefusedWithWarning(&quot;Generic&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning(&quot;Generic&quot;)" methodname="InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="842488787" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000575" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_generic': method must be public static, synchronous and non-generic
+]]></output>
+                </test-case>
+                <test-case id="1720" name="InvalidSignaturesAreRefusedWithWarning(&quot;Async&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning(&quot;Async&quot;)" methodname="InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1551711200" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000578" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_async': method must be public static, synchronous and non-generic
+]]></output>
+                </test-case>
+                <test-case id="1721" name="InvalidSignaturesAreRefusedWithWarning(&quot;Unsupported&quot;)" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvalidSignaturesAreRefusedWithWarning(&quot;Unsupported&quot;)" methodname="InvalidSignaturesAreRefusedWithWarning" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="512828328" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000545" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[[unity-cli-bridge][CustomTools] Cannot register 'test_unsupported': Unsupported parameter type 'UnityEngine.GameObject'; use string, bool, int, long, float, double or an enum
+]]></output>
+                </test-case>
+              </test-suite>
+              <test-case id="1709" name="InvocationUsesDefaultAndRunsOnCallingMainThread" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.InvocationUsesDefaultAndRunsOnCallingMainThread" methodname="InvocationUsesDefaultAndRunsOnCallingMainThread" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1195063547" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.001960" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1700" name="ListToolsReturnsRegistryWithoutInvokingUserCode" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.ListToolsReturnsRegistryWithoutInvokingUserCode" methodname="ListToolsReturnsRegistryWithoutInvokingUserCode" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1183687021" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.006865" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1711" name="OptionalNullEnumBooleanAndIntegerUseStrictTypes" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.OptionalNullEnumBooleanAndIntegerUseStrictTypes" methodname="OptionalNullEnumBooleanAndIntegerUseStrictTypes" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="1781373355" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.005990" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1701" name="SchemaUsesParameterTypesDescriptionsAndCSharpDefaults" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.SchemaUsesParameterTypesDescriptionsAndCSharpDefaults" methodname="SchemaUsesParameterTypesDescriptionsAndCSharpDefaults" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="951427393" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.001909" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1723" name="UnknownNameIsNotHandled" fullname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests.UnknownNameIsNotHandled" methodname="UnknownNameIsNotHandled" classname="UnityCliBridge.Tests.Editor.CustomToolRegistryTests" runstate="Runnable" seed="2003538580" result="Passed" start-time="2026-10-01 18:50:27Z" end-time="2026-10-01 18:50:27Z" duration="0.000374" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: /Users/akiojin/Library/Application Support/DefaultCompany/UnityCliBridge/TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
