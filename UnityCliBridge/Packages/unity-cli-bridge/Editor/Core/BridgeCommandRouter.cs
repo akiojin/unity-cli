@@ -31,6 +31,7 @@ namespace UnityCliBridge.Core
                     echo = command.Parameters?["message"]?.ToString(),
                     timestamp = DateTime.UtcNow.ToString("o"),
                     bridgeVersion = Response.PackageVersion,
+                    supportsSafeClose = true,
                     projectPath = Path.GetDirectoryName(Application.dataPath)
                 }),
                 ["clear_logs"] = command =>
@@ -147,6 +148,22 @@ namespace UnityCliBridge.Core
                 ["get_test_status"] = command => Success(command, TestExecutionHandler.GetTestStatus(command.Parameters)),
                 ["quit_editor"] = command =>
                 {
+                    // Typed `editor close` always supplies force. Keep legacy raw
+                    // quit requests (no force field) compatible with existing hosts.
+                    if (command.Parameters?["force"]?.ToObject<bool>() == false)
+                    {
+                        var unsaved = new List<string>();
+                        for (var i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                        {
+                            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                            if (scene.isDirty)
+                                unsaved.Add(string.IsNullOrEmpty(scene.path) ? "Untitled" : scene.path);
+                        }
+                        if (unsaved.Count > 0)
+                            return Task.FromResult(Response.ErrorResult(command.Id,
+                                "Unsaved scenes; save them first or use editor close --force to discard changes",
+                                "UNSAVED_SCENES", new { scenes = unsaved }));
+                    }
                     var response = Response.SuccessResult(command.Id, new { message = "Unity Editor quitting" });
                     // The transport schedules exit only after this response is sent.
                     return Task.FromResult(response);
