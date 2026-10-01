@@ -1,0 +1,88 @@
+[
+  {
+    "version": "6000.3.25f1",
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-420/target/debug/unity-cli",
+      "--project-path",
+      "/tmp/issue420-validation/6000.3.25f1/project",
+      "--port",
+      "6493",
+      "--host",
+      "127.0.0.1",
+      "--timeout-ms",
+      "30000",
+      "raw",
+      "create_csharp_file",
+      "--json",
+      "{\"relative\": \"Assets/Issue420Probe1790840530.cs\", \"text\": \"public class Issue420Probe1790840530 { public int Value; }\", \"apply\": true, \"refresh\": true, \"waitForCompile\": true}"
+    ],
+    "exit_code": 0,
+    "stderr": "",
+    "time": "2026-10-01T07:42:27Z",
+    "response": {
+      "success": true,
+      "applied": true,
+      "changedFiles": [
+        "Assets/Issue420Probe1790840530.cs"
+      ],
+      "refresh": {
+        "isCompiling": true,
+        "message": "Asset refresh triggered",
+        "timestamp": "2026-10-01T07:42:14.0015640Z"
+      },
+      "compileState": {
+        "isCompiling": false,
+        "isUpdating": false,
+        "errorCount": 0,
+        "lastCompilationTime": "2026-10-01T07:42:20.5714430Z"
+      }
+    },
+    "raw_evidence": {
+      "path": "/tmp/issue420-validation/6000.3.25f1/result.json",
+      "sha256": "a9d275d8363da5087a2b3d19137d0a2b0f05e9e16240bce31cb073867b5d22bf"
+    }
+  },
+  {
+    "version": "2022.3.62f3",
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-420/target/debug/unity-cli",
+      "--project-path",
+      "/tmp/issue420-validation/2022.3.62f3/project",
+      "--port",
+      "6494",
+      "--host",
+      "127.0.0.1",
+      "--timeout-ms",
+      "30000",
+      "raw",
+      "create_csharp_file",
+      "--json",
+      "{\"relative\": \"Assets/Issue420Probe1790840547.cs\", \"text\": \"public class Issue420Probe1790840547 { public int Value; }\", \"apply\": true, \"refresh\": true, \"waitForCompile\": true}"
+    ],
+    "exit_code": 0,
+    "stderr": "",
+    "time": "2026-10-01T07:42:48Z",
+    "response": {
+      "success": true,
+      "applied": true,
+      "changedFiles": [
+        "Assets/Issue420Probe1790840547.cs"
+      ],
+      "refresh": {
+        "isCompiling": true,
+        "message": "Asset refresh triggered",
+        "timestamp": "2026-10-01T07:42:29.9960260Z"
+      },
+      "compileState": {
+        "isCompiling": false,
+        "isUpdating": false,
+        "errorCount": 0,
+        "lastCompilationTime": "2026-10-01T07:42:40.5465180Z"
+      }
+    },
+    "raw_evidence": {
+      "path": "/tmp/issue420-validation/2022.3.62f3/result.json",
+      "sha256": "6d9d5f28e217a22f13cc20ccdbd7e185fc6499c19df6fdb46b9c2a3d444fb937"
+    }
+  }
+]
