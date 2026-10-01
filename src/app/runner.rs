@@ -73,8 +73,10 @@ async fn run_command(cli: Cli) -> Result<()> {
     }
 
     // Background self-update (non-blocking). Skipped for `cli` subcommands
-    // which manage the binary themselves.
-    let mut update_handle = if !matches!(&cli.command, Command::Cli { .. }) {
+    // which manage the binary themselves, and setup previews, which must not
+    // access the network or write even an update-check marker.
+    let setup_preview = cli.dry_run && matches!(&cli.command, Command::Setup { .. });
+    let mut update_handle = if !setup_preview && !matches!(&cli.command, Command::Cli { .. }) {
         crate::core::self_update::maybe_self_update()
     } else {
         None
@@ -340,6 +342,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             project_path,
             launch_editor,
             wait_secs,
+            json,
         } => {
             let cwd = std::env::current_dir()?;
             let overrides = runtime_overrides_from_cli(&cli);
@@ -365,7 +368,14 @@ async fn run_command(cli: Cli) -> Result<()> {
                 dry_run: cli.dry_run,
             };
             let value = super::setup::run(&options, &config, &cwd).await?;
-            print_value(&value, cli.output)?;
+            print_value(
+                &value,
+                if *json {
+                    OutputFormat::Json
+                } else {
+                    cli.output
+                },
+            )?;
             if value["ok"] != json!(true) {
                 return Err(anyhow!(
                     "setup incomplete: the Unity Editor bridge is not ready for this project"

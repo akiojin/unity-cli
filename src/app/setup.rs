@@ -25,19 +25,48 @@ pub async fn run(options: &SetupOptions, config: &RuntimeConfig, cwd: &Path) -> 
     let root = bridge::resolve_project_root(options.project_path.as_deref(), cwd)?;
     let bridge_report = bridge::apply(&root, BridgeAction::Install, options.dry_run)?;
 
-    let mut launch = Value::Null;
-    let mut ping = ping_once(config).await;
     let wait_secs = options.wait_secs.unwrap_or(if options.launch_editor {
         LAUNCH_WAIT_SECS
     } else {
         0
     });
+    if options.dry_run {
+        let mut launch_step = json!({
+            "step": "launch", "enabled": options.launch_editor,
+            "description": "Launch the project's Editor if ping fails and it is not already open",
+        });
+        if options.launch_editor {
+            let version = project_unity_version(&root)?;
+            let editor = std::env::var_os("UNITY_EDITOR_PATH")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| hub_editor_path(&version));
+            launch_step["executable"] = json!(editor);
+            launch_step["args"] = json!(["-projectPath", root]);
+            launch_step["env"] = json!({"UNITY_CLI_PORT": config.port.to_string()});
+            launch_step["unityVersion"] = json!(version);
+        }
+        return Ok(json!({
+            "ok": true,
+            "dryRun": true,
+            "binary": binary,
+            "bridge": bridge_report,
+            "launch": {"launched": false, "reason": "dry_run"},
+            "editor": {"checked": false, "endpoint": format!("{}:{}", config.host, config.port)},
+            "warnings": [],
+            "steps": [
+                {"step": "binary", "description": "Check the CLI binary version and PATH", "details": binary},
+                {"step": "bridge", "description": "Install the bridge in the project manifest", "details": bridge_report},
+                launch_step,
+                {"step": "wait", "description": "Ping the Editor and poll until ready or the wait expires",
+                 "endpoint": format!("{}:{}", config.host, config.port), "waitSecs": wait_secs},
+            ],
+        }));
+    }
+
+    let mut launch = Value::Null;
+    let mut ping = ping_once(config).await;
     if ping.is_err() && options.launch_editor {
-        launch = if options.dry_run {
-            json!({ "launched": false, "reason": "dry_run" })
-        } else {
-            launch_editor(&root, config.port)?
-        };
+        launch = launch_editor(&root, config.port)?;
     }
     if ping.is_err() && wait_secs > 0 {
         let deadline = Instant::now() + Duration::from_secs(wait_secs);
@@ -314,7 +343,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn setup_reports_unreachable_editor_and_dry_run_skips_writes() {
+    async fn setup_dry_run_leaves_editor_unchecked_and_skips_writes() {
         let dir = project();
         let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -326,14 +355,30 @@ mod tests {
 
         let report = run(&opts, &config(port), dir.path()).await.unwrap();
 
-        assert_eq!(report["ok"], false);
-        assert_eq!(report["editor"]["reachable"], false);
+        assert_eq!(report["ok"], true);
+        assert_eq!(report["editor"]["checked"], false);
         assert_eq!(report["launch"]["reason"], "dry_run");
         assert_eq!(report["bridge"]["manifestChanged"], true);
+        assert_eq!(report["steps"][2]["unityVersion"], "6000.3.25f1");
+        assert_eq!(report["steps"][3]["waitSecs"], 0);
         assert_eq!(
             std::fs::read_to_string(dir.path().join("Packages/manifest.json")).unwrap(),
             "{\n  \"dependencies\": {}\n}\n"
         );
+    }
+
+    #[tokio::test]
+    async fn setup_without_dry_run_reports_unreachable_editor() {
+        let dir = project();
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        drop(listener);
+
+        let report = run(&options(), &config(port), dir.path()).await.unwrap();
+
+        assert_eq!(report["ok"], false);
+        assert_eq!(report["editor"]["reachable"], false);
+        assert!(report["editor"]["error"].is_string());
     }
 
     #[test]

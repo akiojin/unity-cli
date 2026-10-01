@@ -102,6 +102,9 @@ pub enum Command {
         /// Seconds to wait for the Editor bridge (default: 0, or 900 with --launch-editor).
         #[arg(long, value_name = "SECS")]
         wait_secs: Option<u64>,
+        /// Print the setup report (or dry-run steps) as JSON; same as --output json.
+        #[arg(long)]
+        json: bool,
     },
     /// Manage the com.akiojin.unity-cli-bridge package in a Unity project.
     Bridge {
