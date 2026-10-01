@@ -1,0 +1,37 @@
+{
+  "hierarchy": [
+    {
+      "components": [
+        "Transform",
+        "Camera",
+        "AudioListener"
+      ],
+      "isActive": true,
+      "name": "Main Camera",
+      "path": "/Main Camera"
+    },
+    {
+      "components": [
+        "Transform",
+        "Light"
+      ],
+      "isActive": true,
+      "name": "Directional Light",
+      "path": "/Directional Light"
+    },
+    {
+      "components": [
+        "Transform",
+        "MeshFilter",
+        "BoxCollider",
+        "MeshRenderer"
+      ],
+      "isActive": true,
+      "name": "BootstrapCube",
+      "path": "/BootstrapCube"
+    }
+  ],
+  "isPrefabMode": false,
+  "objectCount": 3,
+  "sceneName": "Bootstrap"
+}

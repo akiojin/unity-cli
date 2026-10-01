@@ -1,0 +1,19 @@
+{
+  "Bootstrap.unity": "d399ed4b8a845471d43939b538e5f2e1313f1bee9945eddd53af2a87540f8123",
+  "ProjectVersion.txt": "4a18b4936a9f83ec28b32cf336e6f62f6b00ddf12a48c792feac779add1380f3",
+  "claude-tool-calls.json": "cdeb2274d7da44f2cd95f526160f49c51443a48a11b62568f9823691ac00d98d",
+  "commands.txt": "9c0fd9fc51eb3e4ee85fceb70f26f2965eabd7c6934b0ba3164971a77d1e9597",
+  "console.json": "2d12b68c467255acb204af569466b59272607dce737b99ee151b3ab17d5633d8",
+  "creation-excerpt.txt": "b4158693086098ac96bfea1a71b086051e7d9efaae5e90b2bbda8b0f5a8dcb58",
+  "game.png": "d9cfd659cd3a7dffe8ece60f6e4971ff05de1cb3a81cdbefa6fdb4ee54370b67",
+  "hierarchy.json": "13495779ae1ef83524ecb22df3f23fd93208a038273a708969d4ce9489b1b65f",
+  "manifest.json": "0c431febcb0aea4b6fe77ff51acea927f1d8ba618886461f2be1a212e93e9a9d",
+  "normalization.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+  "packages-lock.json": "8da27a07716d924c37fb77ecffefc6febee5fe609547351fbeb4cf40efc184e2",
+  "ping.json": "5d6a91f694202c25e8b1ad2d0c4f016ae8034d3d41f6cdf90ba4e334f3f7cefc",
+  "play-state.json": "f4a7f49cbde7937cf5e173ead9c56caed7b22080b46035244e549e1375140a99",
+  "result.json": "b06ff922cddbc37556208124a9434d184a4d99fb8609bf98863838e8e4a94881",
+  "screenshot.json": "925233f6b82093fd2e679399465b95f01a83d78c4f217b963bf1ded76629d108",
+  "setup.json": "9b024878fe79af0ae317afec56c4d6fc8bb37074fb967e7299b322b07144039e",
+  "stopped-state.json": "52700dadd463670480f545077af5f497d4a92417e2bebec06cb430de30a5ec01"
+}

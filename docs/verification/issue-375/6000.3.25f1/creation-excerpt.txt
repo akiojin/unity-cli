@@ -1,0 +1,4 @@
+COMMAND LINE ARGUMENTS:
+-createProject
+Initialize engine version: 6000.3.25f1 (e1dba0a9aba4)
+Exiting batchmode successfully now!

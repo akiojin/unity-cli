@@ -4,7 +4,7 @@ description: Drive Unity runtime verification with unity-cli. Use when the user 
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: testing
   triggers:
     - playmode
@@ -14,6 +14,7 @@ metadata:
     - screenshot
     - capture
   siblings:
+    - unity-project-bootstrap
     - unity-input-system
     - unity-ui-automation
     - unity-editor-tools
@@ -32,6 +33,7 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 
 ## Do Not Use When
 
+- The request starts by creating a new project and installing its bridge; use `unity-project-bootstrap` to orchestrate the complete workflow.
 - The task is editing input action assets; use `unity-input-system`.
 - The task targets only UI element interaction without runtime gameplay; use `unity-ui-automation`.
 - The work is purely static scene or code inspection; use the corresponding read-only skill.

@@ -116,6 +116,28 @@ or stop the Editor. Global installed skills remain available after the test.
 
 ## Skill Contract v1
 
+### Skill inventory
+
+| Skill | Scope |
+| --- | --- |
+| `unity-project-bootstrap` | New project → bridge/packages → ping → saved starter scene → Play/Game capture |
+| `unity-cli-usage` | CLI installation, setup and connection diagnostics in existing projects |
+| `unity-scene-create` | Create, load and save scenes in an existing project |
+| `unity-scene-inspect` | Read scene hierarchy and state |
+| `unity-gameobject-edit` | Edit existing GameObjects and components |
+| `unity-prefab-workflow` | Prefab assets, instances, variants and overrides |
+| `unity-asset-management` | Assets, materials, imports, animation and Timeline |
+| `unity-addressables` | Addressables groups, entries and content builds |
+| `unity-csharp-edit` | C# implementation and refactoring |
+| `unity-csharp-navigate` | Read and navigate project C# |
+| `unity-csharp-reference` | Read official UnityCsReference sources |
+| `unity-editor-tools` | Editor state, packages, builds, baking and profiling |
+| `unity-input-system` | Input action asset authoring |
+| `unity-playmode-testing` | Runtime tests, input simulation and media capture |
+| `unity-ui-automation` | Inspect and interact with Unity UI |
+| `unity-development-loop` | Gameplay implementation and runtime verification loops |
+| `unity-vfx-graph` | Visual Effect Graph inspection and authoring |
+
 ### Naming
 
 - Pattern: `unity-<domain>-<action>` (kebab-case, lowercase, ≤ 64 chars)

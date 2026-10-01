@@ -1363,7 +1363,12 @@ fn init_tracing(verbose: u8) -> Result<()> {
 #[cfg(test)]
 mod tests {
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
     async fn eval_transport_error_keeps_generated_request_id() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -1454,6 +1459,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let temp = tempfile::tempdir().unwrap();
         let _tools = EnvVarGuard::set("UNITY_CLI_TOOLS_ROOT", temp.path().to_str().unwrap());
         let socket = crate::daemon::runtime::DaemonRuntimePaths::new("unityd")
@@ -1817,6 +1823,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let dir = tempfile::tempdir().unwrap();
         for key in ["UNITY_CLI_HOST", "UNITY_CLI_PORT", "UNITY_PROJECT_ROOT"] {
             std::env::remove_var(key);
@@ -2966,7 +2973,12 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)]
     async fn run_with_cli_batch_marks_skipped_items_in_dry_run_mode() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         run_with_cli(cli_for_dry_run(Command::Batch {
             json: Some(
                 r#"[{"tool":"create_scene","params":{"sceneName":"Main"}},{"tool":"list_packages","params":{}}]"#
@@ -2989,7 +3001,12 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)]
     async fn run_with_cli_exercises_remote_command_error_paths() {
+        let _guard = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let ping_err = run_with_cli(cli_for(Command::System {
             command: SystemCommand::Ping {
                 message: Some("hello".to_string()),
@@ -3027,6 +3044,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry = tempdir().expect("tempdir should succeed");
         let _registry_env = EnvVarGuard::set(
             "UNITY_CLI_REGISTRY_PATH",
@@ -3422,6 +3440,7 @@ mod tests {
         let _guard = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_guard);
         let registry = tempdir().expect("tempdir should succeed");
         let registry_path = registry.path().join("instances.json");
         std::fs::write(&registry_path, "{\n  \"entries\": []\n}\n")
