@@ -13,6 +13,7 @@ metadata:
     - gameobject
     - level
   siblings:
+    - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-project-bootstrap
@@ -38,6 +39,8 @@ Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SK
 - The user needs help loading, saving, or organising a fresh scene authoring workflow.
 
 ## Do Not Use When
+
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 

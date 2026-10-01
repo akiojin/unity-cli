@@ -126,6 +126,7 @@ or stop the Editor. Global installed skills remain available after the test.
 | `unity-scene-inspect` | Read scene hierarchy and state |
 | `unity-gameobject-edit` | Edit existing GameObjects and components |
 | `unity-prefab-workflow` | Prefab assets, instances, variants and overrides |
+| `unity-2d-sprite-tilemap` | Sprite imports → atlas / Tilemap → Pixel Perfect Camera → saved-state and Game verification |
 | `unity-asset-management` | Assets, materials, imports, animation and Timeline |
 | `unity-addressables` | Addressables groups, entries and content builds |
 | `unity-csharp-edit` | C# implementation and refactoring |

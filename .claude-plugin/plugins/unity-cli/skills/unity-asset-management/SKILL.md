@@ -14,6 +14,7 @@ metadata:
     - sprite
     - dependency
   siblings:
+    - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
     - unity-addressables
@@ -35,6 +36,8 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 - The user needs import settings or dependency analysis before file changes.
 
 ## Do Not Use When
+
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
