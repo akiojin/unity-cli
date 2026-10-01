@@ -38,12 +38,20 @@ Manage the Unity Asset Database, materials, animation clips, sprite atlases, imp
 - The request is about scene-instance edits; use `unity-gameobject-edit`.
 - The work happens inside prefab edit mode; use `unity-prefab-workflow`.
 
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
 ## Preferred Flow
 
-1. Inspect the target asset with `manage_asset_database` using `{"action":"get_asset_info","assetPath":"..."}` before changing it.
-2. Run `analyze_asset_dependencies` before deleting, moving, or changing shared assets.
-3. Apply import or material changes with the narrowest possible payload.
-4. Call `refresh_assets` after any out-of-editor file change.
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. Inspect the target asset with `manage_asset_database` using `{"action":"get_asset_info","assetPath":"..."}` before changing it.
+3. Run `analyze_asset_dependencies` before deleting, moving, or changing shared assets.
+4. Apply import or material changes with the narrowest possible payload.
+5. Call `refresh_assets` after any out-of-editor file change.
 
 ```bash
 unity-cli raw manage_asset_database --json '{"action":"get_asset_info","assetPath":"Assets/Textures/hero.png"}'

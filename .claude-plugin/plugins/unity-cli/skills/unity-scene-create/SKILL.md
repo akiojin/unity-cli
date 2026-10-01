@@ -38,12 +38,20 @@ Create scenes, add starter GameObjects, and attach initial components via `unity
 - The work happens inside prefab edit mode; use `unity-prefab-workflow`.
 - The user only wants to read or analyse a scene; use `unity-scene-inspect`.
 
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
 ## Preferred Flow
 
-1. Create or load a scene with `scene create` or `raw load_scene`.
-2. Create GameObjects (optionally with a primitive type and `parentPath`).
-3. Attach components via `add_component`.
-4. Persist with `save_scene` after the bulk authoring is complete.
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. Create or load a scene with `scene create` or `raw load_scene`.
+3. Create GameObjects (optionally with a primitive type and `parentPath`).
+4. Attach components via `add_component`.
+5. Persist with `save_scene` after the bulk authoring is complete.
 
 ```bash
 unity-cli scene create MainMenu --path Assets/Scenes/

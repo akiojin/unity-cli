@@ -34,12 +34,20 @@ Create, open, edit, and instantiate prefab assets via `unity-cli`. This skill ow
 - The task is bootstrapping a fresh scene; use `unity-scene-create`.
 - The request is about asset import settings or materials; use `unity-asset-management`.
 
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
 ## Preferred Flow
 
-1. `open_prefab` to enter edit mode (or `create_prefab` from a scene object).
-2. Apply edits via `add_component`, `modify_component`, or `set_component_field`.
-3. `save_prefab` to persist changes back to the asset.
-4. `exit_prefab_mode` to return to scene authoring.
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. `open_prefab` to enter edit mode (or `create_prefab` from a scene object).
+3. Apply edits via `add_component`, `modify_component`, or `set_component_field`.
+4. `save_prefab` to persist changes back to the asset.
+5. `exit_prefab_mode` to return to scene authoring.
 
 ```bash
 unity-cli raw create_prefab --json '{"gameObjectPath":"/Player","prefabPath":"Assets/Prefabs/Player.prefab"}'
