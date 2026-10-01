@@ -14,6 +14,7 @@ metadata:
     - level
   siblings:
     - unity-urp-setup
+    - unity-ui-toolkit-build
     - unity-project-bootstrap
     - unity-gameobject-edit
     - unity-prefab-workflow
@@ -37,6 +38,8 @@ Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SK
 - The user needs help loading, saving, or organising a fresh scene authoring workflow.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The project itself does not exist yet and the request includes bridge setup; use `unity-project-bootstrap`.
 - The request mainly mutates existing objects in an already-prepared scene; use `unity-gameobject-edit`.

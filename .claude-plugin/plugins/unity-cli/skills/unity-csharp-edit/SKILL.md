@@ -14,6 +14,7 @@ metadata:
     - symbol
     - setting
   siblings:
+    - unity-ui-toolkit-build
     - unity-csharp-navigate
     - unity-csharp-reference
     - unity-editor-tools
@@ -33,6 +34,8 @@ Implement Unity C# changes with `unity-cli` as the primary write path. Prefer th
 - The user changes project or package settings as part of a code change.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The task is read-only investigation; use `unity-csharp-navigate`.
 - The work targets Editor state inspection (console, profiler, packages); use `unity-editor-tools`.

@@ -15,6 +15,7 @@ metadata:
     - capture
   siblings:
     - unity-urp-setup
+    - unity-ui-toolkit-build
     - unity-project-bootstrap
     - unity-input-system
     - unity-ui-automation
@@ -33,6 +34,8 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 - The user wants to inspect current test progress or runtime state.
 
 ## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
 
 - The request starts by creating a new project and installing its bridge; use `unity-project-bootstrap` to orchestrate the complete workflow.
 - The task is editing input action assets; use `unity-input-system`.

@@ -1,0 +1,8 @@
+{"id": "UI377-01", "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"], "predicted_skills": ["unity-ui-toolkit-build"]}
+{"id": "UI377-02", "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"], "predicted_skills": ["unity-ui-toolkit-build"]}
+{"id": "UI377-03", "predicted_tool": "click_ui_element", "predicted_payload_keys": ["elementPath"], "predicted_skills": ["unity-ui-automation"]}
+{"id": "UI377-04", "predicted_tool": "capture_screenshot", "predicted_payload_keys": ["captureMode", "width", "height"], "predicted_skills": ["unity-playmode-testing"]}
+{"id": "UI377-05", "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"], "predicted_skills": ["unity-scene-create"]}
+{"id": "UI377-06", "predicted_tool": "manage_asset_database", "predicted_payload_keys": ["action"], "predicted_skills": ["unity-asset-management"]}
+{"id": "UI377-07", "predicted_tool": "apply_csharp_edits", "predicted_payload_keys": ["files", "validate", "apply"], "predicted_skills": ["unity-csharp-edit"]}
+{"id": "UI377-08", "predicted_tool": "read_console", "predicted_payload_keys": ["count"], "predicted_skills": ["unity-editor-tools"]}

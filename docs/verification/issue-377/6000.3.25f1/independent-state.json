@@ -1,0 +1,43 @@
+{
+  "get_scene_info": {
+    "buildIndex": -1,
+    "fileSize": 10290,
+    "isActive": true,
+    "isDirty": false,
+    "isLoaded": true,
+    "lastModified": "2026-10-01T05:58:44.2247645Z",
+    "sceneName": "ToolkitDemo",
+    "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+    "summary": "Scene \"ToolkitDemo\" - Loaded and active, not in build settings, 10 KB"
+  },
+  "get_compilation_state": {
+    "consoleErrorCount": 0,
+    "consoleWarningCount": 2,
+    "errorCount": 0,
+    "isCompiling": false,
+    "isMonitoring": false,
+    "isUpdating": false,
+    "lastCompilationTime": "2026-10-01T05:57:41.6587590Z",
+    "messageCount": 25,
+    "success": true,
+    "warningCount": 0
+  },
+  "get_editor_state": {
+    "state": {
+      "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+      "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+      "isCompiling": false,
+      "isPaused": false,
+      "isPlaying": false,
+      "isUpdating": false,
+      "playability": {
+        "compilation": null,
+        "lastPlayRequestTime": null,
+        "playRequested": false,
+        "reason": "ready"
+      },
+      "timeSinceStartup": 1981.826286542
+    },
+    "status": "success"
+  }
+}

@@ -1,0 +1,672 @@
+===== [ping] 2026-10-01T06:14:35Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 system ping
+{
+  "bridgeVersion": "0.16.0",
+  "echo": null,
+  "message": "pong",
+  "projectPath": "/private/tmp/issue377-unity-6000.3.25f1",
+  "timestamp": "2026-10-01T06:14:35.1554860Z",
+  "versionCheck": {
+    "bridgeVersion": "0.16.0",
+    "cliVersion": "0.16.0",
+    "message": "CLI and bridge are both 0.16.0",
+    "status": "match"
+  }
+}
+[exit=0]
+
+===== [editor-state-initial] 2026-10-01T06:14:35Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1604.7236571670005
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [scene-list] 2026-10-01T06:14:38Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_scene_info --json \{\}
+{
+  "buildIndex": -1,
+  "fileSize": 10290,
+  "isActive": true,
+  "isDirty": false,
+  "isLoaded": true,
+  "lastModified": "2026-10-01T05:58:44.2247645Z",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Scene \"ToolkitDemo\" - Loaded and active, not in build settings, 10 KB"
+}
+[exit=0]
+
+===== [tool-load-schema] 2026-10-01T06:14:38Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 tool schema load_scene --output json
+{
+  "description": "Unity CLI tool operation",
+  "executor": "remote",
+  "mutating": true,
+  "name": "load_scene",
+  "params_schema": {
+    "additionalProperties": false,
+    "oneOf": [
+      {
+        "additionalProperties": true,
+        "properties": {
+          "scenePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenePath"
+        ],
+        "type": "object"
+      },
+      {
+        "additionalProperties": true,
+        "properties": {
+          "sceneName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sceneName"
+        ],
+        "type": "object"
+      }
+    ],
+    "properties": {
+      "loadMode": {
+        "enum": [
+          "Single",
+          "Additive"
+        ],
+        "type": "string"
+      },
+      "sceneName": {
+        "type": "string"
+      },
+      "scenePath": {
+        "type": "string"
+      }
+    },
+    "type": "object"
+  },
+  "response_schema": {
+    "additionalProperties": true,
+    "type": "object"
+  }
+}
+[exit=0]
+
+===== [load-scene] 2026-10-01T06:14:41Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw load_scene --json \{\"scenePath\":\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\"\,\"loadMode\":\"Single\"\}
+{
+  "activeSceneCount": null,
+  "isLoaded": true,
+  "loadMode": "Single",
+  "previousScene": "ToolkitDemo",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Loaded scene \"ToolkitDemo\" in Single mode"
+}
+[exit=0]
+
+===== [console-pre-play] 2026-10-01T06:14:42Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":20\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 23
+  },
+  "success": true,
+  "totalCaptured": 25
+}
+[exit=0]
+
+===== [play] 2026-10-01T06:14:42Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw play_game --json \{\}
+{
+  "message": "Play mode scheduled in 300ms",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": "2026-10-01T06:14:42.8579460Z",
+      "msSincePlayRequested": 2.283,
+      "playRequested": true,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1612.2267465000002
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [editor-state-playing] 2026-10-01T06:15:06Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1636.6027573330002
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [find-elements] 2026-10-01T06:15:07Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw find_ui_elements --json \{\"uiSystem\":\"uitk\"\}
+{
+  "count": 6,
+  "elements": [
+    {
+      "classes": [
+        "unity-ui-document__root"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "UIDocumentRootElement",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "ToolkitDemo-container",
+      "path": "uitk:/ToolkitDemo#ToolkitDemo-container",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "form"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "VisualElement",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "form",
+      "path": "uitk:/ToolkitDemo#form",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-text-element",
+        "unity-button"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "Button",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "submit",
+      "path": "uitk:/ToolkitDemo#submit",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-base-field",
+        "unity-base-text-field",
+        "unity-text-field"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "TextField",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "player-name",
+      "path": "uitk:/ToolkitDemo#player-name",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-base-text-field__input",
+        "unity-base-text-field__input--single-line",
+        "unity-base-field__input",
+        "unity-text-field__input"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "TextInput",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "unity-text-input",
+      "path": "uitk:/ToolkitDemo#unity-text-input",
+      "uiSystem": "uitk"
+    },
+    {
+      "classes": [
+        "unity-text-element",
+        "unity-label"
+      ],
+      "documentPath": "/ToolkitDemo",
+      "elementType": "Label",
+      "isActive": true,
+      "isInteractable": true,
+      "name": "status",
+      "path": "uitk:/ToolkitDemo#status",
+      "uiSystem": "uitk"
+    }
+  ]
+}
+[exit=0]
+
+===== [state-before-status] 2026-10-01T06:15:13Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#status\"\}
+{
+  "elementType": "Label",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "status",
+  "path": "uitk:/ToolkitDemo#status",
+  "text": "Welcome",
+  "uiSystem": "uitk"
+}
+[exit=0]
+
+===== [state-before-field] 2026-10-01T06:15:13Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\}
+{
+  "elementType": "TextField",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "player-name",
+  "path": "uitk:/ToolkitDemo#player-name",
+  "uiSystem": "uitk",
+  "value": ""
+}
+[exit=0]
+
+===== [eval-runinbg-panel-before] 2026-10-01T06:15:13Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval var\ d=UnityEngine.Object.FindFirstObjectByType\<UnityEngine.UIElements.UIDocument\>\(\)\;\ var\ r=d.rootVisualElement\;\ var\ s=r.Q\<UnityEngine.UIElements.Label\>\(\"status\"\)\;\ var\ inp=r.Q\(\"player-name\"\).Q\(className:\"unity-base-text-field__input\"\)\;\ var\ b=r.Q\<UnityEngine.UIElements.Button\>\(\"submit\"\)\;\ return\ \"runInBackground=\"+UnityEngine.Application.runInBackground+\"\ panel=\"+\(r.panel\!=null\)+\"\ status=\"+s.text+\"\ \|\ input.color=\"+inp.resolvedStyle.color+\"\ input.bg=\"+inp.resolvedStyle.backgroundColor+\"\ \|\ submit.color=\"+b.resolvedStyle.color+\"\ submit.bg=\"+b.resolvedStyle.backgroundColor+\"\ \|\ screen=\"+UnityEngine.Screen.width+\"x\"+UnityEngine.Screen.height\; --mode statements --request-id issue377-panel-before-accepted
+{
+  "diagnostics": [
+    {
+      "column": 121,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 174,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 244,
+      "id": "CS1061",
+      "line": 1,
+      "message": "'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)",
+      "severity": "error"
+    },
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-panel-before-accepted",
+  "state": "compile_error",
+  "value": null
+}
+[exit=0]
+
+===== [eval-runinbg-panel-before-retry] 2026-10-01T06:15:21Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval var\ Q=typeof\(UnityEngine.UIElements.UQueryExtensions\)\;\ var\ d=UnityEngine.Object.FindFirstObjectByType\<UnityEngine.UIElements.UIDocument\>\(\)\;\ var\ r=d.rootVisualElement\;\ var\ s=\(UnityEngine.UIElements.Label\)UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"status\"\,\(string\)null\)\;\ var\ f=UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"player-name\"\,\(string\)null\)\;\ var\ inp=UnityEngine.UIElements.UQueryExtensions.Q\(f\,\(string\)null\,\"unity-base-text-field__input\"\)\;\ var\ b=UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"submit\"\,\(string\)null\)\;\ return\ \"runInBackground=\"+UnityEngine.Application.runInBackground+\"\ panel=\"+\(r.panel\!=null\)+\"\ status=\"+s.text+\"\ \|\ input.color=\"+inp.resolvedStyle.color+\"\ input.bg=\"+inp.resolvedStyle.backgroundColor+\"\ \|\ submit.color=\"+b.resolvedStyle.color+\"\ submit.bg=\"+b.resolvedStyle.backgroundColor+\"\ \|\ screen=\"+UnityEngine.Screen.width+\"x\"+UnityEngine.Screen.height\; --mode statements --request-id issue377-panel-before-q-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-panel-before-q-accepted",
+  "state": "completed",
+  "value": "runInBackground=False panel=True status=Welcome | input.color=RGBA(0.110, 0.137, 0.188, 1.000) input.bg=RGBA(0.941, 0.941, 0.941, 1.000) | submit.color=RGBA(0.110, 0.137, 0.188, 1.000) submit.bg=RGBA(0.737, 0.737, 0.737, 1.000) | screen=1738x1023"
+}
+[exit=0]
+
+===== [eval-runinbg-on] 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval UnityEngine.Application.runInBackground\ =\ true\;\ return\ \"runInBackground=\"+UnityEngine.Application.runInBackground\; --mode statements --request-id issue377-runinbg-on-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-runinbg-on-accepted",
+  "state": "completed",
+  "value": "runInBackground=True"
+}
+[exit=0]
+
+===== [eval-capture-before] 2026-10-01T06:15:29Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval UnityEditor.EditorWindow.GetWindow\(typeof\(UnityEditor.Editor\).Assembly.GetType\(\"UnityEditor.GameView\"\)\).Focus\(\)\;\ var\ captureDir\ =\ System.IO.Path.Combine\(System.IO.Path.GetDirectoryName\(UnityEngine.Application.dataPath\)\,\ \".unity/capture\"\)\;\ System.IO.Directory.CreateDirectory\(captureDir\)\;\ var\ path\ =\ System.IO.Path.Combine\(captureDir\,\ \"issue377-game-before-accepted.png\"\)\;\ if\ \(System.IO.File.Exists\(path\)\)\ throw\ new\ System.InvalidOperationException\(\"Use\ a\ new\ capture\ filename\"\)\;\ UnityEngine.ScreenCapture.CaptureScreenshot\(path\)\;\ return\ path\; --mode statements --request-id issue377-capture-before-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-capture-before-accepted",
+  "state": "completed",
+  "value": "/private/tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-before-accepted.png"
+}
+[exit=0]
+
+===== [wait-before-png] 2026-10-01T06:15:31Z
+-rw-r--r--@ 1 akiojin  wheel  33471 Oct  1 15:15 /tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-before-accepted.png
+/tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-before-accepted.png: PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced
+
+===== [copy-before] 2026-10-01T06:15:34Z
+/tmp/issue377-evidence/6000.3.25f1/game-before-accepted.png: PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced
+
+===== [input-set] 2026-10-01T06:15:39Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw set_ui_element_value --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\,\"value\":\"Ada\"\}
+{
+  "elementPath": "uitk:/ToolkitDemo#player-name",
+  "newValue": "Ada",
+  "success": true,
+  "uiSystem": "uitk"
+}
+[exit=0]
+
+===== [input-readback] 2026-10-01T06:15:39Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#player-name\"\}
+{
+  "elementType": "TextField",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "player-name",
+  "path": "uitk:/ToolkitDemo#player-name",
+  "uiSystem": "uitk",
+  "value": "Ada"
+}
+[exit=0]
+
+===== [click-submit] 2026-10-01T06:15:40Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw click_ui_element --json \{\"elementPath\":\"uitk:/ToolkitDemo#submit\"\}
+{
+  "elementPath": "uitk:/ToolkitDemo#submit",
+  "message": "Successfully clicked submit",
+  "success": true,
+  "uiSystem": "uitk",
+  "warnings": null
+}
+[exit=0]
+
+===== [state-after-status] 2026-10-01T06:15:40Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_ui_element_state --json \{\"elementPath\":\"uitk:/ToolkitDemo#status\"\}
+{
+  "elementType": "Label",
+  "isActive": true,
+  "isInteractable": true,
+  "name": "status",
+  "path": "uitk:/ToolkitDemo#status",
+  "text": "Hello, Ada!",
+  "uiSystem": "uitk"
+}
+[exit=0]
+
+===== [eval-panel-after] 2026-10-01T06:15:48Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval var\ d=UnityEngine.Object.FindFirstObjectByType\<UnityEngine.UIElements.UIDocument\>\(\)\;\ var\ r=d.rootVisualElement\;\ var\ s=\(UnityEngine.UIElements.Label\)UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"status\"\,\(string\)null\)\;\ var\ f=\(UnityEngine.UIElements.TextField\)UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"player-name\"\,\(string\)null\)\;\ var\ inp=UnityEngine.UIElements.UQueryExtensions.Q\(f\,\(string\)null\,\"unity-base-text-field__input\"\)\;\ var\ b=UnityEngine.UIElements.UQueryExtensions.Q\(r\,\"submit\"\,\(string\)null\)\;\ return\ \"status=\"+s.text+\"\ value=\"+f.value+\"\ \|\ input.color=\"+inp.resolvedStyle.color+\"\ input.bg=\"+inp.resolvedStyle.backgroundColor+\"\ \|\ submit.color=\"+b.resolvedStyle.color+\"\ submit.bg=\"+b.resolvedStyle.backgroundColor\; --mode statements --request-id issue377-panel-after-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-panel-after-accepted",
+  "state": "completed",
+  "value": "status=Hello, Ada! value=Ada | input.color=RGBA(0.110, 0.137, 0.188, 1.000) input.bg=RGBA(0.941, 0.941, 0.941, 1.000) | submit.color=RGBA(0.110, 0.137, 0.188, 1.000) submit.bg=RGBA(0.737, 0.737, 0.737, 1.000)"
+}
+[exit=0]
+
+===== [eval-capture-after] 2026-10-01T06:15:49Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval UnityEditor.EditorWindow.GetWindow\(typeof\(UnityEditor.Editor\).Assembly.GetType\(\"UnityEditor.GameView\"\)\).Focus\(\)\;\ var\ captureDir\ =\ System.IO.Path.Combine\(System.IO.Path.GetDirectoryName\(UnityEngine.Application.dataPath\)\,\ \".unity/capture\"\)\;\ System.IO.Directory.CreateDirectory\(captureDir\)\;\ var\ path\ =\ System.IO.Path.Combine\(captureDir\,\ \"issue377-game-after-accepted.png\"\)\;\ if\ \(System.IO.File.Exists\(path\)\)\ throw\ new\ System.InvalidOperationException\(\"Use\ a\ new\ capture\ filename\"\)\;\ UnityEngine.ScreenCapture.CaptureScreenshot\(path\)\;\ return\ path\; --mode statements --request-id issue377-capture-after-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-capture-after-accepted",
+  "state": "completed",
+  "value": "/private/tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-after-accepted.png"
+}
+[exit=0]
+
+===== [wait-copy-after-png] 2026-10-01T06:15:51Z
+-rw-r--r--@ 1 akiojin  wheel  36835 Oct  1 15:15 /tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-after-accepted.png
+/tmp/issue377-unity-6000.3.25f1/.unity/capture/issue377-game-after-accepted.png: PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced
+/tmp/issue377-evidence/6000.3.25f1/game-after-accepted.png:                      PNG image data, 1280 x 720, 8-bit/color RGB, non-interlaced
+
+===== [console-play] 2026-10-01T06:15:57Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":50\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 21
+  },
+  "success": true,
+  "totalCaptured": 23
+}
+[exit=0]
+
+===== [editor-state-before-stop] 2026-10-01T06:15:57Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1687.3741913330002
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [eval-runinbg-restore] 2026-10-01T06:15:58Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 editor eval UnityEngine.Application.runInBackground\ =\ false\;\ return\ \"runInBackground=\"+UnityEngine.Application.runInBackground\; --mode statements --request-id issue377-runinbg-restore-accepted
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "id": "CS0162",
+      "line": 6,
+      "message": "Unreachable code detected",
+      "severity": "warning"
+    }
+  ],
+  "exception": null,
+  "logs": [],
+  "requestId": "issue377-runinbg-restore-accepted",
+  "state": "completed",
+  "value": "runInBackground=False"
+}
+[exit=0]
+
+===== [stop] 2026-10-01T06:15:58Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw stop_game --json \{\}
+{
+  "message": "Exited play mode",
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": true,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "in_play_mode"
+    },
+    "timeSinceStartup": 1687.7253647920002
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [editor-state-after-stop] 2026-10-01T06:16:02Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_editor_state --json \{\}
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 1691.5378972080002
+  },
+  "status": "success"
+}
+[exit=0]
+
+===== [scene-after-stop] 2026-10-01T06:16:02Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw get_scene_info --json \{\}
+{
+  "buildIndex": -1,
+  "fileSize": 10290,
+  "isActive": true,
+  "isDirty": false,
+  "isLoaded": true,
+  "lastModified": "2026-10-01T05:58:44.2247645Z",
+  "sceneName": "ToolkitDemo",
+  "scenePath": "Assets/Scenes/Generated/E2E/ToolkitDemo.unity",
+  "summary": "Scene \"ToolkitDemo\" - Loaded and active, not in build settings, 10 KB"
+}
+[exit=0]
+
+===== [console-after-stop] 2026-10-01T06:16:02Z
+$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6517 raw read_console --json \{\"logTypes\":\[\"Error\"\,\"Exception\"\,\"Assert\"\]\,\"count\":50\}
+{
+  "count": 2,
+  "logs": [
+    {
+      "formattedCompact": "[Error] Ignoring depth surface store action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface store action as it is memoryless\n"
+    },
+    {
+      "formattedCompact": "[Error] Ignoring depth surface load action as it is memoryless\n",
+      "logType": "Error",
+      "message": "Ignoring depth surface load action as it is memoryless\n"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 2,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 23
+  },
+  "success": true,
+  "totalCaptured": 25
+}
+[exit=0]
+
