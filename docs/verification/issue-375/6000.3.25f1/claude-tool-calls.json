@@ -1,0 +1,174 @@
+[
+  {
+    "timestamp": "2026-10-01T04:36:49.215Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Skill",
+    "input": {
+      "skill": "unity-project-bootstrap"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:36:52.493Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /private/tmp/issue375-harness/.claude/skills/unity-project-bootstrap && cat references/project-creation.md references/runtime-checklist.md; which unity-cli; unity-cli --version; ls -la /tmp/issue375-unity-6000.3.25f1-final /tmp/issue375-evidence 2>&1; ps aux | grep -i \"Unity.app\" | grep -v grep | head; lsof -nP -iTCP:6535 -sTCP:LISTEN'",
+      "description": "Read skill references and check environment"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:36:58.149Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /private/tmp/issue375-harness/.claude/skills/unity-project-bootstrap && sed -n \"/## Project Setup/,/## Connection Recovery/p\" references/runtime-checklist.md; ps aux | grep -E \"MacOS/Unity( |$)\" | grep -v grep'",
+      "description": "Read truncated runtime checklist section and list running Editors"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:37:05.105Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; cd /tmp; mkdir -p /tmp/issue375-evidence/6000.3.25f1-final; E=/tmp/issue375-evidence/6000.3.25f1-final; UNITY_EDITOR=\"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity\"; P=/tmp/issue375-unity-6000.3.25f1-final; CMD=\"\\\"$UNITY_EDITOR\\\" -batchmode -quit -createProject \\\"$P\\\" -logFile \\\"$E/create.log\\\"\"; echo \"# cwd=/tmp\" > $E/commands.txt; echo \"$CMD\" >> $E/commands.txt; \"$UNITY_EDITOR\" -batchmode -quit -createProject \"$P\" -logFile \"$E/create.log\"; rc=$?; echo \"exit=$rc\" | tee $E/create-exit.txt; echo \"# exit=$rc\" >> $E/commands.txt; ls $P $P/Packages; cat $P/ProjectSettings/ProjectVersion.txt; tail -5 $E/create.log'",
+      "description": "Create new Unity project via Editor CLI",
+      "timeout": 900000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:37:59.767Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp && unity-cli setup --help; unity-cli --help | head -40'",
+      "description": "Show setup help"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:38:05.471Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; cd /tmp; E=/tmp/issue375-evidence/6000.3.25f1-final; P=/tmp/issue375-unity-6000.3.25f1-final; cp $P/Packages/manifest.json $E/manifest.pre-setup.json; cp $P/ProjectSettings/ProjectSettings.asset $E/ProjectSettings.pre-setup.asset; C=\"UNITY_EDITOR_PATH=/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity unity-cli --project-path $P --port 6535 --output json setup --launch-editor\"; echo \"$C > setup.json\" >> $E/commands.txt; UNITY_EDITOR_PATH=/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity unity-cli --project-path $P --port 6535 --output json setup --launch-editor > $E/setup.json 2> $E/setup.stderr.txt; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; echo exit=$rc; cat $E/setup.json; cat $E/setup.stderr.txt | tail -20'",
+      "description": "Run unity-cli setup with launch-editor on port 6535",
+      "timeout": 1000000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:40:04.764Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; cd /tmp/issue375-unity-6000.3.25f1-final; E=/tmp/issue375-evidence/6000.3.25f1-final; P=/tmp/issue375-unity-6000.3.25f1-final; echo \"unity-cli --project-path $P --port 6535 --output json system ping > ping.json\" >> $E/commands.txt; unity-cli --project-path $P --port 6535 --output json system ping > $E/ping.json; echo \"# exit=$?\" >> $E/commands.txt; cat $E/ping.json; cp Packages/manifest.json $E/manifest.json; cp Packages/packages-lock.json $E/packages-lock.json; cp ProjectSettings/ProjectVersion.txt $E/ProjectVersion.txt; cat Packages/manifest.json | head -20; python3 -c \"\nimport json;d=json.load(open(\\\"Packages/packages-lock.json\\\"))[\\\"dependencies\\\"]\nfor k in [\\\"com.akiojin.unity-cli-bridge\\\",\\\"com.unity.inputsystem\\\"]: print(k, json.dumps(d.get(k)))\"; grep activeInputHandler ProjectSettings/ProjectSettings.asset'",
+      "description": "Ping bridge and check package resolution"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:40:22.138Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-unity-6000.3.25f1-final; unity-cli scene create --help; unity-cli --port 6535 --project-path /tmp/issue375-unity-6000.3.25f1-final tool schema create_scene --output json; unity-cli --port 6535 --project-path /tmp/issue375-unity-6000.3.25f1-final --output json raw get_compilation_state --json \"{}\"'",
+      "description": "Inspect scene create help, schema, compile state"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:40:25.870Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; P=/tmp/issue375-unity-6000.3.25f1-final; cd $P; E=/tmp/issue375-evidence/6000.3.25f1-final; U=\"unity-cli --project-path $P --port 6535 --output json\"; run(){ echo \"$*\" >> $E/commands.txt; \"$@\"; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; return $rc; }\nrun $U scene create Bootstrap --path Assets/Scenes/Generated/E2E/ --load-scene | tee $E/scene-create.json; echo\nrun $U raw get_hierarchy --json \"{\\\"includeComponents\\\":true}\" | tee $E/hierarchy-initial.json | head -60'",
+      "description": "Create Bootstrap scene and inspect hierarchy"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:40:33.204Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; P=/tmp/issue375-unity-6000.3.25f1-final; cd $P; E=/tmp/issue375-evidence/6000.3.25f1-final; U=\"unity-cli --project-path $P --port 6535 --output json\"; run(){ echo \"$*\" >> $E/commands.txt; \"$@\"; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; return $rc; }\nrun $U raw create_gameobject --json \"{\\\"name\\\":\\\"BootstrapCube\\\",\\\"primitiveType\\\":\\\"cube\\\"}\" | tee $E/create-cube.json; echo\nrun $U raw save_scene --json \"{\\\"scenePath\\\":\\\"Assets/Scenes/Generated/E2E/Bootstrap.unity\\\"}\" | tee $E/save-scene.json; echo\nrun $U raw get_hierarchy --json \"{\\\"includeComponents\\\":true}\" > $E/hierarchy.json; cat $E/hierarchy.json\nls -la Assets/Scenes/Generated/E2E/; grep -c BootstrapCube Assets/Scenes/Generated/E2E/Bootstrap.unity; cp Assets/Scenes/Generated/E2E/Bootstrap.unity Assets/Scenes/Generated/E2E/Bootstrap.unity.meta $E/'",
+      "description": "Add cube, save scene, copy scene evidence"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:40:42.218Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; P=/tmp/issue375-unity-6000.3.25f1-final; cd $P; E=/tmp/issue375-evidence/6000.3.25f1-final; U=\"unity-cli --project-path $P --port 6535 --output json\"; run(){ echo \"$*\" >> $E/commands.txt; \"$@\"; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; return $rc; }\nrun $U raw play_game --json \"{}\" | tee $E/play-game.json; echo\nfor i in 1 2 3 4 5 6 7 8 9 10; do s=$($U raw get_editor_state --json \"{}\"); echo \"$s\" | grep -q \"\\\"isPlaying\\\": true\" && break; sleep 2; done\necho \"$U raw get_editor_state --json {}  (polled until isPlaying) > play-state.json\" >> $E/commands.txt; echo \"$s\" > $E/play-state.json; cat $E/play-state.json'",
+      "description": "Enter Play mode and record editor state"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:17.356Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; P=/tmp/issue375-unity-6000.3.25f1-final; cd $P; E=/tmp/issue375-evidence/6000.3.25f1-final; U=\"unity-cli --project-path $P --port 6535 --output json\"; echo \"# note: 4 get_editor_state polls during Play entry returned Connection refused (os error 61) before isPlaying=true\" >> $E/commands.txt; run(){ echo \"$*\" >> $E/commands.txt; \"$@\"; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; return $rc; }\nrun $U raw capture_screenshot --json \"{\\\"captureMode\\\":\\\"game\\\",\\\"width\\\":1280,\\\"height\\\":720,\\\"osFallback\\\":false}\" | tee $E/screenshot.json'",
+      "description": "Capture Game view screenshot"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:20.505Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cp /private/tmp/issue375-unity-6000.3.25f1-final/.unity/capture/image_game_2026-10-01_13-41-17.png /tmp/issue375-evidence/6000.3.25f1-final/game.png && file /tmp/issue375-evidence/6000.3.25f1-final/game.png'",
+      "description": "Copy screenshot to evidence"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:20.910Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Read",
+    "input": {
+      "file_path": "/tmp/issue375-evidence/6000.3.25f1-final/game.png"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:27.389Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; P=/tmp/issue375-unity-6000.3.25f1-final; cd $P; E=/tmp/issue375-evidence/6000.3.25f1-final; U=\"unity-cli --project-path $P --port 6535 --output json\"; run(){ echo \"$*\" >> $E/commands.txt; \"$@\"; rc=$?; echo \"# exit=$rc\" >> $E/commands.txt; return $rc; }\nrun $U raw read_console --json \"{\\\"count\\\":20}\" > $E/console.json; cat $E/console.json\nrun $U raw stop_game --json \"{}\" | tee $E/stop-game.json; echo\nfor i in $(seq 1 15); do s=$($U raw get_editor_state --json \"{}\" 2>/dev/null) && echo \"$s\" | grep -q \"\\\"isPlaying\\\": false\" && break; sleep 2; done\necho \"$U raw get_editor_state --json {}  (polled until isPlaying=false) > stopped-state.json\" >> $E/commands.txt; echo \"$s\" > $E/stopped-state.json; cat $E/stopped-state.json\nrun $U raw get_hierarchy --json \"{\\\"includeComponents\\\":false}\" > $E/hierarchy-after-stop.json; grep -o \"\\\"name\\\": \\\"[^\\\"]*\\\"\" $E/hierarchy-after-stop.json\ncmp Assets/Scenes/Generated/E2E/Bootstrap.unity $E/Bootstrap.unity && echo scene-file-unchanged'",
+      "description": "Read console, stop Play, verify state and scene"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:38.139Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp; unity-cli editor --help; ps -p 48950 -o pid,command | cut -c1-250'",
+      "description": "Check editor subcommand and launched Editor process"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:49.812Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'set -u; cd /tmp/issue375-evidence/6000.3.25f1-final; cat > result.json <<EOF\n{\n  \"project\": \"/tmp/issue375-unity-6000.3.25f1-final\",\n  \"reportedProjectPath\": \"/private/tmp/issue375-unity-6000.3.25f1-final\",\n  \"unityVersion\": \"6000.3.25f1 (e1dba0a9aba4)\",\n  \"editorExecutable\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity\",\n  \"template\": \"built-in 3D minimal (Editor CLI -createProject, no render-pipeline template)\",\n  \"port\": 6535,\n  \"cliVersion\": \"0.16.0\",\n  \"bridgeVersion\": \"0.16.0\",\n  \"steps\": {\n    \"createProject\": {\"ok\": true, \"exitCode\": 0, \"log\": \"create.log\"},\n    \"setup\": {\"ok\": true, \"source\": \"registry (https://package.openupm.com)\", \"projectMatches\": true, \"versionCheck\": \"match\", \"inputBackends\": \"set activeInputHandler 0 -> 2 (Both)\", \"launchedEditorPid\": 48950, \"file\": \"setup.json\"},\n    \"ping\": {\"ok\": true, \"projectPath\": \"/private/tmp/issue375-unity-6000.3.25f1-final\", \"file\": \"ping.json\"},\n    \"packages\": {\"ok\": true, \"com.akiojin.unity-cli-bridge\": \"0.16.0 (registry, openupm)\", \"com.unity.inputsystem\": \"1.20.0 (registry, depth 1; bridge declares 1.14.2 minimum)\", \"files\": [\"manifest.json\", \"packages-lock.json\"]},\n    \"compileState\": {\"ok\": true, \"errorCount\": 0},\n    \"scene\": {\"ok\": true, \"path\": \"Assets/Scenes/Generated/E2E/Bootstrap.unity\", \"objects\": [\"Main Camera\", \"Directional Light\", \"BootstrapCube\"], \"saved\": true, \"files\": [\"Bootstrap.unity\", \"Bootstrap.unity.meta\", \"hierarchy.json\"]},\n    \"play\": {\"ok\": true, \"isPlaying\": true, \"file\": \"play-state.json\", \"note\": \"4 get_editor_state polls got Connection refused during Play-entry domain reload before the bridge recovered\"},\n    \"screenshot\": {\"ok\": true, \"captureMode\": \"game\", \"osFallback\": false, \"size\": \"1280x720\", \"source\": \"Main Camera\", \"originalPath\": \"/private/tmp/issue375-unity-6000.3.25f1-final/.unity/capture/image_game_2026-10-01_13-41-17.png\", \"file\": \"game.png\", \"inspection\": \"default skybox and ground horizon with a white cube at screen center; not black, no No-cameras message\"},\n    \"console\": {\"ok\": true, \"errors\": 0, \"exceptions\": 0, \"asserts\": 1, \"warnings\": 11, \"assertDetail\": \"ArgumentOutOfRangeException in UnityEditor.Search.SearchDatabase.EnumerateAll (Unity QuickSearch startup indexing, Editor-internal, not project/bridge code)\", \"file\": \"console.json\"},\n    \"stopPlay\": {\"ok\": true, \"note\": \"stop_game response embedded a pre-transition state with isPlaying=true; polling then showed isPlaying=false\", \"file\": \"stopped-state.json\"},\n    \"sceneAfterStop\": {\"ok\": true, \"note\": \"hierarchy still has the 3 objects; Bootstrap.unity byte-identical to saved copy\"}\n  },\n  \"inputSimulation\": \"not run (optional; no controller/action in scene)\",\n  \"failures\": [],\n  \"overall\": \"pass\"\n}\nEOF\npython3 -m json.tool result.json >/dev/null && echo valid'",
+      "description": "Write result.json summary"
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:41:53.854Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp; E=/tmp/issue375-evidence/6000.3.25f1-final; echo \"kill -TERM 48950  # close only the Editor launched by setup for this project\" >> $E/commands.txt; kill -TERM 48950; for i in $(seq 1 30); do ps -p 48950 >/dev/null || break; sleep 2; done; ps -p 48950 >/dev/null && echo still-running || echo editor-closed; echo \"# result: $(ps -p 48950 >/dev/null && echo still-running || echo editor-closed)\" >> $E/commands.txt; lsof -nP -iTCP:6535 -sTCP:LISTEN; ls $E'",
+      "description": "Gracefully close the launched Editor and list evidence",
+      "timeout": 120000
+    }
+  },
+  {
+    "timestamp": "2026-10-01T04:42:00.368Z",
+    "session_id": "15abc413-7677-4b2b-bc62-49daa1979195",
+    "tool": "Bash",
+    "input": {
+      "command": "bash -lc 'cd /tmp/issue375-evidence/6000.3.25f1-final && python3 - <<EOF\nimport json;r=json.load(open(\"result.json\"));r[\"steps\"][\"closeEditor\"]={\"ok\":True,\"pid\":48950,\"method\":\"SIGTERM\",\"port6535ListenerAfter\":\"none\"};json.dump(r,open(\"result.json\",\"w\"),indent=2)\nEOF'",
+      "description": "Record Editor close in result.json"
+    }
+  }
+]

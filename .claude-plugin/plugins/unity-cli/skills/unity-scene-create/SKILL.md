@@ -13,6 +13,7 @@ metadata:
     - gameobject
     - level
   siblings:
+    - unity-project-bootstrap
     - unity-gameobject-edit
     - unity-prefab-workflow
     - unity-scene-inspect
@@ -36,6 +37,7 @@ Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SK
 
 ## Do Not Use When
 
+- The project itself does not exist yet and the request includes bridge setup; use `unity-project-bootstrap`.
 - The request mainly mutates existing objects in an already-prepared scene; use `unity-gameobject-edit`.
 - The work happens inside prefab edit mode; use `unity-prefab-workflow`.
 - The user only wants to read or analyse a scene; use `unity-scene-inspect`.
