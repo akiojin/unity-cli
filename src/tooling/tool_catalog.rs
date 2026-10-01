@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 pub const TOOL_NAMES: &[&str] = &[
@@ -157,7 +157,7 @@ pub const TOOL_NAMES: &[&str] = &[
     "vfx_bake_sdf",
 ];
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum ToolExecutor {
     Local,
