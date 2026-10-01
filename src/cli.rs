@@ -149,9 +149,13 @@ pub struct ToolListArgs {
     #[arg(long, value_name = "NAME")]
     pub category: Option<String>,
 
-    /// Emit `{name, description}` entries instead of bare tool names.
-    #[arg(long)]
+    /// Emit only `{name, description}` entries instead of full tool descriptors.
+    #[arg(long, conflicts_with = "names_only")]
     pub compact: bool,
+
+    /// Emit only tool names (the JSON list format used before dynamic discovery).
+    #[arg(long)]
+    pub names_only: bool,
 
     /// Maximum number of tools to return after filtering.
     #[arg(long, value_name = "N")]

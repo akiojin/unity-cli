@@ -210,6 +210,14 @@ cargo build --release
 # Smoke E2E
 scripts/e2e-test.sh
 
+# Custom attributes, live recompilation/discovery, CLI/Bridge argument rejection,
+# Light creation, exception isolation, and focused EditMode collision tests.
+# Each run creates its own project, credentials, port, logs and source hashes.
+python3 scripts/e2e-custom-tools.py --version 6000.3.25f1 \
+  --cli target/debug/unity-cli --output /tmp/custom-tools-6000
+python3 scripts/e2e-custom-tools.py --version 2022.3.62f3 \
+  --cli target/debug/unity-cli --output /tmp/custom-tools-2022
+
 # TCP authentication: isolated real Editor, missing/wrong token rejection,
 # eval side effects, CLI/unityd success, POSIX 0600, and focused EditMode tests.
 # Repeat for 2022.3.62f3; use a fresh output directory for each run.
@@ -516,7 +524,7 @@ Regenerate command examples:
 
 ```bash
 unity-cli --help
-unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
+unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].name'
 ```
 
 ## Benchmark Policy
@@ -1137,7 +1145,7 @@ Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency �
 
 ```bash
 unity-cli --help
-unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.[]'
+unity-cli tool list --host 127.0.0.1 --port 6400 --output json | jq -r '.data[].name'
 ```
 
 ## ベンチマーク方針

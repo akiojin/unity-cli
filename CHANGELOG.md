@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+### Breaking changes (next minor release)
+
+- Together with the #441 JSON envelope migration, `tool list --output json`
+  now returns schema-bearing objects in `data`, with `name`, `description`,
+  `params_schema` and `source: builtin|custom` (plus execution/result metadata).
+  Change name extraction from `.data[]` to `.data[].name`, or add
+  `--names-only` to retain the name array. Pre-envelope consumers must also
+  unwrap `data`. `--compact` retains `{name, description}`; plain text still
+  prints names. `tool schema` includes the same source metadata.
+
+### Features
+
+- Register project-local Editor tools with public static methods marked
+  `[UnityCliBridge.Tools.UnityCliTool("name")]` and optional `[UnityCliArg]`
+  parameter descriptions. Discover them after recompilation via `list_tools`,
+  `tool list` and `tool schema`; call them with `raw` without rebuilding the CLI.
+- Validate custom parameters before execution, reject builtin/duplicate names,
+  execute on the main thread, and return structured errors for user exceptions.
+  See [custom tool authoring and migration](docs/tools.md#extending-with-project-local-tools).
+
 ### Security
 
 - Require per-Editor authentication for TCP Bridge requests, including ping and

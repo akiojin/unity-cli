@@ -4,7 +4,7 @@ description: Inspect and control Unity Editor state with unity-cli. Use when the
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: editor
   triggers:
     - editor
@@ -39,6 +39,7 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 - The user wants to inspect or change a project setting.
 - The user wants to run a menu item, inspect windows, or manipulate the current selection.
 - The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
+- The user wants to expose a project-specific Editor operation as an attributed custom tool.
 
 ## Do Not Use When
 
@@ -98,6 +99,56 @@ unity-cli raw profiler_stop --json '{}'
 ```
 
 ## Examples
+
+### Register a project-local custom tool
+
+Use `unity-csharp-edit` to create `Assets/Editor/ProjectTools.cs` in the target
+project. In an asmdef, reference `UnityCliBridge.Editor` and restrict it to Editor.
+The public API is `UnityCliBridge.Tools`; no CLI release is required.
+
+```csharp
+using UnityEngine;
+using UnityCliBridge.Tools;
+
+public static class ProjectTools
+{
+    [UnityCliTool("spawn_light", Description = "Create a scene light")]
+    public static object SpawnLight([UnityCliArg("Object name")] string name)
+    {
+        var gameObject = new GameObject(name);
+        gameObject.AddComponent<Light>();
+        return new { name = gameObject.name };
+    }
+}
+```
+
+Refresh and wait for compilation before discovery. Use the same project/endpoint
+for every command. Verify the result through the hierarchy and component details.
+
+```bash
+unity-cli raw refresh_assets --json '{}'
+unity-cli raw get_compilation_state --json '{}'
+unity-cli tool list --category custom --output json
+unity-cli tool schema spawn_light --output json
+unity-cli raw spawn_light --json '{"name":"Sun"}' --output json
+unity-cli raw get_hierarchy --json '{}' --output json
+unity-cli raw get_gameobject_details --json '{"path":"/Sun","includeComponents":true}' --output json
+```
+
+JSON list items include `name`, `description`, `params_schema` and
+`source: builtin|custom`. Extract names with `.data[].name`, or use
+`tool list --names-only --output json` with `.data[]`. `--compact` remains a
+small `{name, description}` list. Offline listing contains only builtins.
+
+Methods must be public static, synchronous and non-generic. Supported arguments
+are string/bool/int/long/float/double and enum names; C# defaults make arguments
+optional. Missing, unknown and mistyped arguments return `INVALID_ARGUMENT`
+before invocation. `Mutating` defaults to true so `--dry-run` skips the method;
+set false only for side-effect-free reads. Duplicate/builtin names and unsupported
+signatures produce a Console warning and are not registered. Inspect `read_console`
+if a tool is missing after compilation. Method exceptions return
+`CUSTOM_TOOL_FAILED` without stopping the Editor. Do not automatically retry a
+timed-out method: it may already have run.
 
 ### Player build and scene bake jobs
 

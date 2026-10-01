@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # scripts/e2e-all-tools.sh
-# Full E2E runner that executes every tool returned by `unity-cli tool list`.
+# Full E2E runner for builtins returned by `unity-cli tool list`.
+# Project custom tools have project-specific parameters and their own E2E suite.
 
 set -u -o pipefail
 
@@ -313,7 +314,7 @@ if [[ ${SKIP_LSP_PERF} -eq 0 ]]; then
   echo "" | tee -a "${LOG}"
 fi
 
-tool_list_raw="$("${UNITY_CLI}" tool list --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json | jq -r '.data[]')"
+tool_list_raw="$("${UNITY_CLI}" tool list --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json | jq -r '.data[] | select(.source == "builtin") | .name')"
 while IFS= read -r line; do
   [[ -z "${line}" ]] && continue
   TOOL_LIST+=("${line}")
@@ -491,6 +492,7 @@ run_tool "create_class" "${json_create_class}"
 run_tool "read" "${json_read}"
 run_tool "search" "${json_search}"
 run_tool "list_packages" '{}'
+run_tool "list_tools" '{}'
 run_tool "get_command_stats" '{}'
 run_tool "ping" '{"message":"e2e-all-tools"}'
 run_tool "get_editor_state" '{}'
