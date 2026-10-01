@@ -1,0 +1,115 @@
+{
+  "session_id": "a0779b76-92be-4d93-83d9-7c9daa624e43",
+  "model": "claude-opus-5-5",
+  "skill_invocations": [
+    {
+      "type": "tool_use",
+      "id": "toolu_01ToTomdHbBMLrWyJom3WiU9",
+      "name": "Skill",
+      "input": {
+        "skill": "unity-audio-setup"
+      },
+      "caller": {
+        "type": "direct"
+      }
+    }
+  ],
+  "result": {
+    "duration_api_ms": 180285,
+    "stop_reason": "end_turn",
+    "session_id": "a0779b76-92be-4d93-83d9-7c9daa624e43",
+    "total_cost_usd": 0.9699627999999998,
+    "usage": {
+      "input_tokens": 56,
+      "cache_creation_input_tokens": 48225,
+      "cache_read_input_tokens": 1013894,
+      "output_tokens": 19058,
+      "output_tokens_details": {
+        "thinking_tokens": 1378
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 48225,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1457,
+          "cache_read_input_tokens": 54168,
+          "cache_creation_input_tokens": 1132,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 1132
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 56,
+        "outputTokens": 19058,
+        "cacheReadInputTokens": 1013894,
+        "cacheCreationInputTokens": 48225,
+        "webSearchRequests": 0,
+        "costUSD": 0.9699627999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1378,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "is_error": false,
+    "num_turns": 29,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**The test passed.** All 23 checks in `result.json` passed. The Skill tool was available. I read the updated SKILL.md and both reference files, and their hashes match `final2/skill-hashes.json`. The Editor is still open in Edit mode with `Audio380Final2` loaded and saved.\n\n- **Versions:** CLI 0.16.0 (the issue-380 build) and bridge 0.16.0 (they match), Unity 2022.3.62f3, endpoint 127.0.0.1:6581, Editor PID 55886.\n- **Clip import:** `tone.wav` (GUID `e853e340…`) was modified again to DecompressOnLoad/PCM. The readback after the change and again after Play both show those settings.\n- **Mixer:** I created the new `Assets/Audio/Final2.mixer` (GUID `a4a43a2b…`), added the `Master/Music` group and exposed its Volume as `MusicVolume`. A readback after Play still shows all three.\n- **Scene:** I created the new `Assets/Scenes/Generated/E2E/Audio380Final2.unity` (GUID `466a0142…`). `/Music` was made with `create_gameobject`, then the skill's eval recipe added and configured the AudioSource. Eval state was `completed`.\n  - The source has the clip, the exact `Master/Music` group, volume 0.25, spatialBlend 0, loop on, playOnAwake off.\n  - The scene has exactly one enabled AudioListener, on Main Camera.\n  - After saving and reloading, `/Music` got a new instance ID (-3532 → 20332) and every value was the same. The saved scene file references the clip and mixer GUIDs.\n- **Playback:** I called `Play()` once. The two samples were 1.612 s apart in real time:\n  - Sample 1: isPlaying true, time 0.2133 s, timeSamples 9407\n  - Sample 2: isPlaying true, time 1.8346 s, timeSamples 80908 (+71,501 samples)\n\n  Both samples show the clip routed through `Final2.mixer` / `Music` at runtime.\n- **MusicVolume:** Read with GetFloat as 0.0 dB. SetFloat to -12 succeeded and read back as -12.0, then I restored it to 0.0 and confirmed. It also reads 0.0 in Edit mode.\n- **Console:** no errors, exceptions or asserts, before, during or after Play.\n- **Focus and runInBackground:** The Editor had lost focus before Play. My first attempt to focus it failed because the harness `editor.pid` (34790) is stale. I got the real PID through eval and focused the window. After that, `dspTime` and the frame count advanced. I never changed runInBackground; it stayed false in both the Editor and PlayerSettings.\n\nI'm not claiming the sound was audible. The evidence only proves the engine was playing and the routing was correct.\n\n**Problems to pass on for skill correction:**\n1. The skill says to focus the Editor but not how to find it. A harness PID file can be stale, so getting the PID through eval (`Process.GetCurrentProcess().Id`) is more reliable.\n2. The skill's eval snippets trigger a harmless warning, CS0162 \"Unreachable code detected\", even though the eval completes.\n\nMy own `result.json` generator first failed from a shell quoting mistake. I fixed it before any output was written, so nothing was overwritten.\n\nFiles are in `/tmp/issue380-harness/2022.3.62f3/final2/`:\n- `result.json` (copy in `evidence/result.json`)\n- `evidence/raw/`: every command (`.cmd`), its output (`.out`/`.err`) and exit code (`.rc`), including the focus logs `41-*` and `44-*`\n- `evidence/assets/`: the saved mixer and scene with their `.meta` files, `tone.wav.meta`, `manifest.json`, `packages-lock.json`, `ProjectVersion.txt` and the runInBackground setting\n- `evidence/skill-hashes.final2.json`, `skill-hashes.actual.txt`, `asset-hashes.txt`\n- `evidence/*.cs`, `run.sh`, `make_result.py`: the eval code and scripts used",
+    "ttft_ms": 2162,
+    "type": "result",
+    "duration_ms": 198091,
+    "uuid": "044c041c-f5f1-48d7-a057-0eb126310055",
+    "ttft_stream_ms": 1919,
+    "time_to_request_ms": 74,
+    "first_content_frame_ms": 1920,
+    "queued_turn_count": 0,
+    "result_index": 0
+  }
+}

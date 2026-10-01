@@ -4,7 +4,7 @@ description: Drive Unity runtime verification with unity-cli. Use when the user 
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: testing
   triggers:
     - playmode
@@ -14,6 +14,7 @@ metadata:
     - screenshot
     - capture
   siblings:
+    - unity-audio-setup
     - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -35,6 +36,9 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 - The user wants to inspect current test progress or runtime state.
 
 ## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
 
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 

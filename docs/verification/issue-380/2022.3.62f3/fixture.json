@@ -1,0 +1,9 @@
+{
+  "path": "Assets/Audio/tone.wav",
+  "sample_rate": 44100,
+  "duration_seconds": 30,
+  "channels": 1,
+  "format": "signed 16-bit little-endian PCM WAV",
+  "sample_formula": "int(1600*sin(2*pi*440*i/44100))",
+  "sha256": "ea731357db7392be6dc11d97bf8e4034920bae40076580918b900f8cbcd2a3fd"
+}

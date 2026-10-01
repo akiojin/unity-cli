@@ -1,0 +1,8 @@
+{"id": "AUD380-01", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-02", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-03", "predicted_skills": ["unity-audio-setup"], "predicted_tool": "manage_audio_mixer", "predicted_payload_keys": ["action", "assetPath"]}
+{"id": "AUD380-04", "predicted_skills": ["unity-asset-management"], "predicted_tool": "manage_asset_import_settings", "predicted_payload_keys": ["action", "assetPath", "settings"]}
+{"id": "AUD380-05", "predicted_skills": ["unity-gameobject-edit"], "predicted_tool": "set_component_field", "predicted_payload_keys": ["gameObjectPath", "componentType", "fieldPath", "value"]}
+{"id": "AUD380-06", "predicted_skills": ["unity-scene-create"], "predicted_tool": "create_scene", "predicted_payload_keys": ["sceneName", "path"]}
+{"id": "AUD380-07", "predicted_skills": ["unity-playmode-testing"], "predicted_tool": "play_game", "predicted_payload_keys": []}
+{"id": "AUD380-08", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
