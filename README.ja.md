@@ -190,6 +190,7 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 ## ドキュメント
 
 - コマンドとツールの一覧: [docs/tools.md](docs/tools.md)
+- 公式 Unity CLI との比較（機能・レイテンシ計測・併用方法）: [docs/comparison.md](docs/comparison.md)
 - 開発フローと CI: [docs/development.md](docs/development.md)
 - 貢献ガイド: [CONTRIBUTING.md](CONTRIBUTING.md)
 - リリース手順: [RELEASE.md](RELEASE.md)

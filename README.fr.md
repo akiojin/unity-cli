@@ -118,6 +118,7 @@ Les variables legacy prefixees MCP ne sont pas supportees. Utilisez uniquement `
 ## Documentation
 
 - Catalogue complet des commandes et des outils: [docs/tools.md](docs/tools.md)
+- Comparaison avec le Unity CLI officiel (fonctionnalites, mesures de latence, utilisation conjointe): [docs/comparison.md](docs/comparison.md)
 - Workflow de developpement et CI: [docs/development.md](docs/development.md)
 - Guide de contribution: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Processus de release: [RELEASE.md](RELEASE.md)

@@ -118,6 +118,7 @@ Legacy MCP Umgebungsvariablen werden nicht unterstutzt. Nutzen Sie nur `UNITY_CL
 ## Dokumentation
 
 - Vollstandiger Command und Tool Katalog: [docs/tools.md](docs/tools.md)
+- Vergleich mit dem offiziellen Unity CLI (Funktionen, Latenzmessung, gemeinsame Nutzung): [docs/comparison.md](docs/comparison.md)
 - Entwicklungsworkflow und CI: [docs/development.md](docs/development.md)
 - Beitragshandbuch: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Release Prozess: [RELEASE.md](RELEASE.md)
