@@ -16,6 +16,7 @@ pub use crate::core::instances;
 pub use crate::core::managed_binaries as lsp_manager;
 pub use crate::daemon::unityd;
 pub use crate::lsp::daemon as lspd;
+pub use crate::tooling::discovery;
 pub use crate::tooling::local_tools;
 pub use crate::tooling::tool_catalog;
 pub use crate::tooling::tool_index;
