@@ -37,6 +37,8 @@ impl<'a> TestEnvironment<'a> {
             "UNITY_CLI_PORT",
             "UNITY_CLI_TIMEOUT_MS",
             "UNITY_PROJECT_ROOT",
+            "UNITY_CLI_ALLOW_UNAUTHENTICATED",
+            "UNITY_CLI_AUTH_TOKEN_FILE",
         ] {
             environment.previous.push((key, std::env::var_os(key)));
             std::env::remove_var(key);

@@ -68,6 +68,7 @@ pub async fn run_with_cli(cli: Cli) -> Result<()> {
 }
 
 async fn run_with_cli_named(cli: Cli, command: &str) -> Result<()> {
+    crate::unity::auth::warn_unauthenticated();
     let format = if matches!(cli.command, Command::Setup { json: true, .. }) {
         OutputFormat::Json
     } else {
@@ -134,6 +135,21 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
                 }
                 EditorCommand::EvalStats { collect } => {
                     ("get_eval_stats", json!({"collect": collect}))
+                }
+                EditorCommand::Open {
+                    headless,
+                    wait_ready,
+                } => {
+                    let value = super::editor::open(&cli, *headless, *wait_ready).await?;
+                    return print_value(&value, cli.output);
+                }
+                EditorCommand::Close { force } => {
+                    let value = super::editor::close(&cli, *force).await?;
+                    return print_value(&value, cli.output);
+                }
+                EditorCommand::Status => {
+                    let value = super::editor::status(&cli).await?;
+                    return print_value(&value, cli.output);
                 }
             };
             let value = execute_tool(&cli, tool, params).await?;

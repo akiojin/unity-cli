@@ -93,6 +93,44 @@ namespace UnityCliBridge.Tests.Editor
             }
         }
 
+        [Test]
+        public void QuitEditor_RefusesDirtySceneUnlessForceIsExplicit()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.NewScene(
+                UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
+                UnityEditor.SceneManagement.NewSceneMode.Single);
+            var before = UnityEditor.EditorApplication.delayCall;
+            try
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+                foreach (var force in new[] { false, true })
+                {
+                    var response = Newtonsoft.Json.Linq.JObject.Parse(
+                        global::UnityCliBridge.Core.BridgeCommandRouter.Handle(new Command
+                        {
+                            Id = "quit-dirty", Type = "quit_editor",
+                            Parameters = new Newtonsoft.Json.Linq.JObject { ["force"] = force }
+                        }).GetAwaiter().GetResult());
+                    Assert.AreEqual(force ? "success" : "error", response["status"]?.ToString());
+                    if (!force)
+                    {
+                        Assert.AreEqual("UNSAVED_SCENES", response["code"]?.ToString());
+                        Assert.IsNotEmpty(response["details"]?["scenes"] as Newtonsoft.Json.Linq.JArray);
+                        Assert.IsTrue(scene.isDirty, "Refusal must not clear unsaved changes");
+                    }
+                    Assert.AreEqual(before, UnityEditor.EditorApplication.delayCall,
+                        "The router must never schedule exit before the response is sent");
+                }
+            }
+            finally
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.NewScene(
+                    UnityEditor.SceneManagement.NewSceneSetup.EmptyScene,
+                    UnityEditor.SceneManagement.NewSceneMode.Single);
+                UnityEditor.EditorApplication.delayCall = before;
+            }
+        }
+
         [SetUp]
         public void SetUp()
         {

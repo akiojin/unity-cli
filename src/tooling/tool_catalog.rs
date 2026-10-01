@@ -1263,8 +1263,9 @@ fn tool_params_schema(name: &str) -> Value {
             &[],
             false,
         ),
-        "clear_logs" | "refresh_assets" | "quit_editor" | "get_editor_info"
-        | "get_editor_state" | "get_command_stats" => object_schema(&[], &[], false),
+        "quit_editor" => object_schema(&[("force", boolean_schema())], &[], false),
+        "clear_logs" | "refresh_assets" | "get_editor_info" | "get_editor_state"
+        | "get_command_stats" => object_schema(&[], &[], false),
         "get_project_setting" => object_schema(&[("path", string_schema())], &["path"], false),
         "set_project_setting" => object_schema(
             &[
@@ -3078,6 +3079,15 @@ fn enum_string_schema(values: &[&str]) -> Value {
 mod tests {
     use super::{get_tool_spec, is_known_tool, list_tool_specs, ToolExecutor, TOOL_NAMES};
     use serde_json::{json, Value};
+
+    #[test]
+    fn quit_editor_exposes_optional_scene_protection_parameter() {
+        let spec = get_tool_spec("quit_editor").unwrap();
+        assert_eq!(spec.params_schema["properties"]["force"]["type"], "boolean");
+        assert!(spec.params_schema["required"]
+            .as_array()
+            .is_none_or(|required| !required.contains(&json!("force"))));
+    }
 
     #[test]
     fn hot_reload_tools_expose_explicit_preview_and_recovery_contract() {
