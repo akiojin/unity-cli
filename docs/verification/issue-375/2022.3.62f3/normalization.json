@@ -1,0 +1,32 @@
+[
+  {
+    "source": "hierarchy.json",
+    "artifact": "hierarchy.json",
+    "removed_suffix": "exit=0",
+    "source_sha256": "a84154cf9d8746b551c6ad554951fc3cad1fb47b23e0987d39e8888e2a75badd"
+  },
+  {
+    "source": "play-state.json",
+    "artifact": "play-state.json",
+    "removed_suffix": "exit=0",
+    "source_sha256": "c4bb01f2deca222b31ea513763b3ac4d7a737fe08f86db4ad76d3ea15f17db99"
+  },
+  {
+    "source": "console.json",
+    "artifact": "console.json",
+    "removed_suffix": "exit=0",
+    "source_sha256": "f6ee28b661d5b12960dcf584285216f48ca81d88ce0625c3bb23801a03d1d4fe"
+  },
+  {
+    "source": "screenshot.json",
+    "artifact": "screenshot.json",
+    "removed_suffix": "exit=0",
+    "source_sha256": "c6048dd066bc3ee58b469b5828261b5348032db1dca64c67e56cbf4318651dd1"
+  },
+  {
+    "source": "state-after-stop.json",
+    "artifact": "stopped-state.json",
+    "removed_suffix": "exit=0",
+    "source_sha256": "8354aad476eba855fad0ac6ea42ce634d3667635a8da21c8522a184307d358a9"
+  }
+]

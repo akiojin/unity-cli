@@ -1,0 +1,18 @@
+{
+  "state": {
+    "applicationContentsPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents",
+    "applicationPath": "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app",
+    "isCompiling": false,
+    "isPaused": false,
+    "isPlaying": false,
+    "isUpdating": false,
+    "playability": {
+      "compilation": null,
+      "lastPlayRequestTime": null,
+      "playRequested": false,
+      "reason": "ready"
+    },
+    "timeSinceStartup": 205.62872675
+  },
+  "status": "success"
+}
