@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Screen.uss" />
+    <ui:VisualElement name="form" class="form">
+        <ui:Label text="Welcome" name="status" />
+        <ui:TextField label="Name" name="player-name" />
+        <ui:Button text="Submit" name="submit" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,60 @@
+{
+  "editor": "2022.3.62f3",
+  "platform": "macOS arm64",
+  "source_streams": {
+    "construction": {
+      "sha256": "34b50ebc7a97d5ce51d30d0618e84e07319a610b2926a26da76a3f624575d621",
+      "local_path": "/tmp/issue377-evidence/2022.3.62f3/claude-session.jsonl"
+    },
+    "verification": {
+      "sha256": "4ff5d6d043c64fb7a628c1f7aafc7ab09967dcd0a9e41453fe2bdf10b509ae63",
+      "local_path": "/tmp/issue377-evidence/2022.3.62f3/claude-accepted.jsonl"
+    }
+  },
+  "files": {
+    "Screen.uss": {
+      "sha256": "95ae16abe41aafb09cba9696bfc7bc5318093ff1baf2415863e4909bd3113f48",
+      "bytes": 389
+    },
+    "Screen.uxml": {
+      "sha256": "b336d4a7d4f4c914e53861c07bc6ca0827ed347dd7241494c069eb622dea3fa8",
+      "bytes": 315
+    },
+    "Theme.tss": {
+      "sha256": "682e2b1c6cc1d6e332c15f56c840f7d8282cb1e5bc627eb6664580352a752fda",
+      "bytes": 38
+    },
+    "ToolkitDemoBinding.cs": {
+      "sha256": "d00560919813a0f43399a4e70cfadc0e18b0f3480062cb3addec9a43d4528f8d",
+      "bytes": 887
+    },
+    "accepted-ui.log": {
+      "sha256": "cf38c641c282bd7bf5bf3edb085d06c5ec5c08a279cdd5c4bfb0ac9229bf9cee",
+      "bytes": 23579
+    },
+    "construction.json": {
+      "sha256": "e624f33faf696a6230669b4f64bbd0c3727c8893d84b7928f34e63c049c2447f",
+      "bytes": 128549
+    },
+    "contrast-corrected.json": {
+      "sha256": "09055182984adc85c6f319d199fa0de6dd6307abca7360c1caaa7ea85b6fedc9",
+      "bytes": 1088
+    },
+    "game-after-accepted.png": {
+      "sha256": "31d9e3f6028ed486995b53d620d0f4cd167e0a93338250bf52e8e1af5f9f2e4d",
+      "bytes": 123039
+    },
+    "game-before-accepted.png": {
+      "sha256": "4ac64a392f3ac454c1346a5381ec2880457f1885df5a3f218317a74128f2d56e",
+      "bytes": 122205
+    },
+    "independent-state.json": {
+      "sha256": "bf4f244ee39c61b3193742c2c88eeac5892fea9d7366e95de6b8c32b0f383797",
+      "bytes": 1255
+    },
+    "verification.json": {
+      "sha256": "289ff0d82b76d76da8511c273a35df6b31a3306ae1a7d732a0cee371364d7e40",
+      "bytes": 64219
+    }
+  }
+}

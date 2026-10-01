@@ -1,0 +1,771 @@
+[
+  {
+    "type": "system",
+    "subtype": "init",
+    "session_id": "6a5c602c-97be-43d1-b4cf-eabcc80d2854",
+    "cwd": "/private/tmp/issue377-unity-2022.3.62f3",
+    "model": "claude-opus-5-5",
+    "slash_commands": [
+      "deep-research",
+      "unity-cli:unity-addressables",
+      "unity-cli:unity-asset-management",
+      "unity-cli:unity-csharp-edit",
+      "unity-cli:unity-csharp-navigate",
+      "unity-cli:unity-csharp-reference",
+      "unity-cli:unity-development-loop",
+      "unity-cli:unity-editor-tools",
+      "unity-cli:unity-gameobject-edit",
+      "unity-cli:unity-input-system",
+      "unity-cli:unity-playmode-testing",
+      "unity-cli:unity-prefab-workflow",
+      "unity-cli:unity-project-bootstrap",
+      "unity-cli:unity-scene-create",
+      "unity-cli:unity-scene-inspect",
+      "unity-cli:unity-ui-automation",
+      "unity-cli:unity-ui-toolkit-build",
+      "unity-cli:unity-vfx-graph",
+      "design",
+      "design-sync",
+      "dataviz",
+      "update-config",
+      "verify",
+      "debug",
+      "code-review",
+      "simplify",
+      "batch",
+      "fewer-permission-prompts",
+      "doctor",
+      "loop",
+      "schedule",
+      "claude-api",
+      "workflow-authoring",
+      "run",
+      "run-skill-generator",
+      "advisor",
+      "agents",
+      "auto-mode-setup",
+      "autocompact",
+      "clear",
+      "color",
+      "compact",
+      "config",
+      "output-style",
+      "context",
+      "effort",
+      "fast",
+      "focus",
+      "heapdump",
+      "init",
+      "mcp",
+      "import",
+      "model",
+      "__remote-workflow",
+      "workflow-launch-exec",
+      "reload-plugins",
+      "reload-skills",
+      "rename",
+      "ultrareview",
+      "security-review",
+      "usage-credits",
+      "extra-usage",
+      "usage",
+      "insights",
+      "recap",
+      "skill-doctor",
+      "goal",
+      "design-consent",
+      "design-revoke",
+      "list-agents",
+      "team-onboarding"
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01HkzAAdqQ39tAporyz4DfZn",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /Users/akiojin/Workbench/unity-cli/work/issue-377/.claude-plugin/plugins/unity-cli/skills/unity-ui-toolkit-build && cat references/construction.md references/runtime-checklist.md'",
+          "description": "Read construction and checklist references"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01HkzAAdqQ39tAporyz4DfZn",
+        "type": "tool_result",
+        "content": "# Small runtime form\n\n## Table of Contents\n\n- UXML and USS\n- Serialized setup through the Editor\n- Binding script\n- Game capture including the overlay\n\nUse an unused folder such as `Assets/UI/ToolkitDemo`. These are independently\nauthored examples, using APIs shared by Unity 2022.3 and Unity 6. Adapt the paths\nand screen content to the request. Inspect existing files before replacing them.\n\n## UXML and USS\n\nWrite these source texts through `unity-editor-tools` using\n`unity-cli editor eval '<statements>' --mode statements --request-id <unique-id>`\nwith `System.IO.Directory.CreateDirectory` / `System.IO.File.WriteAllText`.\nEscape text as C# string literals and then shell-quote the entire expression;\nnever interpolate untrusted text into shell commands. Use absolute paths derived\nfrom `UnityEngine.Application.dataPath`. Import via AssetDatabase afterward.\n\n`Screen.uxml`:\n\n```xml\n<ui:UXML xmlns:ui=\"UnityEngine.UIElements\">\n    <Style src=\"Screen.uss\" />\n    <ui:VisualElement name=\"form\" class=\"form\">\n        <ui:Label text=\"Welcome\" name=\"status\" />\n        <ui:TextField label=\"Name\" name=\"player-name\" />\n        <ui:Button text=\"Submit\" name=\"submit\" />\n    </ui:VisualElement>\n</ui:UXML>\n```\n\n`Screen.uss`:\n\n```css\n.form {\n    padding-top: 32px;\n    padding-left: 32px;\n    padding-right: 32px;\n    padding-bottom: 32px;\n    width: 480px;\n    background-color: rgb(28, 35, 48);\n    color: rgb(240, 243, 250);\n    font-size: 24px;\n}\n#status { margin-bottom: 20px; }\n#player-name .unity-base-text-field__input { color: rgb(28, 35, 48); }\n#submit { margin-top: 16px; height: 48px; color: rgb(28, 35, 48); }\n```\n\n## Serialized setup through the Editor\n\nImport UXML and USS synchronously and confirm both load as `VisualTreeAsset`\nand `StyleSheet`. Use fully qualified API names in eval statements:\n\n```csharp\nUnityEditor.AssetDatabase.Refresh(UnityEditor.ImportAssetOptions.ForceSynchronousImport);\nvar tree = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.VisualTreeAsset>(\"Assets/UI/ToolkitDemo/Screen.uxml\");\nif (tree == null) throw new System.InvalidOperationException(\"UXML import failed\");\nvar panel = UnityEngine.ScriptableObject.CreateInstance<UnityEngine.UIElements.PanelSettings>();\nUnityEditor.AssetDatabase.CreateAsset(panel, \"Assets/UI/ToolkitDemo/Panel.asset\");\nvar go = new UnityEngine.GameObject(\"ToolkitDemo\");\nvar document = go.AddComponent<UnityEngine.UIElements.UIDocument>();\ndocument.panelSettings = panel;\ndocument.visualTreeAsset = tree;\nUnityEditor.EditorUtility.SetDirty(document);\nUnityEditor.AssetDatabase.SaveAssets();\nUnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(go.scene);\nreturn go.name;\n```\n\nThis is for a new, unused path/object only. For existing assets load and modify\nthe requested object instead of duplicating it. Ensure PanelSettings has a theme\nstyle sheet for legible built-in controls. If Unity does not assign its default\ntheme, import/create a `.tss` source containing\n`@import url(\"unity-theme://default\");` and assign the resulting\n`ThemeStyleSheet` to `panel.themeStyleSheet` before saving.\n\n## Binding script\n\nUse `unity-csharp-edit` to write `Assets/Scripts/ToolkitDemoBinding.cs`:\n\n```csharp\nusing UnityEngine;\nusing UnityEngine.UIElements;\n\n[RequireComponent(typeof(UIDocument))]\npublic class ToolkitDemoBinding : MonoBehaviour\n{\n    private Button submit;\n    private TextField playerName;\n    private Label status;\n    private void OnEnable()\n    {\n        var root = GetComponent<UIDocument>().rootVisualElement;\n        submit = root.Q<Button>(\"submit\");\n        playerName = root.Q<TextField>(\"player-name\");\n        status = root.Q<Label>(\"status\");\n        if (submit == null || playerName == null || status == null)\n        {\n            Debug.LogError(\"ToolkitDemo: required UXML controls missing\");\n            return;\n        }\n        submit.clicked += Submit;\n    }\n    private void OnDisable() { if (submit != null) submit.clicked -= Submit; }\n    private void Submit() { status.text = \"Hello, \" + playerName.value + \"!\"; }\n}\n```\n\nAfter compilation succeeds, add this component to the document object using\n`add_component` and save/reload the scene. In Play, discover the controls, assert\ninitial label `Welcome`, input `Ada`, read back `Ada`, click Submit, then assert\n`Hello, Ada!`. Capture actual Game images before/after using the recipe below,\ncheck text visibility and layout, and inspect the console for errors. Preserve\nUXML/USS, command responses and captures as evidence; restore Edit Mode afterward.\n\n## Game capture including the overlay\n\n`capture_screenshot` with `captureMode:game` can render only the camera even when\n`includeUI:true`; a successful response is not proof that the UI is in the PNG.\nDo not use its camera-only result or an OS fallback as evidence for this screen.\nUse the existing `unity-editor-tools` eval with Unity's Game-frame capture API:\n\n```csharp\nUnityEditor.EditorWindow.GetWindow(typeof(UnityEditor.Editor).Assembly.GetType(\"UnityEditor.GameView\")).Focus();\nvar captureDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath), \".unity/capture\");\nSystem.IO.Directory.CreateDirectory(captureDir);\nvar path = System.IO.Path.Combine(captureDir, \"toolkit-before.png\");\nif (System.IO.File.Exists(path)) throw new System.InvalidOperationException(\"Use a new capture filename\");\nUnityEngine.ScreenCapture.CaptureScreenshot(path);\nreturn path;\n```\n\nRun while playing, after the panel has rendered. This queues capture for a\nsubsequent frame: wait for the file to exist and finish writing, then open it.\nUse a different filename after the click. Keep Game view visible; if background\nexecution prevents frames, record `Application.runInBackground`, temporarily set\nit to true via eval, and restore it after capturing. Verify the images actually\nshow `Welcome` and `Hello, Ada!`, alongside the matching structured UI state.\nDo not implement a screenshot backend or modify the bridge to obtain evidence.\n# Runtime Checklist\n\n## Binary Selection\n\n- Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).\n- If no binary is installed, run `scripts/install.sh` (macOS / Linux) or `scripts/install.ps1` (Windows, when published) instead of asking the user.\n- Only inside a unity-cli source checkout, `cargo run -- <args>` is a development alternative.\n\n## Project Setup\n\n- `unity-cli setup` = binary check → `bridge install` → Editor `ping`; it prints one JSON report and exits non-zero until the Editor answers for this project.\n- Tell the user before running it: it edits `Packages/manifest.json` and, when the project uses only the legacy Input Manager and the Editor is closed, sets `activeInputHandler: 2` (Both) in `ProjectSettings/ProjectSettings.asset` so the Input System dependency does not block the Editor with a restart dialog. `bridge install` is idempotent (a second run leaves both files byte-identical).\n- If the Editor was already open, it may show \"enable the Input System backends? (restart)\"; bridge commands time out until someone answers it. Close the Editor and rerun `setup --launch-editor` instead.\n- `--launch-editor` starts the Unity Hub Editor recorded in `ProjectSettings/ProjectVersion.txt` (`UNITY_EDITOR_PATH` overrides) and waits up to 900 s (`--wait-secs`).\n- `editor.projectMatches: false` means another project's Editor owns the port; pass `--port`.\n- `versionCheck.status: mismatch` (from `setup` or `system ping`) → `unity-cli bridge upgrade`, or update the CLI.\n- Verify the binary with `unity-cli --version` before debugging higher-level workflows.\n\n## Instance Selection\n\n- Use `unity-cli system ping` when a single active target is expected.\n- Use `unity-cli instances list` when multiple editors may be running.\n- Prefer `--project-path <project>` (or running inside the project) to target one Editor; `AMBIGUOUS_EDITOR` lists candidates in `data.candidates`.\n- Use `unity-cli instances set-active <host:port>` only after confirming the target is `up`.\n\n## Command Routing\n\n- The bootstrap-relevant typed subcommands are `system ping`, `scene create`, `instances list`, `instances set-active`. Use them when available. (`instances list` / `instances set-active` are local registry operations rather than bridge-tool wrappers.)\n- The `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`) also has typed wrappers over the `reference_*` bridge tools — see the `unity-csharp-reference` skill. Beyond these, most bridge tools have no typed wrapper.\n- For every tool without a typed wrapper, use `unity-cli raw <tool_name> --json '{...}'` (or its alias `unity-cli tool call <tool_name> --json '{...}'`). This is the primary invocation pattern, not a fallback — bridge tools such as `analyze_scene_contents`, `find_by_component`, `modify_component`, and `get_compilation_state` are all invoked this way.\n- Discover tools with `unity-cli tool list --query <term> --compact`; add `--category <name>` (a `docs/tools.md` heading or slug such as `scenes`, `playback-testing`) and `--limit N` / `--offset N` to keep output small. Inspect a tool's expected JSON payload with `unity-cli tool schema <tool_name> --output json`.\n- Use `--output json` when another tool or script will consume the result.\n\n## Connection Recovery\n\n- A failed `system ping` does not prove the Editor is closed. Run `unity-cli doctor --output json` (add `--project-path <dir>` outside the project) before any fallback such as hand-editing YAML.\n- Act on the `diagnosis` code:\n  - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) by editing the file directly, then let Unity recompile or restart the Editor.\n  - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.\n  - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.\n  - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.\n  - `SANDBOX_BLOCKED`: the local socket was denied. Retry in a permitted execution context according to the host's approval policy; do not bypass sandbox restrictions or conclude the Editor is missing. If reachability still cannot be verified, ask the user to confirm the running project and bridge connection before considering an offline fallback.\n  - `BRIDGE_NOT_RESPONDING`: the Editor is still importing/compiling or the port differs from Project Settings > Unity CLI Bridge.\n- Re-run `unity-cli doctor` until `diagnosis` is `OK`, then continue the workflow.\n- An empty instance list or failed process probe inside a sandbox is also inconclusive. Confirm the project/host/port and the user's Editor state instead of treating restricted visibility as `EDITOR_NOT_RUNNING`.\n- When the target Editor is reachable, never hand-edit serialized `.unity`, `.prefab`, or `.asset` YAML. Bridge operations keep serialized references, prefab overrides, and the live Editor state in sync.\n- If recovery cannot restore the connection and offline work is appropriate, declare the fallback before editing: explain the verified limitation, affected files, alternative method, and how the result will be checked after reopening Unity. Without confirmation of an uncertain sandbox diagnosis, pause dependent edits. Do not silently substitute YAML edits for bridge calls.\n\n## CI Notes\n\n- Set `UNITY_CLI_HOST` and `UNITY_CLI_PORT` explicitly in CI.\n- Keep JSON payloads quoted as a single shell argument.\n- If connectivity fails in CI, report the resolved host and port before retrying.",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01PgbM3hAhBBdsr7DgjaL8jg",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'mkdir -p /tmp/issue377-evidence/2022.3.62f3 && ls -la /tmp/issue377-evidence/2022.3.62f3 && cat > /tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh <<\"EOF\"\n#!/bin/bash\n# Usage: ucli-accepted.sh <args...> ; logs exact command and output to accepted-ui.log\ncd /tmp/issue377-unity-2022.3.62f3 || exit 1\nLOG=/tmp/issue377-evidence/2022.3.62f3/accepted-ui.log\n{ printf \"\\n===== %s\\n$ /Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518\" \"$(date -u +%FT%TZ)\"; printf \" %q\" \"$@\"; printf \"\\n\"; } >> \"$LOG\"\nout=$(/Users/akiojin/.local/bin/unity-cli --host 127.0.0.1 --port 6518 \"$@\" 2>&1); rc=$?\nprintf \"%s\\n[exit %d]\\n\" \"$out\" \"$rc\" >> \"$LOG\"\nprintf \"%s\\n[exit %d]\\n\" \"$out\" \"$rc\"\nEOF\nchmod +x /tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; test -e /tmp/issue377-evidence/2022.3.62f3/accepted-ui.log && echo LOG_EXISTS'",
+          "description": "Create evidence dir and logging wrapper"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "type": "tool_result",
+        "content": "Exit code 1\ntotal 8472\ndrwxr-xr-x@ 34 akiojin  wheel     1088 Oct  1 15:14 .\ndrwxr-xr-x@  4 akiojin  wheel      128 Oct  1 14:56 ..\n-rw-r--r--@  1 akiojin  wheel      884 Oct  1 15:02 ToolkitDemoBinding.cs.src\n-rw-r--r--@  1 akiojin  wheel     2927 Oct  1 15:14 accepted-prompt.txt\n-rw-r--r--@  1 akiojin  wheel        0 Oct  1 15:14 claude-accepted-stderr.log\n-rw-r--r--@  1 akiojin  wheel    37214 Oct  1 15:14 claude-accepted.jsonl\n-rw-r--r--@  1 akiojin  wheel        0 Oct  1 15:07 claude-final-stderr.log\n-rw-r--r--@  1 akiojin  wheel   845159 Oct  1 15:08 claude-final.jsonl\n-rw-r--r--@  1 akiojin  wheel  1199733 Oct  1 15:05 claude-session.jsonl\n-rw-r--r--@  1 akiojin  wheel        0 Oct  1 14:57 claude-stderr.log\n-rw-r--r--@  1 akiojin  wheel        0 Oct  1 15:10 claude-verified-stderr.log\n-rw-r--r--@  1 akiojin  wheel   806252 Oct  1 15:13 claude-verified.jsonl\n-rw-r--r--@  1 akiojin  wheel     1088 Oct  1 15:13 contrast-corrected.json\n-rw-r--r--@  1 akiojin  wheel     1066 Oct  1 15:09 contrast-update.json\n-rw-r--r--@  1 akiojin  wheel   335540 Oct  1 15:13 editor.log\n-rw-r--r--@  1 akiojin  wheel     1984 Oct  1 15:01 eval-01-write-sources.cs\n-rw-r--r--@  1 akiojin  wheel     1858 Oct  1 15:01 eval-02-panel-document.cs\n-rw-r--r--@  1 akiojin  wheel     2070 Oct  1 15:07 final-prompt.txt\n-rw-r--r--@  1 akiojin  wheel    44011 Oct  1 15:08 final-ui.log\n-rw-r--r--@  1 akiojin  wheel   122582 Oct  1 15:08 game-after-final.png\n-rw-r--r--@  1 akiojin  wheel   122770 Oct  1 15:12 game-after-verified.png\n-rw-r--r--@  1 akiojin  wheel   121978 Oct  1 15:08 game-before-final.png\n-rw-r--r--@  1 akiojin  wheel   122205 Oct  1 15:11 game-before-verified.png\n-rw-r--r--@  1 akiojin  wheel   158955 Oct  1 15:04 game-initial.png\n-rw-r--r--@  1 akiojin  wheel   158955 Oct  1 15:04 game-result.png\n-rw-r--r--@  1 akiojin  wheel   108984 Oct  1 15:04 ops.log\n-rw-r--r--@  1 akiojin  wheel        5 Oct  1 14:56 pid\n-rw-r--r--@  1 akiojin  wheel      331 Oct  1 14:57 ping.json\n-rw-r--r--@  1 akiojin  wheel     1463 Oct  1 14:57 prompt.txt\ndrwxr-xr-x@  5 akiojin  wheel      160 Oct  1 15:09 tools\n-rwxr-xr-x@  1 akiojin  wheel      526 Oct  1 15:10 u.sh\n-rwxr-xr-x@  1 akiojin  wheel      581 Oct  1 15:07 ucli.sh\n-rw-r--r--@  1 akiojin  wheel     2644 Oct  1 15:10 verified-prompt.txt\n-rw-r--r--@  1 akiojin  wheel    21244 Oct  1 15:12 verified-ui.log",
+        "is_error": true,
+        "tool_use_id": "toolu_01PgbM3hAhBBdsr7DgjaL8jg"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01N16NdNxWkyBtfREerboerS",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && ls -la /tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; ls -la .unity/capture 2>/dev/null; S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S system ping; $S raw get_editor_state --json \"{}\"'",
+          "description": "Ping Editor and get editor state"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01N16NdNxWkyBtfREerboerS",
+        "type": "tool_result",
+        "content": "-rwxr-xr-x@ 1 akiojin  wheel  530 Oct  1 15:14 /tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh\ntotal 1104\ndrwxr-xr-x@ 6 akiojin  wheel     192 Oct  1 15:12 .\ndrwxr-xr-x@ 3 akiojin  wheel      96 Oct  1 15:04 ..\n-rw-r--r--@ 1 akiojin  wheel  158955 Oct  1 15:04 image_game_2026-10-01_15-04-17.png\n-rw-r--r--@ 1 akiojin  wheel  158955 Oct  1 15:04 image_game_2026-10-01_15-04-40.png\n-rw-r--r--@ 1 akiojin  wheel  122770 Oct  1 15:12 toolkit-after-verified.png\n-rw-r--r--@ 1 akiojin  wheel  122205 Oct  1 15:11 toolkit-before-verified.png\n{\n  \"bridgeVersion\": \"0.16.0\",\n  \"echo\": null,\n  \"message\": \"pong\",\n  \"projectPath\": \"/private/tmp/issue377-unity-2022.3.62f3\",\n  \"timestamp\": \"2026-10-01T06:14:34.6167450Z\",\n  \"versionCheck\": {\n    \"bridgeVersion\": \"0.16.0\",\n    \"cliVersion\": \"0.16.0\",\n    \"message\": \"CLI and bridge are both 0.16.0\",\n    \"status\": \"match\"\n  }\n}\n[exit 0]\n{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1106.673949583\n  },\n  \"status\": \"success\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Not playing. Check scene state and errors, then load the saved scene."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01WvedYPRGu4ywCoEMZjekuL",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S tool list --query scene --compact --limit 20; $S editor eval \"var s=UnityEngine.SceneManagement.SceneManager.GetActiveScene(); return s.path+\\\" dirty=\\\"+s.isDirty;\" --mode statements --request-id issue377-scene-pre-accepted'",
+          "description": "Inspect active scene and scene tools"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01WvedYPRGu4ywCoEMZjekuL",
+        "type": "tool_result",
+        "content": "analyze_scene_contents\tAnalyze scene asset contents\ninstantiate_prefab\tInstantiate a Prefab in the scene\nget_hierarchy\tGet scene hierarchy tree\ncreate_scene\tCreate a new scene\nget_scene_info\tGet scene metadata\nstart_scene_bake\tStart Lighting, legacy NavMesh, NavMeshSurface, or Occlusion baking\nget_scene_bake_status\tPoll bake progress, terminal failure, and verified saved artifacts\nlist_scenes\tList all scenes\nload_scene\tLoad a scene\nsave_scene\tSave the current scene\n[exit 0]\n{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-scene-pre-accepted\",\n  \"state\": \"completed\",\n  \"value\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity dirty=False\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01GZ59vMNTuGSG6k4STge7Fp",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw load_scene --json \"{\\\"scenePath\\\":\\\"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\\\",\\\"loadMode\\\":\\\"Single\\\"}\"; $S raw get_scene_info --json \"{}\"; $S raw read_console --json \"{\\\"logTypes\\\":[\\\"Error\\\",\\\"Exception\\\",\\\"Assert\\\"],\\\"count\\\":50}\"; cat Assets/UI/ToolkitDemo/Screen.uss'",
+          "description": "Load saved scene, info, filtered console"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01GZ59vMNTuGSG6k4STge7Fp",
+        "type": "tool_result",
+        "content": "{\n  \"activeSceneCount\": null,\n  \"isLoaded\": true,\n  \"loadMode\": \"Single\",\n  \"previousScene\": \"ToolkitDemo\",\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Loaded scene \\\"ToolkitDemo\\\" in Single mode\"\n}\n[exit 0]\n{\n  \"buildIndex\": -1,\n  \"fileSize\": 10004,\n  \"isActive\": true,\n  \"isDirty\": false,\n  \"isLoaded\": true,\n  \"lastModified\": \"2026-10-01T06:03:34.4428204Z\",\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Scene \\\"ToolkitDemo\\\" - Loaded and active, not in build settings, 9.8 KB\"\n}\n[exit 0]\n{\n  \"count\": 2,\n  \"logs\": [\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface store action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface store action as it is memoryless\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface load action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface load action as it is memoryless\\n\"\n    }\n  ],\n  \"statistics\": {\n    \"asserts\": 0,\n    \"errors\": 2,\n    \"exceptions\": 0,\n    \"logs\": 0,\n    \"warnings\": 25\n  },\n  \"success\": true,\n  \"totalCaptured\": 27\n}\n[exit 0]\n.form {\n    padding-top: 32px;\n    padding-left: 32px;\n    padding-right: 32px;\n    padding-bottom: 32px;\n    width: 480px;\n    background-color: rgb(28, 35, 48);\n    color: rgb(240, 243, 250);\n    font-size: 24px;\n}\n#status { margin-bottom: 20px; }\n#player-name .unity-base-text-field__input { color: rgb(28, 35, 48); }\n#submit { margin-top: 16px; height: 48px; color: rgb(28, 35, 48); }",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01GocWxmqxcdExwobMusUqKq",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && U=/Users/akiojin/.local/bin/unity-cli; $U tool list --query play --compact --limit 20; $U tool list --query console --compact'",
+          "description": "Discover play and console tools"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01GocWxmqxcdExwobMusUqKq",
+        "type": "tool_result",
+        "content": "get_timeline\tInspect a Timeline asset or PlayableDirector, tracks, clips, and bindings (read-only)\nhot_reload\tPreview methods or recover Play\npause_game\tPause Play mode\nplay_game\tEnter Play mode\nstop_game\tExit Play mode\nrun_tests\tRun EditMode/PlayMode tests\nbuild_player\tQueue a standalone player build on the Unity Editor host\nreference_view\tDisplay a slice of a file in the cached reference source by line range.\nclear_console\tClear the Console window\nread_console\tRead Console output",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01GV2VUJXLT9PLaMNfMbEedP",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw clear_console --json \"{}\"; $S editor eval \"return UnityEngine.Application.runInBackground;\" --mode statements --request-id issue377-rib-read-accepted; $S raw play_game --json \"{}\"'",
+          "description": "Clear console, read runInBackground, enter Play"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01GV2VUJXLT9PLaMNfMbEedP",
+        "type": "tool_result",
+        "content": "{\n  \"clearOnBuild\": false,\n  \"clearOnPlay\": false,\n  \"clearOnRecompile\": false,\n  \"clearedCount\": 27,\n  \"message\": \"Console cleared successfully\",\n  \"remainingCount\": 0,\n  \"settingsUpdated\": false,\n  \"success\": true,\n  \"timestamp\": \"2026-10-01T06:14:47.6953590Z\"\n}\n[exit 0]\n{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-rib-read-accepted\",\n  \"state\": \"completed\",\n  \"value\": false\n}\n[exit 0]\n{\n  \"message\": \"Play mode scheduled in 300ms\",\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": \"2026-10-01T06:14:48.1914740Z\",\n      \"msSincePlayRequested\": 0.8570000000000001,\n      \"playRequested\": true,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1120.003189792\n  },\n  \"status\": \"success\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Buu3YxnqWsyudvm6DviTgr",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw get_editor_state --json \"{}\"'",
+          "description": "Check that Play mode is active"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Buu3YxnqWsyudvm6DviTgr",
+        "type": "tool_result",
+        "content": "Error: unityd request failed: Failed to connect to Unity at 127.0.0.1:6518: Connection refused (os error 61). Run `unity-cli doctor --output json` to diagnose (Safe Mode / compile errors, bridge not installed, port in use, Editor not running, sandbox)\n[exit 1]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Domain reload on entering Play; retrying."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01ABfQQ3aA3UGtKRyA2WsBeQ",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; for i in 1 2 3 4 5 6 7 8 9 10; do if $S raw get_editor_state --json \"{}\" | grep -q \"\\\"isPlaying\\\": true\"; then echo PLAYING; break; fi; perl -e \"select(undef,undef,undef,2)\"; done'",
+          "description": "Poll editor state until playing"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01ABfQQ3aA3UGtKRyA2WsBeQ",
+        "type": "tool_result",
+        "content": "PLAYING",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01UfrWP49zSpoUdszE5yWqBC",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw get_editor_state --json \"{}\"; $S raw find_ui_elements --json \"{\\\"uiSystem\\\":\\\"uitk\\\"}\"'",
+          "description": "Confirm Play state and discover UI elements"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01UfrWP49zSpoUdszE5yWqBC",
+        "type": "tool_result",
+        "content": "{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": true,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"in_play_mode\"\n    },\n    \"timeSinceStartup\": 1139.033484333\n  },\n  \"status\": \"success\"\n}\n[exit 0]\n{\n  \"count\": 6,\n  \"elements\": [\n    {\n      \"classes\": [\n        \"unity-ui-document__root\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TemplateContainer\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"ToolkitDemo-container\",\n      \"path\": \"uitk:/ToolkitDemo#ToolkitDemo-container\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"form\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"VisualElement\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"form\",\n      \"path\": \"uitk:/ToolkitDemo#form\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-text-element\",\n        \"unity-button\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"Button\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"submit\",\n      \"path\": \"uitk:/ToolkitDemo#submit\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-base-field\",\n        \"unity-base-text-field\",\n        \"unity-text-field\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TextField\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"player-name\",\n      \"path\": \"uitk:/ToolkitDemo#player-name\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-base-text-field__input\",\n        \"unity-base-text-field__input--single-line\",\n        \"unity-base-field__input\",\n        \"unity-text-field__input\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"TextInput\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"unity-text-input\",\n      \"path\": \"uitk:/ToolkitDemo#unity-text-input\",\n      \"uiSystem\": \"uitk\"\n    },\n    {\n      \"classes\": [\n        \"unity-text-element\",\n        \"unity-label\"\n      ],\n      \"documentPath\": \"/ToolkitDemo\",\n      \"elementType\": \"Label\",\n      \"isActive\": true,\n      \"isInteractable\": true,\n      \"name\": \"status\",\n      \"path\": \"uitk:/ToolkitDemo#status\",\n      \"uiSystem\": \"uitk\"\n    }\n  ]\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01VZLxW7J5T5TKCtETcqsDvd",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#status\\\"}\"; $S raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\"}\"'",
+          "description": "Read initial status and text field state"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01VZLxW7J5T5TKCtETcqsDvd",
+        "type": "tool_result",
+        "content": "{\n  \"elementType\": \"Label\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"status\",\n  \"path\": \"uitk:/ToolkitDemo#status\",\n  \"text\": \"Welcome\",\n  \"uiSystem\": \"uitk\"\n}\n[exit 0]\n{\n  \"elementType\": \"TextField\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"player-name\",\n  \"path\": \"uitk:/ToolkitDemo#player-name\",\n  \"uiSystem\": \"uitk\",\n  \"value\": \"\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Initial `Welcome` confirmed. Now enable runInBackground and request the before-capture."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01PxqsxJ9pmghsGnu4qVAYMH",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S editor eval \"UnityEngine.Application.runInBackground = true; return UnityEngine.Application.runInBackground;\" --mode statements --request-id issue377-rib-enable-accepted; $S editor eval \"UnityEditor.EditorWindow.GetWindow(typeof(UnityEditor.Editor).Assembly.GetType(\\\"UnityEditor.GameView\\\")).Focus(); var captureDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath), \\\".unity/capture\\\"); System.IO.Directory.CreateDirectory(captureDir); var path = System.IO.Path.Combine(captureDir, \\\"toolkit-before-accepted.png\\\"); if (System.IO.File.Exists(path)) throw new System.InvalidOperationException(\\\"Use a new capture filename\\\"); UnityEngine.ScreenCapture.CaptureScreenshot(path); return path;\" --mode statements --request-id issue377-capture-before-accepted'",
+          "description": "Enable runInBackground and queue before capture"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01PxqsxJ9pmghsGnu4qVAYMH",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-rib-enable-accepted\",\n  \"state\": \"completed\",\n  \"value\": true\n}\n[exit 0]\n{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-capture-before-accepted\",\n  \"state\": \"completed\",\n  \"value\": \"/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-before-accepted.png\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01TJ6oZi3PeDSzMWgBnqHUDe",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'F=/tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-before-accepted.png; prev=-1; for i in $(seq 1 30); do if [ -f $F ]; then s=$(stat -f %z $F); [ \"$s\" = \"$prev\" ] && [ \"$s\" -gt 0 ] && break; prev=$s; fi; perl -e \"select(undef,undef,undef,0.5)\"; done; ls -la $F && test ! -e /tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png && cp $F /tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png && sips -g pixelWidth -g pixelHeight /tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png | tee -a /tmp/issue377-evidence/2022.3.62f3/accepted-ui.log'",
+          "description": "Wait for PNG, copy to evidence, get dimensions"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01TJ6oZi3PeDSzMWgBnqHUDe",
+        "type": "tool_result",
+        "content": "-rw-r--r--@ 1 akiojin  wheel  122205 Oct  1 15:15 /tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-before-accepted.png\n/private/tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png\n  pixelWidth: 1280\n  pixelHeight: 720",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01FoHLeofHAQshXn5qpNcwm4",
+        "name": "Read",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01FoHLeofHAQshXn5qpNcwm4",
+        "type": "tool_result",
+        "content": [
+          {
+            "type": "image",
+            "omitted": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Before frame shows the UI overlay with `Welcome`, a light input box, and dark `Submit` text on a light gray button. Now the interaction:"
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01UdqHVcE2a27cunkZYKc5m2",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw set_ui_element_value --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\",\\\"value\\\":\\\"Ada\\\"}\"; $S raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#player-name\\\"}\"; $S raw click_ui_element --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#submit\\\"}\"; $S raw get_ui_element_state --json \"{\\\"elementPath\\\":\\\"uitk:/ToolkitDemo#status\\\"}\"'",
+          "description": "Set Ada, read back, click Submit, read status"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01UdqHVcE2a27cunkZYKc5m2",
+        "type": "tool_result",
+        "content": "{\n  \"elementPath\": \"uitk:/ToolkitDemo#player-name\",\n  \"newValue\": \"Ada\",\n  \"success\": true,\n  \"uiSystem\": \"uitk\"\n}\n[exit 0]\n{\n  \"elementType\": \"TextField\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"player-name\",\n  \"path\": \"uitk:/ToolkitDemo#player-name\",\n  \"uiSystem\": \"uitk\",\n  \"value\": \"Ada\"\n}\n[exit 0]\n{\n  \"elementPath\": \"uitk:/ToolkitDemo#submit\",\n  \"message\": \"Successfully clicked submit\",\n  \"success\": true,\n  \"uiSystem\": \"uitk\",\n  \"warnings\": null\n}\n[exit 0]\n{\n  \"elementType\": \"Label\",\n  \"isActive\": true,\n  \"isInteractable\": true,\n  \"name\": \"status\",\n  \"path\": \"uitk:/ToolkitDemo#status\",\n  \"text\": \"Hello, Ada!\",\n  \"uiSystem\": \"uitk\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01RvqnvuNaCqw1utjh52gUKX",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S editor eval \"UnityEditor.EditorWindow.GetWindow(typeof(UnityEditor.Editor).Assembly.GetType(\\\"UnityEditor.GameView\\\")).Focus(); var captureDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(UnityEngine.Application.dataPath), \\\".unity/capture\\\"); System.IO.Directory.CreateDirectory(captureDir); var path = System.IO.Path.Combine(captureDir, \\\"toolkit-after-accepted.png\\\"); if (System.IO.File.Exists(path)) throw new System.InvalidOperationException(\\\"Use a new capture filename\\\"); UnityEngine.ScreenCapture.CaptureScreenshot(path); return path;\" --mode statements --request-id issue377-capture-after-accepted; F=.unity/capture/toolkit-after-accepted.png; prev=-1; for i in $(seq 1 30); do if [ -f $F ]; then s=$(stat -f %z $F); [ \"$s\" = \"$prev\" ] && [ \"$s\" -gt 0 ] && break; prev=$s; fi; perl -e \"select(undef,undef,undef,0.5)\"; done; ls -la $F && test ! -e /tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png && cp $F /tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png && sips -g pixelWidth -g pixelHeight /tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png | tee -a /tmp/issue377-evidence/2022.3.62f3/accepted-ui.log'",
+          "description": "Queue after capture, wait, copy, dimensions"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01RvqnvuNaCqw1utjh52gUKX",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-capture-after-accepted\",\n  \"state\": \"completed\",\n  \"value\": \"/private/tmp/issue377-unity-2022.3.62f3/.unity/capture/toolkit-after-accepted.png\"\n}\n[exit 0]\n-rw-r--r--@ 1 akiojin  wheel  123039 Oct  1 15:15 .unity/capture/toolkit-after-accepted.png\n/private/tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png\n  pixelWidth: 1280\n  pixelHeight: 720",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Bx91cm5PeUSz8DJkeg3oJV",
+        "name": "Read",
+        "input": {
+          "file_path": "/tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Bx91cm5PeUSz8DJkeg3oJV",
+        "type": "tool_result",
+        "content": [
+          {
+            "type": "image",
+            "omitted": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The after frame shows `Hello, Ada!` and `Ada` in the input. Next I'll read the resolvedStyle colors, check the console, and restore runInBackground."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01Skt8LSF1jNYFb9TuaLHhSD",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S editor eval \"var root = UnityEngine.Object.FindObjectOfType<UnityEngine.UIElements.UIDocument>().rootVisualElement; var input = root.Q(\\\"player-name\\\").Q(className: \\\"unity-base-text-field__input\\\"); var submit = root.Q<UnityEngine.UIElements.Button>(\\\"submit\\\"); var status = root.Q<UnityEngine.UIElements.Label>(\\\"status\\\"); return \\\"input color=\\\" + input.resolvedStyle.color + \\\" bg=\\\" + input.resolvedStyle.backgroundColor + \\\" | submit color=\\\" + submit.resolvedStyle.color + \\\" bg=\\\" + submit.resolvedStyle.backgroundColor + \\\" | status text=\\\" + status.text + \\\" color=\\\" + status.resolvedStyle.color;\" --mode statements --request-id issue377-resolvedstyle-accepted; $S raw read_console --json \"{\\\"logTypes\\\":[\\\"Error\\\",\\\"Exception\\\",\\\"Assert\\\"],\\\"count\\\":50}\"; $S editor eval \"UnityEngine.Application.runInBackground = false; return UnityEngine.Application.runInBackground;\" --mode statements --request-id issue377-rib-restore-accepted'",
+          "description": "Read resolvedStyle, filtered console, restore runInBackground"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01Skt8LSF1jNYFb9TuaLHhSD",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 121,\n      \"id\": \"CS1061\",\n      \"line\": 1,\n      \"message\": \"'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)\",\n      \"severity\": \"error\"\n    },\n    {\n      \"column\": 202,\n      \"id\": \"CS1061\",\n      \"line\": 1,\n      \"message\": \"'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)\",\n      \"severity\": \"error\"\n    },\n    {\n      \"column\": 264,\n      \"id\": \"CS1061\",\n      \"line\": 1,\n      \"message\": \"'VisualElement' does not contain a definition for 'Q' and no accessible extension method 'Q' accepting a first argument of type 'VisualElement' could be found (are you missing a using directive or an assembly reference?)\",\n      \"severity\": \"error\"\n    },\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-resolvedstyle-accepted\",\n  \"state\": \"compile_error\",\n  \"value\": null\n}\n[exit 0]\n{\n  \"count\": 2,\n  \"logs\": [\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface store action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface store action as it is memoryless\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface load action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface load action as it is memoryless\\n\"\n    }\n  ],\n  \"statistics\": {\n    \"asserts\": 0,\n    \"errors\": 2,\n    \"exceptions\": 0,\n    \"logs\": 0,\n    \"warnings\": 17\n  },\n  \"success\": true,\n  \"totalCaptured\": 19\n}\n[exit 0]\n{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-rib-restore-accepted\",\n  \"state\": \"completed\",\n  \"value\": false\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The resolvedStyle eval failed to compile (it never ran) because `Q` is an extension method. I'm rerunning it with explicit `UQueryExtensions` calls and a new request ID."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01MhE4XANUJQq26Z4JVnLGVD",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S editor eval \"var root = UnityEngine.Object.FindObjectOfType<UnityEngine.UIElements.UIDocument>().rootVisualElement; var field = UnityEngine.UIElements.UQueryExtensions.Q(root, \\\"player-name\\\"); var input = UnityEngine.UIElements.UQueryExtensions.Q(field, null, \\\"unity-base-text-field__input\\\"); var submit = UnityEngine.UIElements.UQueryExtensions.Q(root, \\\"submit\\\"); var status = UnityEngine.UIElements.UQueryExtensions.Q<UnityEngine.UIElements.Label>(root, \\\"status\\\"); return \\\"input color=\\\" + input.resolvedStyle.color + \\\" bg=\\\" + input.resolvedStyle.backgroundColor + \\\" | submit color=\\\" + submit.resolvedStyle.color + \\\" bg=\\\" + submit.resolvedStyle.backgroundColor + \\\" | status text=\\\" + status.text + \\\" color=\\\" + status.resolvedStyle.color;\" --mode statements --request-id issue377-resolvedstyle2-accepted'",
+          "description": "Read resolvedStyle colors of input and Submit"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01MhE4XANUJQq26Z4JVnLGVD",
+        "type": "tool_result",
+        "content": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"issue377-resolvedstyle2-accepted\",\n  \"state\": \"completed\",\n  \"value\": \"input color=RGBA(0.110, 0.137, 0.188, 1.000) bg=RGBA(0.941, 0.941, 0.941, 1.000) | submit color=RGBA(0.110, 0.137, 0.188, 1.000) bg=RGBA(0.737, 0.737, 0.737, 1.000) | status text=Hello, Ada! color=RGBA(0.941, 0.953, 0.980, 1.000)\"\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Both are dark text (rgb 28,35,48) on light backgrounds. Next I'll exit Play and check that the scene is clean."
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_012MnBUTpTgFzRf63eQtDgQj",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-unity-2022.3.62f3 && S=/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh; $S raw stop_game --json \"{}\"; for i in $(seq 1 15); do if $S raw get_editor_state --json \"{}\" 2>/dev/null | grep -q \"\\\"isPlaying\\\": false\"; then echo STOPPED; break; fi; perl -e \"select(undef,undef,undef,2)\"; done; $S raw get_editor_state --json \"{}\"; $S raw get_scene_info --json \"{}\"; $S raw read_console --json \"{\\\"logTypes\\\":[\\\"Error\\\",\\\"Exception\\\",\\\"Assert\\\"],\\\"count\\\":50}\"'",
+          "description": "Stop Play, confirm state, scene clean, console"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_012MnBUTpTgFzRf63eQtDgQj",
+        "type": "tool_result",
+        "content": "{\n  \"message\": \"Exited play mode\",\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": true,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"in_play_mode\"\n    },\n    \"timeSinceStartup\": 1186.859479042\n  },\n  \"status\": \"success\"\n}\n[exit 0]\nSTOPPED\n{\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": null,\n      \"playRequested\": false,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 1187.835621375\n  },\n  \"status\": \"success\"\n}\n[exit 0]\n{\n  \"buildIndex\": -1,\n  \"fileSize\": 10004,\n  \"isActive\": true,\n  \"isDirty\": false,\n  \"isLoaded\": true,\n  \"lastModified\": \"2026-10-01T06:03:34.4428204Z\",\n  \"sceneName\": \"ToolkitDemo\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/ToolkitDemo.unity\",\n  \"summary\": \"Scene \\\"ToolkitDemo\\\" - Loaded and active, not in build settings, 9.8 KB\"\n}\n[exit 0]\n{\n  \"count\": 2,\n  \"logs\": [\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface store action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface store action as it is memoryless\\n\"\n    },\n    {\n      \"formattedCompact\": \"[Error] Ignoring depth surface load action as it is memoryless\\n\",\n      \"logType\": \"Error\",\n      \"message\": \"Ignoring depth surface load action as it is memoryless\\n\"\n    }\n  ],\n  \"statistics\": {\n    \"asserts\": 0,\n    \"errors\": 2,\n    \"exceptions\": 0,\n    \"logs\": 0,\n    \"warnings\": 21\n  },\n  \"success\": true,\n  \"totalCaptured\": 23\n}\n[exit 0]",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01W3zGjD6FZGwY5nSJLwhQPF",
+        "name": "Bash",
+        "input": {
+          "command": "bash -lc 'cd /tmp/issue377-evidence/2022.3.62f3 && ls -la game-*-accepted.png accepted-ui.log && shasum game-before-accepted.png game-after-accepted.png game-before-verified.png && grep -c \"^=====\" accepted-ui.log'",
+          "description": "Verify evidence files and log entries"
+        },
+        "caller": {
+          "type": "direct"
+        }
+      }
+    ]
+  },
+  {
+    "type": "user",
+    "content": [
+      {
+        "tool_use_id": "toolu_01W3zGjD6FZGwY5nSJLwhQPF",
+        "type": "tool_result",
+        "content": "-rw-r--r--@ 1 akiojin  wheel   23579 Oct  1 15:15 accepted-ui.log\n-rw-r--r--@ 1 akiojin  wheel  123039 Oct  1 15:15 game-after-accepted.png\n-rw-r--r--@ 1 akiojin  wheel  122205 Oct  1 15:15 game-before-accepted.png\n6239aa9b668028591deb37be45c7dee2a2e81ba1  game-before-accepted.png\n6189e5867076c97de46c0ee1a3fb38584dac8179  game-after-accepted.png\n6239aa9b668028591deb37be45c7dee2a2e81ba1  game-before-verified.png\n33",
+        "is_error": false
+      }
+    ]
+  },
+  {
+    "type": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "The screenshot criterion passes on Unity 2022.3.62f3. Both Game frames were captured with `UnityEngine.ScreenCapture.CaptureScreenshot` through `editor eval`, not the camera-only screenshot tool or an OS capture. Both show the UI overlay.\n\n**Captures (both 1280×720):**\n\n| File | Request ID | Source PNG | What it shows |\n|---|---|---|---|\n| `/tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png` | `issue377-capture-before-accepted` | `.unity/capture/toolkit-before-accepted.png` | `Welcome`, empty light input box, `Submit` in dark text on a light gray button |\n| `/tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png` | `issue377-capture-after-accepted` | `.unity/capture/toolkit-after-accepted.png` | `Hello, Ada!`, `Ada` in dark text in the light input box, same `Submit` button |\n\nI opened both images and checked them. The before image is byte-identical to the earlier `game-before-verified.png` (same SHA-1). It is still a new capture: the eval refuses to run if the target file already exists, and the file was written at 15:15 in this session. The scene renders the same before input, so the bytes match.\n\n**Steps run (exact inputs and outputs are in `/tmp/issue377-evidence/2022.3.62f3/accepted-ui.log`, 33 entries):**\n1. **Start:** Play was not running. The ping showed CLI and bridge both at 0.16.0. I loaded `Assets/Scenes/Generated/E2E/ToolkitDemo.unity`; it was not dirty. I cleared the console and entered Play.\n2. **Before:** UI automation found the document's elements. `#status` read `Welcome` and `#player-name` was empty.\n3. **runInBackground:** it was `false`. I set it to `true` for the captures and set it back to `false` afterwards.\n4. **Interaction:** I set `#player-name` to `Ada` and read back `Ada`. Clicking `#submit` succeeded, and `#status` then read `Hello, Ada!`.\n5. **Contrast (resolvedStyle, request `issue377-resolvedstyle2-accepted`):**\n   - Input (`.unity-base-text-field__input`): text rgb(28,35,48) on background 0.941 gray. Dark on light.\n   - Submit: text rgb(28,35,48) on background 0.737 gray. Dark on light.\n   - Status: text 0.941/0.953/0.980 (near white) on the dark form background.\n   \n   My first attempt at this check (`issue377-resolvedstyle-accepted`) failed to compile because `Q` is an extension method, so it never ran. The rerun with a new ID worked.\n6. **End:** I exited Play. The scene is still `ToolkitDemo.unity`, not dirty, and its last-modified time is unchanged (06:03:34Z).\n\n**Console (filtered to Error/Exception/Assert):** no exceptions or asserts, and no errors from the binding or UI. The only errors are Unity's known renderer messages, \"Ignoring depth surface store action as it is memoryless\" and \"Ignoring depth surface load action as it is memoryless\". They were already there before Play, came back after the console was cleared, and did not affect either capture.\n\nI made no changes to the assets, scripts, bridge, packages or scene YAML. The only thing I added is a logging wrapper, `/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh`, outside the project."
+      }
+    ]
+  },
+  {
+    "type": "result",
+    "session_id": "6a5c602c-97be-43d1-b4cf-eabcc80d2854",
+    "is_error": false,
+    "permission_denials": [],
+    "result": "The screenshot criterion passes on Unity 2022.3.62f3. Both Game frames were captured with `UnityEngine.ScreenCapture.CaptureScreenshot` through `editor eval`, not the camera-only screenshot tool or an OS capture. Both show the UI overlay.\n\n**Captures (both 1280×720):**\n\n| File | Request ID | Source PNG | What it shows |\n|---|---|---|---|\n| `/tmp/issue377-evidence/2022.3.62f3/game-before-accepted.png` | `issue377-capture-before-accepted` | `.unity/capture/toolkit-before-accepted.png` | `Welcome`, empty light input box, `Submit` in dark text on a light gray button |\n| `/tmp/issue377-evidence/2022.3.62f3/game-after-accepted.png` | `issue377-capture-after-accepted` | `.unity/capture/toolkit-after-accepted.png` | `Hello, Ada!`, `Ada` in dark text in the light input box, same `Submit` button |\n\nI opened both images and checked them. The before image is byte-identical to the earlier `game-before-verified.png` (same SHA-1). It is still a new capture: the eval refuses to run if the target file already exists, and the file was written at 15:15 in this session. The scene renders the same before input, so the bytes match.\n\n**Steps run (exact inputs and outputs are in `/tmp/issue377-evidence/2022.3.62f3/accepted-ui.log`, 33 entries):**\n1. **Start:** Play was not running. The ping showed CLI and bridge both at 0.16.0. I loaded `Assets/Scenes/Generated/E2E/ToolkitDemo.unity`; it was not dirty. I cleared the console and entered Play.\n2. **Before:** UI automation found the document's elements. `#status` read `Welcome` and `#player-name` was empty.\n3. **runInBackground:** it was `false`. I set it to `true` for the captures and set it back to `false` afterwards.\n4. **Interaction:** I set `#player-name` to `Ada` and read back `Ada`. Clicking `#submit` succeeded, and `#status` then read `Hello, Ada!`.\n5. **Contrast (resolvedStyle, request `issue377-resolvedstyle2-accepted`):**\n   - Input (`.unity-base-text-field__input`): text rgb(28,35,48) on background 0.941 gray. Dark on light.\n   - Submit: text rgb(28,35,48) on background 0.737 gray. Dark on light.\n   - Status: text 0.941/0.953/0.980 (near white) on the dark form background.\n   \n   My first attempt at this check (`issue377-resolvedstyle-accepted`) failed to compile because `Q` is an extension method, so it never ran. The rerun with a new ID worked.\n6. **End:** I exited Play. The scene is still `ToolkitDemo.unity`, not dirty, and its last-modified time is unchanged (06:03:34Z).\n\n**Console (filtered to Error/Exception/Assert):** no exceptions or asserts, and no errors from the binding or UI. The only errors are Unity's known renderer messages, \"Ignoring depth surface store action as it is memoryless\" and \"Ignoring depth surface load action as it is memoryless\". They were already there before Play, came back after the console was cleared, and did not affect either capture.\n\nI made no changes to the assets, scripts, bridge, packages or scene YAML. The only thing I added is a logging wrapper, `/tmp/issue377-evidence/2022.3.62f3/ucli-accepted.sh`, outside the project.",
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 44,
+        "outputTokens": 8633,
+        "cacheReadInputTokens": 623697,
+        "cacheCreationInputTokens": 33686,
+        "webSearchRequests": 0,
+        "costUSD": 0.5670633999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 603,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    }
+  }
+]
