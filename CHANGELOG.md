@@ -1,3 +1,65 @@
+## [0.17.0] - 2026-10-01
+
+### 🚀 Features
+
+- *(perf)* Add CLI and Editor latency regression harnesses
+- *(prefab)* Add override management and unpack tools
+- *(skills)* Add new Unity project bootstrap workflow
+- *(skills)* Install and refresh embedded skills for four clients
+- *(skills)* Add URP setup and Bloom visual workflow
+- *(skills)* Add verified UPM package management workflow
+- *(skills)* Add verified UI Toolkit build workflow
+- *(audio)* Add mixer authoring and AudioImporter settings
+- *(skills)* Add 2d sprite tilemap workflow
+- *(skills)* Add verified audio setup workflow
+- *(skills)* Add verified localization workflow
+
+### 🐛 Bug Fixes
+
+- *(perf)* Discard disturbed focus cycles and strengthen measurements
+- *(perf)* Retain results when Editor measurement is interrupted
+- *(perf)* Isolate Game View focus and regenerate URP upgrade cache
+- *(perf)* Distinguish screenshot activation from focus interference
+- *(skills)* Bootstrap missing CLI before scene creation
+- *(setup)* Return a side-effect-free dry-run plan
+- *(skills)* Include canonical tool schemas in routing catalog
+- *(skills)* Preserve UPM workflow routing and finalize evidence
+- *(cli)* Await C# post-write compilation on the selected endpoint
+- *(console)* Align severity flags and full console counts
+- *(capture)* Include UI in final Game screenshots
+
+### 📚 Documentation
+
+- *(skills)* Expose v0.13-v0.15 tool workflows
+- *(perf)* Record passing Editor and transport gate evidence
+- *(skills)* Require Editor tools for serialized asset edits
+- *(skills)* Record URP integration verification for issue 427
+
+### 🧪 Testing
+
+- *(e2e)* Extend Editor compatibility matrix
+- *(perf)* Establish Editor budgets from four measured conditions
+- *(perf)* Calibrate background median budgets for update jitter
+- *(rust)* Isolate daemon-dependent tests from home runtime
+- *(skills)* Retain UI Toolkit operation logs
+
+### ⚙️ Miscellaneous Tasks
+
+- *(work)* Record v0.16.0 release completion
+- *(work)* Record performance gate pull request
+- Merge develop and preserve both skill routing suites
+- *(work)* Record skills distribution pull request
+- Merge develop and preserve dry-run update guards
+- Merge develop and preserve both skill workflows
+- Merge develop for URP skill integration
+- Resync PR #429 head
+- *(skills)* Merge develop and preserve 2d and urp routing
+- *(work)* Record pr 433 delivery
+- *(work)* Record issue 381 acceptance audit
+- *(skills)* Merge develop for localization delivery
+- Merge develop preserving audio and localization skills
+- *(work)* Record v0.17.0 release verification
+
 ## [0.16.0] - 2026-09-30
 
 ### 🚀 Features
