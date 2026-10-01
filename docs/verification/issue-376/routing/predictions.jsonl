@@ -1,0 +1,9 @@
+{"id": "SR-171", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "keyword"]}
+{"id": "SR-172", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "SR-173", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId", "version"]}
+{"id": "SR-174", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageName"]}
+{"id": "SR-175", "predicted_skills": ["unity-package-management"], "predicted_tool": "registry_config", "predicted_payload_keys": ["action", "scopes", "autoAddPopular"]}
+{"id": "SR-176", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
+{"id": "SR-177", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "list_packages", "predicted_payload_keys": []}
+{"id": "SR-178", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}
+{"id": "SR-PKG-009", "predicted_skills": ["unity-package-management"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action"]}

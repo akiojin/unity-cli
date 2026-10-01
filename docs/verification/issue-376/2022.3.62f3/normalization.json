@@ -1,0 +1,7 @@
+{
+  "commands.txt": {
+    "change": "Trimmed trailing whitespace only; original command semantics unchanged",
+    "original_sha256": "7d72189e07d394d96ba61da088e2e7cb656a4c21d10b68151f74c9d6eb3d14a8",
+    "original_path": "/private/tmp/issue376-evidence/2022.3.62f3-final/commands.txt"
+  }
+}

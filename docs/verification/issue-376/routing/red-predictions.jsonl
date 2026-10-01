@@ -1,0 +1,8 @@
+{"id": "SR-171", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "keyword"]}
+{"id": "SR-172", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "SR-173", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "SR-174", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "packageId"]}
+{"id": "SR-175", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "package_manager", "predicted_payload_keys": ["action", "name", "url", "scopes"]}
+{"id": "SR-176", "predicted_skills": ["unity-editor-tools"], "predicted_tool": "read_console", "predicted_payload_keys": ["count"]}
+{"id": "SR-177", "predicted_skills": ["unity-csharp-navigate"], "predicted_tool": "find_symbol", "predicted_payload_keys": ["kind", "scope"]}
+{"id": "SR-178", "predicted_skills": ["unity-addressables"], "predicted_tool": "addressables_build", "predicted_payload_keys": ["action"]}

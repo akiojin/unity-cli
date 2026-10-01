@@ -1,6 +1,6 @@
 ---
 name: unity-csharp-navigate
-description: Explore Unity C# code without modifying files. Use when the user asks to read scripts, search text, find a symbol, trace references, inspect namespaces or packages, or understand where a class, method, or field is used. Do not use for code edits, renames, or refactors; use `unity-csharp-edit`. Do not use for scene inspection; use `unity-scene-inspect`.
+description: Explore Unity C# code without modifying files. Use when the user asks to read scripts, search text, find a symbol, trace references, inspect namespaces or package sources, or understand where a class, method, or field is used. Do not use for UPM package discovery, installation or updates; use `unity-package-management`. For code edits use `unity-csharp-edit`; for scene inspection use `unity-scene-inspect`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -16,6 +16,7 @@ metadata:
     - unity-csharp-edit
     - unity-csharp-reference
     - unity-scene-inspect
+    - unity-package-management
 ---
 
 # Unity C# Navigate
@@ -30,6 +31,7 @@ Navigate and search C# source via `unity-cli` local tools. This is the read-only
 
 ## Do Not Use When
 
+- The user wants UPM registry discovery or dependency changes; use `unity-package-management`.
 - The user wants to modify code or create new C# files; use `unity-csharp-edit`.
 - The task depends on Unity scene state rather than source; use `unity-scene-inspect`.
 
@@ -42,6 +44,7 @@ Navigate and search C# source via `unity-cli` local tools. This is the read-only
 5. Use `list_packages` when the question might involve packages rather than project sources.
 
 ```bash
+unity-cli raw list_packages --json '{}'
 unity-cli raw read --json '{"path":"Assets/Scripts/Player.cs"}'
 unity-cli raw search --json '{"pattern":"OnCollisionEnter","path":"Assets/Scripts"}'
 unity-cli raw find_symbol --json '{"name":"PlayerController","kind":"class","scope":"assets"}'

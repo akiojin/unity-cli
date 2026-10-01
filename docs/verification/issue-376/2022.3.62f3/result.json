@@ -1,0 +1,118 @@
+{
+  "scenario": "issue376 unity-package-management acceptance (OpenUPM com.cysharp + UniTask install/update/remove)",
+  "overallResult": "PASS",
+  "environment": {
+    "editorVersion": "2022.3.62f3",
+    "editorApplicationPath": "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app",
+    "editorMode": "batchmode -nographics isolated batch host (UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run), pid 17482 per launch.json",
+    "projectPath": "/private/tmp/issue376-unity-2022.3.62f3-final",
+    "port": 6549,
+    "cli": "/Users/akiojin/Workbench/unity-cli/work/issue-376/target/debug/unity-cli",
+    "cliVersion": "0.16.0",
+    "bridgeVersion": "0.16.0",
+    "pingProjectMatched": true
+  },
+  "phases": {
+    "01-baseline": {
+      "success": true,
+      "scopedRegistries": [],
+      "unitaskPresent": false,
+      "installedPackageCount": 35,
+      "editorIdle": true,
+      "consolePreExisting": {
+        "errors": ["GfxDevice renderer is null ... Run the Editor without the -nographics argument (expected in -nographics batch host)"],
+        "exceptionTypedEntries": [
+          "Packages/unity-cli-bridge/Tests/Editor/Handlers/LoadSceneTests.cs(10,7): warning CS0105 (compiler warning reported with logType Exception)",
+          "Packages/unity-cli-bridge/Editor/Handlers/ProjectSettingsHandler.cs(374,38): warning CS0618 (compiler warning reported with logType Exception)"
+        ],
+        "statistics": {"errors": 1, "exceptions": 2, "warnings": 7}
+      }
+    },
+    "02-registry": {
+      "success": true,
+      "operation": "registry_config add_openupm scopes=[com.cysharp] autoAddPopular=false",
+      "verifiedRegistries": [{"name": "OpenUPM", "url": "https://package.openupm.com", "scopes": ["com.cysharp"]}],
+      "manifestChange": "added scopedRegistries[OpenUPM, com.cysharp] only; dependencies unchanged",
+      "search": {
+        "keyword": "UniTask",
+        "totalCount": 2,
+        "results": [
+          {"name": "com.cysharp.unitask", "latestVersion": "2.5.11"},
+          {"name": "com.cysharp.unitask.compatible", "latestVersion": "2.3.1"}
+        ],
+        "note": "Search reflects only configured registries; it returned the latest version, not the full version list."
+      },
+      "editorIdle": true,
+      "newConsoleErrors": []
+    },
+    "03-install": {
+      "success": true,
+      "requested": "com.cysharp.unitask@2.5.4",
+      "toolResponseVersion": "2.5.4",
+      "resolvedVersion": {"info": "2.5.4", "list": "2.5.4", "manifest": "2.5.4", "packagesLock": "2.5.4", "source": "Registry", "lockUrl": "https://package.openupm.com", "isDirectDependency": true},
+      "installedPackageCount": 36,
+      "reloadObserved": true,
+      "compilation": "UniTask*.dll assemblies built; 'Reloading assemblies after forced synchronous recompile' + 'Mono: successfully reloaded assembly'; no 'error CS' in editor.log",
+      "editorIdle": true,
+      "consoleAfter": {
+        "statistics": {"errors": 1, "exceptions": 0, "warnings": 13},
+        "errors": ["[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:59864 (bridge transport log from a read-only poll in flight during domain reload; not a compiler/package error)"],
+        "compilerErrors": []
+      },
+      "note": "Console buffer reflects the post-reload session; baseline entries are no longer present after the domain reload (console was not cleared by this test)."
+    },
+    "04-update": {
+      "success": true,
+      "requested": "com.cysharp.unitask@2.5.5 (install action with target version)",
+      "toolResponseVersion": "2.5.5",
+      "resolvedVersion": {"info": "2.5.5", "list": "2.5.5", "manifest": "2.5.5", "packagesLock": "2.5.5", "source": "Registry", "isDirectDependency": true},
+      "installedPackageCount": 36,
+      "reloadObserved": true,
+      "compilation": "UniTask.dll rebuilt; assembly reload succeeded; no 'error CS' in editor.log segment",
+      "editorIdle": true,
+      "consoleAfter": {
+        "statistics": {"errors": 1, "exceptions": 0, "warnings": 13},
+        "errors": ["[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:60257 (bridge transport log during reload)"],
+        "compilerErrors": []
+      }
+    },
+    "05-remove": {
+      "success": true,
+      "operation": "package_manager remove packageName=com.cysharp.unitask",
+      "dependentsCheckedBeforeRemoval": "none in packages-lock.json",
+      "verifiedAbsence": {"manifestDependency": false, "packagesLockEntry": false, "packageList": false, "infoResponse": "error: Package 'com.cysharp.unitask' not found in installed packages", "packageCacheDir": false},
+      "installedPackageCount": 35,
+      "reloadObserved": true,
+      "compilation": "assembly reload succeeded; no 'error CS' in editor.log segment",
+      "editorIdle": true,
+      "consoleAfter": {
+        "statistics": {"errors": 1, "exceptions": 0, "warnings": 10},
+        "errors": ["[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:60697 (bridge transport log during reload)"],
+        "compilerErrors": []
+      },
+      "registryRetained": [{"name": "OpenUPM", "url": "https://package.openupm.com", "scopes": ["com.cysharp"]}]
+    }
+  },
+  "observedUniTaskVersions": ["absent (baseline)", "absent (registry)", "2.5.4 (install)", "2.5.5 (update)", "absent (remove)"],
+  "finalState": {
+    "manifestDiffBaselineToFinal": "only scopedRegistries OpenUPM [com.cysharp] added",
+    "packagesLockDiffBaselineToFinal": "none (identical)",
+    "otherPackagesChanged": false,
+    "editorLeftRunning": true
+  },
+  "compilerErrorsIntroduced": [],
+  "failures": [],
+  "observations": [
+    "Each mutation triggered a domain reload; 2 read-only polls failed during reload, and the bridge logged an Error 'Dropped 1 queued command(s) for disconnected client' each time. This is a bridge logging-severity issue (logged as Error via Debug.LogWarning stack) caused by polling, not by the package change.",
+    "The bridge reports compiler warnings (CS0105, CS0618) with logType 'Exception' in the baseline console.",
+    "unity-cli exits 0 even when the tool JSON contains an 'error' field (e.g. info after removal); results were judged from JSON content.",
+    "No mutation was retried; no manual manifest edits; console never cleared."
+  ],
+  "evidence": {
+    "root": "/private/tmp/issue376-evidence/2022.3.62f3-final",
+    "commands": "commands.txt",
+    "phaseDirs": ["01-baseline", "02-registry", "03-install", "04-update", "05-remove"],
+    "manifestDiffs": ["diff-baseline-to-registry.diff", "diff-registry-to-install.diff", "diff-install-to-update.diff", "diff-update-to-remove.diff", "manifest-diffs-chain.diff", "diff-baseline-to-final.diff", "diff-lock-baseline-to-final.diff"],
+    "helpers": ["ucli.sh (logging wrapper)", "wait-idle.sh (bounded read-only polling)"]
+  }
+}

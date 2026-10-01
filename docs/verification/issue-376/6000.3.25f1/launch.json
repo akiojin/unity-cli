@@ -1,0 +1,16 @@
+{
+  "pid": 17045,
+  "project": "/private/tmp/issue376-unity-6000.3.25f1-final",
+  "port": 6548,
+  "command": [
+    "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+    "-projectPath",
+    "/private/tmp/issue376-unity-6000.3.25f1-final",
+    "-logFile",
+    "/private/tmp/issue376-evidence/6000.3.25f1-final/editor.log",
+    "-batchmode",
+    "-nographics",
+    "-executeMethod",
+    "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run"
+  ]
+}

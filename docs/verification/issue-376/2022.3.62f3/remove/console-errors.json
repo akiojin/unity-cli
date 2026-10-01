@@ -1,0 +1,19 @@
+{
+  "count": 1,
+  "logs": [
+    {
+      "formattedCompact": "[Error] [unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:60697",
+      "logType": "Error",
+      "message": "[unity-cli-bridge] Dropped 1 queued command(s) for disconnected client 127.0.0.1:60697"
+    }
+  ],
+  "statistics": {
+    "asserts": 0,
+    "errors": 1,
+    "exceptions": 0,
+    "logs": 0,
+    "warnings": 10
+  },
+  "success": true,
+  "totalCaptured": 11
+}

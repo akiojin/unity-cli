@@ -1,0 +1,54 @@
+--- baseline/Packages/manifest.json
++++ registry/Packages/manifest.json
+@@ -35,5 +35,14 @@
+     "com.unity.modules.vr": "1.0.0",
+     "com.unity.modules.wind": "1.0.0",
+     "com.unity.modules.xr": "1.0.0"
+-  }
+-}
++  },
++  "scopedRegistries": [
++    {
++      "name": "OpenUPM",
++      "url": "https://package.openupm.com",
++      "scopes": [
++        "com.cysharp"
++      ]
++    }
++  ]
++}--- registry/Packages/manifest.json
++++ install/Packages/manifest.json
+@@ -1,6 +1,7 @@
+ {
+   "dependencies": {
+     "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
++    "com.cysharp.unitask": "2.5.4",
+     "com.unity.test-framework": "1.1.33",
+     "com.unity.toolchain.macos-arm64-linux-x86_64": "2.0.5",
+     "com.unity.ugui": "1.0.0",
+@@ -45,4 +46,4 @@
+       ]
+     }
+   ]
+-}+}
+--- install/Packages/manifest.json
++++ update/Packages/manifest.json
+@@ -1,7 +1,7 @@
+ {
+   "dependencies": {
+     "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
+-    "com.cysharp.unitask": "2.5.4",
++    "com.cysharp.unitask": "2.5.5",
+     "com.unity.test-framework": "1.1.33",
+     "com.unity.toolchain.macos-arm64-linux-x86_64": "2.0.5",
+     "com.unity.ugui": "1.0.0",
+--- update/Packages/manifest.json
++++ remove/Packages/manifest.json
+@@ -1,7 +1,6 @@
+ {
+   "dependencies": {
+     "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
+-    "com.cysharp.unitask": "2.5.5",
+     "com.unity.test-framework": "1.1.33",
+     "com.unity.toolchain.macos-arm64-linux-x86_64": "2.0.5",
+     "com.unity.ugui": "1.0.0",
