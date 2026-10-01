@@ -1,0 +1,493 @@
+{
+  "started_at": "2026-10-01T16:19:21.025675+00:00",
+  "platform": "macOS-26.5-arm64-arm-64bit",
+  "architecture": "arm64",
+  "editors": [
+    {
+      "version": "6000.3.25f1",
+      "launch": [
+        "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+        "-batchmode",
+        "-nographics",
+        "-projectPath",
+        "/private/tmp/issue-441-envelope-final/6000.3.25f1/project",
+        "-executeMethod",
+        "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+        "-logFile",
+        "/private/tmp/issue-441-envelope-final/6000.3.25f1/editor.log"
+      ],
+      "project": "/private/tmp/issue-441-envelope-final/6000.3.25f1/project",
+      "status": "PASS",
+      "bridge_error": {
+        "exit": 6,
+        "wire_code": "JOB_NOT_FOUND",
+        "envelope": {
+          "command": "raw get_scene_bake_status",
+          "data": {
+            "code": "JOB_NOT_FOUND",
+            "error": "No bake job exists for this jobId in this Editor session.",
+            "reason": "No bake job exists for this jobId in this Editor session.",
+            "status": "error",
+            "unityVersion": "6000.3.25f1"
+          },
+          "errors": [
+            {
+              "code": "JOB_NOT_FOUND",
+              "message": "No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"
+            }
+          ],
+          "success": false,
+          "warnings": []
+        }
+      },
+      "tests": [
+        {
+          "fixture": "Mixed",
+          "exit": 8,
+          "envelope": {
+            "command": "raw get_test_status",
+            "data": {
+              "failedTests": 1,
+              "failures": [
+                {
+                  "message": "Intentional Issue 441 exit-code fixture",
+                  "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/6000.3.25f1/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n",
+                  "testName": "EnvelopeAcceptance.Mixed.Fail"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "UnityCliBridge"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "/private/tmp/issue-441-envelope-final/6000.3.25f1/project/Library/ScriptAssemblies/EnvelopeAcceptance.dll"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "EnvelopeAcceptance"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "EnvelopeAcceptance.Mixed"
+                }
+              ],
+              "inconclusiveTests": 0,
+              "latestResult": {
+                "fileContent": null,
+                "generatedAt": "2026-10-01T16:21:04.3153930Z",
+                "path": "/private/tmp/issue-441-envelope-final/6000.3.25f1/project/.unity/test-results/TestResults_EditMode_20261001_162102.json",
+                "status": "available",
+                "summary": {
+                  "durationSeconds": 0.0328772,
+                  "failed": 1,
+                  "failures": [
+                    {
+                      "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                      "message": "Intentional Issue 441 exit-code fixture",
+                      "name": "Fail",
+                      "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/6000.3.25f1/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n"
+                    },
+                    {
+                      "fullName": "UnityCliBridge",
+                      "message": "One or more child tests had errors",
+                      "name": "UnityCliBridge",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "/private/tmp/issue-441-envelope-final/6000.3.25f1/project/Library/ScriptAssemblies/EnvelopeAcceptance.dll",
+                      "message": "One or more child tests had errors",
+                      "name": "EnvelopeAcceptance.dll",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "EnvelopeAcceptance",
+                      "message": "One or more child tests had errors",
+                      "name": "EnvelopeAcceptance",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "EnvelopeAcceptance.Mixed",
+                      "message": "One or more child tests had errors",
+                      "name": "Mixed",
+                      "stackTrace": null
+                    }
+                  ],
+                  "generatedAt": "2026-10-01T16:21:04.2860210Z",
+                  "inconclusive": 0,
+                  "passed": 1,
+                  "runStartedAt": "2026-10-01T16:21:04.1434640Z",
+                  "skipped": 0,
+                  "status": "failed",
+                  "testMode": "EditMode",
+                  "tests": [
+                    {
+                      "duration": 0.0062184,
+                      "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                      "message": "Intentional Issue 441 exit-code fixture",
+                      "name": "Fail",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Fail\n",
+                      "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/6000.3.25f1/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n",
+                      "status": "Failed"
+                    },
+                    {
+                      "duration": 0.0045829,
+                      "fullName": "EnvelopeAcceptance.Mixed.Pass",
+                      "message": null,
+                      "name": "Pass",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Pass\n",
+                      "stackTrace": null,
+                      "status": "Passed"
+                    }
+                  ],
+                  "totalTests": 2
+                }
+              },
+              "passedTests": 1,
+              "runId": "43875330-d4d4-4086-8130-005243ded26a",
+              "skippedTests": 0,
+              "status": "completed",
+              "success": false,
+              "testMode": "EditMode",
+              "tests": [
+                {
+                  "duration": 0.0062184,
+                  "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                  "message": "Intentional Issue 441 exit-code fixture",
+                  "name": "Fail",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Fail\n",
+                  "status": "Failed"
+                },
+                {
+                  "duration": 0.0045829,
+                  "fullName": "EnvelopeAcceptance.Mixed.Pass",
+                  "message": null,
+                  "name": "Pass",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Pass\n",
+                  "status": "Passed"
+                }
+              ],
+              "totalTests": 2
+            },
+            "errors": [
+              {
+                "code": "TEST_FAILED",
+                "message": "Unity command failed (code: UNKNOWN_ERROR)"
+              }
+            ],
+            "success": false,
+            "warnings": []
+          }
+        },
+        {
+          "fixture": "Passing",
+          "exit": 0,
+          "envelope": {
+            "command": "raw get_test_status",
+            "data": {
+              "failedTests": 0,
+              "failures": [],
+              "inconclusiveTests": 0,
+              "latestResult": {
+                "fileContent": null,
+                "generatedAt": "2026-10-01T16:21:05.1401280Z",
+                "path": "/private/tmp/issue-441-envelope-final/6000.3.25f1/project/.unity/test-results/TestResults_EditMode_20261001_162104.json",
+                "status": "available",
+                "summary": {
+                  "durationSeconds": 0.0057254,
+                  "failed": 0,
+                  "failures": [],
+                  "generatedAt": "2026-10-01T16:21:05.1396260Z",
+                  "inconclusive": 0,
+                  "passed": 1,
+                  "runStartedAt": "2026-10-01T16:21:05.1268450Z",
+                  "skipped": 0,
+                  "status": "passed",
+                  "testMode": "EditMode",
+                  "tests": [
+                    {
+                      "duration": 0.0002174,
+                      "fullName": "EnvelopeAcceptance.Passing.Pass",
+                      "message": null,
+                      "name": "Pass",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n",
+                      "stackTrace": null,
+                      "status": "Passed"
+                    }
+                  ],
+                  "totalTests": 1
+                }
+              },
+              "passedTests": 1,
+              "runId": "985b4975-197f-47b6-ab8e-ec9d01bc4dae",
+              "skippedTests": 0,
+              "status": "completed",
+              "success": true,
+              "testMode": "EditMode",
+              "tests": [
+                {
+                  "duration": 0.0002174,
+                  "fullName": "EnvelopeAcceptance.Passing.Pass",
+                  "message": null,
+                  "name": "Pass",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n",
+                  "status": "Passed"
+                }
+              ],
+              "totalTests": 1
+            },
+            "errors": [],
+            "success": true,
+            "warnings": []
+          }
+        }
+      ]
+    },
+    {
+      "version": "2022.3.62f3",
+      "launch": [
+        "/Applications/Unity/Hub/Editor/2022.3.62f3/Unity.app/Contents/MacOS/Unity",
+        "-batchmode",
+        "-nographics",
+        "-projectPath",
+        "/private/tmp/issue-441-envelope-final/2022.3.62f3/project",
+        "-executeMethod",
+        "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+        "-logFile",
+        "/private/tmp/issue-441-envelope-final/2022.3.62f3/editor.log"
+      ],
+      "project": "/private/tmp/issue-441-envelope-final/2022.3.62f3/project",
+      "status": "PASS",
+      "bridge_error": {
+        "exit": 6,
+        "wire_code": "JOB_NOT_FOUND",
+        "envelope": {
+          "command": "raw get_scene_bake_status",
+          "data": {
+            "code": "JOB_NOT_FOUND",
+            "error": "No bake job exists for this jobId in this Editor session.",
+            "reason": "No bake job exists for this jobId in this Editor session.",
+            "status": "error",
+            "unityVersion": "2022.3.62f3"
+          },
+          "errors": [
+            {
+              "code": "JOB_NOT_FOUND",
+              "message": "No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"
+            }
+          ],
+          "success": false,
+          "warnings": []
+        }
+      },
+      "tests": [
+        {
+          "fixture": "Mixed",
+          "exit": 8,
+          "envelope": {
+            "command": "raw get_test_status",
+            "data": {
+              "failedTests": 1,
+              "failures": [
+                {
+                  "message": "Intentional Issue 441 exit-code fixture",
+                  "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/2022.3.62f3/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n",
+                  "testName": "EnvelopeAcceptance.Mixed.Fail"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "UnityCliBridge"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "/private/tmp/issue-441-envelope-final/2022.3.62f3/project/Library/ScriptAssemblies/EnvelopeAcceptance.dll"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "EnvelopeAcceptance"
+                },
+                {
+                  "message": "One or more child tests had errors",
+                  "stackTrace": null,
+                  "testName": "EnvelopeAcceptance.Mixed"
+                }
+              ],
+              "inconclusiveTests": 0,
+              "latestResult": {
+                "fileContent": null,
+                "generatedAt": "2026-10-01T16:22:39.9397790Z",
+                "path": "/private/tmp/issue-441-envelope-final/2022.3.62f3/project/.unity/test-results/TestResults_EditMode_20261001_162239.json",
+                "status": "available",
+                "summary": {
+                  "durationSeconds": 0.0414097,
+                  "failed": 1,
+                  "failures": [
+                    {
+                      "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                      "message": "Intentional Issue 441 exit-code fixture",
+                      "name": "Fail",
+                      "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/2022.3.62f3/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n"
+                    },
+                    {
+                      "fullName": "UnityCliBridge",
+                      "message": "One or more child tests had errors",
+                      "name": "UnityCliBridge",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "/private/tmp/issue-441-envelope-final/2022.3.62f3/project/Library/ScriptAssemblies/EnvelopeAcceptance.dll",
+                      "message": "One or more child tests had errors",
+                      "name": "EnvelopeAcceptance.dll",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "EnvelopeAcceptance",
+                      "message": "One or more child tests had errors",
+                      "name": "EnvelopeAcceptance",
+                      "stackTrace": null
+                    },
+                    {
+                      "fullName": "EnvelopeAcceptance.Mixed",
+                      "message": "One or more child tests had errors",
+                      "name": "Mixed",
+                      "stackTrace": null
+                    }
+                  ],
+                  "generatedAt": "2026-10-01T16:22:39.9360660Z",
+                  "inconclusive": 0,
+                  "passed": 1,
+                  "runStartedAt": "2026-10-01T16:22:39.8083940Z",
+                  "skipped": 0,
+                  "status": "failed",
+                  "testMode": "EditMode",
+                  "tests": [
+                    {
+                      "duration": 0.0058779,
+                      "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                      "message": "Intentional Issue 441 exit-code fixture",
+                      "name": "Fail",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Fail\n",
+                      "stackTrace": "at EnvelopeAcceptance.Mixed.Fail () [0x00000] in /private/tmp/issue-441-envelope-final/2022.3.62f3/project/Assets/Tests/EnvelopeAcceptance/EnvelopeAcceptance.cs:5\n",
+                      "status": "Failed"
+                    },
+                    {
+                      "duration": 0.0050441,
+                      "fullName": "EnvelopeAcceptance.Mixed.Pass",
+                      "message": null,
+                      "name": "Pass",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Pass\n",
+                      "stackTrace": null,
+                      "status": "Passed"
+                    }
+                  ],
+                  "totalTests": 2
+                }
+              },
+              "passedTests": 1,
+              "runId": "e72f4226-3bdb-4ceb-9287-88790594edb7",
+              "skippedTests": 0,
+              "status": "completed",
+              "success": false,
+              "testMode": "EditMode",
+              "tests": [
+                {
+                  "duration": 0.0058779,
+                  "fullName": "EnvelopeAcceptance.Mixed.Fail",
+                  "message": "Intentional Issue 441 exit-code fixture",
+                  "name": "Fail",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Fail\n",
+                  "status": "Failed"
+                },
+                {
+                  "duration": 0.0050441,
+                  "fullName": "EnvelopeAcceptance.Mixed.Pass",
+                  "message": null,
+                  "name": "Pass",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Mixed.Pass\n",
+                  "status": "Passed"
+                }
+              ],
+              "totalTests": 2
+            },
+            "errors": [
+              {
+                "code": "TEST_FAILED",
+                "message": "Unity command failed (code: UNKNOWN_ERROR)"
+              }
+            ],
+            "success": false,
+            "warnings": []
+          }
+        },
+        {
+          "fixture": "Passing",
+          "exit": 0,
+          "envelope": {
+            "command": "raw get_test_status",
+            "data": {
+              "failedTests": 0,
+              "failures": [],
+              "inconclusiveTests": 0,
+              "latestResult": {
+                "fileContent": null,
+                "generatedAt": "2026-10-01T16:22:41.0490140Z",
+                "path": "/private/tmp/issue-441-envelope-final/2022.3.62f3/project/.unity/test-results/TestResults_EditMode_20261001_162240.json",
+                "status": "available",
+                "summary": {
+                  "durationSeconds": 0.0360659,
+                  "failed": 0,
+                  "failures": [],
+                  "generatedAt": "2026-10-01T16:22:41.0445030Z",
+                  "inconclusive": 0,
+                  "passed": 1,
+                  "runStartedAt": "2026-10-01T16:22:40.9544130Z",
+                  "skipped": 0,
+                  "status": "passed",
+                  "testMode": "EditMode",
+                  "tests": [
+                    {
+                      "duration": 0.0002471,
+                      "fullName": "EnvelopeAcceptance.Passing.Pass",
+                      "message": null,
+                      "name": "Pass",
+                      "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n",
+                      "stackTrace": null,
+                      "status": "Passed"
+                    }
+                  ],
+                  "totalTests": 1
+                }
+              },
+              "passedTests": 1,
+              "runId": "a699c5dc-550b-4fd6-ab20-da1d5bf08415",
+              "skippedTests": 0,
+              "status": "completed",
+              "success": true,
+              "testMode": "EditMode",
+              "tests": [
+                {
+                  "duration": 0.0002471,
+                  "fullName": "EnvelopeAcceptance.Passing.Pass",
+                  "message": null,
+                  "name": "Pass",
+                  "output": "[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n[unity-cli-bridge][TestExecutionHandler] Test started: EnvelopeAcceptance.Passing.Pass\n",
+                  "status": "Passed"
+                }
+              ],
+              "totalTests": 1
+            },
+            "errors": [],
+            "success": true,
+            "warnings": []
+          }
+        }
+      ]
+    }
+  ]
+}

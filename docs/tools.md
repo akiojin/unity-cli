@@ -2,6 +2,51 @@
 
 Snapshot date: `2026-09-28`
 
+## JSON Results and Exit Codes
+
+`--output json` writes one result envelope to stdout for both success and failure.
+Diagnostics go to stderr. Tool-specific fields in this catalog are relative to
+`data`; successful arrays (including `tool list` and `batch`) are also inside
+`data`. `--help` and `--version` retain their normal informational output.
+
+```json
+{"success":true,"command":"system ping","data":{"message":"pong"},"errors":[],"warnings":[]}
+```
+
+```json
+{"success":false,"command":"system ping","data":null,"errors":[{"code":"EDITOR_UNREACHABLE","message":"Could not connect to the Editor"}],"warnings":[]}
+```
+
+| Exit | Meaning | Automation action |
+| --- | --- | --- |
+| 0 | Success | Read `data` |
+| 1 | General failure | Inspect `errors` and diagnostics |
+| 2 | Invalid arguments (`INVALID_ARGUMENT`) | Correct the command or JSON; do not retry unchanged |
+| 3 | Authentication failure (`UNAUTHORIZED`) | Correct credentials before retrying |
+| 4 | Unmet precondition | Correct Editor/project settings or required capabilities |
+| 6 | Operation failed, potentially retryable | Inspect the preserved Bridge code; retry only when the operation is safe |
+| 7 | Editor unreachable (`EDITOR_UNREACHABLE`, `EDITOR_NOT_FOUND`) | Diagnose the target with `doctor`, then reconnect |
+| 8 | Completed test run failed (`TEST_FAILED`) | Inspect `data.failures` and fix the tests/product |
+| 130 | SIGINT | Interrupted |
+| 143 | SIGTERM | Terminated |
+
+Bridge failure codes are preserved verbatim in `errors[].code` and the original
+failure payload is retained in `data` (including `details`). Errors without a
+Bridge code use `OPERATION_FAILED`. Response timeouts use `TIMEOUT` (exit 6);
+connection failures use `EDITOR_UNREACHABLE` (exit 7). A timeout does not prove
+that an operation was not executed: poll its job/request ID before resubmitting.
+`AMBIGUOUS_EDITOR` retains exit 6 and lists candidates in `data.candidates`.
+
+`run_tests` starts an asynchronous job and normally exits 0. Poll
+`get_test_status` until `data.status == "completed"`: the final poll exits 8 if
+tests failed, or 0 if all tests passed. Starting a run is not evidence of a pass.
+The signal codes are the standard shell statuses for signal termination;
+abruptly terminated processes may not emit a result envelope.
+
+Migration: use `jq '.data'` or `json.loads(stdout)["data"]` at the CLI boundary,
+then read the existing tool fields. Check the exit status and `success` before
+using a result. Do not treat the absence of stderr text as success.
+
 ## Command Groups (Typed Subcommands)
 
 | Group       | Subcommands                           |
@@ -26,7 +71,7 @@ Tool discovery:
 - `tool list [--query <text>] [--category <name>] [--compact] [--limit N] [--offset N]`
 - `--query` matches tool names and one-line descriptions case-insensitively.
 - `--category` accepts a `### ...` heading of this catalog (plus `Reference Cache`) or its slug: `scenes`, `gameobjects`, `components`, `animator`, `timeline`, `prefabs`, `assets`, `visual-effect-graph`, `addressables`, `code-lsp`, `input-system`, `ui`, `playback-testing`, `player-builds`, `profiler`, `editor`, `screenshots-video`, `system`, `reference-cache`.
-- `--compact` returns `{name, description}` entries instead of bare names. Without it, JSON output stays an array of names.
+- `--compact` returns `{name, description}` entries instead of bare names. Without it, JSON `data` is an array of names.
 - Category membership is checked against this file by `tool_index_matches_docs_headings`; keep the tool tables in sync when adding tools.
 
 ```bash

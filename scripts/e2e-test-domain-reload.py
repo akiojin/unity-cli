@@ -57,7 +57,7 @@ def main():
             owners = listener_pids()
             if owners != {str(host_process.pid)}:
                 raise ConnectionError(f"Port {args.port} is not owned by this Unity host: {owners}")
-        command = [args.cli, "--host", args.host, "--port", str(args.port),
+        command = [args.cli, "--output", "json", "--host", args.host, "--port", str(args.port),
                    "--timeout-ms", "10000", "raw", tool, "--json", json.dumps(parameters)]
         result = subprocess.run(command, capture_output=True, text=True, timeout=20, env=env)
         report["calls"].append({"tool": tool, "parameters": parameters,
@@ -65,7 +65,7 @@ def main():
                                 "stderr": result.stderr})
         if result.returncode:
             raise ConnectionError(result.stderr or result.stdout)
-        value = json.loads(result.stdout)
+        value = json.loads(result.stdout)["data"]
         if value.get("error"):
             raise RuntimeError(json.dumps(value))
         return value

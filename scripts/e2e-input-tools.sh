@@ -101,7 +101,7 @@ invoke_tool() {
     --host "${HOST}" \
     --port "${PORT}" \
     --timeout-ms "${TIMEOUT_MS}" \
-    --output json
+    --output json | jq -c '.data'
 }
 
 run_tool() {

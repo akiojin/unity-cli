@@ -108,7 +108,7 @@ def main():
         raise RuntimeError("fresh session did not discover /unity-scene-create")
     if result.get("is_error") or result.get("permission_denials"):
         raise RuntimeError("Claude session failed or a required tool was denied")
-    scene = json.loads(cli(*target, "raw", "get_scene_info", "--json", json.dumps({"scenePath": scene_path})))
+    scene = json.loads(cli(*target, "raw", "get_scene_info", "--json", json.dumps({"scenePath": scene_path})))["data"]
     (out / "scene.json").write_text(json.dumps(scene, indent=2))
     if scene.get("scenePath") != scene_path or not scene.get("isLoaded") or scene.get("isDirty"):
         raise RuntimeError("Editor did not confirm the new scene was loaded and saved")

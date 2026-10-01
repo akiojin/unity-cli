@@ -67,7 +67,7 @@ def invoke(name, args):
     (artifacts / f"{name}.stdout.log").write_text(process.stdout)
     (artifacts / f"{name}.stderr.log").write_text(process.stderr)
     assert process.returncode == 0, process.stderr or process.stdout
-    value = json.loads(process.stdout)
+    value = json.loads(process.stdout)["data"]
     assert value.get("ok") is not False and value.get("success") is not False, value
     return value
 

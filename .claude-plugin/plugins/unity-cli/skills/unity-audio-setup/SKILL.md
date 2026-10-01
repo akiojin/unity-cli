@@ -21,6 +21,8 @@ metadata:
 
 # Audio Setup
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Connect persistent clip import, mixer routing and source configuration to measured
 Play Mode state. Playback state proves engine playback, not audible speaker output.
 

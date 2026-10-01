@@ -20,6 +20,8 @@ metadata:
 
 # Unity C# Reference
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Browse Unity Technologies' official UnityCsReference C# source as a read-only local cache. This skill is the sibling of `unity-csharp-navigate` (project sources) and `unity-csharp-edit` (writes). Hand off as soon as the request implies project-level reading or a write.
 
 ## Use When

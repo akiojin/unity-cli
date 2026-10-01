@@ -98,7 +98,7 @@ def main():
                                    "stderr": result.stderr[-2000:]})
         if result.returncode:
             raise RuntimeError(f"{' '.join(command)} failed: {result.stderr.strip()}")
-        return json.loads(result.stdout)
+        return json.loads(result.stdout)["data"]
 
     def check(name, condition):
         report["passed" if condition else "failed"] += 1

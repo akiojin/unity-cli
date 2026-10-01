@@ -19,6 +19,8 @@ metadata:
 
 # Visual Effect Graph
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts, blocks, operators and parameters, discover the node library, and apply authoring mutations. The VFX authoring API is internal to Unity, so these operations run through dedicated bridge tools (`vfx_*`) rather than direct component edits. This skill is the VFX complement to `unity-asset-management`, which handles generic asset, material, and import operations.
 
 ## Use When

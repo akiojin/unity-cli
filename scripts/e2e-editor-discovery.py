@@ -194,7 +194,7 @@ def main() -> int:
               refreshed.get("heartbeatAt", 0) > lock_a["heartbeatAt"], json.dumps(refreshed))
 
         code, out, err = cli([unity_cli, "--output", "json", "instances", "list"], work, cli_env)
-        listed = json.loads(out) if code == 0 else []
+        listed = json.loads(out)["data"] if code == 0 else []
         by_project = {Path(entry.get("project_path", "")).name: entry for entry in listed}
         check(
             "AC-2 instances list (no --ports) lists both Editors with project paths",
@@ -237,7 +237,7 @@ def main() -> int:
         check(
             "AC-4 AMBIGUOUS_EDITOR with exit 6 and candidates (projectPath, port, pid)",
             code == 6
-            and payload.get("error", {}).get("code") == "AMBIGUOUS_EDITOR"
+            and (payload.get("errors") or [{}])[0].get("code") == "AMBIGUOUS_EDITOR"
             and {Path(c["projectPath"]).name for c in candidates} == {"ProjectA", "ProjectB"}
             and all(c.get("port") and c.get("pid") for c in candidates),
             out.strip(),
@@ -252,7 +252,7 @@ def main() -> int:
         code, out, _ = cli(
             [unity_cli, "--output", "json", "instances", "list", "--ports",
              f"{lock_a['port']},{lock_b['port']}"], work, cli_env)
-        check("compat instances list --ports", code == 0 and len(json.loads(out)) == 2, out.strip())
+        check("compat instances list --ports", code == 0 and len(json.loads(out)["data"]) == 2, out.strip())
         code, out, err = cli(
             [unity_cli, "--output", "json", "instances", "set-active", f"127.0.0.1:{lock_b['port']}"],
             work, cli_env)
@@ -267,7 +267,7 @@ def main() -> int:
         hosts["ProjectA"].send_signal(signal.SIGKILL)
         hosts["ProjectA"].wait(timeout=30)
         code, out, err = cli([unity_cli, "--output", "json", "instances", "list"], work, cli_env)
-        listed = json.loads(out) if code == 0 else []
+        listed = json.loads(out)["data"] if code == 0 else []
         by_project = {Path(entry.get("project_path", "")).name: entry for entry in listed}
         check(
             "AC-5 force-killed Editor is listed as unreachable",

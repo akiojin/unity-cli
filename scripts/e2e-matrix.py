@@ -236,7 +236,7 @@ def run_editor(editor, args, output, base_env):
                                     env=env, text=True, capture_output=True, timeout=20)
             if result.returncode:
                 raise RuntimeError(result.stdout + result.stderr)
-            return json.loads(result.stdout)
+            return json.loads(result.stdout)["data"]
 
         deadline = time.monotonic() + args.startup_timeout
         last_error = "Editor not ready"

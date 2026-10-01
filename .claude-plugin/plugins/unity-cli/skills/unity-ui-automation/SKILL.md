@@ -21,6 +21,8 @@ metadata:
 
 # UI Automation
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Find, inspect, and interact with uGUI / UI Toolkit elements via `unity-cli`. This skill is the UI-focused complement to `unity-playmode-testing` (full runtime control).
 
 ## Use When

@@ -133,7 +133,7 @@ class Editor:
             raise RuntimeError(f"{command[:2]}: exit {result.returncode}: {result.stdout[:1000]} {result.stderr[:1000]}")
         if "falling back to direct TCP" in result.stderr:
             raise RuntimeError(f"{command[:2]}: unityd fallback invalidated the measurement: {result.stderr[:2000]}")
-        return json.loads(result.stdout)
+        return json.loads(result.stdout)["data"]
 
     def raw(self, tool, params):
         result = self.command(["raw", tool, "--json", json.dumps(params)])

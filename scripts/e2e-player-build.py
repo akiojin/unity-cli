@@ -123,7 +123,7 @@ def main(argv=None):
                               env=dict(os.environ, UNITY_PROJECT_ROOT=str(PROJECT)))
         (run / f"{len(checks)}-{tool}.json").write_text(proc.stdout + proc.stderr)
         assert (proc.returncode == 0) == success, proc.stdout + proc.stderr
-        return json.loads(proc.stdout) if proc.stdout.strip() else None
+        return json.loads(proc.stdout)["data"] if proc.stdout.strip() else None
 
     def settings():
         return {str(p.relative_to(PROJECT)): hashlib.sha256(p.read_bytes()).hexdigest()

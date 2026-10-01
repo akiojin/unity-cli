@@ -34,6 +34,7 @@ call() {
   local tool="$1" payload="$2" status=0
   LAST_OUTPUT="$("${CLI}" tool call "${tool}" --json "${payload}" --host "${HOST}" --port "${PORT}" --timeout-ms "${TIMEOUT_MS}" --output json 2>&1)" || status=$?
   printf '%s\npayload: %s\nexit: %s\n%s\n' "${tool}" "${payload}" "${status}" "${LAST_OUTPUT}" >> "${LOG}"
+  LAST_OUTPUT="$(jq -c '.data' <<< "${LAST_OUTPUT}")"
   return "${status}"
 }
 check() {

@@ -28,12 +28,22 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
 
-    def raw(tool, payload):
+    def raw(tool, payload, expected_error=None):
         process = subprocess.run(
-            [args.unity_cli, "--port", str(args.port), "--timeout-ms", "15000",
+            [args.unity_cli, "--output", "json", "--port", str(args.port), "--timeout-ms", "15000",
              "raw", tool, "--json", json.dumps(payload)],
-            text=True, capture_output=True, timeout=25, check=True)
-        return json.loads(process.stdout)
+            text=True, capture_output=True, timeout=25)
+        envelope = json.loads(process.stdout)
+        with (args.output / "calls.jsonl").open("a") as transcript:
+            transcript.write(json.dumps({"tool": tool, "params": payload,
+                                         "exit": process.returncode, "result": envelope}) + "\n")
+        if expected_error:
+            assert process.returncode == 6 and envelope["success"] is False, envelope
+            assert envelope["errors"][0]["code"] == expected_error, envelope
+        else:
+            assert process.returncode == 0, envelope
+            assert envelope["success"] is True, envelope
+        return envelope["data"]
 
     def evaluate(code):
         result = raw("eval_csharp", {"code": code, "mode": "statements"})
@@ -195,7 +205,8 @@ return Application.unityVersion;
             assert resized.size == (640, 360)
             assert colors(resized)["red"] > 100 and colors(resized)["yellow"] > 100
             evaluate('EditorWindow.GetWindow<SceneView>().Focus(); return true;')
-            error = raw("capture_screenshot", {"captureMode": "game", "includeUI": True, "osFallback": False})
+            error = raw("capture_screenshot", {"captureMode": "game", "includeUI": True, "osFallback": False},
+                        expected_error="GAME_VIEW_NOT_FOCUSED")
             assert error.get("code") == "GAME_VIEW_NOT_FOCUSED" and "path" not in error, error
             summary["cases"][mode] = {"colors": counts, "ui_changed": True,
                                       "camera_unchanged": True, "focus_error": error,

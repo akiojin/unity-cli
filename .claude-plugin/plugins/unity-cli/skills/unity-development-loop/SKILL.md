@@ -18,6 +18,8 @@ metadata:
 
 # Unity Development Loop
 
+With `--output json`, results use `{success, command, data, errors, warnings}`. Check the exit status and envelope `success` first; tool-result fields in this skill are relative to `data`. Read failure codes from `errors[0].code`; see `unity-cli-usage` for exit-code recovery.
+
 Run Unity-side development as short, acceptance-driven loops.
 This skill chooses the smallest next change, the narrowest runtime check, and the lightest evidence set that can prove or disprove the current hypothesis.
 
