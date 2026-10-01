@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 using Newtonsoft.Json.Linq;
@@ -16,6 +17,7 @@ namespace UnityCliBridge.Handlers
     /// </summary>
     public static class ScreenshotHandler
     {
+        private static bool gameCapturePending;
         private sealed class TimedCaptureOutcome
         {
             public JObject Payload { get; }
@@ -43,7 +45,7 @@ namespace UnityCliBridge.Handlers
         /// <summary>
         /// Captures a screenshot from the Unity Editor
         /// </summary>
-        public static object CaptureScreenshot(JObject parameters)
+        public static async Task<object> CaptureScreenshot(JObject parameters)
         {
             try
             {
@@ -64,7 +66,7 @@ namespace UnityCliBridge.Handlers
                 
                 // 保存先は固定: <unityProjectRoot>/.unity/capture/image_<mode>_<timestamp>.png
                 {
-                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff") + "_" + Guid.NewGuid().ToString("N");
                     var projectRoot = CapturePathResolver.GetProjectRootFromAssetsPath(Application.dataPath);
                     outputPath = CapturePathResolver.BuildCaptureFilePath(projectRoot, "image", captureMode, timestamp, ".png");
                 }
@@ -86,7 +88,9 @@ namespace UnityCliBridge.Handlers
                 switch (captureMode)
                 {
                     case "game":
-                        result = CaptureGameView(outputPath, width, height, includeUI, encodeAsBase64);
+                        result = includeUI
+                            ? await CaptureCompositedGameView(outputPath, width, height, encodeAsBase64)
+                            : CaptureGameView(outputPath, width, height, false, encodeAsBase64);
                         break;
                     case "scene":
                         result = CaptureSceneView(outputPath, width, height, encodeAsBase64);
@@ -113,6 +117,111 @@ namespace UnityCliBridge.Handlers
                 BridgeLogger.LogError("ScreenshotHandler", $"Error capturing screenshot: {ex.Message}");
                 return CreateError($"Failed to capture screenshot: {ex.Message}");
             }
+        }
+
+        // ScreenCapture schedules the final Game frame (including UI Toolkit and overlay
+        // canvases). Await its PNG without blocking the editor loop which produces it.
+        private static async Task<TimedCaptureOutcome> CaptureCompositedGameView(
+            string outputPath, int width, int height, bool encodeAsBase64)
+        {
+            var gameView = EditorWindow.focusedWindow;
+            if (gameView == null || gameView.GetType().FullName != "UnityEditor.GameView")
+                return GameCaptureError("GAME_VIEW_NOT_FOCUSED", "Focus the Game View before capturing with includeUI=true.");
+            if (Application.isBatchMode || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null
+                || EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return GameCaptureError("GAME_CAPTURE_UNAVAILABLE", "Game capture requires a graphics-enabled, idle Editor.");
+            if (gameCapturePending)
+                return GameCaptureError("GAME_CAPTURE_BUSY", "Another Game View capture is pending. Retry after it completes.");
+
+            gameCapturePending = true;
+            // Unity cannot cancel a scheduled screenshot if focus is lost. A late native
+            // write must remain a temporary cache file, never a successful output image.
+            string pendingPath = Path.Combine(Application.temporaryCachePath, "unity-cli-" + Guid.NewGuid().ToString("N") + ".png");
+            Texture2D texture = null;
+            Texture2D resized = null;
+            RenderTexture target = null;
+            RenderTexture previousActive = null;
+            var stopwatch = Stopwatch.StartNew();
+            var timings = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                ScreenCapture.CaptureScreenshot(pendingPath);
+                byte[] bytes = null;
+                while (stopwatch.Elapsed.TotalSeconds < 5)
+                {
+                    if (gameView == null || EditorWindow.focusedWindow != gameView)
+                        return GameCaptureError("GAME_VIEW_NOT_FOCUSED", "Game View lost focus during capture. Retry with the Game View focused.");
+                    if (File.Exists(pendingPath))
+                    {
+                        try { bytes = File.ReadAllBytes(pendingPath); }
+                        catch (IOException) { bytes = null; }
+                        // IEND is the last PNG chunk. Do not decode a partially written file.
+                        if (bytes != null && bytes.Length >= 24
+                            && bytes[bytes.Length - 8] == 'I' && bytes[bytes.Length - 7] == 'E'
+                            && bytes[bytes.Length - 6] == 'N' && bytes[bytes.Length - 5] == 'D')
+                            break;
+                        bytes = null;
+                    }
+                    gameView.Repaint();
+                    EditorApplication.QueuePlayerLoopUpdate();
+                    await Task.Delay(16);
+                }
+                if (bytes == null)
+                    return GameCaptureError("GAME_CAPTURE_TIMEOUT", "No completed Game frame was produced within 5 seconds.");
+                timings["captureMs"] = stopwatch.Elapsed.TotalMilliseconds;
+                texture = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (!texture.LoadImage(bytes))
+                    return GameCaptureError("GAME_CAPTURE_UNAVAILABLE", "The captured Game frame could not be decoded.");
+                int captureWidth = width > 0 ? width : texture.width;
+                int captureHeight = height > 0 ? height : texture.height;
+                if (captureWidth != texture.width || captureHeight != texture.height)
+                {
+                    // Resize the complete frame, never re-render only its camera.
+                    target = RenderTexture.GetTemporary(captureWidth, captureHeight, 0);
+                    previousActive = RenderTexture.active;
+                    Graphics.Blit(texture, target);
+                    RenderTexture.active = target;
+                    resized = new Texture2D(captureWidth, captureHeight, TextureFormat.RGB24, false);
+                    resized.ReadPixels(new Rect(0, 0, captureWidth, captureHeight), 0, 0);
+                    resized.Apply();
+                    bytes = resized.EncodeToPNG();
+                }
+                var io = Stopwatch.StartNew();
+                File.WriteAllBytes(outputPath, bytes);
+                timings["ioMs"] = io.Elapsed.TotalMilliseconds;
+                var result = new JObject
+                {
+                    ["path"] = outputPath, ["width"] = captureWidth, ["height"] = captureHeight,
+                    ["captureMode"] = "game", ["includeUI"] = true, ["fileSize"] = bytes.Length,
+                    ["message"] = "Composited Game View screenshot captured successfully"
+                };
+                if (encodeAsBase64) result["base64Data"] = Convert.ToBase64String(bytes);
+                return new TimedCaptureOutcome(result, timings);
+            }
+            catch (Exception ex)
+            {
+                return GameCaptureError("GAME_CAPTURE_UNAVAILABLE", $"Failed to capture Game View: {ex.Message}");
+            }
+            finally
+            {
+                if (target != null)
+                {
+                    RenderTexture.active = previousActive;
+                    RenderTexture.ReleaseTemporary(target);
+                }
+                if (resized != null) UnityEngine.Object.DestroyImmediate(resized);
+                if (texture != null) UnityEngine.Object.DestroyImmediate(texture);
+                gameCapturePending = false;
+                try { if (File.Exists(pendingPath)) File.Delete(pendingPath); }
+                catch (IOException) { /* A native writer can still own the temporary file. */ }
+            }
+        }
+
+        private static TimedCaptureOutcome GameCaptureError(string code, string message)
+        {
+            var payload = CreateError(message);
+            payload["code"] = code;
+            return new TimedCaptureOutcome(payload, null);
         }
 
         /// <summary>
