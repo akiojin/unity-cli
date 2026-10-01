@@ -1,0 +1,187 @@
+[
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "editor",
+      "eval",
+      "return UnityEditor.EditorApplication.isPlaying;",
+      "--mode",
+      "statements",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"cli-84979-18da606db175e5c8-0\",\n  \"state\": \"completed\",\n  \"value\": false\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "editor",
+      "eval",
+      "var s=UnityEngine.GameObject.Find(\"/Music\").GetComponent<UnityEngine.AudioSource>();\nreturn new { scene=s.gameObject.scene.path, clip=UnityEditor.AssetDatabase.GetAssetPath(s.clip),\n mixer=UnityEditor.AssetDatabase.GetAssetPath(s.outputAudioMixerGroup.audioMixer), group=s.outputAudioMixerGroup.name,\n s.isPlaying,s.time,s.timeSamples,s.loop,s.playOnAwake,s.spatialBlend,s.volume,s.mute,s.enabled,\n active=s.gameObject.activeInHierarchy, instance=s.GetInstanceID(), samples=s.clip.samples,\n listeners=UnityEngine.Object.FindObjectsOfType<UnityEngine.AudioListener>().Length };",
+      "--mode",
+      "statements",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"diagnostics\": [\n    {\n      \"column\": 12,\n      \"id\": \"CS0618\",\n      \"line\": 6,\n      \"message\": \"'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\",\n      \"severity\": \"warning\"\n    },\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 11,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"cli-85002-18da606dbdb797c8-0\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"active\": true,\n    \"clip\": \"Assets/Audio/tone.wav\",\n    \"enabled\": true,\n    \"group\": \"Music\",\n    \"instance\": 29508,\n    \"isPlaying\": false,\n    \"listeners\": 1,\n    \"loop\": true,\n    \"mixer\": \"Assets/Audio/Final2.mixer\",\n    \"mute\": false,\n    \"playOnAwake\": false,\n    \"samples\": 1323000,\n    \"scene\": \"Assets/Scenes/Generated/E2E/Audio380Final2.unity\",\n    \"spatialBlend\": 0.0,\n    \"time\": 0.0,\n    \"timeSamples\": 0,\n    \"volume\": 0.25\n  }\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "raw",
+      "load_scene",
+      "--json",
+      "{\"scenePath\": \"Assets/Scenes/Generated/E2E/Audio380Final2.unity\"}",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"activeSceneCount\": null,\n  \"isLoaded\": true,\n  \"loadMode\": \"Single\",\n  \"previousScene\": \"Audio380Final2\",\n  \"sceneName\": \"Audio380Final2\",\n  \"scenePath\": \"Assets/Scenes/Generated/E2E/Audio380Final2.unity\",\n  \"summary\": \"Loaded scene \\\"Audio380Final2\\\" in Single mode\"\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "editor",
+      "eval",
+      "var s=UnityEngine.GameObject.Find(\"/Music\").GetComponent<UnityEngine.AudioSource>();\nreturn new { scene=s.gameObject.scene.path, clip=UnityEditor.AssetDatabase.GetAssetPath(s.clip),\n mixer=UnityEditor.AssetDatabase.GetAssetPath(s.outputAudioMixerGroup.audioMixer), group=s.outputAudioMixerGroup.name,\n s.isPlaying,s.time,s.timeSamples,s.loop,s.playOnAwake,s.spatialBlend,s.volume,s.mute,s.enabled,\n active=s.gameObject.activeInHierarchy, instance=s.GetInstanceID(), samples=s.clip.samples,\n listeners=UnityEngine.Object.FindObjectsOfType<UnityEngine.AudioListener>().Length };",
+      "--mode",
+      "statements",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"diagnostics\": [\n    {\n      \"column\": 12,\n      \"id\": \"CS0618\",\n      \"line\": 6,\n      \"message\": \"'Object.FindObjectsOfType<T>()' is obsolete: 'Object.FindObjectsOfType has been deprecated. Use Object.FindObjectsByType instead which lets you decide whether you need the results sorted or not.  FindObjectsOfType sorts the results by InstanceID but if you do not need this using FindObjectSortMode.None is considerably faster.'\",\n      \"severity\": \"warning\"\n    },\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 11,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"cli-85078-18da606dcc205430-0\",\n  \"state\": \"completed\",\n  \"value\": {\n    \"active\": true,\n    \"clip\": \"Assets/Audio/tone.wav\",\n    \"enabled\": true,\n    \"group\": \"Music\",\n    \"instance\": 29568,\n    \"isPlaying\": false,\n    \"listeners\": 1,\n    \"loop\": true,\n    \"mixer\": \"Assets/Audio/Final2.mixer\",\n    \"mute\": false,\n    \"playOnAwake\": false,\n    \"samples\": 1323000,\n    \"scene\": \"Assets/Scenes/Generated/E2E/Audio380Final2.unity\",\n    \"spatialBlend\": 0.0,\n    \"time\": 0.0,\n    \"timeSamples\": 0,\n    \"volume\": 0.25\n  }\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "raw",
+      "manage_asset_import_settings",
+      "--json",
+      "{\"action\": \"get\", \"assetPath\": \"Assets/Audio/tone.wav\"}",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"action\": \"get\",\n  \"assetPath\": \"Assets/Audio/tone.wav\",\n  \"settings\": {\n    \"ambisonic\": false,\n    \"assetType\": \"Audio\",\n    \"compressionFormat\": \"PCM\",\n    \"forceToMono\": false,\n    \"loadInBackground\": false,\n    \"loadType\": \"DecompressOnLoad\",\n    \"quality\": 1.0,\n    \"sampleRateOverride\": 44100,\n    \"sampleRateSetting\": \"PreserveSampleRate\"\n  },\n  \"success\": true\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "raw",
+      "manage_audio_mixer",
+      "--json",
+      "{\"action\": \"get\", \"assetPath\": \"Assets/Audio/Final2.mixer\"}",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"action\": \"get\",\n  \"assetPath\": \"Assets/Audio/Final2.mixer\",\n  \"exposedParameters\": [\n    {\n      \"groupPath\": \"Master/Music\",\n      \"guid\": \"854490bdde0954bd8bb7cba419920fbb\",\n      \"name\": \"MusicVolume\",\n      \"parameter\": \"Volume\"\n    }\n  ],\n  \"groups\": [\n    {\n      \"name\": \"Master\",\n      \"parentPath\": null,\n      \"path\": \"Master\"\n    },\n    {\n      \"name\": \"Music\",\n      \"parentPath\": \"Master\",\n      \"path\": \"Master/Music\"\n    }\n  ],\n  \"success\": true\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "raw",
+      "play_game",
+      "--json",
+      "{}",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"message\": \"Play mode scheduled in 300ms\",\n  \"state\": {\n    \"applicationContentsPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents\",\n    \"applicationPath\": \"/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app\",\n    \"isCompiling\": false,\n    \"isPaused\": false,\n    \"isPlaying\": false,\n    \"isUpdating\": false,\n    \"playability\": {\n      \"compilation\": null,\n      \"lastPlayRequestTime\": \"2026-10-01T10:17:06.6048940Z\",\n      \"msSincePlayRequested\": 1.363,\n      \"playRequested\": true,\n      \"reason\": \"ready\"\n    },\n    \"timeSinceStartup\": 975.1877830420002\n  },\n  \"status\": \"success\"\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "editor",
+      "eval",
+      "return UnityEditor.EditorApplication.isPlaying;",
+      "--mode",
+      "statements",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "{\n  \"diagnostics\": [\n    {\n      \"column\": 1,\n      \"id\": \"CS0162\",\n      \"line\": 6,\n      \"message\": \"Unreachable code detected\",\n      \"severity\": \"warning\"\n    }\n  ],\n  \"exception\": null,\n  \"logs\": [],\n  \"requestId\": \"cli-85082-18da606dd2feb0d0-0\",\n  \"state\": \"completed\",\n  \"value\": false\n}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+      "editor",
+      "eval",
+      "return UnityEditor.EditorApplication.isPlaying;",
+      "--mode",
+      "statements",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "6582",
+      "--output",
+      "json",
+      "--timeout-ms",
+      "30000"
+    ],
+    "stdout": "",
+    "stderr": "Error: Evaluation may still be running (requestId=cli-85194-18da606de4ab16e8-0). Query `unity-cli editor eval-status cli-85194-18da606de4ab16e8-0` on the same endpoint; do not automatically rerun: early eof\n",
+    "exit_code": 1
+  }
+]

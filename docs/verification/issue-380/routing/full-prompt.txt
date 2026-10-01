@@ -1,0 +1,2057 @@
+Route each request using ONLY the supplied skill catalog. Return a JSON array of {id,predicted_skills:[one primary skill],predicted_tool,predicted_payload_keys:[required keys for requested operation]}. No tools, no prose. Do not invent skills.
+CATALOG
+---
+name: unity-2d-sprite-tilemap
+description: Build and verify a 2D sprite and Tilemap scene with unity-cli. Use when the user wants sprite import, Sprite Atlas, Tile or Rule Tile painting, and Pixel Perfect Camera verification as one workflow. Do not use for import or atlas edits alone; use `unity-asset-management`. For scene creation alone use `unity-scene-create`; for capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: assets
+  triggers:
+    - sprite
+    - tilemap
+    - pixel
+  siblings:
+    - unity-asset-management
+    - unity-scene-create
+    - unity-playmode-testing
+---
+
+# 2D Sprite and Tilemap
+
+Take sprite art through import, atlas and tile authoring, then verify the saved
+scene in Play with a Pixel Perfect Camera. Use existing tools and Editor APIs.
+
+## Use When
+
+- The request spans sprite import, Tilemap construction and a visible runtime check.
+- The user wants a Tile or Rule Tile level with matching sprite/camera PPU.
+- A pixel-art workflow needs both saved asset checks and Game-view evidence.
+
+## Do Not Use When
+
+- Only change imports or create an atlas: `unity-asset-management`.
+- Only create/load/save a scene: `unity-scene-create`.
+- Only capture or simulate input in an existing level: `unity-playmode-testing`.
+- Only install 2D packages: `unity-package-management`; only read console or
+  evaluate a snippet: `unity-editor-tools`; only inspect UI: `unity-ui-automation`.
+
+## Preferred Flow
+
+1. Follow [runtime prerequisites](references/runtime-checklist.md). Select the
+   project and explicit port consistently, ping, and inspect Editor state. Work
+   in Edit Mode. Preserve existing scenes and shared assets; do not discard an
+   unsaved scene. Establish source PNG paths, Sprite Mode, PPU, tile cell size,
+   scene destination and reference resolution. For a new example use Single,
+   16 PPU, unit cells and 320×180; preserve requested values.
+2. Inspect resolved packages and the render pipeline. Built-in Tilemap needs
+   `com.unity.modules.tilemap`. RuleTile needs compatible
+   `com.unity.2d.tilemap.extras`; Pixel Perfect comes from either standalone
+   `com.unity.2d.pixel-perfect` or URP. Use `unity-package-management` for missing
+   dependencies, wait for compilation and ping again. Do not migrate pipelines
+   or install a second PixelPerfectCamera provider just for this workflow.
+3. Follow [the authoring recipe](references/tilemap-recipe.md). Import the supplied
+   sprite with `manage_asset_import_settings`; use `editor eval` for PPU and
+   Sprite Mode, which the import tool does not expose. For Multiple preserve
+   slicing and select a named subasset. Verify actual importer values and
+   sprite dimensions after reimport; JSON success alone is insufficient.
+4. Create a Sprite Atlas through `create_sprite_atlas`, with Point filtering,
+   mipmaps/rotation disabled for the pixel-art example. Inspect an existing
+   atlas before changing it; do not silently overwrite. Create Tile assets via
+   `ScriptableObject.CreateInstance` and `AssetDatabase.CreateAsset`. Use a
+   RuleTile only when requested and its package/type is available; define
+   actual neighbor rules rather than claiming a default sprite is autotiling.
+5. Use `unity-scene-create` for the target scene. Add/reuse a Grid parent,
+   Tilemap and TilemapRenderer, paint the requested cell coordinates through
+   `Tilemap.SetTile`, and configure a pipeline-compatible sprite material.
+   Keep stable paths/names and inspect on retries to avoid duplicate objects.
+6. Configure an orthographic camera and the installed PixelPerfectCamera type.
+   Match `assetsPPU` to sprite PPU and set the reference resolution. Position
+   the camera to see the painted cells, with a valid clipping range and culling
+   mask. Mark the scene dirty, save assets/scene, reopen that scene and read
+   back the tiles, atlas packables, importer and camera settings.
+7. Enter Play through `unity-playmode-testing`, confirm Play state, capture the
+   Game view with `osFallback:false`, and inspect the image for visible tiles,
+   crisp pixels, expected arrangement and absence of seams/missing materials.
+   Verify console/compilation errors and tile state. Input is only applicable
+   if the scene has an input-driven behavior; do not invent one for static art.
+   Stop Play and confirm the saved authoring state is retained.
+8. Report actual Editor/package versions, saved scene/Tile/atlas paths, imported
+   PPU/filter, cell assertions and screenshot path. Distinguish visual evidence
+   from state checks. If an existing tool/API cannot perform a required step,
+   report the gap for a separate issue and link it; do not expand CLI/bridge
+   functionality or hand-edit serialized Unity YAML here.
+
+## Examples
+
+- "Import grass.png, paint a small Tilemap and check it through a Pixel Perfect Camera."
+- "スプライトの取り込みから Tile / Sprite Atlas を作り、Game 画面で確認して。"
+- "Only make a Sprite Atlas" → `unity-asset-management`.
+
+After selecting the project/port and creating the asset folder:
+
+```bash
+unity-cli raw manage_asset_import_settings --json '{"action":"modify","assetPath":"Assets/Tiles/grass.png","settings":{"textureType":"Sprite","filterMode":"Point","generateMipMaps":false,"compressionQuality":100}}'
+unity-cli raw create_sprite_atlas --json '{"atlasPath":"Assets/Tiles/Terrain.spriteatlas","packables":["Assets/Tiles/grass.png"],"packingSettings":{"allowRotation":false},"textureSettings":{"filterMode":"Point","generateMipMaps":false}}'
+unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/Terrain.unity"}'
+unity-cli raw play_game --json '{}'
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw capture_screenshot --json '{"captureMode":"game","width":1280,"height":720,"osFallback":false}'
+unity-cli raw read_console --json '{"count":20}'
+unity-cli raw stop_game --json '{}'
+```
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): CLI and Editor selection.
+- [tilemap-recipe.md](references/tilemap-recipe.md): import, Tile/RuleTile, camera and persistence details.
+
+---
+name: unity-addressables
+description: Manage Unity Addressables groups and content with unity-cli. Use when the user asks to list or create a group, add or remove an entry, build or clean addressables content, or analyze and fix addressables issues before a build. Do not use for generic import settings or material edits; use `unity-asset-management` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: assets
+  triggers:
+    - addressables
+    - group
+    - entry
+    - bundle
+    - content-build
+  siblings:
+    - unity-asset-management
+---
+
+# Addressables
+
+Manage Addressable asset groups, build content, and analyse bundles. This skill is the content-delivery sibling of `unity-asset-management`.
+
+## Use When
+
+- The user wants to manage Addressables groups or entries.
+- The task involves building or cleaning Addressables content.
+- The user wants an analysis pass or automatic issue fix before shipping content.
+
+## Do Not Use When
+
+- The task is about general asset import settings or dependency analysis outside Addressables; use `unity-asset-management`.
+- The request is about scene object setup rather than content delivery; use `unity-gameobject-edit` or `unity-scene-create`.
+
+## Preferred Flow
+
+1. Inspect existing groups before creating or moving entries.
+2. Apply group or entry changes with `addressables_manage`.
+3. Run `addressables_analyze` before a build, and use `fix_issues` only when the reported changes are acceptable.
+4. Build with `addressables_build`, using `clean_build` when structure changed substantially.
+
+```bash
+unity-cli raw addressables_manage --json '{"action":"list_groups"}'
+unity-cli raw addressables_manage --json '{"action":"create_group","groupName":"Characters"}'
+unity-cli raw addressables_manage --json '{"action":"add_entry","groupName":"Characters","assetPath":"Assets/Prefabs/Hero.prefab","address":"hero"}'
+unity-cli raw addressables_analyze --json '{"action":"analyze"}'
+unity-cli raw addressables_build --json '{"action":"clean_build"}'
+```
+
+## Examples
+
+- "Create an Addressables group for character prefabs and add the hero prefab."
+- "Analyze Addressables issues and then build content."
+- "Run a clean Addressables build after reorganising groups."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [addressables-build-loop.md](references/addressables-build-loop.md): safer order for group changes, analysis, and clean builds.
+
+---
+name: unity-asset-management
+description: Manage Unity assets and import metadata with unity-cli. Use when the user asks to inspect or edit Timeline tracks/clips/bindings, create materials, animation clips or sprite atlases, refresh assets, update imports, or analyze dependencies. Do not use for Addressables builds; use `unity-addressables`. For Player builds or scene baking, use `unity-editor-tools`. For scene object edits, use `unity-gameobject-edit`. For URP pipeline and Volume setup use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.3
+  category: assets
+  triggers:
+    - asset
+    - material
+    - import
+    - animation
+    - sprite
+    - dependency
+  siblings:
+    - unity-audio-setup
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-addressables
+    - unity-prefab-workflow
+    - unity-gameobject-edit
+    - unity-editor-tools
+    - unity-vfx-graph
+---
+
+# Asset Management
+
+Manage the Unity Asset Database, materials, animation clips, sprite atlases, import settings, and asset dependency analysis. This skill is the file/asset complement to `unity-addressables` (which handles groups and content builds).
+
+## Use When
+
+- The user wants to inspect, refresh, move, or otherwise manage project assets.
+- The user wants to create or update materials.
+- The user wants to author Timeline, AnimationClip or SpriteAtlas assets, inspect Timeline tracks/clips/bindings, or edit numeric animation curves.
+- The user needs import settings or dependency analysis before file changes.
+
+## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
+
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+
+- The task is Addressables groups or content builds; use `unity-addressables`.
+- The request is about scene-instance edits; use `unity-gameobject-edit`.
+- The work happens inside prefab edit mode; use `unity-prefab-workflow`.
+
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
+## Preferred Flow
+
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. Inspect the target asset with `manage_asset_database` using `{"action":"get_asset_info","assetPath":"..."}` before changing it.
+3. Run `analyze_asset_dependencies` before deleting, moving, or changing shared assets.
+4. Apply import or material changes with the narrowest possible payload.
+5. Call `refresh_assets` after any out-of-editor file change.
+
+```bash
+unity-cli raw manage_asset_database --json '{"action":"get_asset_info","assetPath":"Assets/Textures/hero.png"}'
+unity-cli raw manage_asset_database --json '{"action":"refresh"}'
+unity-cli raw create_material --json '{"materialPath":"Assets/Materials/HeroMat.mat","shader":"Standard"}'
+unity-cli raw create_animation_clip --json '{"clipPath":"Assets/Animations/Hero.anim","spritePaths":["Assets/Sprites/Hero/idle_0.png"],"frameRate":12,"loopTime":true}'
+unity-cli raw get_animation_curves --json '{"clipPath":"Assets/Animations/Move.anim"}'
+unity-cli raw edit_animation_curve --json '{"clipPath":"Assets/Animations/Move.anim","animationRoot":12345,"binding":{"path":"","component":"UnityEngine.Transform","property":"localPosition.x"},"operation":"set","createIfMissing":true,"keys":[{"time":0,"value":0},{"time":1,"value":2}]}'
+unity-cli raw analyze_asset_dependencies --json '{"action":"get_dependencies","assetPath":"Assets/Prefabs/Player.prefab","recursive":true}'
+```
+
+For numeric curves, replace `12345` with the actual animation root GameObject instance ID from scene inspection. `path` is relative to that root; `component` is fully qualified and `property` is the serialized binding name (Transform `localPosition.x` aliases `m_LocalPosition.x`). Only writable standalone `Assets/*.anim` clips are editable, outside Play Mode. Use `set` to replace one curve, `upsert_keys` to add/update exact times, `remove_keys` with `times`, or `remove_curve`. Other bindings remain intact. New keys default to Linear; omitted tangent settings on existing keys are retained. Use `leftTangentMode`/`rightTangentMode` and finite `inTangent`/`outTangent` for Free tangents. Inspect with `get_animation_curves` after editing; object-reference bindings are listed separately and cannot be numerically edited.
+
+## Examples
+
+### Timeline assets, tracks, clips and bindings
+
+Requires Timeline installed, Edit Mode, and an existing writable parent folder.
+Use a new asset path for creation, then inspect before subsequent edits.
+
+```bash
+unity-cli raw manage_timeline --json '{"action":"create_asset","assetPath":"Assets/Timelines/Intro.playable"}'
+unity-cli raw manage_timeline --json '{"action":"create_track","assetPath":"Assets/Timelines/Intro.playable","trackName":"Movement","trackType":"AnimationTrack"}'
+unity-cli raw get_timeline --json '{"assetPath":"Assets/Timelines/Intro.playable"}'
+```
+
+Use inspected stable `trackId` values (GUID:localID), not track names. Only top-level
+AnimationTrack editing is supported. For `add_clip`, supply `animationClipPath`,
+`start`, and positive `duration`; re-inspect before `update_clip`/`remove_clip` and
+include `clipIndex` plus `expectedClip` from that snapshot. To bind or evaluate a
+PlayableDirector, use full hierarchy paths for `directorPath`/`animatorPath`.
+Inspect `unity-cli tool schema manage_timeline` for action-specific required fields.
+
+- "Refresh the asset database and inspect `Assets/Textures/hero.png`."
+- "Create a material for the player and tint it red."
+- "Generate an animation clip from a set of sprite frames."
+- "Check which assets depend on `Player.prefab` before moving it."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [asset-safety.md](references/asset-safety.md): dependency analysis, import changes, and material updates that touch many assets.
+
+---
+name: unity-audio-setup
+description: Configure Unity audio with unity-cli. Use when the user asks to connect AudioClip import settings, AudioMixer groups and exposed volume, and AudioSource routing with Play Mode playback verification. Do not use for import settings alone; use `unity-asset-management`. For individual component edits use `unity-gameobject-edit`; for scene-only creation use `unity-scene-create`; for existing runtime tests or capture alone use `unity-playmode-testing`; for console or generic eval alone use `unity-editor-tools`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: assets
+  triggers:
+    - audio
+    - audioclip
+    - audiomixer
+    - audiosource
+  siblings:
+    - unity-asset-management
+    - unity-gameobject-edit
+    - unity-scene-create
+    - unity-playmode-testing
+    - unity-editor-tools
+---
+
+# Audio Setup
+
+Connect persistent clip import, mixer routing and source configuration to measured
+Play Mode state. Playback state proves engine playback, not audible speaker output.
+
+## Use When
+
+- Configure an AudioClip, AudioMixer/Group/exposed Volume and AudioSource together.
+- Verify that the saved source routes through the intended mixer and plays in Play.
+- Diagnose a complete audio setup using import, listener, source and mixer state.
+
+## Do Not Use When
+
+- Only edit import settings or refresh assets: `unity-asset-management`.
+- Only change an existing component field: `unity-gameobject-edit`.
+- Only create, load or save a scene: `unity-scene-create`.
+- Only run runtime tests, enter Play or capture media: `unity-playmode-testing`.
+- Only read console messages or run generic eval: `unity-editor-tools`.
+- Implement DSP, custom importers or missing bridge operations: track separately.
+
+## Preferred Flow
+
+1. Follow [runtime prerequisites](references/runtime-checklist.md). Pin the project
+   and endpoint; record Editor/bridge versions, scene and initial Play state. Stop
+   Play before persistent edits. Inspect the existing clip, mixer and source before
+   choosing paths; preserve unrelated assets and dirty scenes.
+2. Follow [audio authoring and verification](references/audio-workflow.md). Use an
+   existing licensed clip or an explicitly authorized generated test tone. Refresh
+   assets, read its importer, then modify load type/compression for its use case.
+   Read settings back after reimport; do not assume a requested value persisted.
+3. Use `manage_audio_mixer` to create/reuse the mixer, add the named group and expose
+   its Volume. Inspect the returned full group paths and parameter names before
+   retrying mutations. Do not use internal-API reflection or write mixer YAML.
+4. Assign the imported AudioClip and the exact AudioMixerGroup to the AudioSource
+   using existing component tools or public-API `editor eval`. Ensure one enabled
+   AudioListener, active source, nonzero volume and suitable spatial blend. Save
+   assets and scene; reload the saved scene and verify both references persisted.
+5. Enter Play with `play_game`, wait for readiness, then explicitly play the source
+   if needed. Sample `isPlaying`, `time` and `timeSamples` at two separated times;
+   require active playback and progress, accounting for loop wrap. Confirm clip and
+   mixer routing at runtime. A successful play command alone is insufficient.
+6. Read back the exposed volume through `AudioMixer.GetFloat`; if changing it in
+   Play, record the previous value, check `SetFloat`/`GetFloat` and restore it. Read
+   console errors. Stop Play, then verify persistent asset/source settings again.
+   Never save temporary Play changes as the intended authoring result.
+7. Report versions, clip/import settings, mixer/group/parameter, saved scene,
+   source settings, both playback samples and console status. Retain tool outputs
+   and asset evidence. If capability is missing, link a separate issue instead of
+   adding a workaround implementation here; audio authoring tools are owned by
+   [#431](https://github.com/akiojin/unity-cli/issues/431).
+
+## Examples
+
+- "AudioClip を取り込み、Mixer 経由で AudioSource を再生して状態を確認して。"
+- "Create a Music mixer group and exposed volume, route my clip and verify Play."
+- "Only change this clip's compression" → `unity-asset-management`.
+- "Only set this AudioSource's volume" → `unity-gameobject-edit`.
+
+Use the same explicit project/host/port on each command:
+
+```bash
+unity-cli raw manage_asset_import_settings --json '{"action":"modify","assetPath":"Assets/Audio/tone.wav","settings":{"loadType":"DecompressOnLoad","compressionFormat":"PCM"}}'
+unity-cli raw manage_audio_mixer --json '{"action":"create","assetPath":"Assets/Audio/Music.mixer"}'
+unity-cli raw manage_audio_mixer --json '{"action":"add_group","assetPath":"Assets/Audio/Music.mixer","parentGroup":"Master","name":"Music"}'
+unity-cli raw manage_audio_mixer --json '{"action":"expose_parameter","assetPath":"Assets/Audio/Music.mixer","groupPath":"Master/Music","parameter":"Volume","parameterName":"MusicVolume"}'
+unity-cli raw manage_audio_mixer --json '{"action":"get","assetPath":"Assets/Audio/Music.mixer"}'
+unity-cli raw play_game --json '{}'
+unity-cli raw stop_game --json '{}'
+```
+
+## References
+
+- [Runtime checklist](references/runtime-checklist.md): connection and recovery.
+- [Audio workflow](references/audio-workflow.md): saved references and measured playback.
+
+---
+name: unity-cli-usage
+description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+user-invocable: false
+metadata:
+  author: akiojin
+  version: 0.4.1
+  category: foundation
+  triggers:
+    - bootstrap
+    - install
+    - setup
+    - connect
+    - ping
+    - doctor
+    - instance
+  siblings:
+    - unity-package-management
+    - unity-project-bootstrap
+    - unity-scene-create
+    - unity-csharp-edit
+    - unity-editor-tools
+---
+
+# unity-cli Usage
+
+Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This is a foundation skill that loads automatically when no other unity-* skill matches a connection or install question.
+
+## Use When
+
+- The user asks how to verify or install `unity-cli`, or any Unity task finds `unity-cli` missing or the Editor unreachable.
+- The user needs help with `system ping`, `instances list`, or `instances set-active`.
+- The user is unsure how to invoke a bridge tool (typed subcommand vs. `raw`/`tool call`) or how to discover what tools exist.
+- A workflow is blocked on host/port selection, install mode, or connection troubleshooting.
+
+## Do Not Use When
+
+- The user wants to create a new Unity project and bootstrap its bridge and first scene; use `unity-project-bootstrap`.
+- A more specific skill clearly matches the task. For scene authoring, use `unity-scene-create`. For C# edits, use `unity-csharp-edit`. For Editor state inspection, use `unity-editor-tools`.
+- The request only inspects or edits project files without invoking Unity.
+
+## Preferred Flow
+
+1. **Bootstrap once per project** (skip when `unity-cli system ping` already succeeds):
+   1. If `command -v unity-cli` fails, install the release binary without asking for a manual step:
+      - macOS / Linux: `curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh`, then use `~/.local/bin/unity-cli` if `~/.local/bin` is not on `PATH`.
+      - Windows: run `scripts/install.ps1` the same way when it is published; otherwise download the release asset from GitHub Releases.
+      - Only inside a unity-cli source checkout, `cargo run -- <args>` is an alternative for development.
+   2. Tell the user that setup edits `Packages/manifest.json` (adds the OpenUPM scoped registry and `com.akiojin.unity-cli-bridge` pinned to the CLI version) and, for legacy-input-only projects, sets `activeInputHandler` to Both in `ProjectSettings/ProjectSettings.asset`; then run `unity-cli --output json setup --launch-editor` from the Unity project root (or pass `--project-path`).
+   3. Read the JSON: `ok: true` means the Editor answered `ping` for this project. On `ok: false`, act on `editor.hint` (first import can take several minutes; rerun `setup` to keep waiting). Report any `warnings` — a `versionCheck.status` of `mismatch` means run `unity-cli bridge upgrade`.
+2. Verify reachability with `unity-cli system ping`; its `versionCheck` reports CLI ↔ bridge version drift. If it fails, run `unity-cli doctor --output json` and follow the `diagnosis` code (`SAFE_MODE`, `BRIDGE_NOT_INSTALLED`, `PORT_IN_USE`, `EDITOR_NOT_RUNNING`, `SANDBOX_BLOCKED`) before retrying; see the Connection Recovery section of the runtime checklist. On `BRIDGE_NOT_INSTALLED`, run `unity-cli setup`.
+3. When multiple editors may run, call `unity-cli instances list` (lists every Editor with its project path) and target one with `--project-path <project>` or by running inside that project directory. On `AMBIGUOUS_EDITOR` (exit 6), pick a `projectPath` from `data.candidates` and retry with `--project-path`. `unity-cli instances set-active <host:port>` still works but persists and takes precedence over the current directory.
+4. Pick the right entry point for the operation:
+   - **Typed subcommand** when one exists. The bootstrap-relevant typed subcommands are `setup`, `bridge install|upgrade|status`, `system ping`, `scene create`, `instances list`, and `instances set-active`. Other typed subcommands exist too — notably the `reference *` family (`fetch`, `status`, `search`, `grep`, `view`, `find-symbol`, `diff`, `resolve-symbol-at`, `embed-build`, `embed-search`, `clean`), which wrap the `reference_*` bridge tools; see the `unity-csharp-reference` skill. But most bridge tools have no typed wrapper. (Note: `setup`, `bridge *`, `instances list`, and `instances set-active` are local operations, not bridge-tool wrappers.)
+   - **`raw <tool_name> --json '{...}'`** (equivalent alias: `tool call <tool_name> --json '{...}'`) for every tool without a typed wrapper. This is the primary way to invoke the bridge, not a fallback. Discover tools by keyword with `unity-cli tool list --query <term> --compact` (narrow further with `--category <name>` such as `scenes`, and `--limit N`) instead of listing all tools; inspect a tool's expected payload with `unity-cli tool schema <tool_name> --output json`.
+5. Use `--output json` for chained automation.
+
+```bash
+if ! command -v unity-cli >/dev/null 2>&1; then
+  curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+unity-cli --version
+unity-cli --output json setup --launch-editor   # bridge install + Editor connection check
+unity-cli bridge status                        # declared / resolved bridge version
+unity-cli system ping
+unity-cli tool list --query scene --compact    # discover tools by keyword
+unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
+unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
+```
+
+## Examples
+
+- "Add a Cube to the scene" in a fresh project without unity-cli → install the binary, run `unity-cli --output json setup --launch-editor`, then `unity-cli raw create_gameobject --json '{"name":"Cube","primitiveType":"cube"}'`.
+- "Check whether unity-cli can reach my Unity Editor." → run `unity-cli system ping`.
+- "unity-cli cannot connect to Unity." → `unity-cli doctor --output json`; on `SAFE_MODE`, fix the files in `editorLog.compileErrors` and retry instead of assuming the Editor is closed.
+- "Switch to the Unity instance running on port 6401." → `unity-cli instances list --ports 6400,6401` then `unity-cli instances set-active 127.0.0.1:6401`.
+- "Run this against ProjectB while two Editors are open." → `unity-cli --project-path <ProjectB> raw get_hierarchy --json '{}'`.
+- "Inspect what's in the open scene." → `unity-cli raw analyze_scene_contents --json '{}'`. There is no typed `scene` subcommand for this — `scene create` is the only typed scene operation.
+- "What tools does the bridge expose?" → `unity-cli tool list --query <term> --compact` (or `--category <name>`); plain `unity-cli tool list` prints all names. For a specific tool's JSON payload shape: `unity-cli tool schema <tool_name> --output json`.
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): binary selection, instance selection, connection recovery with `unity-cli doctor`, command routing, CI environment notes.
+
+---
+name: unity-csharp-edit
+description: Implement, fix, and refactor Unity C# code with unity-cli write tools. Use when the user wants to change behavior in .cs files, create or rewrite scripts, update multiple C# files together, rename a symbol, add or remove members, or change project or package settings as part of a code change. Do not use for read-only inspection with no planned edit; use `unity-csharp-navigate` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob, Edit, Write
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: code
+  triggers:
+    - csharp
+    - script
+    - rename
+    - refactor
+    - symbol
+    - setting
+  siblings:
+    - unity-ui-toolkit-build
+    - unity-csharp-navigate
+    - unity-csharp-reference
+    - unity-editor-tools
+    - unity-cli-usage
+    - unity-gameobject-edit
+---
+
+# Unity C# Edit
+
+Implement Unity C# changes with `unity-cli` as the primary write path. Prefer the smallest write primitive that keeps the change correct, and preserve Unity serialization, UI binding paths, and editor/runtime boundaries.
+
+## Use When
+
+- The user intends to change C# behavior in `.cs` files.
+- The user wants to create or rewrite scripts (single or coordinated multi-file).
+- The user asks for a symbol rename, member add/remove, or refactor.
+- The user changes project or package settings as part of a code change.
+
+## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+
+- The task is read-only investigation; use `unity-csharp-navigate`.
+- The work targets Editor state inspection (console, profiler, packages); use `unity-editor-tools`.
+
+## Preferred Flow
+
+1. Decide the write shape: symbol edit, full-file write, multi-file write, or settings change.
+2. Read only the minimum context with `read`, `get_symbols`, `find_symbol`, or `find_refs`.
+3. Preview risky symbol edits with `apply: false`.
+4. Apply with `refresh`, `waitForCompile`, and `updateIndex` when later steps depend on clean diagnostics.
+5. Inspect `changedFiles`, `changedSymbols`, and `diagnostics`; fix compilation issues before unrelated follow-up.
+
+```bash
+unity-cli raw get_symbols --json '{"path":"Assets/Scripts/Player.cs"}'
+unity-cli raw rename_symbol --json '{"relative":"Assets/Scripts/Player.cs","namePath":"Player/Jump","newName":"Leap","apply":false}'
+unity-cli raw apply_csharp_edits --json '{"files":[{"relative":"Assets/Scripts/IPlayerMover.cs","newText":"public interface IPlayerMover { void Move(); }\n"}],"validate":true,"apply":true,"waitForCompile":true,"updateIndex":true}'
+unity-cli raw get_compilation_state --json '{}'
+```
+
+## Examples
+
+- "Implement dash cooldown in `PlayerController.cs` and update the related tests."
+- "Rename `Jump` to `Leap` across the player package without breaking serialized field names."
+- "Create a new editor utility script and change the matching project setting."
+- "Refactor an interface, its implementation, and the tests in one coordinated write."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [file-write-recipes.md](references/file-write-recipes.md): choosing between symbol edits, file writes, and multi-file writes.
+- [lsp-write-safety.md](references/lsp-write-safety.md): preview-first edits, `namePath`, and write-result checks.
+- [unity-implementation-guidelines.md](references/unity-implementation-guidelines.md): serialized fields, UI bindings, editor code, ScriptableObjects, SettingsProviders.
+- [settings-write-recipes.md](references/settings-write-recipes.md): project and package settings safe-write recipes.
+
+---
+name: unity-csharp-navigate
+description: Explore Unity C# code without modifying files. Use when the user asks to read scripts, search text, find a symbol, trace references, inspect namespaces or package sources, or understand where a class, method, or field is used. Do not use for UPM package discovery, installation or updates; use `unity-package-management`. For code edits use `unity-csharp-edit`; for scene inspection use `unity-scene-inspect`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: code
+  triggers:
+    - csharp
+    - read
+    - search
+    - reference
+    - symbol
+  siblings:
+    - unity-csharp-edit
+    - unity-csharp-reference
+    - unity-scene-inspect
+    - unity-package-management
+---
+
+# Unity C# Navigate
+
+Navigate and search C# source via `unity-cli` local tools. This is the read-only sibling of `unity-csharp-edit`; hand off as soon as the request implies a write.
+
+## Use When
+
+- The user wants to inspect a script or understand existing C# behavior.
+- The user asks where a symbol is defined or referenced.
+- The user wants to search packages or source trees before making a change.
+
+## Do Not Use When
+
+- The user wants UPM registry discovery or dependency changes; use `unity-package-management`.
+- The user wants to modify code or create new C# files; use `unity-csharp-edit`.
+- The task depends on Unity scene state rather than source; use `unity-scene-inspect`.
+
+## Preferred Flow
+
+1. Build or refresh the index before symbol-heavy queries.
+2. Anchor on the right file with `read` or `search`.
+3. Use `get_symbols`, `find_symbol`, and `find_refs` once the target identifier is clear.
+4. Narrow the search path or page size if the result set is large.
+5. Use `list_packages` when the question might involve packages rather than project sources.
+
+```bash
+unity-cli raw list_packages --json '{}'
+unity-cli raw read --json '{"path":"Assets/Scripts/Player.cs"}'
+unity-cli raw search --json '{"pattern":"OnCollisionEnter","path":"Assets/Scripts"}'
+unity-cli raw find_symbol --json '{"name":"PlayerController","kind":"class","scope":"assets"}'
+unity-cli raw find_refs --json '{"name":"Health","scope":"assets","pageSize":20}'
+```
+
+## Examples
+
+- "Read `PlayerController.cs` and explain how jumping works."
+- "Find every reference to `Health` in project scripts."
+- "List installed packages and check whether Input System is present."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [code-search-playbook.md](references/code-search-playbook.md): indexing strategy, path narrowing, and reference tracing guidance.
+
+---
+name: unity-csharp-reference
+description: Browse Unity Technologies' official UnityCsReference C# source as a read-only local cache. Use when the user asks about the exact signature, behavior, or internal implementation of a Unity API, when comparing API differences between Unity versions, or when validating LLM-suggested Unity code against the canonical source. Do not use for editing project code (use `unity-csharp-edit`). Do not use for project-local script reading (use `unity-csharp-navigate`).
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: code
+  triggers:
+    - reference
+    - unity-api
+    - signature
+    - unity-source
+    - version-diff
+  siblings:
+    - unity-csharp-navigate
+    - unity-csharp-edit
+    - unity-scene-inspect
+---
+
+# Unity C# Reference
+
+Browse Unity Technologies' official UnityCsReference C# source as a read-only local cache. This skill is the sibling of `unity-csharp-navigate` (project sources) and `unity-csharp-edit` (writes). Hand off as soon as the request implies project-level reading or a write.
+
+## Use When
+
+- The user asks about the exact signature, attributes, or behavior of a Unity API such as `UnityEngine.Animator.Play` or `UnityEditor.AssetDatabase.Refresh`.
+- The user wants to read the internal implementation of a Unity type to predict performance characteristics or side effects.
+- The user compares API differences between Unity versions (LTS vs Tech release branches).
+- The user wants to validate an LLM-suggested Unity script against the canonical Unity source.
+
+## Do Not Use When
+
+- The user wants to read project-local scripts; use `unity-csharp-navigate`.
+- The user wants to write or refactor C# code; use `unity-csharp-edit`.
+- The user wants Unity scene state, packages, or assets; use the matching scene, asset, or editor skill family.
+
+## Preferred Flow
+
+1. Run the runtime checklist in [runtime-checklist.md](references/runtime-checklist.md) before the first fetch in a new environment.
+2. Populate the cache for the project's Unity version with `unity-cli reference fetch --accept-license` (one-time per version).
+3. Use `unity-cli reference grep` for line-level pattern lookups with optional context, or `unity-cli reference search` for filtered file hits.
+4. Open the candidate file with `unity-cli reference view --start-line N --max-lines M` to read the relevant span.
+5. Confirm the signature or behavior, then hand off to `unity-csharp-navigate` for project sources or `unity-csharp-edit` for writes.
+
+```bash
+unity-cli reference fetch --accept-license
+unity-cli reference status --output json
+unity-cli reference find-symbol --name Animator --kind class
+unity-cli reference grep "class Animator " --context 3
+unity-cli reference view Runtime/Export/Animation/Animator.bindings.cs --start-line 100 --max-lines 60
+unity-cli reference diff --from 2022.3.10f1 --to 2023.2.20f1 --symbol UnityEngine.Animator
+unity-cli reference resolve-symbol-at Assets/Scripts/Player.cs --line 42 --column 18
+unity-cli reference embed-build --version 2023.2.20f1
+unity-cli reference embed-search --query "animator state callback" --version 2023.2.20f1
+unity-cli reference clean --keep 1 --dry-run
+```
+
+Use `reference find-symbol` first when you already know the type name (class / interface / struct / enum). It is backed by an on-disk index per Unity version (`~/.unity/cache/UnityCsReference/<version>/.unity-cli-index/symbols.json`) and is faster than `grep` for repeated lookups. Drop back to `grep` for free-text patterns or member-level matches.
+
+Use `reference diff` to compare two cached Unity versions. The default symbol-only mode (`--symbol <fqn>`) returns a single before/after pair, and the opt-in path mode (`--path <subpath> [--max-symbols N]`) lists added / removed / changed type definitions in a directory.
+
+Use `reference resolve-symbol-at <project-rel-path> --line <n> --column <m>` when the user is on a specific cursor position in a project file (`Assets/...` or `Packages/...`) and wants to see the canonical Unity reference for the type under the cursor. The tool is a thin wrapper: it reads the project file, extracts the identifier at the cursor, and feeds it through `reference find-symbol` + `reference view` for each cached version.
+
+Use `reference embed-build` + `reference embed-search --query "..."` for semantic / natural-language lookup when the user has a concept (`"animator state callback"`) instead of an exact symbol name. The first call downloads the BGE-Small-EN ONNX model (~130MB, cached under the platform-default fastembed cache) and writes a per-version `.unity-cli-index/embeddings.bin`. Subsequent `embed-search` calls only run a single query embedding and a linear cosine scan over that file, so they stay fast. The result is sorted by `score` (cosine similarity, higher is closer); `find-symbol` and `grep` remain the right tools when the exact symbol name is already known.
+
+## Examples
+
+- "Show me how Unity implements `Animator.Play` so I can predict whether it allocates."
+- "Compare `UnityWebRequest.Get` between Unity 2022.3 and Unity 6 staging."
+- "Confirm the exact signature of `EditorApplication.delayCall` before I wire it into the build pipeline."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): runtime prerequisites and license acceptance before the first fetch.
+- [fetch-and-cache.md](references/fetch-and-cache.md): `reference fetch`, `status`, and `clean` command details and branch mapping per Unity version.
+- [symbol-lookup-playbook.md](references/symbol-lookup-playbook.md): the canonical reference → navigate → edit workflow when validating LLM-suggested Unity code.
+
+---
+name: unity-development-loop
+description: Run Unity runtime development loops with gameplay-focused implementation and validation. Use when the user asks to iterate on runtime behavior, reproduce and fix a gameplay bug, measure Editor operation latency, or implement a Unity-side flow until acceptance criteria are met. Do not use for `.inputactions` authoring, read-only inspection, or Rust CLI-only work.
+compatibility: Requires unity-cli connected to a Unity Editor that supports Play Mode control, runtime input simulation, UI automation, and editor diagnostics.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: testing
+  triggers:
+    - runtime
+    - gameplay
+    - iterate
+    - acceptance
+    - latency
+    - benchmark
+---
+
+# Unity Development Loop
+
+Run Unity-side development as short, acceptance-driven loops.
+This skill chooses the smallest next change, the narrowest runtime check, and the lightest evidence set that can prove or disprove the current hypothesis.
+
+## Use When
+
+- The user wants to implement and verify a Unity gameplay, input, or UI scenario.
+- The task needs a repeatable loop of Unity-side code changes, Play Mode execution, evidence capture, and runtime confirmation.
+- The user asks to iterate on a runtime bug until acceptance criteria are satisfied.
+- The request needs screenshots, short video, console inspection, or profiler data as part of Unity runtime validation.
+- The user wants to measure Editor operation latency or check performance budgets in a unity-cli source checkout.
+
+## Do Not Use When
+
+- The task is authoring `.inputactions` assets instead of validating runtime behavior. Use `unity-input-system`.
+- The task is read-only code or scene investigation with no planned change. Use the relevant inspection skill.
+- The task is Rust CLI-only or does not require Unity runtime validation.
+- The task is scene, prefab, or asset authoring without a runtime validation loop.
+
+## Preferred Flow
+
+1. Confirm the bridge answers `unity-cli system ping`. If it does not, run `unity-cli doctor --output json` and recover from its `diagnosis` first; on `SAFE_MODE`, fix the reported compile errors (`file`, `line`) before any runtime check.
+2. Lock the scenario as observable runtime behavior and define 1-3 acceptance checks before editing or running anything.
+3. Choose the smallest next Unity-side change and delegate implementation to `unity-csharp-edit` when code must change.
+4. When only the body of an existing method changes and the Play session state is worth keeping, preview it without leaving Play Mode: check `unity-cli raw hot_reload_status --json '{}'` and, if `supported` is true, follow the Hot Reload Preview Loop in the playbook. Otherwise edit the file and re-enter Play Mode.
+5. Run the narrowest runtime check through `unity-playmode-testing`, `unity-ui-automation`, or `unity-editor-tools`, depending on whether the loop is gameplay, UI, or diagnostics driven.
+6. Capture only the evidence needed for the current hypothesis: state reads or logs for non-visual behavior, a screenshot for visible end state, short video for timing, and profiler data only for performance questions.
+7. Record the iteration with scenario, acceptance criteria, change made, execution, evidence, observations, result, and next action.
+8. Stop when the current evidence satisfies every acceptance check; otherwise continue with one concrete next hypothesis.
+
+## Latency regression checks
+
+For performance work in a `unity-cli` source checkout, build the release CLI and run
+`python3 scripts/e2e-matrix.py --suites perf --unity-cli target/release/unity-cli`.
+Select Editors with repeated `--editor` arguments; release acceptance requires
+6000.3.25f1 and 2022.3.62f3 with the default `--perf-focus both`.
+This launches isolated GUI projects and runs `scripts/bench-editor-ops.py` for the
+staff report's 23 operations, 30 samples after 3 warmup cycles per focus condition.
+It also runs the existing frontmost `editor_eval` budget with 100 samples and history.
+Use an idle host and coordinate Editor focus with other agents.
+The owned Game Views temporarily use `PlayUnfocused`; the benchmark restores their
+previous window settings after measurement so Play does not invalidate background samples.
+Background screenshots start with Finder frontmost but may activate the target Editor
+through the existing `GameView.Focus()` call. JSON records this exception; a third-party
+PID change or any other operation's focus change invalidates the cycle.
+
+Inspect `matrix.json`, each `perf.json` and `perf.log`. Report the command, Unity
+version, pass/fail counts and violations. `perf-budgets.json` gates p50/p95;
+`.unity/perf/editor-ops-history.jsonl` also gates p50 degradation greater than 20%
+against the last five complete matching runs. `UNITY_CLI_PERF_REGRESSION_PERCENT`
+overrides that relative threshold for investigation; releases use the default.
+Read Benchmark Policy in `docs/development.md` for baseline recovery and conditions.
+
+Timing includes each CLI process startup while Editor/unityd remain warm. The 22
+remote operations use unityd. C# file
+reads use the local reader; Play/Stop include state confirmation. Do not equate
+these measurements with persistent-shell timings or compare foreground and
+background as if they were the same condition. After a product/benchmark change,
+re-run the matrix; a historical PASS is insufficient. For Unity-free transport
+regressions use `python3 scripts/bench-cli-latency.py` (CI's required latency gate).
+
+## Examples
+
+- "Implement a jump input tweak, run it in Play Mode, and keep iterating until the jump timing feels correct."
+- "Fix this settings panel flow, click through the UI, capture proof, and stop when the final state matches the spec."
+- "Reproduce the runtime bug, inspect logs, make the smallest fix, and rerun only the affected path."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection, instance, `unity-cli doctor` recovery, and evidence-capture baseline before starting a loop.
+- [development-loop-playbook.md](references/development-loop-playbook.md): scenario-specific loop recipes (including the Play Mode hot reload preview), evidence selection rules, and exit criteria.
+
+---
+name: unity-editor-tools
+description: Inspect and control Unity Editor state with unity-cli. Use when the user asks to build a standalone Player, bake lighting, NavMesh or occlusion, poll build/bake jobs, evaluate C#, read console output, update settings, run menus, inspect windows or capture profiler data. Do not use for package operations; use `unity-package-management`. For C# edits use `unity-csharp-edit`; for URP and Volume setup with visual verification use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.1
+  category: editor
+  triggers:
+    - editor
+    - console
+    - profiler
+    - menu
+    - package
+    - setting
+  siblings:
+    - unity-audio-setup
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-cli-usage
+    - unity-csharp-edit
+    - unity-asset-management
+    - unity-playmode-testing
+    - unity-package-management
+---
+
+# Editor Tools
+
+Use this skill for editor-wide diagnostics and control: console, project settings, menu items, windows, selection, and profiler. Hand off to a domain skill once the request narrows to scene, asset, package, or code work.
+
+## Use When
+
+- The user asks for editor health checks, console logs, or profiler data.
+- The user wants a standalone Player build or lighting, NavMesh, NavMeshSurface, or occlusion bake and its job status.
+- The user wants to inspect or change a project setting.
+- The user wants to run a menu item, inspect windows, or manipulate the current selection.
+- The user explicitly wants a short C# expression or synchronous statement evaluated in the Editor.
+
+## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+- The work is UPM package discovery/install/update/removal or scoped registries; use `unity-package-management`.
+- The task is scene creation or prefab editing (rather than a bake job); use `unity-scene-create` or `unity-prefab-workflow`.
+- The work is asset import or material edits; use `unity-asset-management`.
+- The work is a C# refactor; use `unity-csharp-edit`.
+- The user only needs Play Mode or test execution; use `unity-playmode-testing`.
+
+## Preferred Flow
+
+1. Verify connectivity with `unity-cli system ping` and `get_editor_state`.
+2. Read state before mutating it: console before clearing, settings before updating, profiler status before start/stop.
+3. Apply one editor-wide change at a time and verify the result immediately.
+4. Capture before/after state when project settings change.
+
+```bash
+unity-cli system ping
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw read_console --json '{"count":20}'
+unity-cli raw update_project_settings --json '{"confirmChanges":true,"player":{"companyName":"MyStudio"}}'
+unity-cli raw profiler_start --json '{}'
+unity-cli raw profiler_stop --json '{}'
+```
+
+## Examples
+
+### Player build and scene bake jobs
+
+Run from Edit Mode after compilation/import finishes. Save the target scene first.
+The build target must already be active with its support module installed. Paths
+refer to the Editor host; use a new/empty output parent outside the project assets.
+Replace scene/output paths and the returned IDs below with values for your project.
+
+```bash
+unity-cli raw build_player --json '{"target":"StandaloneOSX","scenes":["Assets/Scenes/Generated/E2E/Level.unity"],"outputPath":"/private/tmp/unity-cli-skill-build/Player.app","development":true}'
+unity-cli raw get_build_status --json '{"buildId":"<returned-build-id>"}'
+unity-cli raw start_scene_bake --json '{"target":"navmesh-surface","scenePath":"Assets/Scenes/Generated/E2E/Level.unity","surfacePath":"/BakeSurface"}'
+unity-cli raw get_scene_bake_status --json '{"jobId":"<returned-job-id>"}'
+```
+
+For Windows use `StandaloneWindows64` and an `.exe` output. Poll `get_build_status`
+until `state` is `succeeded`, `failed`, or `interrupted`; only `succeeded` is a pass.
+Inspect the report, artifacts and `changedProjectSettings` on completion.
+Output ancestors must not be symbolic links; on macOS use `/private/tmp`, not `/tmp`.
+
+Bake targets are `lighting`, `navmesh-legacy`, `navmesh-surface`, and `occlusion`.
+Load only the target scene and close prefab/asset previews before baking (a preview
+scene also triggers `MULTIPLE_SCENES`). Use its saved path and contributing geometry.
+Lighting needs lightmap static geometry and a baked light; occlusion needs occluder
+geometry. `navmesh-surface` additionally needs AI Navigation and a NavMeshSurface at
+`surfacePath`. Omit `surfacePath` for other targets. Poll `get_scene_bake_status`
+until `status` is `succeeded` or `failed`, then check saved artifacts and verification.
+An accepted start is not completion; never start duplicate jobs while polling.
+
+### Evaluate a short C# snippet
+
+```bash
+unity-cli editor eval '1+2' --request-id sum --output json
+unity-cli editor eval 'var go = new GameObject("Probe"); return go;' --mode statements --request-id create-probe --output json
+unity-cli editor eval-status create-probe --output json
+unity-cli editor eval-stats --output json
+```
+
+Inspect `state`: only `completed` means execution and value conversion succeeded.
+`compile_error`, `runtime_error`, and `serialization_error` are distinct failures.
+Primitive JSON values preserve their types; Unity objects return reference descriptors.
+Evaluation supports Edit/Play Mode, implicit System/UnityEngine/UnityEditor namespaces,
+and loaded assembly references. Async/await and persistent REPL sessions are unsupported.
+Use dedicated tools when they cover the operation; eval does not require a persistent
+`.cs` file or MenuItem. File edits still belong to `unity-csharp-edit`.
+
+A timeout only stops waiting; it does not stop code or undo changes. Query the same
+request ID with `eval-status`; never automatically resend with a new ID. Identical
+input under a stored ID reuses the result. Domain Reload loses results, so `unknown`
+requires inspecting actual state before deciding whether to execute again. Long-running
+synchronous code also blocks status responses. The newest 256 request IDs are kept;
+older IDs read as `unknown`.
+
+Eval is fast when warm: identical `code` reuses its compiled assembly (the code still
+runs on every call) and costs about one ordinary command; new source adds one compile;
+the first call after a Domain Reload is the slowest. To repeat an operation, resend the
+same `code` instead of generating a new string per call. Each distinct source emits one
+assembly, and after 128 per domain new source returns `reload_required` (already
+compiled source keeps running); eval never reloads automatically. `editor eval-stats`
+shows the domain's emitted-assembly, cache and memory counters.
+
+- "Show me the latest Unity console errors."
+- "Update the company name in Project Settings."
+- "Start the profiler, record briefly, stop, and report the status."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [editor-ops-checklist.md](references/editor-ops-checklist.md): safer sequence for settings or profiler changes.
+
+---
+name: unity-gameobject-edit
+description: Edit existing GameObjects and components in Unity with unity-cli. Use when the user asks to rename objects, move or deactivate them, add components, change component fields, add or remove tags and layers, or delete objects from an existing scene. Do not use for new scene bootstrapping; use `unity-scene-create`. Do not use inside prefab edit mode; use `unity-prefab-workflow`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: scenes
+  triggers:
+    - gameobject
+    - component
+    - rename
+    - tag
+    - layer
+  siblings:
+    - unity-audio-setup
+    - unity-scene-create
+    - unity-scene-inspect
+    - unity-prefab-workflow
+    - unity-asset-management
+    - unity-csharp-edit
+---
+
+# GameObject Edit
+
+Modify existing GameObjects and their components in an already-prepared scene. This skill is the destructive sibling of `unity-scene-inspect`.
+
+## Use When
+
+- The user wants to change an existing object's properties or hierarchy.
+- The user wants to inspect, add, modify, or remove components on an existing object.
+- The user needs tag or layer management for the current project.
+
+## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
+
+- The task is to create a brand-new scene from scratch; use `unity-scene-create`.
+- The work is prefab asset editing rather than scene objects; use `unity-prefab-workflow`.
+- The user only wants to read state without mutation; use `unity-scene-inspect`.
+
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
+## Preferred Flow
+
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. Inspect the exact `gameObjectPath` and current components before changing anything.
+3. Add a missing component with `add_component`; use `modify_gameobject`, `modify_component`, or `set_component_field` for existing properties. Apply one mutation at a time.
+4. Reserve `delete_gameobject` and `remove_component` for confirmed scopes.
+5. Save the scene after destructive or bulk updates so reloads do not lose work.
+
+```bash
+unity-cli raw modify_gameobject --json '{"path":"/Player","name":"Hero","active":true}'
+unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'
+unity-cli raw modify_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody","properties":{"mass":2.0}}'
+unity-cli raw set_component_field --json '{"gameObjectPath":"/Player","componentType":"Transform","fieldPath":"position","value":{"x":0,"y":1,"z":0}}'
+unity-cli raw remove_component --json '{"gameObjectPath":"/Player","componentType":"BoxCollider"}'
+```
+
+## Examples
+
+- "Deactivate `/Player` and rename it to `Hero`."
+- "Player に Rigidbody を付けて" → inspect `/Player`, then use `add_component` if it has no Rigidbody.
+- "Change the Rigidbody mass on `/Player` and move it to (0,1,0)."
+- "Remove the old collider from `/Obstacle` after listing its components."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [component-edit-safety.md](references/component-edit-safety.md): destructive-edit safety, nested field paths, tag/layer pitfalls.
+
+---
+name: unity-input-system
+description: Configure Unity Input System assets with unity-cli. Use when the user asks to create or remove an action map, add or remove an action or binding, set up a composite binding, inspect an input actions asset, or manage a control scheme. Do not use for runtime input simulation during tests; use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: input
+  triggers:
+    - input
+    - action-map
+    - binding
+    - composite
+    - control-scheme
+  siblings:
+    - unity-playmode-testing
+---
+
+# Input System
+
+Author Input Action Assets: action maps, actions, bindings, control schemes, and composites. This skill owns asset authoring; runtime input simulation belongs to `unity-playmode-testing`.
+
+## Use When
+
+- The user wants to author or update `.inputactions` assets.
+- The task is about action maps, actions, bindings, or control schemes.
+- The user wants to inspect the structure of an input actions asset before modifying it.
+
+## Do Not Use When
+
+- The user wants to simulate keyboard, mouse, gamepad, or touch input during tests; use `unity-playmode-testing`.
+- The task is only to verify that the Input System package is installed; use `unity-editor-tools`.
+
+## Preferred Flow
+
+1. Decide which asset path and action map the change belongs to.
+2. Create or inspect the action map before adding actions or bindings.
+3. Add actions first, then bindings, then control schemes or composites.
+4. Run `analyze_input_actions_asset` after non-trivial edits.
+
+```bash
+unity-cli raw create_action_map --json '{"assetPath":"Assets/Input/Controls.inputactions","mapName":"Gameplay"}'
+unity-cli raw add_input_action --json '{"assetPath":"Assets/Input/Controls.inputactions","mapName":"Gameplay","actionName":"Jump","actionType":"Button"}'
+unity-cli raw add_input_binding --json '{"assetPath":"Assets/Input/Controls.inputactions","mapName":"Gameplay","actionName":"Jump","path":"<Keyboard>/space"}'
+unity-cli raw analyze_input_actions_asset --json '{"assetPath":"Assets/Input/Controls.inputactions"}'
+```
+
+## Examples
+
+- "Create a `Gameplay` action map with `Jump` and keyboard bindings."
+- "Add a 2D movement composite to the `Move` action."
+- "Inspect this input actions asset and tell me whether it is missing control schemes."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [input-actions-playbook.md](references/input-actions-playbook.md): sequencing for action maps, composites, and control schemes.
+
+---
+name: unity-package-management
+description: Manage Unity UPM packages and scoped registries with unity-cli. Use when the user asks to list installed packages, search, install, update or remove a package, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: editor
+  triggers:
+    - package
+    - upm
+    - registry
+  siblings:
+    - unity-editor-tools
+    - unity-csharp-navigate
+    - unity-project-bootstrap
+    - unity-cli-usage
+---
+
+# Unity Package Management
+
+Use the existing Editor package tools to change dependencies, then verify the
+resolved package state and compilation in the same project.
+
+## Use When
+
+- List installed UPM packages, search the registry or inspect versions/dependencies.
+- Install, update or remove a package and verify the resulting compilation.
+- Add or inspect supported scoped registries and their package scopes.
+
+## Do Not Use When
+
+- Only read console, build a Player, change Editor settings or profile:
+  `unity-editor-tools`. Only inspect C# package sources: `unity-csharp-navigate`.
+- Create a project and install its bridge: `unity-project-bootstrap`. Diagnose
+  a missing CLI or unreachable bridge: `unity-cli-usage`.
+- Author Addressables groups/content: `unity-addressables`; edit imports or
+  materials: `unity-asset-management`; author input actions: `unity-input-system`.
+
+## Preferred Flow
+
+1. Follow [runtime prerequisites](references/runtime-checklist.md). Select the
+   exact project and endpoint, pass the same `--project-path` and `--port` on
+   every call when multiple Editors exist, and check `system ping` returns that
+   project. Require Edit Mode and idle compilation/import before mutations.
+2. Read `Packages/manifest.json`, `Packages/packages-lock.json` when present,
+   `package_manager list`, `registry_config list` and the console. Retain this
+   baseline so pre-existing errors and unrelated dependencies remain visible.
+3. Establish the requested package ID, version and registry. Use `search` for
+   discovery; its results are registry-dependent, not every package on the
+   internet. `info` reads an installed package. Keep explicit versions and
+   choose an Editor-compatible version when none was specified; inspect package
+   metadata rather than assuming the newest version supports Unity 2022.3.
+4. For a supported registry, configure only the needed scopes. Set
+   `autoAddPopular:false` on `add_openupm` / `add_nuget`; otherwise unrelated
+   scopes may be added. Re-read `registry_config list` and the manifest.
+   See [package operations](references/package-operations.md) for supported
+   actions and limitations.
+5. Apply one requested change at a time. Install with `packageId` and optional
+   `version`; update with the same `install` action and the target version.
+   Remove with the unversioned `packageName`. Read dependency information first:
+   removing a direct dependency can leave it installed transitively. Do not
+   remove a registry still used by other packages, or remove the active bridge.
+6. After each change, inspect both transport and tool results: a JSON `error`
+   inside a successful transport response is still a failure. Wait for reload
+   and compilation as described below; never send duplicate mutations just
+   because a response timed out. Reconcile actual state first.
+7. Re-read package/registry lists, manifest and lock file; confirm the requested
+   version/source or removal. Read console errors/exceptions after compilation
+   settles. Report the actual result, manifest diff, resolved versions and
+   console evidence. Existing errors prevent an unqualified clean-compilation
+   claim; retain and distinguish them from errors introduced by this change.
+
+### Reload and compilation completion
+
+Keep the selected endpoint while the domain reloads. Retry only read-only
+`system ping` and `get_editor_state` with a bounded deadline (for example,
+180 seconds, adjustable for a known large import). Continue when the responding
+project matches and `isCompiling` and `isUpdating` are both false. Confirm the
+resolved package state and another idle state reading before checking console;
+one early idle response alone does not prove an import finished. Do not require
+observing a reload: packages without scripts may not trigger one.
+
+If the connection does not recover, collect the Editor log and use
+`unity-cli-usage` diagnostics. A modal package/registry notification can suspend
+the Editor update loop even when its TCP listener is running. Inspect the exact
+prompt in the selected Editor; close informational notices through its UI before
+resuming. If that UI is inaccessible or the prompt requires a new trust decision,
+report the blocker. Do not disable package validation to make polling pass.
+If a mutation response was lost but its result is
+already present, verify it instead of repeating it. If the state is ambiguous,
+stop with the evidence; do not edit the manifest by hand or restart an unrelated
+Editor. Compilation errors require diagnosis, not console clearing or a claimed
+PASS. Unsupported operations are tracked separately from this workflow (#376).
+
+## Examples
+
+Run from the chosen project, adding its explicit endpoint flags when needed.
+The package/version below illustrate a user-selected target, not a universal
+recommendation. Inspect compatibility before applying it.
+
+```bash
+unity-cli system ping
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw package_manager --json '{"action":"search","keyword":"UniTask","limit":10}'
+unity-cli raw registry_config --json '{"action":"list"}'
+unity-cli raw registry_config --json '{"action":"add_openupm","scopes":["com.cysharp"],"autoAddPopular":false}'
+unity-cli raw package_manager --json '{"action":"install","packageId":"com.cysharp.unitask","version":"2.5.5"}'
+# Wait for compilation, then verify the actual resolved version and console.
+unity-cli raw package_manager --json '{"action":"info","packageName":"com.cysharp.unitask"}'
+unity-cli raw package_manager --json '{"action":"list","includeBuiltIn":false}'
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw read_console --json '{"count":100,"logTypes":["Error","Exception"],"includeStackTrace":true}'
+# Only when removal was requested; repeat the completion checks afterward.
+unity-cli raw package_manager --json '{"action":"remove","packageName":"com.cysharp.unitask"}'
+```
+
+- “Install this package, wait for reload, then show the manifest change and errors.”
+- “指定した UPM パッケージを更新して、コンパイル結果も確認して。”
+- “Only show console errors” → `unity-editor-tools`.
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): binary and instance selection.
+- [package-operations.md](references/package-operations.md): payloads, version changes and evidence.
+
+---
+name: unity-playmode-testing
+description: Drive Unity runtime verification with unity-cli. Use when the user asks to run PlayMode tests with Domain Reload, simulate keyboard, mouse, gamepad or touch input, inspect InputAction notifications in Play, record video or PNG frames, or preview method hot reload. Do not use for authoring input action assets; use `unity-input-system` instead. For URP and Bloom setup with before/after captures use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.2
+  category: testing
+  triggers:
+    - playmode
+    - editmode
+    - test
+    - simulate
+    - screenshot
+    - capture
+  siblings:
+    - unity-audio-setup
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-project-bootstrap
+    - unity-input-system
+    - unity-ui-automation
+    - unity-editor-tools
+---
+
+# Play Mode Testing
+
+Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capture media. This skill is the runtime sibling of `unity-input-system` (asset authoring) and `unity-ui-automation` (UI interaction).
+
+## Use When
+
+- The user wants to run EditMode or PlayMode tests.
+- The task requires runtime input simulation.
+- The user wants screenshots or video from the current game or editor state.
+- The user wants to inspect current test progress or runtime state.
+
+## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
+
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+
+- The request starts by creating a new project and installing its bridge; use `unity-project-bootstrap` to orchestrate the complete workflow.
+- The task is editing input action assets; use `unity-input-system`.
+- The task targets only UI element interaction without runtime gameplay; use `unity-ui-automation`.
+- The work is purely static scene or code inspection; use the corresponding read-only skill.
+
+## Preferred Flow
+
+1. Confirm editor state with `get_editor_state` before entering Play Mode or running tests.
+2. Enter Play Mode or start tests, then wait until the runtime is ready before sending input.
+3. Capture screenshots or short video only after the target state is visible.
+4. Stop Play Mode or recording cleanly and report the final status.
+5. If `capture_screenshot` returns `"fallback": "os"`, the Editor did not respond (often a modal dialog). Inspect the desktop image, resolve the dialog, then retry. Pass `"osFallback": false` to get the timeout error instead.
+
+```bash
+unity-cli raw play_game --json '{}'
+unity-cli raw input_keyboard --json '{"key":"space","action":"press"}'
+unity-cli raw capture_screenshot --json '{"captureMode":"game","width":1280,"height":720}'
+unity-cli raw run_tests --json '{"testMode":"PlayMode"}'
+unity-cli raw get_test_status --json '{}'
+unity-cli raw stop_game --json '{}'
+```
+
+## Examples
+
+### Input simulation and InputAction notifications
+
+Requires Input System enabled and a running Play session. Replace the asset path
+with an existing input asset. Enable the intended action map in the game's runtime
+code and observe its `performed`/`canceled` callback (for example, log a counter).
+`get_input_actions_state` inspects asset maps/actions/bindings; it does **not** prove
+that callbacks fired, and a PlayerInput runtime copy can differ from the asset.
+
+```bash
+unity-cli raw input_keyboard --json '{"key":"space","action":"press","holdSeconds":0.2}'
+unity-cli raw input_gamepad --json '{"action":"button","button":"a","buttonAction":"press","holdSeconds":0.2}'
+unity-cli raw input_mouse --json '{"action":"move","x":100,"y":200,"absolute":true}'
+unity-cli raw input_touch --json '{"action":"tap","x":100,"y":200,"touchId":0}'
+unity-cli raw create_input_sequence --json '{"sequence":[{"type":"keyboard","params":{"action":"press","key":"space","holdSeconds":0.1}},{"type":"mouse","params":{"action":"move","x":100,"y":200,"absolute":true}}],"delayBetween":80}'
+unity-cli raw get_input_actions_state --json '{"assetPath":"Assets/Input/Player.inputactions","includeBindings":true}'
+unity-cli raw read_console --json '{"count":20}'
+```
+
+Check the callback evidence after sending input. `holdSeconds` holds a press across
+frames before release; sequence `delayBetween` is milliseconds. Device state alone
+is not evidence of a gameplay notification. For gamepad sticks, x/y specify
+individual processed axes; a diagonally processed Vector2 can differ.
+
+### Video and PNG sequences
+
+Requires a graphics-enabled Editor with Recorder installed and a visible Game View.
+Start one session, allow frames to render, inspect status, then stop before starting
+another. `format` accepts `mp4`, `webm`, or `png_sequence` (run the same flow for each).
+
+```bash
+unity-cli raw capture_video_start --json '{"captureMode":"game","format":"png_sequence","width":320,"height":180,"fps":10,"maxDurationSec":0}'
+unity-cli raw capture_video_status --json '{}'
+unity-cli raw capture_video_stop --json '{}'
+```
+
+Check `isRecording` and the final `outputPath`. For PNG sequences it names the first
+frame in a unique session directory; verify subsequent PNG files exist too.
+
+### Tests with Domain Reload enabled
+
+Domain Reload may remain enabled in Enter Play Mode Settings. Start tests from
+Edit Mode; the bridge persists and recovers the result across the reload. Poll
+status until complete, including results, and inspect passed/failed counts. A
+temporary disconnect during reload is not a failed test; reconnect and query status
+instead of submitting a duplicate test run.
+
+```bash
+unity-cli raw run_tests --json '{"testMode":"PlayMode"}'
+unity-cli raw get_test_status --json '{"includeTestResults":true}'
+```
+
+### Method hot reload preview
+
+Requires optional FastScriptReload 1.8.0, a supported macOS Editor, a compiled
+baseline and Play Mode. Replace the path with an existing eligible script.
+Disable Fast Script Reload's automatic and on-demand reload in its settings first;
+the bridge rejects concurrent patchers rather than changing those preferences.
+Inspect `supported` before beginning; do not report an unsupported preview as a pass.
+
+```bash
+unity-cli raw hot_reload_status --json '{}'
+unity-cli raw hot_reload --json '{"action":"begin","path":"Assets/HotReloadProbe.cs"}'
+unity-cli raw hot_reload --json '{"action":"recover"}'
+```
+
+`begin` returns `appliedRevision`; to apply complete candidate source and verify the
+actual method change, follow the [Hot Reload Preview Loop](../unity-development-loop/references/development-loop-playbook.md#hot-reload-preview-loop).
+`recover` stops Play and recompiles; poll `hot_reload_status` until idle. Preview
+does not save source. Persist a verified edit through `unity-csharp-edit` afterwards.
+If `begin` returns `HOT_RELOAD_BASELINE_UNPROVEN`, run `recover`, wait for idle,
+then re-enter Play Mode and begin again against the freshly compiled baseline.
+
+- "Run PlayMode tests for the player flow and report the result."
+- "Enter Play Mode, press space, and capture a screenshot."
+- "Record a 5 second gameplay clip and stop automatically."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [playmode-test-loop.md](references/playmode-test-loop.md): clean execution loop for entering Play Mode, sending input, waiting for results, and capturing evidence.
+
+---
+name: unity-prefab-workflow
+description: Manage Unity prefab assets with unity-cli. Use when the user asks to create or instantiate a prefab or Variant, list or apply/revert instance overrides, unpack a prefab, open prefab edit mode, save changes, or update prefab asset properties. Do not use for general scene object editing; use `unity-gameobject-edit` or `unity-scene-create` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.4.0
+  category: prefabs
+  triggers:
+    - prefab
+    - instantiate
+    - edit-mode
+    - asset
+  siblings:
+    - unity-gameobject-edit
+    - unity-scene-create
+    - unity-asset-management
+---
+
+# Prefab Workflow
+
+Create, open, edit, and instantiate prefab assets via `unity-cli`. This skill owns Prefab edit mode, Variant inheritance, override apply/revert, and unpacking; ordinary scene-instance field edits belong to `unity-gameobject-edit`.
+
+## Use When
+
+- The user wants to create or update a prefab asset.
+- The task requires entering prefab edit mode and saving changes back to the asset.
+- The user wants to instantiate prefab assets into a scene with specific transforms.
+- The user wants to create a Variant, inspect/apply/revert overrides, or unpack a Prefab connection.
+
+## Do Not Use When
+
+- The request edits ordinary scene objects with no prefab asset involved; use `unity-gameobject-edit`.
+- The task is bootstrapping a fresh scene; use `unity-scene-create`.
+- The request is about asset import settings or materials; use `unity-asset-management`.
+
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
+## Preferred Flow
+
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. `open_prefab` to enter edit mode (or `create_prefab` from a scene object).
+3. Apply edits via `add_component`, `modify_component`, or `set_component_field`.
+4. `save_prefab` to persist changes back to the asset.
+5. `exit_prefab_mode` to return to scene authoring.
+
+```bash
+unity-cli raw create_prefab --json '{"gameObjectPath":"/Player","prefabPath":"Assets/Prefabs/Player.prefab"}'
+unity-cli raw open_prefab --json '{"prefabPath":"Assets/Prefabs/Player.prefab"}'
+unity-cli raw save_prefab --json '{}'
+unity-cli raw exit_prefab_mode --json '{}'
+unity-cli raw instantiate_prefab --json '{"prefabPath":"Assets/Prefabs/Player.prefab","position":{"x":0,"y":0,"z":0}}'
+```
+
+## Variant and Override Flow
+
+1. Instantiate the base with `instantiate_prefab`, then use `create_prefab` on
+   that connected root with a new asset path. Unity creates a Variant and connects
+   the instance to it. Do not unpack the base instance before saving the Variant.
+2. List `get_prefab_overrides` on the scene instance root. It returns property,
+   object, added/removed component overrides and `applyTargets`.
+3. Use `manage_prefab_overrides` with `action: apply|revert` and
+   `scope: all|property|object|added_component|removed_component`. Apply requires an
+   explicit `assetPath` (Variant or base). Revert restores the immediate source.
+4. For individual scopes use the returned `instanceId`; also supply `propertyPath`
+   for a property or `assetComponentId` for a removed component. Refresh the list
+   after mutations or reloads; IDs are session-local. An object added only to a
+   Variant cannot be applied to a base where it does not exist.
+5. Save the scene after reverting or unpacking. Use `unpack_prefab` with
+   `Completely` when no Prefab connections should remain. `Outermost` preserves
+   nested connections and a Variant's base connection; inspect the returned
+   `isPartOfPrefabInstance` and `connectedObjectCount`.
+
+```bash
+unity-cli raw instantiate_prefab --json '{"prefabPath":"Assets/Prefabs/Player.prefab","name":"ArmoredPlayer"}'
+unity-cli raw create_prefab --json '{"gameObjectPath":"/ArmoredPlayer","prefabPath":"Assets/Prefabs/ArmoredPlayer.prefab"}'
+unity-cli raw get_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer"}'
+unity-cli raw manage_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer","action":"apply","scope":"all","assetPath":"Assets/Prefabs/ArmoredPlayer.prefab"}'
+unity-cli raw manage_prefab_overrides --json '{"gameObjectPath":"/ArmoredPlayer","action":"revert","scope":"all"}'
+unity-cli raw unpack_prefab --json '{"gameObjectPath":"/ArmoredPlayer","mode":"Completely"}'
+```
+
+## Examples
+
+- "Create a prefab from `/Player` and save it under `Assets/Prefabs/Player.prefab`."
+- "Open an existing prefab, change a field, save it, and exit prefab mode."
+- "Instantiate a prefab at the origin for a test scene."
+- "Create a Variant that inherits Player defaults but keeps its own collider override."
+- "Apply only this component override to the Variant and preserve the base Prefab."
+- "Unpack this hierarchy completely and verify no Prefab connections remain."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [prefab-edit-mode.md](references/prefab-edit-mode.md): safe sequence for edit mode, scene handoff, and instantiation checks.
+
+---
+name: unity-project-bootstrap
+description: Bootstrap a new Unity project with unity-cli. Use when the user wants to create a project from scratch and install the bridge, connect it, or prepare its first runnable scene. Do not use for setup or ping alone in an existing project; use `unity-cli-usage`. For scene-only authoring use `unity-scene-create`; for runtime capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: foundation
+  triggers:
+    - project
+    - bootstrap
+  siblings:
+    - unity-cli-usage
+    - unity-scene-create
+    - unity-playmode-testing
+    - unity-package-management
+---
+
+# Unity Project Bootstrap
+
+Take an absent project through creation, bridge connection, a saved starter scene,
+and a visible Play-mode check using existing Unity and unity-cli operations.
+
+## Use When
+
+- The user wants a new Unity project with the bridge installed and reachable.
+- The request spans project creation, initial packages, and a first runnable scene.
+- The project folder is empty or does not exist, rather than an existing project
+  needing a connection repair.
+
+## Do Not Use When
+
+- Only install or diagnose the CLI/bridge in an existing project: `unity-cli-usage`.
+- Only create, load or save a scene in an existing project: `unity-scene-create`.
+- Only capture or simulate input in Play mode: `unity-playmode-testing`.
+- Only manage packages: `unity-package-management`; only edit materials/imports:
+  `unity-asset-management`; only interact with UI: `unity-ui-automation`.
+
+## Preferred Flow
+
+1. Establish the absolute project path, installed Editor version, and template /
+   render pipeline from the request. Use a minimal built-in 3D project when no
+   pipeline is specified, and state that choice. Preserve explicit choices.
+   Check whether the destination already contains a project; never replace it
+   or silently change its Editor version. Resume existing work through the
+   appropriate sibling instead of running creation again.
+2. Follow [project creation](references/project-creation.md) for Hub or Editor CLI.
+   Wait for creation/import to finish and verify `Packages/manifest.json` and
+   `ProjectSettings/ProjectVersion.txt`. Close the newly created Editor before
+   bridge installation so Input System activation can be configured without a
+   restart dialog. Do not close another project's Editor.
+3. Follow [runtime prerequisites](references/runtime-checklist.md) to obtain the
+   CLI and select this project. Explain that `setup` adds the bridge / OpenUPM
+   registry to the manifest and may enable Both input backends. Then run
+   `unity-cli --project-path <project> --output json setup --launch-editor`.
+   With multiple Editors, choose an unused port and pass the same explicit
+   `--port` on setup and every subsequent command. Require `ok: true`,
+   `editor.projectMatches: true`, and a matching bridge version before authoring.
+   Check `unity-cli system ping` against that same project/port. On failure use
+   `doctor`, import/compile logs and `editor.hint`; do not loop blindly or create
+   another project. For CLI versions without `setup`, use `bridge install`,
+   open the project and verify ping per `unity-cli-usage` (#363 / #366).
+4. Verify package resolution in `Packages/packages-lock.json`. The bridge brings
+   Input System as a dependency; do not install an arbitrary latest version.
+   Add only other packages requested by the user, using `unity-package-management`
+   and the selected Editor's compatible package versions. Allow import/reload
+   to settle and ping again before continuing.
+5. Use `unity-scene-create` to create and save a minimal scene. The default scene
+   contains a camera and directional light; inspect the hierarchy, then add a
+   visible Cube. Keep one camera and avoid duplicate starter objects on retry.
+   Use `Assets/Scenes/Bootstrap.unity` unless another path was requested. For
+   repository E2E runs use `Assets/Scenes/Generated/E2E/Bootstrap.unity`.
+6. Use `unity-playmode-testing`: enter Play, confirm `get_editor_state`, capture
+   the Game view and inspect the image. Require the Cube to be visible, no
+   compile/runtime errors, and a real Game capture (not an OS fallback).
+   Input simulation is optional when a requested controller/action exists;
+   an empty scene's device state does not prove gameplay input works. Stop Play
+   and confirm the scene remains saved before reporting success.
+7. Report Editor/CLI/bridge versions, project path, resolved packages, ping,
+   saved scene and screenshot paths, and any remaining failures. Keep the
+   manifest, scene and screenshot as evidence. If an operation is absent from
+   the tool catalog, report the gap and link a separately tracked issue; do not
+   add CLI/bridge functionality as part of this workflow.
+
+## Examples
+
+- "Create a new Unity 2022.3 project, install the bridge and confirm ping."
+- "新しい Unity 6 プロジェクトを作り、Input System と最小シーンを用意して実行確認して。"
+- "Create only a scene in my existing project" → `unity-scene-create`.
+- "The bridge in my existing project is unreachable" → `unity-cli-usage`.
+
+After project creation and setup, run these commands inside that project with
+the selected endpoint (add the same `--project-path` / `--port` if needed):
+
+```bash
+unity-cli system ping
+unity-cli scene create Bootstrap --path Assets/Scenes/
+unity-cli raw get_hierarchy --json '{"includeComponents":true}'
+unity-cli raw create_gameobject --json '{"name":"BootstrapCube","primitiveType":"cube"}'
+unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/Bootstrap.unity"}'
+unity-cli raw play_game --json '{}'
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw capture_screenshot --json '{"captureMode":"game","width":1280,"height":720,"osFallback":false}'
+unity-cli raw read_console --json '{"count":20}'
+unity-cli raw stop_game --json '{}'
+```
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): CLI, setup, instance selection and connection recovery.
+- [project-creation.md](references/project-creation.md): Hub/Editor CLI creation and verification artifacts.
+
+---
+name: unity-scene-create
+description: Create and bootstrap Unity scenes with unity-cli. Use when the user asks to create a new scene, load or save a scene, add starter GameObjects, or attach initial components while bootstrapping a level or test scene. Do not use for editing existing GameObjects in place; use `unity-gameobject-edit`. Do not use inside prefab edit mode; use `unity-prefab-workflow` instead. For URP pipeline and Global Volume setup use `unity-urp-setup`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.2
+  category: scenes
+  triggers:
+    - scene
+    - bootstrap
+    - create
+    - gameobject
+    - level
+  siblings:
+    - unity-audio-setup
+    - unity-2d-sprite-tilemap
+    - unity-urp-setup
+    - unity-ui-toolkit-build
+    - unity-project-bootstrap
+    - unity-gameobject-edit
+    - unity-prefab-workflow
+    - unity-scene-inspect
+    - unity-cli-usage
+    - unity-ui-automation
+---
+
+# Scene Bootstrap
+
+Create scenes, add starter GameObjects, and attach initial components via `unity-cli`. This skill owns greenfield scene authoring; it hands off to `unity-gameobject-edit` or `unity-prefab-workflow` once objects already exist.
+
+## Bootstrap Prerequisite
+
+Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SKILL.md) and [toolchain checklist](../unity-cli-usage/references/runtime-checklist.md). If `unity-cli` is missing, install the release binary and run `setup --launch-editor` yourself; do not ask the user to install it. Use the current project and configured port. Inspect `create_gameobject` schema before creating a primitive; its enum values are lowercase.
+
+## Use When
+
+- The user wants to create a brand-new scene from scratch.
+- The user asks to add initial GameObjects and components while bootstrapping a scene.
+- The user needs help loading, saving, or organising a fresh scene authoring workflow.
+
+## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
+
+- Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+
+- The project itself does not exist yet and the request includes bridge setup; use `unity-project-bootstrap`.
+- The request mainly mutates existing objects in an already-prepared scene; use `unity-gameobject-edit`.
+- The work happens inside prefab edit mode; use `unity-prefab-workflow`.
+- The user only wants to read or analyse a scene; use `unity-scene-inspect`.
+
+## Editor and Serialized Asset Safety
+
+- When the target Editor is reachable, do not hand-edit `.unity`, `.prefab`, or `.asset` YAML. Use bridge tools so Unity maintains object references, prefab overrides, and its in-memory state consistently.
+- A failed ping can be a sandbox false negative. Follow [Connection Recovery](../unity-cli-usage/references/runtime-checklist.md#connection-recovery); confirm the target project and connection with the user when sandbox restrictions prevent verification. Do not infer that the Editor is absent.
+- Before using an offline fallback, explicitly state why the bridge is unavailable, which files are affected, and the alternative method. A timeout alone is not permission to edit YAML.
+
+## Preferred Flow
+
+1. Run `unity-cli system ping` for the target project before mutations (use `--project-path <project>` with multiple Editors). If it fails, follow Connection Recovery before continuing.
+
+2. Create or load a scene with `scene create` or `raw load_scene`.
+3. Create GameObjects (optionally with a primitive type and `parentPath`).
+4. Attach components via `add_component`.
+5. Persist with `save_scene` after the bulk authoring is complete.
+
+```bash
+unity-cli scene create MainMenu --path Assets/Scenes/
+unity-cli raw create_gameobject --json '{"name":"Player","primitiveType":"cube"}'
+unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'
+unity-cli raw save_scene --json '{"scenePath":"Assets/Scenes/MainMenu.unity"}'
+```
+
+## Examples
+
+- "Create a new gameplay scene and add a `Player` object with physics components."
+- "Load `Assets/Scenes/TestScene.unity`, add a camera rig, then save it."
+- "Bootstrap a simple empty scene for UI testing."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance selection prerequisites.
+- [scene-bootstrap-patterns.md](references/scene-bootstrap-patterns.md): safe scene setup order and starter patterns.
+
+---
+name: unity-scene-inspect
+description: Inspect Unity scenes without mutating them. Use when the user asks to analyze scene hierarchy, list scenes, find a gameobject by name or component, inspect component values, review object references, or query animator state. Do not use for creating scenes; use `unity-scene-create`. Do not use for editing GameObjects; use `unity-gameobject-edit`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: scenes
+  triggers:
+    - hierarchy
+    - inspect
+    - find
+    - reference
+    - animator
+  siblings:
+    - unity-scene-create
+    - unity-gameobject-edit
+    - unity-csharp-navigate
+    - unity-csharp-reference
+---
+
+# Scene Inspect
+
+Inspect scene hierarchy, find objects, and read component data without mutating anything. This is the read-only sibling of `unity-gameobject-edit`.
+
+## Use When
+
+- The user wants to inspect the current scene before making changes.
+- The user asks where a GameObject, component, or animator state lives.
+- The user wants a hierarchy summary, scene inventory, or reference analysis.
+
+## Do Not Use When
+
+- The task is to create new scenes; use `unity-scene-create`.
+- The task is to mutate existing objects; use `unity-gameobject-edit`.
+- The user only needs source-code navigation with no scene context; use `unity-csharp-navigate`.
+
+## Preferred Flow
+
+1. Start with `get_scene_info`, `list_scenes`, or `get_hierarchy` to scope the work.
+2. Locate candidates with `find_gameobject` or `find_by_component`.
+3. Inspect targets with `get_gameobject_details`, `get_component_values`, or animator queries.
+4. Use `analyze_scene_contents` with `includeInactive` for broad audits.
+
+```bash
+unity-cli raw get_hierarchy --json '{"nameOnly":true}'
+unity-cli raw find_gameobject --json '{"name":"Player"}'
+unity-cli raw get_component_values --json '{"gameObjectName":"Player","componentType":"Transform"}'
+unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
+```
+
+## Examples
+
+- "Show the current scene hierarchy and find the player camera."
+- "Inspect the `Transform` values on `Player`."
+- "Tell me which animator state the character is in right now."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [scene-inspection-playbook.md](references/scene-inspection-playbook.md): step-by-step inspection flow for large or duplicated scenes.
+
+---
+name: unity-ui-automation
+description: Automate Unity UI inspection and interaction with unity-cli. Use when the user asks to find a UI element by name or type, inspect button or input state, click a UI element, set a UI value, or run a short UI interaction sequence during testing. Do not use for scene authoring or general play-mode control without UI targeting; use `unity-scene-create` or `unity-playmode-testing` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.3.0
+  category: ui
+  triggers:
+    - ui
+    - canvas
+    - button
+    - click
+    - input-field
+  siblings:
+    - unity-ui-toolkit-build
+    - unity-playmode-testing
+    - unity-scene-create
+---
+
+# UI Automation
+
+Find, inspect, and interact with uGUI / UI Toolkit elements via `unity-cli`. This skill is the UI-focused complement to `unity-playmode-testing` (full runtime control).
+
+## Use When
+
+- The user wants to locate UI elements by name or type.
+- The task requires inspecting UI state before or after interaction.
+- The user wants to click UI elements, set values, or run a short UI input sequence.
+
+## Do Not Use When
+
+- Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.
+
+- The task is general Play Mode setup with no UI targeting requirement; use `unity-playmode-testing`.
+- The request authors UI prefabs or scene hierarchy; use `unity-scene-create` or `unity-prefab-workflow`.
+
+## Preferred Flow
+
+1. Find the target with `namePattern` or `elementType`.
+2. Inspect current state before acting (visibility, interactability).
+3. Perform one interaction at a time and re-check state when sequence matters.
+4. Combine with `unity-playmode-testing` only when the UI depends on runtime state.
+
+```bash
+unity-cli raw find_ui_elements --json '{"namePattern":"Start","includeInactive":true}'
+unity-cli raw get_ui_element_state --json '{"elementPath":"/Canvas/StartButton"}'
+unity-cli raw click_ui_element --json '{"elementPath":"/Canvas/StartButton"}'
+unity-cli raw set_ui_element_value --json '{"elementPath":"/Canvas/NameInput","value":"Player1"}'
+```
+
+## Examples
+
+- "Find the start button and click it."
+- "Read the current value of `/Canvas/NameInput` and then set it to `Player1`."
+- "Run a short slider interaction sequence in the active UI."
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [ui-test-flow.md](references/ui-test-flow.md): safer locate-inspect-interact sequence for UI testing.
+
+---
+name: unity-ui-toolkit-build
+description: Build UI Toolkit screens with unity-cli. Use when the user asks to author UXML and USS, configure PanelSettings and UIDocument, bind C# callbacks, and verify the screen in Play Mode. Do not use for interacting with existing UI only; use `unity-ui-automation`. For scene-only creation use `unity-scene-create`, C#-only edits use `unity-csharp-edit`, and runtime capture alone use `unity-playmode-testing`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: ui
+  triggers:
+    - ui-toolkit
+    - uxml
+    - uss
+    - uidocument
+  siblings:
+    - unity-ui-automation
+    - unity-scene-create
+    - unity-csharp-edit
+    - unity-asset-management
+    - unity-editor-tools
+    - unity-playmode-testing
+---
+
+# UI Toolkit Build
+
+Take a runtime screen from UXML/USS through a saved UIDocument and C# binding
+to observed input, state changes, and Game-view captures. Use the existing
+tools and delegated skills; no separate UI authoring backend is required.
+
+## Use When
+
+- Build a UI Toolkit screen with UXML/USS, PanelSettings, and UIDocument.
+- Create a button/text-field form and bind its callback to a visible label.
+- Complete the build → Play → input → inspect → capture loop in an existing project.
+
+## Do Not Use When
+
+- Only inspect/click/set an existing UI: `unity-ui-automation`.
+- Build a uGUI Canvas/prefab or a scene without UI Toolkit: `unity-scene-create`.
+- Only edit the binding script: `unity-csharp-edit`.
+- Only refresh/import assets: `unity-asset-management`.
+- Only evaluate C# or inspect Editor diagnostics: `unity-editor-tools`.
+- Only enter Play, simulate input, or capture media: `unity-playmode-testing`.
+
+## Preferred Flow
+
+1. Read the runtime checklist, pin the project/port, and confirm `system ping`.
+   Inspect scene dirty state and console before mutation; preserve unrelated work.
+   Confirm the target screen, paths, named controls, and expected post-click text.
+2. Delegate scene creation/loading to `unity-scene-create`. For an acceptance
+   fixture use `Assets/Scenes/Generated/E2E/`; reuse the requested scene otherwise.
+3. Follow the construction recipe. Delegate short Editor evaluations to
+   `unity-editor-tools` to write UXML/USS source, import it, create PanelSettings
+   via AssetDatabase, and assign a UIDocument. Never hand-edit `.asset`, `.unity`,
+   `.prefab`, or `.meta` YAML. Refuse accidental overwrite of existing assets.
+4. Delegate the MonoBehaviour binding to `unity-csharp-edit`, using CLI C# write
+   tools with `refresh:false` and `waitForCompile:false`; run the refresh and
+   compilation checks as separate calls in step 5. Register callbacks in OnEnable and unregister in OnDisable. Use stable,
+   unique UXML names, validate queries, and support Unity 2022.3 as well as Unity 6.
+5. Call `refresh_assets`, wait for compilation/domain reload with
+   `get_compilation_state`, and reconnect. If a write fails after saving a file,
+   inspect that file and diagnostics before retrying; do not duplicate the write.
+   Inspect diagnostics; attach
+   the compiled binding component, save assets and scene, then reload to check
+   persistence. Do not infer compilation success from a write response alone.
+6. Delegate Play to `unity-playmode-testing` and use the construction reference's
+   Editor-eval Game capture recipe for UI Toolkit overlays. Wait until the
+   document has a ready panel. Delegate discovery/state/input to
+   `unity-ui-automation`; use the returned `uitk:/Object#element` paths, not uGUI
+   hierarchy paths or screen coordinates guessed from an image.
+7. Capture the initial Game view and label state. Set the text field, read its
+   value back, click the button, and assert the label text changed to the expected
+   value. Capture the resulting Game view. Inspect both images, console errors,
+   and structured state; an interaction success response alone is insufficient.
+8. Exit Play, preserve the saved screen, and report paths and evidence. If an
+   existing tool cannot perform a required operation, preserve the failing call
+   and report the gap for a separate Issue; do not add bridge features here or
+   claim a mocked/manual edit passed the automated loop.
+
+Use a stable request ID for each mutating eval. After a timeout query
+`editor eval-status` before retrying; timeout does not cancel execution.
+
+## Examples
+
+- "Create a UI Toolkit sign-in form and verify its Submit button updates a label."
+- "UXML と USS で名前入力画面を作り、Play 中のクリック結果まで確認して。"
+
+For a new test scene, then a discovered document named `ToolkitDemo`:
+
+```bash
+unity-cli raw create_scene --json '{"sceneName":"ToolkitDemo","path":"Assets/Scenes/Generated/E2E/"}'
+unity-cli raw find_ui_elements --json '{"namePattern":"submit","uiSystem":"uitk"}'
+unity-cli raw get_ui_element_state --json '{"elementPath":"uitk:/ToolkitDemo#status"}'
+unity-cli raw set_ui_element_value --json '{"elementPath":"uitk:/ToolkitDemo#player-name","value":"Ada"}'
+unity-cli raw click_ui_element --json '{"elementPath":"uitk:/ToolkitDemo#submit"}'
+unity-cli raw get_ui_element_state --json '{"elementPath":"uitk:/ToolkitDemo#status"}'
+```
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites.
+- [construction.md](references/construction.md): source assets, Editor setup, binding, and expected checks.
+- [C# post-write pipeline issue #420](https://github.com/akiojin/unity-cli/issues/420): independent refresh/compile calls avoid this CLI failure.
+- [Game capture issue #422](https://github.com/akiojin/unity-cli/issues/422): use the Editor-eval ScreenCapture recipe for UI overlays.
+
+---
+name: unity-urp-setup
+description: Set up URP and verify post-processing with unity-cli. Use when the user asks to install Universal Render Pipeline, assign its pipeline and renderer, configure a Global Volume with Bloom or Color Adjustments, or compare the rendered result before and after. Do not use for material or import edits alone; use `unity-asset-management`. For package management alone use `unity-package-management`; for generic settings or eval use `unity-editor-tools`; for capture alone use `unity-playmode-testing`; for scene-only creation use `unity-scene-create`.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.1.0
+  category: editor
+  triggers:
+    - urp
+    - bloom
+    - post-processing
+  siblings:
+    - unity-editor-tools
+    - unity-asset-management
+    - unity-playmode-testing
+    - unity-scene-create
+---
+
+# URP Setup
+
+Connect URP installation, persistent pipeline/Volume assets, and a rendered
+before/after check using existing unity-cli tools.
+
+## Use When
+
+- Install Universal Render Pipeline and assign its pipeline and renderer assets.
+- Configure a Global Volume, Bloom or Color Adjustments and verify the result.
+- Diagnose why URP post-processing is invisible using Camera, Volume and pipeline
+  state together with a Game-view capture.
+
+## Do Not Use When
+
+- Only create or save a scene: `unity-scene-create`.
+- Only edit a material, texture import or animation: `unity-asset-management`.
+- Only list, install, update or remove packages: `unity-package-management`.
+- Only change generic settings or evaluate C#: `unity-editor-tools`.
+- Only capture an existing game or run runtime tests: `unity-playmode-testing`.
+- Author shaders, Renderer Features, RenderGraph passes, or perform a project-wide
+  Built-in material migration: these need a separately scoped implementation.
+
+## Preferred Flow
+
+1. Follow [runtime prerequisites](references/runtime-checklist.md). Pin the
+   project/endpoint, confirm ping and read Editor state. Record the Unity version,
+   installed URP version, active scene, Graphics default pipeline, each Quality
+   override and target Camera. Stop Play before persistent asset edits.
+2. Read [setup and verification](references/urp-workflow.md). Reuse compatible
+   URP assets when present. Otherwise install an Editor-compatible
+   `com.unity.render-pipelines.universal` through `package_manager`; wait for
+   package resolution and compilation, then recheck ping, package list and console.
+   Do not downgrade an existing pipeline or switch from HDRP without a scoped
+   migration decision. Installing the package alone does not enable URP.
+3. Use Editor operations / `editor eval` to create and save the Renderer and URP
+   Asset, and assign Graphics plus the intended Quality levels. Report which
+   levels changed; preserve unrelated overrides. Inspect the effective pipeline
+   after assignment. Use `AssetDatabase` APIs rather than serialized YAML edits.
+4. Create or reuse a Global Volume and saved Volume Profile. Persist Bloom / Color
+   Adjustments as profile subassets, enable their overrides, assign `sharedProfile`,
+   and enable the target Camera's post-processing and matching volume layer mask.
+   Save assets and scene. Never mistake a Play-mode profile clone for saved content.
+5. With the same Camera, framing, resolution and scene, capture the effect disabled
+   and enabled. Use a bright subject for Bloom; an empty or dark scene cannot prove
+   it works. Enter Play, allow the renderer to produce frames, then request
+   `capture_screenshot` with `captureMode:"game"` and `osFallback:false`.
+   Compare the returned images, not just successful command exits or file hashes.
+6. Read back the effective pipeline, renderer, Camera flags, Volume weight/layers
+   and profile values. Inspect console errors. If there is no visible difference,
+   follow the reference diagnostics; do not declare success. Stop Play, restore the
+   intended effect value and save. Reload the scene/profile and confirm persistence.
+7. Report Unity/URP versions, affected Quality levels, saved asset/scene paths,
+   before/after image paths, observed visual difference and console status. If a
+   required tool capability is absent, report and link a separately tracked issue;
+   do not implement new CLI/bridge tools inside this workflow.
+
+## Examples
+
+- "URP を導入して Global Volume の Bloom を設定し、適用前後を比較して。"
+- "Enable URP Color Adjustments and prove that the Game view changes."
+- "Only take a screenshot" → `unity-playmode-testing`.
+- "Change this material's base color" → `unity-asset-management`.
+
+Inspect before changing, using the same endpoint on every command:
+
+```bash
+unity-cli system ping
+unity-cli raw get_editor_state --json '{}'
+unity-cli raw package_manager --json '{"action":"list"}'
+unity-cli editor eval 'new { unity = Application.unityVersion, graphics = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline, quality = QualitySettings.renderPipeline, effective = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline }' --output json
+unity-cli raw capture_screenshot --json '{"captureMode":"game","width":1280,"height":720,"osFallback":false}'
+unity-cli raw read_console --json '{"count":30}'
+```
+
+## References
+
+- [runtime-checklist.md](references/runtime-checklist.md): connection, instance selection and recovery.
+- [urp-workflow.md](references/urp-workflow.md): package compatibility, persistent assets and visual checks.
+
+---
+name: unity-vfx-graph
+description: Author and inspect Unity Visual Effect Graph (vfx) assets with unity-cli. Use when the user wants to read, build, or modify a .vfx graph and its systems, contexts, blocks, operators, or particle behavior, or to discover available blocks. Do not use for generic asset, material, or import operations; use `unity-asset-management` instead.
+allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
+metadata:
+  author: akiojin
+  version: 0.35.0
+  category: assets
+  triggers:
+    - vfx
+    - visual effect
+    - particle
+    - spawner
+    - effect graph
+    - custom hlsl
+  siblings:
+    - unity-asset-management
+---
+
+# Visual Effect Graph
+
+Author and inspect `.vfx` Visual Effect Graph assets: read a graph's contexts, blocks, operators and parameters, discover the node library, and apply authoring mutations. The VFX authoring API is internal to Unity, so these operations run through dedicated bridge tools (`vfx_*`) rather than direct component edits. This skill is the VFX complement to `unity-asset-management`, which handles generic asset, material, and import operations.
+
+## Use When
+
+- The user wants to inspect a `.vfx` graph's structure (contexts, blocks, operators, parameters, links, layout).
+- The user wants to discover which blocks, operators, contexts, or templates are available.
+- The user wants to build or modify a graph: add/remove/link nodes, set values and settings, manage the blackboard, systems, events, subgraphs, sticky notes, groups, or canvas layout.
+- The user wants to verify a graph compiles, or find out why it does not.
+- The user wants to drive an exposed parameter on a live `VisualEffect` (`vfx_runtime`), read/write VFX project settings or editor preferences (`vfx_settings`), or bake a Mesh into an SDF Texture3D (`vfx_bake_sdf`).
+
+## Do Not Use When
+
+- The task is generic asset, material, or import work; use `unity-asset-management`.
+- The request is about editing arbitrary serialized fields on a scene component; use `unity-gameobject-edit`. (`vfx_runtime` is only for VisualEffect public-API calls like `SetFloat`/`SendEvent`.)
+- The work is play-mode lifecycle control or input simulation; use `unity-playmode-testing`.
+
+## Preferred Flow
+
+Prerequisite: the target project must have `com.unity.visualeffectgraph` installed.
+The Bridge keeps it optional; `VFX_PACKAGE_MISSING` means to report the missing
+package and obtain the user's intended package setup before authoring a graph.
+Input errors return `{error, code}` without Console Error logs; inspect the
+response before continuing. Runtime playback uses `send_event` with `OnPlay`.
+
+1. **Baseline.** `vfx_describe_graph` before mutating. Note the three oracles it carries: `errors` (validation + compile errors, on by default), `compile` (outcome of the last recompile), and `layout` (`overlapCount` + overlapping node pairs). Write down the baseline `overlapCount`: a hand-made graph often has a non-zero one (node sizes are estimated generously), and your job is to not add to it.
+2. **Discover names.** `vfx_list_library` with `kind` (`block` default, `operator`, `context`, `parameter`, `template`) and a `filter` whenever you are not certain of an exact descriptor name — the leading `|` and `|_` separators in names like `|Set|_Color` are load-bearing.
+3. **Mutate narrowly** with `vfx_apply`, one op at a time. **Every op response carries `compile.success`; read it.** If it is `false`, the graph no longer compiles — `compile.exception` / `compile.errors` / `compile.logs` say why. Fix that before doing anything else; never stack more ops on a broken graph. An op that returns `error` was not applied at all.
+4. **Place what you added — mandatory; move nothing else.** Add ops only keep a new node off existing ones. Before you report, run `vfx_apply op:"auto_layout"`. Its default scope, `nodes`, places only the nodes created this session — operators, and a parameter canvas node for every link made from a parameter — in free space directly left of what they feed, aligned with the consuming block's row and stacked per consumer, and moves nothing that existed before. (One exception, reported as `shiftedDown`: a context that grew over the next context of its own system pushes that lower part of the system down, vertically only, as a person would.) A person's canvas is theirs: re-laying out a whole system for one added block is never the right answer. Pass `scope:"touched"` (re-lay out every system edited this session), `scope:"all"`, or `contexts:[…]` only when the user asks for a tidy-up.
+5. **Box the feature with its note.** A person keeps the nodes of one feature in a group box with a sticky note explaining it; do the same for what you added: `group_nodes` with your new nodes and `note:{title, contents}` creates the box and the note inside it (left of the members). Read `nonMembersInside` in the response — if the box swallows nodes that are not yours, move your own nodes closer together (`move_node`; nodes created this session move freely) and run `group_nodes` again, or drop the box and keep just the note. A block cannot be grouped; name it in the note.
+6. **Verify and only then report.** Re-run `vfx_describe_graph` and confirm all three: `compile.success == true`, no `errors[]` entry with `type: "Error"`, and `layout.overlapCount` no higher than your baseline with no listed overlap involving a node you created (on a graph you built from scratch that means `0`). Quote those three facts in your completion report. (`get_compilation_state` is C# script compilation and says nothing about a VFX graph; use `compile` / describe instead.)
+
+Invocation: every tool runs as `unity-cli raw <tool> --json '<json>'`. Add `--output json` for a structured (parseable) result, and `--port <N>` to target a specific bridge (default `6400`).
+
+```bash
+unity-cli raw vfx_describe_graph --json '{"assetPath":"Assets/FX/Burst.vfx"}'
+unity-cli raw vfx_list_library --json '{"kind":"block","filter":"turbulence"}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/FX/Burst.vfx","contextType":"Update","blockName":"Turbulence","settings":{"NoiseType":"Perlin"}}'
+unity-cli raw vfx_apply --json '{"op":"add_operator","assetPath":"Assets/FX/Burst.vfx","operatorName":"Multiply"}'
+unity-cli raw vfx_apply --json '{"op":"link_slots","assetPath":"Assets/FX/Burst.vfx","from":{"node":"operator","operatorIndex":0,"slot":0},"to":{"node":"block","contextType":"Update","blockIndex":0,"slot":0}}'
+unity-cli raw vfx_apply --json '{"op":"add_parameter","assetPath":"Assets/FX/Burst.vfx","parameterName":"Rate","type":"Float","value":42.5,"min":0,"max":100}'
+unity-cli raw vfx_describe_graph --json '{"assetPath":"Assets/FX/Burst.vfx","include":["errors"],"includeSlots":false}'
+unity-cli raw vfx_apply --json '{"op":"add_block","assetPath":"Assets/FX/Burst.vfx","contextType":"Update","blockName":"Turbulence","autoCompile":false}'
+unity-cli raw vfx_apply --json '{"op":"compile","assetPath":"Assets/FX/Burst.vfx"}'
+unity-cli raw vfx_apply --json '{"op":"auto_layout","assetPath":"Assets/FX/Burst.vfx"}'
+unity-cli raw vfx_apply --json '{"op":"group_nodes","assetPath":"Assets/FX/Burst.vfx","title":"Liquid turbulence","nodes":[{"node":"parameter","parameterIndex":12},{"node":"operator","operatorIndex":3}],"note":{"title":"Liquid turbulence","contents":"Relative-mode Perlin turbulence: Drag pulls velocity toward the noise field."}}'
+```
+
+## Hard Rules
+
+- **Describe narrowly on a big graph.** An unfiltered `vfx_describe_graph` on a real graph is huge — a working hand-made graph returns ~450 KB (~112K tokens), which will swamp your context. Pass `includeSlots:false` to drop the slot trees that dominate it (-61%), and `include:[...]` to keep only the top-level sections you need (`include:["errors"]` + `includeSlots:false` is ~1K tokens). Counts and `assetPath` always survive, and `slotsOmitted:true` marks a filtered read so empty slot arrays are never mistaken for "no slots". Use the full describe only when you actually need slot values.
+- **Batch edits with `autoCompile:false`.** Every op recompiles by default, and the cost grows with the graph — 20 `add_block` ops cost ~34s eagerly and ~8s deferred (4.4x). Pass `autoCompile:false` on each op in a run of edits, then one `vfx_apply op:"compile"` to flush (it reports `flushedDeferred`). **Deferred edits live in memory until that compile** — a domain reload (script recompile, play-mode enter) before it discards them, so keep a deferred run short and always close it with `compile`. A deferred op response carries `compile.deferred:true` instead of a compile summary, so rule 3 above (read `compile.success`) applies to the flushing `compile` call instead.
+- **Custom HLSL operator: at most 4 inputs.** A VFX expression takes at most 4 parents, so a Custom HLSL *operator* whose function has 5+ parameters makes the asset stop compiling. `set_operator_setting`/`add_operator` refuse such a function with a clear error; pack inputs into `float2/3/4` or split the function. Custom HLSL *blocks* have no such limit.
+- **Addressing.** Block ops take `contextType` (first context of that type) **or** `contextIndex` (absolute index from describe). Context ops (`set_context_setting`, `remove_context`, `delete_system`, `set_system_name`, `set_bounds`, `link_flow`/`unlink_flow` endpoints) take `contextType` or `index` — `contextIndex` is accepted as an alias everywhere. Prefer the index whenever a graph has two contexts of the same type.
+- **New nodes take open space.** Add/duplicate/insert ops and `add_sticky_note` refuse to drop a node on an existing one: if the spot is taken (auto or explicit `position`) the node is moved to the nearest free space and the response says `positionAdjusted: true`. Read the returned `position` rather than assuming the one you asked for.
+- **Existing nodes are the person's.** The default `auto_layout` (`scope:"nodes"`) never moves a node that existed before your session. The whole-system passes (`touched`/`all`/`contexts`) keep every existing context's x and only re-stack vertically; `move_node` on such a context keeps x and says so in `note`. Only a system you created this session is placed in a fresh column.
+- **Short edges over shared nodes.** Do not route one parameter node or operator across the canvas to many consumers. Give far-apart consumers their own parameter canvas node and put cheap operators beside the system they feed. The `nodes` pass gives every parameter link you made a node within reach of its consumer; the whole-system passes also duplicate shared operators (`duplicateShared`, `splitParameters`), so operator indices can change after them — re-describe before addressing by index.
+- **Linked slots ignore constants.** `set_slot_value` on a linked input warns (`warning`) — `unlink_slots` first if you meant the constant.
+- **Parameters must be used to survive.** An exposed parameter that feeds nothing is stripped at compile and invisible at runtime (`vfx_runtime` `hasFloat:false`).
+- **`|Set|_X` / `Get|_X` descriptors** compose attribute blocks/operators; custom attributes are declared with `add_custom_attribute` and then targeted with `set_block_setting setting:"attribute"`.
+
+## Op Index
+
+| Area | Ops (all `vfx_apply`) | Reference |
+| --- | --- | --- |
+| Blocks | `add_block`, `set_block_setting`, `set_block_enabled`, `reorder_block`, `move_block`, `duplicate_block`, `remove_block` | [ops-graph.md](references/ops-graph.md) |
+| Contexts / systems | `add_context`, `set_context_setting`, `remove_context`, `delete_system`, `set_system_name`, `link_flow`, `unlink_flow`, `set_bounds` | [ops-graph.md](references/ops-graph.md), [systems-and-events.md](references/systems-and-events.md) |
+| Operators | `add_operator`, `set_operator_setting`, `duplicate_operator`, `remove_operator`, `add_operator_input`, `remove_operator_input`, `set_operator_operand_type`, `rename_operator_input`, `reorder_operator_input` | [ops-graph.md](references/ops-graph.md) |
+| Slots / links | `link_slots`, `unlink_slots`, `set_slot_value`, `set_slot_space`, `convert_to_property`, `convert_to_inline` | [ops-graph.md](references/ops-graph.md) |
+| Blackboard | `add_parameter`, `set_parameter`, `rename_parameter`, `set_parameter_category`, `rename_category`, `reorder_category`, `reorder_parameter`, `duplicate_parameter`, `remove_parameter`, `add_custom_attribute` | [ops-graph.md](references/ops-graph.md) |
+| Compile / verify | `compile`; describe `errors` / `compile` | [ops-graph.md](references/ops-graph.md) |
+| Layout / canvas | `auto_layout` (`nodes` default / `touched` / `all` / `contexts`), `move_node`, `group_nodes` (+ `note`, sticky-note members, `nonMembersInside`), `remove_group`, `add_sticky_note`, `update_sticky_note`, `remove_sticky_note`, `reorder_sticky_note`; describe `layout` | [layout.md](references/layout.md) |
+| Custom HLSL | `add_block "Custom HLSL"`, `add_operator "Custom HLSL"`, `m_HLSLCode` / `m_ShaderFile` / function selector | [custom-hlsl.md](references/custom-hlsl.md) |
+| Events, subgraphs, templates, asset | GPU/output events, `create_subgraph_asset`, `create_from_template`, `insert_template`, `designate_template`, `set_instancing`, `set_initial_event_name` | [systems-and-events.md](references/systems-and-events.md) |
+| Runtime, settings, SDF | `vfx_runtime`, `vfx_settings`, `vfx_bake_sdf` | [runtime-settings-sdf.md](references/runtime-settings-sdf.md) |
+
+## Examples
+
+- "List the contexts and blocks in `Assets/FX/Burst.vfx`."
+- "Add a Turbulence block to the Update context, set NoiseType to Perlin, and confirm it compiles."
+- "Create an exposed float `Rate`, drive the Constant Spawn Rate block with it, then tidy the canvas."
+- "Build a second particle system Init→Update→Output in this graph and confirm it is disjoint from the first."
+- "Add a Custom HLSL operator that combines three floats and a float3 into a float3."
+- "Why does this graph not compile?"
+- "Put the graph on a VisualEffect, set `Rate` to 7.5 at runtime, and read it back."
+- "Set the fixed time step to 0.02 in the VFX project settings."
+
+## References
+
+- [ops-graph.md](references/ops-graph.md): blocks, contexts, operators, slots/links, blackboard, compile/verify — parameters and semantics for every op.
+- [layout.md](references/layout.md): the readable-canvas rules, `auto_layout`, `move_node`, groups, sticky notes, and the `layout` oracle.
+- [custom-hlsl.md](references/custom-hlsl.md): Custom HLSL blocks and operators, the 4-input operator limit, external files, function selectors, buffer/texture types.
+- [systems-and-events.md](references/systems-and-events.md): building systems and variants, events (GPU/spawn/output), subgraphs, templates, instancing and initial event.
+- [runtime-settings-sdf.md](references/runtime-settings-sdf.md): `vfx_runtime`, `vfx_settings`, `vfx_bake_sdf`.
+- [runtime-checklist.md](references/runtime-checklist.md): connection and instance prerequisites, runtime verification caveats.
+
+CASES
+[{"id": "SR-001", "prompt": "Unity Editorとの接続疎通だけを最短で確認したい"}, {"id": "SR-002", "prompt": "まずはCLIでhelloメッセージ付きpingを送りたい"}, {"id": "SR-003", "prompt": "rawコマンドで最小のGameObjectを1つ作る例がほしい"}, {"id": "SR-004", "prompt": "JSON出力で現在のエディタ状態確認の基本形を出して"}, {"id": "SR-005", "prompt": "コマンド統計を見てCLI通信が増えているか確認したい"}, {"id": "SR-006", "prompt": "利用可能なツール一覧を取る前の疎通チェックをしたい"}, {"id": "SR-007", "prompt": "まず失敗しづらいコマンドでUnity側応答を確認したい"}, {"id": "SR-008", "prompt": "環境変数を使った運用前に接続確認だけ先に回したい"}, {"id": "SR-009", "prompt": "新しいシーンをAssets/Scenes配下に作成したい"}, {"id": "SR-010", "prompt": "既存シーンを読み込みたい"}, {"id": "SR-011", "prompt": "シーンを保存したい"}, {"id": "SR-012", "prompt": "PlayerというCubeを作りたい"}, {"id": "SR-013", "prompt": "Canvas配下にEmptyを作る例を出して"}, {"id": "SR-014", "prompt": "PlayerにRigidbodyを追加したい"}, {"id": "SR-015", "prompt": "新規シーンを作って即ロードまでしたい"}, {"id": "SR-016", "prompt": "ゲーム開始用の土台シーンを初期化したい"}, {"id": "SR-017", "prompt": "Hierarchyを軽量モードで取得したい"}, {"id": "SR-018", "prompt": "現在シーン情報を取得したい"}, {"id": "SR-019", "prompt": "シーン一覧を確認したい"}, {"id": "SR-020", "prompt": "Playerというオブジェクトを検索したい"}, {"id": "SR-021", "prompt": "Cameraコンポーネント持ちオブジェクトを探したい"}, {"id": "SR-022", "prompt": "Playerの詳細を階層込みで見たい"}, {"id": "SR-023", "prompt": "PlayerのTransform値を確認したい"}, {"id": "SR-024", "prompt": "Playerがどこから参照されているか調べたい"}, {"id": "SR-025", "prompt": "Playerの名前をHeroに変更したい"}, {"id": "SR-026", "prompt": "OldObjectを削除したい"}, {"id": "SR-027", "prompt": "Rigidbodyのmassを2.0にしたい"}, {"id": "SR-028", "prompt": "Transformのpositionを直接フィールド更新したい"}, {"id": "SR-029", "prompt": "BoxColliderを削除したい"}, {"id": "SR-030", "prompt": "Playerに付いてるコンポーネント一覧を見たい"}, {"id": "SR-031", "prompt": "Enemyタグを追加したい"}, {"id": "SR-032", "prompt": "レイヤー一覧を取得したい"}, {"id": "SR-033", "prompt": "PlayerからPrefabを作成したい"}, {"id": "SR-034", "prompt": "PrefabをPrefabモードで開きたい"}, {"id": "SR-035", "prompt": "Prefabモードでの変更を保存したい"}, {"id": "SR-036", "prompt": "Prefabモードを終了したい"}, {"id": "SR-037", "prompt": "Prefabをシーンにインスタンス化したい"}, {"id": "SR-038", "prompt": "Prefabのroot名を更新したい"}, {"id": "SR-039", "prompt": "空Prefabをテンプレートで作りたい"}, {"id": "SR-040", "prompt": "Prefabを上書きで作り直したい"}, {"id": "SR-041", "prompt": "AssetDatabaseをrefreshしたい"}, {"id": "SR-042", "prompt": "materialを新規作成したい"}, {"id": "SR-043", "prompt": "materialの色を変更したい"}, {"id": "SR-044", "prompt": "import settingsを取得したい"}, {"id": "SR-045", "prompt": "依存関係を再帰で確認したい"}, {"id": "SR-046", "prompt": "未使用アセットを検出したい"}, {"id": "SR-047", "prompt": "assetを別パスにコピーしたい"}, {"id": "SR-048", "prompt": "外部変更後に明示的に再読込したい"}, {"id": "SR-049", "prompt": "Addressablesのグループ一覧を取得したい"}, {"id": "SR-050", "prompt": "Charactersグループを作りたい"}, {"id": "SR-051", "prompt": "PrefabをAddressablesに追加したい"}, {"id": "SR-052", "prompt": "Addressablesを通常ビルドしたい"}, {"id": "SR-053", "prompt": "Addressablesのビルドキャッシュを掃除したい"}, {"id": "SR-054", "prompt": "重複や未使用を解析したい"}, {"id": "SR-055", "prompt": "エントリのラベルを付与したい"}, {"id": "SR-056", "prompt": "アドレス名を変更したい"}, {"id": "SR-057", "prompt": "Assets/Scripts/Player.csを読みたい"}, {"id": "SR-058", "prompt": "Player.csの10行目から30行だけ見たい"}, {"id": "SR-059", "prompt": "OnCollisionEnterを検索したい"}, {"id": "SR-060", "prompt": "PlayerControllerクラス定義を探したい"}, {"id": "SR-061", "prompt": "Healthの参照箇所を列挙したい"}, {"id": "SR-062", "prompt": "対象ファイルのsymbolsを取得したい"}, {"id": "SR-063", "prompt": "packages一覧を確認したい"}, {"id": "SR-064", "prompt": "indexをビルドしてから検索したい"}, {"id": "SR-065", "prompt": "編集前にsymbol indexを更新したい"}, {"id": "SR-066", "prompt": "JumpメソッドをLeapにrenameしたい"}, {"id": "SR-067", "prompt": "Jumpメソッド本体を置換したい"}, {"id": "SR-068", "prompt": "Jumpの前に新規メソッドを挿入したい"}, {"id": "SR-069", "prompt": "Jumpの後に新規メソッドを追加したい"}, {"id": "SR-070", "prompt": "不要メンバーを参照チェック付きで削除したい"}, {"id": "SR-071", "prompt": "newTextの文法だけ先に検証したい"}, {"id": "SR-072", "prompt": "EnemyAIクラスをAssets/Scripts/AIに作りたい"}, {"id": "SR-073", "prompt": "Play modeを開始したい"}, {"id": "SR-074", "prompt": "Play modeを停止したい"}, {"id": "SR-075", "prompt": "キーボードでspaceを押したい"}, {"id": "SR-076", "prompt": "マウスをクリックしたい"}, {"id": "SR-077", "prompt": "ゲームパッドのAボタンを押したい"}, {"id": "SR-078", "prompt": "入力シーケンスをまとめて実行したい"}, {"id": "SR-079", "prompt": "スクリーンショットを撮りたい"}, {"id": "SR-080", "prompt": "PlayModeテストを走らせたい"}, {"id": "SR-081", "prompt": "Gameplay Action Mapを作成したい"}, {"id": "SR-082", "prompt": "Jump Actionを追加したい"}, {"id": "SR-083", "prompt": "Jumpにspaceをbindしたい"}, {"id": "SR-084", "prompt": "WASDのcomposite bindingを作りたい"}, {"id": "SR-085", "prompt": "binding index 0を削除したい"}, {"id": "SR-086", "prompt": "Actionの全bindingを削除したい"}, {"id": "SR-087", "prompt": "Control Schemeを追加したい"}, {"id": "SR-088", "prompt": "Input Actions資産の解析をしたい"}, {"id": "SR-089", "prompt": "Button要素を名前パターンで探したい"}, {"id": "SR-090", "prompt": "Buttonコンポーネント型のUIを列挙したい"}, {"id": "SR-091", "prompt": "StartButtonの状態を取得したい"}, {"id": "SR-092", "prompt": "StartButtonをクリックしたい"}, {"id": "SR-093", "prompt": "NameInputにPlayer1を入力したい"}, {"id": "SR-094", "prompt": "UI入力シーケンスでクリック操作を再現したい"}, {"id": "SR-095", "prompt": "inactiveを含めてUI要素を探索したい"}, {"id": "SR-096", "prompt": "特定Canvas配下だけ検索したい"}, {"id": "SR-097", "prompt": "Editor情報を取得したい"}, {"id": "SR-098", "prompt": "Project settingsをplayer込みで取得したい"}, {"id": "SR-099", "prompt": "companyNameを更新したい"}, {"id": "SR-100", "prompt": "Consoleログを20件取得したい"}, {"id": "SR-101", "prompt": "Consoleをクリアしたい"}, {"id": "SR-102", "prompt": "Profiler recordingを開始したい"}, {"id": "SR-103", "prompt": "Window一覧を取得したい"}, {"id": "SR-104", "prompt": "メニュー項目を実行したい"}, {"id": "SR-105", "prompt": "UIボタンを押してからスクリーンショットを撮りたい"}, {"id": "SR-106", "prompt": "プレハブを生成して配置位置を調整したい"}, {"id": "SR-107", "prompt": "シーン作成後にHierarchyを確認したい"}, {"id": "SR-108", "prompt": "入力アセット更新後にPlayでキー入力検証したい"}, {"id": "SR-109", "prompt": "C#シンボルを探してからrenameしたい"}, {"id": "SR-110", "prompt": "Addressablesのgroup追加後にビルドしたい"}, {"id": "SR-111", "prompt": "Project設定を見て必要なら更新したい"}, {"id": "SR-112", "prompt": "GameObjectの詳細確認後にコンポーネント値を変えたい"}, {"id": "SR-113", "prompt": "Prefabを開いてUI要素のパスを確認したい"}, {"id": "SR-114", "prompt": "ローカル検索して該当クラスを新規作成したい"}, {"id": "SR-115", "prompt": "テスト実行前にPlay状態を確認したい"}, {"id": "SR-116", "prompt": "Asset依存を調べて不要なら削除したい"}, {"id": "SR-117", "prompt": "UI検索結果を使って入力シーケンスを組みたい"}, {"id": "SR-118", "prompt": "シーンをロードしてPlay開始まで自動化したい"}, {"id": "SR-119", "prompt": "Control Schemeを追加してGamepad入力を試したい"}, {"id": "SR-120", "prompt": "最低限の疎通確認後にEditor情報を取得したい"}, {"id": "SR-121", "prompt": "ジャンプ挙動を調整したい。実装してPlayで確認し、条件を満たすまで回したい"}, {"id": "SR-122", "prompt": "設定UIの保存フローを修正して、クリック確認とスクリーンショット取得を繰り返したい"}, {"id": "SR-123", "prompt": "ランタイムの入力バグを再現して最小修正を入れ、ゲームパッド操作で再検証したい"}, {"id": "SR-124", "prompt": "挙動は合っているが重いので、プロファイラも見ながら改善ループを回したい"}, {"id": "SR-125", "prompt": "Controls.inputactions にGamepad用 binding を追加して構造だけ解析したい"}, {"id": "SR-126", "prompt": "PlayerController.cs にダッシュ処理を実装したい。Play検証はまだ不要"}, {"id": "SR-127", "prompt": "実装は変えずにPlayでspaceを押してスクリーンショットだけ撮りたい"}, {"id": "SR-128", "prompt": "Show me the contexts and blocks inside this .vfx graph"}, {"id": "SR-129", "prompt": "List the operators I could add to a Visual Effect Graph"}, {"id": "SR-130", "prompt": "Add a turbulence block to the Update context of my VFX"}, {"id": "SR-131", "prompt": "My graph has two spawners; add a Single Burst block to the second spawner specifically"}, {"id": "SR-132", "prompt": "Create an exposed float parameter called Rate on this VFX graph"}, {"id": "SR-133", "prompt": "Wire my exposed parameter's output into the spawn rate block's input slot"}, {"id": "SR-134", "prompt": "Change the noise type setting on the turbulence block in the Update context"}, {"id": "SR-135", "prompt": "Drive a block's on/off activation port from a boolean parameter in the graph"}, {"id": "SR-136", "prompt": "At runtime, set the float parameter Rate to 25 on my VisualEffect component"}, {"id": "SR-137", "prompt": "Send the custom event named Burst to the running visual effect"}, {"id": "SR-138", "prompt": "Bake this cube mesh into an SDF Texture3D asset for use in a VFX"}, {"id": "SR-139", "prompt": "Change the VFX fixed time step in the project's VFXManager settings"}, {"id": "SR-140", "prompt": "Mark this .vfx graph as a custom template named Sparkle Burst"}, {"id": "SR-141", "prompt": "Run PlayMode tests with Domain Reload enabled and collect their results."}, {"id": "SR-142", "prompt": "Hold the gamepad A button for 0.2 seconds in Play Mode."}, {"id": "SR-143", "prompt": "Move the simulated mouse to screen position 100, 200."}, {"id": "SR-144", "prompt": "Tap the touchscreen at 100, 200 during Play Mode."}, {"id": "SR-145", "prompt": "Execute a repeatable input sequence of keyboard then mouse actions."}, {"id": "SR-146", "prompt": "Inspect the runtime InputAction state of Assets/Input/Player.inputactions during Play Mode."}, {"id": "SR-147", "prompt": "Record the Game View as a PNG frame sequence."}, {"id": "SR-148", "prompt": "Read the status of the current video recording."}, {"id": "SR-149", "prompt": "Stop the video recording and retrieve its output path."}, {"id": "SR-150", "prompt": "Inspect the tracks and clips in Assets/Timelines/Intro.playable."}, {"id": "SR-151", "prompt": "Create a Timeline asset at Assets/Timelines/Intro.playable."}, {"id": "SR-152", "prompt": "Inspect whether method hot reload preview is supported in this Editor."}, {"id": "SR-153", "prompt": "Begin a method hot reload preview of Assets/Player.cs in the current Play session."}, {"id": "SR-154", "prompt": "Start a lightmap bake for Assets/Scenes/Level.unity."}, {"id": "SR-155", "prompt": "Read the status of scene bake job bake-123."}, {"id": "SR-156", "prompt": "Build a StandaloneOSX Player from Assets/Scenes/Level.unity to /private/tmp/PlayerBuild/Player.app."}, {"id": "SR-157", "prompt": "Poll Player build status for build ID build-123."}, {"id": "SR-158", "prompt": "Create a brand-new Unity project, install unity-cli-bridge, and confirm its connection with ping. The project directory does not exist yet."}, {"id": "SR-159", "prompt": "まだプロジェクトがありません。Unity Hub で新規プロジェクトを作成し bridge を導入して ping 疎通確認まで進めたい。"}, {"id": "SR-160", "prompt": "In my existing Unity project, only check whether the bridge connection answers ping. Do not create a project or scene."}, {"id": "SR-161", "prompt": "The Unity project and bridge are already set up. Create only a new empty scene named Lobby under Assets/Scenes/."}, {"id": "SR-162", "prompt": "The project is running in Play mode already. Only capture a screenshot of the Game view; do not create or configure anything."}, {"id": "SR-163", "prompt": "Bootstrap a new Unity project from an empty directory, install the bridge and Input System, then create and save a minimal scene and verify it in Play mode with a Game view screenshot."}, {"id": "SR-164", "prompt": "既存の Player に Rigidbody を付けて。Editor は起動しています。"}, {"id": "SR-165", "prompt": "The Editor is reachable. Add a Rigidbody to the existing /Player using the bridge instead of editing scene YAML."}, {"id": "SR-166", "prompt": "Create a new scene and a Player with a Rigidbody using Editor tools, without hand-editing .unity YAML."}, {"id": "SR-167", "prompt": "Open Assets/Prefabs/Player.prefab in Prefab edit mode to edit it through Unity, without hand-editing its YAML."}, {"id": "SR-168", "prompt": "Create a material at Assets/Materials/Player.mat using shader Standard through Unity, without hand-editing serialized asset YAML."}, {"id": "SR-169", "prompt": "The sandbox could not see my running Editor. Retry system ping against the target project before considering an offline fallback; do not edit any assets."}, {"id": "SR-170", "prompt": "Unity Editor is running. Only inspect the Rigidbody component values on Player; do not add or change anything."}, {"id": "SR-URP-001", "prompt": "URPを導入してGlobal VolumeのBloomを設定し、適用前後のGame画像で検証したい。まずpackage_managerでインストール済みパッケージ一覧を確認して。"}, {"id": "SR-URP-002", "prompt": "Set up Universal Render Pipeline assets and a Global Volume with Color Adjustments, then compare Game screenshots. Start by evaluating the effective Graphics and Quality pipeline in C#."}, {"id": "SR-URP-003", "prompt": "URPのBloomを有効化しても見た目が変わらない。CameraとVolumeを設定し直して前後の差を検証したい。最初にC# evalで有効なrender pipelineを確認して。"}, {"id": "SR-URP-004", "prompt": "URP設定やVolumeの変更は不要。今のGameビューのスクリーンショットだけ撮って。"}, {"id": "SR-URP-005", "prompt": "Only create a material at Assets/Materials/Blue.mat with shader Universal Render Pipeline/Lit. Do not set up a pipeline or Volume."}, {"id": "SR-URP-006", "prompt": "List installed Unity packages with package_manager only; no URP setup or rendering changes."}, {"id": "SR-URP-007", "prompt": "既存のURPプロジェクトに新しい空シーンだけ作成して。Volumeやpipelineの設定は変えない。"}, {"id": "SR-URP-008", "prompt": "既存VolumeのGameObjectのTransformだけ移動して。レンダリング設定、Bloom、Profileは変更しない。"}, {"id": "UI377-01", "prompt": "Build a UI Toolkit form from UXML and USS with a button and text field, wire UIDocument and verify its click changes a label in Play Mode."}, {"id": "UI377-02", "prompt": "UXML と USS を新規作成して PanelSettings と UIDocument を配置し、入力してボタンを押した表示変化まで検証して。"}, {"id": "UI377-03", "prompt": "Only click the existing UI Toolkit button at uitk:/Menu#submit. Do not create or rebuild the screen."}, {"id": "UI377-04", "prompt": "Only capture a Game view screenshot in the already running Play Mode; no UI authoring."}, {"id": "UI377-05", "prompt": "Only create an empty scene named Menu under Assets/Scenes/; no UI or scripts."}, {"id": "UI377-06", "prompt": "Only refresh imported assets. Do not construct any UI."}, {"id": "UI377-07", "prompt": "Only update the two existing binding scripts MenuBinding.cs and MenuState.cs together using apply_csharp_edits. Do not rebuild the screen or run Play Mode."}, {"id": "UI377-08", "prompt": "Only read the latest 20 Unity Console messages. Do not construct UI or change scripts."}, {"id": "SR-171", "prompt": "Search the Unity package registry for a tween package before choosing one; do not install anything yet."}, {"id": "SR-172", "prompt": "既存 Unity プロジェクトに指定した UPM パッケージを導入して、リロード後のコンパイルエラーがないことを確認して。"}, {"id": "SR-173", "prompt": "Upgrade com.cysharp.unitask to version 2.5.5 in this existing Unity project and verify compilation after domain reload."}, {"id": "SR-174", "prompt": "Remove the direct dependency com.cysharp.unitask from this Unity project and check the manifest and compiler errors afterward."}, {"id": "SR-175", "prompt": "OpenUPM scoped registry を com.cysharp の scope だけで追加し、他の scope を勝手に追加せず設定を確認して。"}, {"id": "SR-176", "prompt": "Show the latest Unity console errors only. Do not install, remove or update packages."}, {"id": "SR-177", "prompt": "List the C# package roots available to the local source index, without reading symbols or changing UPM dependencies or registries."}, {"id": "SR-178", "prompt": "Build the existing Addressables content; do not install or update the Addressables package."}, {"id": "SR-PKG-009", "prompt": "List the UPM packages installed in this running Unity Editor, including their resolved versions. Do not install or change anything, and do not query the C# source index."}, {"id": "SPR379-01", "prompt": "Import Assets/Tiles/grass.png as a point-filtered sprite using manage_asset_import_settings, then build a small Tilemap, create its Sprite Atlas, and verify it in Play with a Pixel Perfect Camera."}, {"id": "SPR379-02", "prompt": "Assets/Tiles/terrain.png の取り込み設定を Sprite/Point に変更するところから、Tile と Grid/Tilemap を構築し Pixel Perfect Camera の Game 画面を撮って検証するまで進めて。"}, {"id": "SPR379-03", "prompt": "Use create_sprite_atlas to create Assets/Tiles/Terrain.spriteatlas with Assets/Tiles/grass.png as its packable, then build a Rule Tile terrain and verify the saved Tilemap through a Pixel Perfect Camera."}, {"id": "SPR379-04", "prompt": "Only create a Sprite Atlas at Assets/Art/Hero.spriteatlas with Assets/Art/Hero.png as its packable. Do not build a Tilemap or configure a camera."}, {"id": "SPR379-05", "prompt": "Only change the filter mode of Assets/Tiles/grass.png to Point. Do not create tiles, scenes or cameras."}, {"id": "SPR379-06", "prompt": "Create an empty scene called Forest in Assets/Scenes/Generated/E2E/. Do not build a Tilemap or configure sprites."}, {"id": "SPR379-07", "prompt": "Only capture a Game-view screenshot of the current running tilemap level. Do not author or modify it."}, {"id": "SPR379-08", "prompt": "Only read the latest 20 Unity Console messages while working on a 2D tilemap. Do not change its assets or scene."}, {"id": "SPR379-09", "prompt": "Only install the compatible com.unity.2d.tilemap.extras package in this existing project. Do not create any Rule Tile assets yet."}, {"id": "AUD380-01", "prompt": "Configure Assets/Audio/music.wav load type and compression, create an AudioMixer with a Music group and exposed volume, assign an AudioSource, then verify playback in Play Mode."}, {"id": "AUD380-02", "prompt": "AudioClip を取り込んで AudioMixer のグループと公開音量を作り、AudioSource に割り当てて Play 中の isPlaying と time を確認して。まずクリップの取り込み設定を変更して。"}, {"id": "AUD380-03", "prompt": "Create Assets/Audio/Music.mixer first, then add a Music group, expose its Volume and route an AudioSource through it; verify saved references and Play Mode playback."}, {"id": "AUD380-04", "prompt": "Only change Assets/Audio/music.wav import compression to Vorbis. Do not create a mixer, AudioSource or playback test."}, {"id": "AUD380-05", "prompt": "Only use set_component_field to set the existing /Music AudioSource volume to 0.25; do not import clips, author a mixer or enter Play."}, {"id": "AUD380-06", "prompt": "Only create an empty scene called AudioTest in Assets/Scenes/Generated/E2E/. No audio assets or playback setup."}, {"id": "AUD380-07", "prompt": "Only enter Play Mode in the existing audio scene. Do not configure its AudioClip or Mixer."}, {"id": "AUD380-08", "prompt": "Only read the latest 20 Unity console messages to investigate audio errors; do not change any assets or source settings."}]

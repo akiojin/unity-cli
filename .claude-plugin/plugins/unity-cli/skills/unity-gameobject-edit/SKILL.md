@@ -4,7 +4,7 @@ description: Edit existing GameObjects and components in Unity with unity-cli. U
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.0
+  version: 0.3.1
   category: scenes
   triggers:
     - gameobject
@@ -13,6 +13,7 @@ metadata:
     - tag
     - layer
   siblings:
+    - unity-audio-setup
     - unity-scene-create
     - unity-scene-inspect
     - unity-prefab-workflow
@@ -31,6 +32,9 @@ Modify existing GameObjects and their components in an already-prepared scene. T
 - The user needs tag or layer management for the current project.
 
 ## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
 
 - The task is to create a brand-new scene from scratch; use `unity-scene-create`.
 - The work is prefab asset editing rather than scene objects; use `unity-prefab-workflow`.

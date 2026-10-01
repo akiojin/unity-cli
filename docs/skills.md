@@ -128,6 +128,7 @@ or stop the Editor. Global installed skills remain available after the test.
 | `unity-prefab-workflow` | Prefab assets, instances, variants and overrides |
 | `unity-2d-sprite-tilemap` | Sprite imports → atlas / Tilemap → Pixel Perfect Camera → saved-state and Game verification |
 | `unity-asset-management` | Assets, materials, imports, animation and Timeline |
+| `unity-audio-setup` | AudioClip import → AudioMixer groups/exposed Volume → AudioSource routing → saved-state and Play verification |
 | `unity-addressables` | Addressables groups, entries and content builds |
 | `unity-csharp-edit` | C# implementation and refactoring |
 | `unity-csharp-navigate` | Read and navigate project C# |

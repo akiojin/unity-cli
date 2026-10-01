@@ -14,6 +14,7 @@ metadata:
     - package
     - setting
   siblings:
+    - unity-audio-setup
     - unity-localization
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -38,6 +39,8 @@ Use this skill for editor-wide diagnostics and control: console, project setting
 
 ## Do Not Use When
 
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
 - Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 
 - Build a complete UXML/USS UI Toolkit screen and verify its interactions: use `unity-ui-toolkit-build`.

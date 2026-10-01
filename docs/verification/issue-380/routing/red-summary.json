@@ -1,0 +1,227 @@
+{
+  "timestamp": "2026-10-01T09:57:33.510174+00:00",
+  "model": "claude",
+  "benchmark": "/tmp/issue380-harness/cases.jsonl",
+  "total": 8,
+  "missing_predictions": 0,
+  "metrics": {
+    "top1": 0.625,
+    "top2": 0.625,
+    "tool_correct": 0.5,
+    "payload_valid": 0.5
+  },
+  "thresholds": {
+    "top1": 0.9,
+    "top2": 0.98,
+    "tool_correct": 0.92,
+    "payload_valid": 0.95
+  },
+  "passed": {
+    "top1": false,
+    "top2": false,
+    "tool_correct": false,
+    "payload_valid": false
+  },
+  "all_passed": false,
+  "results": [
+    {
+      "id": "AUD380-01",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-audio-setup"
+      ],
+      "expected_tool": "manage_asset_import_settings",
+      "expected_payload_keys": [
+        "action",
+        "assetPath",
+        "settings"
+      ],
+      "predicted_skills": [
+        "unity-asset-management"
+      ],
+      "predicted_tool": "asset_import_settings_manage",
+      "predicted_payload_keys": [
+        "assetPath",
+        "settings"
+      ],
+      "top1": false,
+      "top2": false,
+      "tool_correct": false,
+      "payload_valid": false,
+      "error": null
+    },
+    {
+      "id": "AUD380-02",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-audio-setup"
+      ],
+      "expected_tool": "manage_asset_import_settings",
+      "expected_payload_keys": [
+        "action",
+        "assetPath",
+        "settings"
+      ],
+      "predicted_skills": [
+        "unity-asset-management"
+      ],
+      "predicted_tool": "asset_import_settings_manage",
+      "predicted_payload_keys": [
+        "assetPath",
+        "settings"
+      ],
+      "top1": false,
+      "top2": false,
+      "tool_correct": false,
+      "payload_valid": false,
+      "error": null
+    },
+    {
+      "id": "AUD380-03",
+      "difficulty": "medium",
+      "expected_skills": [
+        "unity-audio-setup"
+      ],
+      "expected_tool": "manage_audio_mixer",
+      "expected_payload_keys": [
+        "action",
+        "assetPath"
+      ],
+      "predicted_skills": [
+        "unity-asset-management"
+      ],
+      "predicted_tool": "asset_create",
+      "predicted_payload_keys": [
+        "assetPath",
+        "assetType"
+      ],
+      "top1": false,
+      "top2": false,
+      "tool_correct": false,
+      "payload_valid": false,
+      "error": null
+    },
+    {
+      "id": "AUD380-04",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-asset-management"
+      ],
+      "expected_tool": "manage_asset_import_settings",
+      "expected_payload_keys": [
+        "action",
+        "assetPath",
+        "settings"
+      ],
+      "predicted_skills": [
+        "unity-asset-management"
+      ],
+      "predicted_tool": "asset_import_settings_manage",
+      "predicted_payload_keys": [
+        "assetPath",
+        "settings"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": false,
+      "payload_valid": false,
+      "error": null
+    },
+    {
+      "id": "AUD380-05",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-gameobject-edit"
+      ],
+      "expected_tool": "set_component_field",
+      "expected_payload_keys": [
+        "componentType",
+        "fieldPath",
+        "gameObjectPath",
+        "value"
+      ],
+      "predicted_skills": [
+        "unity-gameobject-edit"
+      ],
+      "predicted_tool": "set_component_field",
+      "predicted_payload_keys": [
+        "componentType",
+        "fieldPath",
+        "gameObjectPath",
+        "value"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "AUD380-06",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-scene-create"
+      ],
+      "expected_tool": "create_scene",
+      "expected_payload_keys": [
+        "path",
+        "sceneName"
+      ],
+      "predicted_skills": [
+        "unity-scene-create"
+      ],
+      "predicted_tool": "create_scene",
+      "predicted_payload_keys": [
+        "path",
+        "sceneName"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "AUD380-07",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-playmode-testing"
+      ],
+      "expected_tool": "play_game",
+      "expected_payload_keys": [],
+      "predicted_skills": [
+        "unity-playmode-testing"
+      ],
+      "predicted_tool": "play_game",
+      "predicted_payload_keys": [],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    },
+    {
+      "id": "AUD380-08",
+      "difficulty": "hard",
+      "expected_skills": [
+        "unity-editor-tools"
+      ],
+      "expected_tool": "read_console",
+      "expected_payload_keys": [
+        "count"
+      ],
+      "predicted_skills": [
+        "unity-editor-tools"
+      ],
+      "predicted_tool": "read_console",
+      "predicted_payload_keys": [
+        "count"
+      ],
+      "top1": true,
+      "top2": true,
+      "tool_correct": true,
+      "payload_valid": true,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,470 @@
+{
+  "result": "PASS",
+  "generatedFrom": "fresh run evidence/raw only",
+  "versions": {
+    "cli": "unity-cli 0.16.0",
+    "bridge": "0.16.0",
+    "versionCheck": {
+      "bridgeVersion": "0.16.0",
+      "cliVersion": "0.16.0",
+      "message": "CLI and bridge are both 0.16.0",
+      "status": "match"
+    },
+    "unity": "2022.3.62f3",
+    "cliBinary": "/Users/akiojin/Workbench/unity-cli/work/issue-380/target/debug/unity-cli",
+    "endpoint": "127.0.0.1:6581",
+    "editorPid": 55886
+  },
+  "skillHashes": {
+    "SKILL.md": "056208c0272947c806936fe7bd7d2a89cd40d829a508835a1207c1b97379dbf4",
+    "references/audio-workflow.md": "d269bcb3a1352432a73aa54b59f89b8ef69df8679a27faab1004f98c06035afb",
+    "references/runtime-checklist.md": "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6"
+  },
+  "skillHashesActual": [
+    "056208c0272947c806936fe7bd7d2a89cd40d829a508835a1207c1b97379dbf4  SKILL.md",
+    "d269bcb3a1352432a73aa54b59f89b8ef69df8679a27faab1004f98c06035afb  references/audio-workflow.md",
+    "fbc261df856462cac926c05912d561222b4ec9c9c15af2ab5b976683197cc4b6  references/runtime-checklist.md"
+  ],
+  "assets": {
+    "clip": {
+      "path": "Assets/Audio/tone.wav",
+      "guid": "e853e3405a1f54a0c8fd854e6805546b"
+    },
+    "mixer": {
+      "path": "Assets/Audio/Final2.mixer",
+      "guid": "a4a43a2b456b44049bb7b20993a7848a",
+      "exposedParamGuid": "303c14e12ae23476ea356afcd20429c5"
+    },
+    "scene": {
+      "path": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "guid": "466a014263800481bb0b21289d43ce41"
+    }
+  },
+  "importer": {
+    "before": {
+      "ambisonic": false,
+      "assetType": "Audio",
+      "compressionFormat": "PCM",
+      "forceToMono": false,
+      "loadInBackground": false,
+      "loadType": "DecompressOnLoad",
+      "quality": 1.0,
+      "sampleRateOverride": 44100,
+      "sampleRateSetting": "PreserveSampleRate"
+    },
+    "modify": {
+      "action": "modify",
+      "assetPath": "Assets/Audio/tone.wav",
+      "message": "Import settings modified for: Assets/Audio/tone.wav",
+      "newSettings": {
+        "compressionFormat": "PCM",
+        "loadType": "DecompressOnLoad"
+      },
+      "previousSettings": {
+        "compressionFormat": "PCM",
+        "loadType": "DecompressOnLoad"
+      },
+      "success": true
+    },
+    "after": {
+      "ambisonic": false,
+      "assetType": "Audio",
+      "compressionFormat": "PCM",
+      "forceToMono": false,
+      "loadInBackground": false,
+      "loadType": "DecompressOnLoad",
+      "quality": 1.0,
+      "sampleRateOverride": 44100,
+      "sampleRateSetting": "PreserveSampleRate"
+    },
+    "afterStop": {
+      "ambisonic": false,
+      "assetType": "Audio",
+      "compressionFormat": "PCM",
+      "forceToMono": false,
+      "loadInBackground": false,
+      "loadType": "DecompressOnLoad",
+      "quality": 1.0,
+      "sampleRateOverride": 44100,
+      "sampleRateSetting": "PreserveSampleRate"
+    }
+  },
+  "mixer": {
+    "get": {
+      "action": "get",
+      "assetPath": "Assets/Audio/Final2.mixer",
+      "exposedParameters": [
+        {
+          "groupPath": "Master/Music",
+          "guid": "303c14e12ae23476ea356afcd20429c5",
+          "name": "MusicVolume",
+          "parameter": "Volume"
+        }
+      ],
+      "groups": [
+        {
+          "name": "Master",
+          "parentPath": null,
+          "path": "Master"
+        },
+        {
+          "name": "Music",
+          "parentPath": "Master",
+          "path": "Master/Music"
+        }
+      ],
+      "success": true
+    },
+    "afterStop": {
+      "action": "get",
+      "assetPath": "Assets/Audio/Final2.mixer",
+      "exposedParameters": [
+        {
+          "groupPath": "Master/Music",
+          "guid": "303c14e12ae23476ea356afcd20429c5",
+          "name": "MusicVolume",
+          "parameter": "Volume"
+        }
+      ],
+      "groups": [
+        {
+          "name": "Master",
+          "parentPath": null,
+          "path": "Master"
+        },
+        {
+          "name": "Music",
+          "parentPath": "Master",
+          "path": "Master/Music"
+        }
+      ],
+      "success": true
+    }
+  },
+  "sourceReadback": {
+    "beforeSave": {
+      "active": true,
+      "audioSourceCount": 1,
+      "clip": "tone",
+      "clipGuid": "e853e3405a1f54a0c8fd854e6805546b",
+      "clipLength": 30.0,
+      "clipPath": "Assets/Audio/tone.wav",
+      "clipSamples": 1323000,
+      "enabled": true,
+      "enabledListeners": 1,
+      "group": "Music",
+      "hasSource": true,
+      "importerCompression": "PCM",
+      "importerLoadType": "DecompressOnLoad",
+      "isDirty": true,
+      "listenerCount": 1,
+      "listenerObjs": [
+        "Main Camera"
+      ],
+      "loop": true,
+      "mixerGuid": "a4a43a2b456b44049bb7b20993a7848a",
+      "mixerPath": "Assets/Audio/Final2.mixer",
+      "musicExists": true,
+      "mute": false,
+      "playOnAwake": false,
+      "playing": false,
+      "sameGroupAsMasterMusic": true,
+      "sceneGuid": "466a014263800481bb0b21289d43ce41",
+      "scenePath": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "spatialBlend": 0.0,
+      "volume": 0.25
+    },
+    "afterReload": {
+      "active": true,
+      "audioSourceCount": 1,
+      "clip": "tone",
+      "clipGuid": "e853e3405a1f54a0c8fd854e6805546b",
+      "clipLength": 30.0,
+      "clipPath": "Assets/Audio/tone.wav",
+      "clipSamples": 1323000,
+      "enabled": true,
+      "enabledListeners": 1,
+      "group": "Music",
+      "hasSource": true,
+      "importerCompression": "PCM",
+      "importerLoadType": "DecompressOnLoad",
+      "isDirty": false,
+      "listenerCount": 1,
+      "listenerObjs": [
+        "Main Camera"
+      ],
+      "loop": true,
+      "mixerGuid": "a4a43a2b456b44049bb7b20993a7848a",
+      "mixerPath": "Assets/Audio/Final2.mixer",
+      "musicExists": true,
+      "mute": false,
+      "playOnAwake": false,
+      "playing": false,
+      "sameGroupAsMasterMusic": true,
+      "sceneGuid": "466a014263800481bb0b21289d43ce41",
+      "scenePath": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "spatialBlend": 0.0,
+      "volume": 0.25
+    },
+    "afterStop": {
+      "active": true,
+      "audioSourceCount": 1,
+      "clip": "tone",
+      "clipGuid": "e853e3405a1f54a0c8fd854e6805546b",
+      "clipLength": 30.0,
+      "clipPath": "Assets/Audio/tone.wav",
+      "clipSamples": 1323000,
+      "enabled": true,
+      "enabledListeners": 1,
+      "group": "Music",
+      "hasSource": true,
+      "importerCompression": "PCM",
+      "importerLoadType": "DecompressOnLoad",
+      "isDirty": false,
+      "listenerCount": 1,
+      "listenerObjs": [
+        "Main Camera"
+      ],
+      "loop": true,
+      "mixerGuid": "a4a43a2b456b44049bb7b20993a7848a",
+      "mixerPath": "Assets/Audio/Final2.mixer",
+      "musicExists": true,
+      "mute": false,
+      "playOnAwake": false,
+      "playing": false,
+      "sameGroupAsMasterMusic": true,
+      "sceneGuid": "466a014263800481bb0b21289d43ce41",
+      "scenePath": "Assets/Scenes/Generated/E2E/Audio380Final2.unity",
+      "spatialBlend": 0.0,
+      "volume": 0.25
+    },
+    "musicInstanceId": {
+      "created": -3532,
+      "afterReload": 20332
+    }
+  },
+  "focusDiagnostics": {
+    "initial": {
+      "appRunInBackground": false,
+      "focused": true,
+      "isDirty": false,
+      "isPlaying": false,
+      "mixerExists": false,
+      "muteAudio": false,
+      "name": "Audio380Final",
+      "path": "Assets/Scenes/Generated/E2E/Audio380Final.unity",
+      "runInBackgroundPlayer": false,
+      "sceneCount": 1,
+      "sceneExists": false
+    },
+    "preFocus": {
+      "appRunInBackground": false,
+      "dsp": 292.05333333333334,
+      "focused": false,
+      "frame": 0,
+      "isPaused": false,
+      "isPlaying": false,
+      "listenerPause": false,
+      "masterMute": false,
+      "outputRate": 48000,
+      "playerRunInBackground": false,
+      "realtime": 6.836454666999998
+    },
+    "afterFocus": {
+      "appRunInBackground": false,
+      "dsp": 293.99466666666666,
+      "focused": true,
+      "frame": 1,
+      "isPaused": false,
+      "isPlaying": false,
+      "listenerPause": false,
+      "masterMute": false,
+      "outputRate": 48000,
+      "playerRunInBackground": false,
+      "realtime": 20.38097837500004
+    },
+    "inPlay": {
+      "appRunInBackground": false,
+      "dsp": 302.464,
+      "focused": true,
+      "frame": 382,
+      "isPaused": false,
+      "isPlaying": true,
+      "listenerPause": false,
+      "masterMute": false,
+      "outputRate": 48000,
+      "playerRunInBackground": false,
+      "realtime": 2.7228729590000285
+    },
+    "final": {
+      "appRunInBackground": false,
+      "dsp": 328.34133333333335,
+      "focused": true,
+      "frame": 2,
+      "isPaused": false,
+      "isPlaying": false,
+      "listenerPause": false,
+      "masterMute": false,
+      "outputRate": 48000,
+      "playerRunInBackground": false,
+      "realtime": 1.5833775840000044
+    },
+    "note": "editor.pid (34790) was stale; first focus attempt failed (raw/41-focus-editor.log); real PID 55886 from eval, focused via osascript (raw/44). runInBackground never changed."
+  },
+  "playback": {
+    "playCall": {
+      "called": "Play",
+      "isPlaying": true,
+      "time": 0.0
+    },
+    "sample1": {
+      "active": true,
+      "clip": "tone",
+      "clipFrequency": 44100,
+      "clipLoadState": "Loaded",
+      "clipPath": "Assets/Audio/tone.wav",
+      "dsp": 310.528,
+      "editorPlaying": true,
+      "enabled": true,
+      "focused": true,
+      "frame": 11671,
+      "group": "Music",
+      "isPlaying": true,
+      "loop": true,
+      "mixer": "Assets/Audio/Final2.mixer",
+      "mute": false,
+      "paused": false,
+      "realtime": 10.787162417000104,
+      "runInBackground": false,
+      "samples": 1323000,
+      "spatialBlend": 0.0,
+      "time": 0.213310659,
+      "timeSamples": 9407,
+      "volume": 0.25
+    },
+    "sample2": {
+      "active": true,
+      "clip": "tone",
+      "clipFrequency": 44100,
+      "clipLoadState": "Loaded",
+      "clipPath": "Assets/Audio/tone.wav",
+      "dsp": 312.14933333333335,
+      "editorPlaying": true,
+      "enabled": true,
+      "focused": true,
+      "frame": 13708,
+      "group": "Music",
+      "isPlaying": true,
+      "loop": true,
+      "mixer": "Assets/Audio/Final2.mixer",
+      "mute": false,
+      "paused": false,
+      "realtime": 12.398716750000062,
+      "runInBackground": false,
+      "samples": 1323000,
+      "spatialBlend": 0.0,
+      "time": 1.83464849,
+      "timeSamples": 80908,
+      "volume": 0.25
+    },
+    "realtimeDeltaSec": 1.6115543329999582,
+    "timeDeltaSec": 1.621337831,
+    "timeSamplesDelta": 71501
+  },
+  "musicVolume": {
+    "setGetRestore": {
+      "afterRestore": 0.0,
+      "afterSet": -12.0,
+      "getAfterRestore": true,
+      "getAfterSet": true,
+      "getOrig": true,
+      "mixer": "Assets/Audio/Final2.mixer",
+      "original": 0.0,
+      "restoreOk": true,
+      "setOk": true
+    },
+    "recheckInPlay": {
+      "ok": true,
+      "v": 0.0
+    },
+    "editModeAfterStop": {
+      "ok": true,
+      "v": 0.0
+    }
+  },
+  "console": {
+    "initial": {
+      "count": 0,
+      "logs": [],
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 0,
+        "logs": 41,
+        "warnings": 0
+      },
+      "success": true,
+      "totalCaptured": 41
+    },
+    "inPlay": {
+      "count": 0,
+      "logs": [],
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 0,
+        "logs": 21,
+        "warnings": 0
+      },
+      "success": true,
+      "totalCaptured": 21
+    },
+    "final": {
+      "count": 0,
+      "logs": [],
+      "statistics": {
+        "asserts": 0,
+        "errors": 0,
+        "exceptions": 0,
+        "logs": 23,
+        "warnings": 0
+      },
+      "success": true,
+      "totalCaptured": 23
+    }
+  },
+  "assertions": {
+    "importer_after_modify_DecompressOnLoad_PCM": true,
+    "importer_after_stop_DecompressOnLoad_PCM": true,
+    "importer_modify_success": true,
+    "mixer_group_and_exposed_param": true,
+    "mixer_after_stop": true,
+    "create_gameobject_Music": true,
+    "assign_eval_completed": true,
+    "source_before_save": true,
+    "scene_saved": true,
+    "scene_reloaded_new_instance": true,
+    "source_after_reload": true,
+    "source_after_stop": true,
+    "editor_focused_for_play": true,
+    "source_play_called": true,
+    "samples_completed": true,
+    "both_samples_playing": true,
+    "sample_interval_0.5_to_3s": true,
+    "time_and_samples_advancing": true,
+    "runtime_routing": true,
+    "volume_get_set_restore": true,
+    "no_console_errors": true,
+    "final_edit_mode": true,
+    "runInBackground_unchanged": true
+  },
+  "failures": [],
+  "recoveryEvents": [
+    "Focus attempt with stale editor.pid 34790 failed (osascript -1719); recovered by reading real PID via eval and focusing it."
+  ],
+  "skillRecipeIssues": [
+    "Recipe eval snippets (statements ending in return) produce compiler warning CS0162 (Unreachable code detected) in eval diagnostics; harmless, state=completed.",
+    "Skill does not say how to focus the headed Editor; harness editor.pid can be stale, so the Editor PID should be obtained via eval (Process.GetCurrentProcess().Id)."
+  ],
+  "notClaimed": "Audible speaker output is not claimed; evidence shows engine playback state and routing only."
+}

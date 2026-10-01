@@ -14,6 +14,7 @@ metadata:
     - screenshot
     - capture
   siblings:
+    - unity-audio-setup
     - unity-localization
     - unity-2d-sprite-tilemap
     - unity-urp-setup
@@ -36,6 +37,9 @@ Control Play Mode, run EditMode/PlayMode tests, simulate input devices, and capt
 - The user wants to inspect current test progress or runtime state.
 
 ## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
 
 - Configure Locale/String Table assets and verify localized UI text: `unity-localization`.
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.

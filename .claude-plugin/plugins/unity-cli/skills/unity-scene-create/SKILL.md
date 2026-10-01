@@ -4,7 +4,7 @@ description: Create and bootstrap Unity scenes with unity-cli. Use when the user
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
-  version: 0.3.2
+  version: 0.3.3
   category: scenes
   triggers:
     - scene
@@ -13,6 +13,7 @@ metadata:
     - gameobject
     - level
   siblings:
+    - unity-audio-setup
     - unity-2d-sprite-tilemap
     - unity-urp-setup
     - unity-ui-toolkit-build
@@ -39,6 +40,9 @@ Before scene commands, follow the [bootstrap instructions](../unity-cli-usage/SK
 - The user needs help loading, saving, or organising a fresh scene authoring workflow.
 
 ## Do Not Use When
+
+- Configure AudioClip import, AudioMixer routing and AudioSource playback as one
+  verified workflow: use `unity-audio-setup`.
 
 - Build and verify a complete sprite / Tilemap / Pixel Perfect workflow: `unity-2d-sprite-tilemap`.
 
