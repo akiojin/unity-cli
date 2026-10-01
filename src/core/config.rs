@@ -250,6 +250,7 @@ mod tests {
         let _lock = crate::test_env::env_lock()
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&_lock);
         env::remove_var("UNITY_CLI_HOST");
         env::remove_var("UNITY_CLI_PORT");
         env::remove_var("UNITY_CLI_TIMEOUT_MS");
