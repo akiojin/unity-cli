@@ -572,8 +572,9 @@ export UNITY_PROJECT_ROOT=/absolute/path/to/UnityCliBridge
 
 ### `Capabilities: none`
 
-`unity-cli` is a CLI, not an MCP server.  
-If a client still expects MCP capabilities directly, remove legacy MCP launch settings and configure command execution to call `unity-cli`.
+The CLI is the primary implementation. For MCP clients, use the thin
+`unity-cli mcp` stdio adapter and `unity-cli mcp configure <client>`;
+see [MCP configuration](./mcp.md). Legacy Node.js MCP launch settings are not supported.
 
 Verification:
 
@@ -1193,8 +1194,9 @@ export UNITY_PROJECT_ROOT=/absolute/path/to/UnityCliBridge
 
 ### `Capabilities: none`
 
-`unity-cli` は MCP サーバーではなく CLI です。  
-クライアントが MCP capabilities を直接期待している場合は、旧 MCP 起動設定を削除し、コマンド実行先を `unity-cli` に切り替えてください。
+CLI が本体です。MCP クライアントには薄い stdio アダプタ `unity-cli mcp` と
+`unity-cli mcp configure <client>` を使用してください（[MCP 設定](./mcp.md)）。
+旧 Node.js MCP サーバーの起動設定はサポートしません。
 
 確認:
 

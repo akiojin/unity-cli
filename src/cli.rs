@@ -70,6 +70,11 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Expose the existing CLI tools over MCP stdio, or configure a client.
+    Mcp {
+        #[command(subcommand)]
+        command: Option<McpCommand>,
+    },
     /// Run tests in an existing Editor or an automatically started headless Editor.
     Test(TestArgs),
     Raw(RawArgs),
@@ -145,6 +150,27 @@ pub enum Command {
         #[arg(long)]
         stdin: bool,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum McpCommand {
+    /// Merge the unity-cli server into a client configuration atomically.
+    Configure {
+        #[arg(value_enum)]
+        client: McpClient,
+        /// Write project-scoped configuration (unsupported by Windsurf).
+        #[arg(long)]
+        local: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum McpClient {
+    ClaudeCode,
+    Cursor,
+    Vscode,
+    Windsurf,
+    Codex,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]

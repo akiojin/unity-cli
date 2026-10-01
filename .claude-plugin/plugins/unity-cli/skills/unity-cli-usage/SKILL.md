@@ -1,6 +1,6 @@
 ---
 name: unity-cli-usage
-description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
+description: Bootstrap the unity-cli toolchain for Unity Editor automation. Use when verifying the unity-cli binary, discovering available tools, invoking a tool by name, switching active Unity instances, configuring an MCP client, or troubleshooting host/port and install-mode issues. Do not use once a more specific Unity workflow skill applies; defer to `unity-scene-create`, `unity-csharp-edit`, `unity-editor-tools`, or another domain skill instead.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 user-invocable: false
 metadata:
@@ -15,6 +15,7 @@ metadata:
     - ping
     - doctor
     - instance
+    - mcp
   siblings:
     - unity-package-management
     - unity-project-bootstrap
@@ -86,6 +87,25 @@ unity-cli tool list --names-only --output json # name array in data
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
 unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ```
+
+## MCP client setup
+
+The CLI is the primary implementation; `unity-cli mcp` is a thin stdio adapter
+over the same catalog, execution path and Editor authentication. Use it when a
+client needs MCP instead of shell/skill execution. It starts without an Editor
+and emits `notifications/tools/list_changed` when the selected Editor connects.
+
+1. Preview the requested client settings with `unity-cli mcp configure cursor --local --dry-run`.
+2. Apply them with `unity-cli mcp configure cursor --local`. Supported clients:
+   `claude-code`, `cursor`, `vscode`, `windsurf`, `codex`; Claude Desktop is not
+   distributed. `--local` writes project settings in the current directory and
+   pins that project path; omit it for user settings. Windsurf has no local scope.
+3. Ensure `unity-cli` is on the client's PATH, reload its MCP settings, and follow
+   the client's trust prompt. Existing keys/other servers are preserved; invalid
+   files and symlinks are rejected. Never put an Editor token in client settings.
+4. Verify with `npx @modelcontextprotocol/inspector --cli unity-cli mcp --method tools/list`.
+   MCP tool failures have `isError: true` and the normal CLI envelope in text
+   content. Inspect `errors[0].code` and use the same recovery steps as CLI calls.
 
 ## Examples
 

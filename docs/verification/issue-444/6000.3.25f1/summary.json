@@ -1,0 +1,74 @@
+{
+  "started_at": "2026-10-01T18:44:38.755125+00:00",
+  "finished_at": "2026-10-01T18:46:17.594135+00:00",
+  "version": "6000.3.25f1",
+  "inspector": "@modelcontextprotocol/inspector@2.9.0",
+  "checks": [
+    {
+      "name": "starts with Editor absent",
+      "passed": true
+    },
+    {
+      "name": "catalog before connection",
+      "passed": true
+    },
+    {
+      "name": "no false connection notification",
+      "passed": true
+    },
+    {
+      "name": "real Editor late-connect notification",
+      "passed": true
+    },
+    {
+      "name": "Editor import and compilation ready",
+      "passed": true
+    },
+    {
+      "name": "tools-list inspector exit",
+      "passed": true
+    },
+    {
+      "name": "Inspector and CLI tool names identical",
+      "passed": true
+    },
+    {
+      "name": "Inspector schema projection matches CLI",
+      "passed": true
+    },
+    {
+      "name": "raw MCP and CLI schemas exactly identical",
+      "passed": true
+    },
+    {
+      "name": "project custom tool is published",
+      "passed": true
+    },
+    {
+      "name": "MCP calls project custom tool",
+      "passed": true
+    },
+    {
+      "name": "Inspector creates GameObject",
+      "passed": true
+    },
+    {
+      "name": "hierarchy confirms created GameObject",
+      "passed": true
+    },
+    {
+      "name": "MCP eval authenticated",
+      "passed": true
+    },
+    {
+      "name": "MCP rejects mismatched token with original envelope",
+      "passed": true
+    },
+    {
+      "name": "rejected eval has no scene side effect",
+      "passed": true
+    }
+  ],
+  "status": "PASS",
+  "binary_sha256": "4020ba87eb34f22e05bd89ebe53d351aaaf235611240572dc3effa4cbfe334b3"
+}

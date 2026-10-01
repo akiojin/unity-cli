@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"command\":\"get_hierarchy\",\"data\":{\"hierarchy\":[{\"name\":\"McpInspector444_6000.3.25f1\",\"path\":\"/McpInspector444_6000.3.25f1\"}],\"isPrefabMode\":false,\"objectCount\":1,\"sceneName\":\"\"},\"errors\":[],\"success\":true,\"warnings\":[]}"
+    }
+  ],
+  "isError": false
+}

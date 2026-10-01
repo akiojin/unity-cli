@@ -1,0 +1,7663 @@
+{
+  "tools": [
+    {
+      "name": "addressables_analyze",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "analyze_duplicates",
+              "analyze_dependencies",
+              "analyze_unused"
+            ],
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "analyze_duplicates"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "analyze_dependencies"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "analyze_unused"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "addressables_build",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "build",
+              "clean_build"
+            ],
+            "type": "string"
+          },
+          "buildTarget": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "build"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "clean_build"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "addressables_manage",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "add_entry",
+              "remove_entry",
+              "set_address",
+              "add_label",
+              "remove_label",
+              "list_entries",
+              "list_groups",
+              "create_group",
+              "remove_group",
+              "move_entry"
+            ],
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "newAddress": {
+            "type": "string"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "targetGroupName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_entry"
+                ],
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "groupName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "address",
+              "groupName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove_entry"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "set_address"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "newAddress": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "newAddress"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_label"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "label"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove_label"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "label"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "list_entries"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "list_groups"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "create_group"
+                ],
+                "type": "string"
+              },
+              "groupName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "groupName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove_group"
+                ],
+                "type": "string"
+              },
+              "groupName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "groupName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "move_entry"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "targetGroupName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "targetGroupName"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_animator_runtime_info",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectName": {
+            "type": "string"
+          },
+          "includeBehaviours": {
+            "type": "boolean"
+          },
+          "includeIK": {
+            "type": "boolean"
+          },
+          "includeRootMotion": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gameObjectName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_animator_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectName": {
+            "type": "string"
+          },
+          "includeClips": {
+            "type": "boolean"
+          },
+          "includeParameters": {
+            "type": "boolean"
+          },
+          "includeStates": {
+            "type": "boolean"
+          },
+          "includeTransitions": {
+            "type": "boolean"
+          },
+          "layerIndex": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gameObjectName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_timeline",
+      "description": "Inspect a Timeline asset or PlayableDirector, tracks, clips, and bindings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "directorPath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {},
+            "required": [
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {},
+            "required": [
+              "directorPath"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "manage_timeline",
+      "description": "Create and edit Timeline AnimationTracks, bind a director, or evaluate a time",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "create_asset",
+              "assign_director",
+              "create_track",
+              "delete_track",
+              "add_clip",
+              "update_clip",
+              "remove_clip",
+              "set_binding",
+              "clear_binding",
+              "evaluate"
+            ],
+            "type": "string"
+          },
+          "animationClipPath": {
+            "type": "string"
+          },
+          "animatorPath": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "clipIndex": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "directorPath": {
+            "type": "string"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "maximum": 1000000,
+            "type": "number"
+          },
+          "expectedClip": {
+            "additionalProperties": false,
+            "properties": {
+              "animationClipPath": {
+                "type": "string"
+              },
+              "duration": {
+                "exclusiveMinimum": 0,
+                "maximum": 1000000,
+                "type": "number"
+              },
+              "start": {
+                "maximum": 1000000,
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "animationClipPath",
+              "start",
+              "duration"
+            ],
+            "type": "object"
+          },
+          "start": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "time": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "trackId": {
+            "description": "Stable GUID:localID returned by get_timeline",
+            "type": "string"
+          },
+          "trackName": {
+            "type": "string"
+          },
+          "trackType": {
+            "enum": [
+              "AnimationTrack"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "create_asset"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "assign_director"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "directorPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "create_track"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "trackName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "delete_track"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "trackId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_clip"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "trackId",
+              "animationClipPath",
+              "start",
+              "duration"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "update_clip"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "trackId",
+              "clipIndex",
+              "expectedClip"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove_clip"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath",
+              "trackId",
+              "clipIndex",
+              "expectedClip"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "set_binding"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "directorPath",
+              "trackId",
+              "animatorPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "clear_binding"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "directorPath",
+              "trackId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "evaluate"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "directorPath",
+              "time"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_animator_controller",
+      "description": "Create an AnimatorController asset with parameters, states, and transitions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "controllerPath": {
+            "type": "string"
+          },
+          "defaultState": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "parameters": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "defaultBool": {
+                  "type": "boolean"
+                },
+                "defaultFloat": {
+                  "type": "number"
+                },
+                "defaultInt": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "enum": [
+                    "Bool",
+                    "Float",
+                    "Int",
+                    "Trigger"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "states": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "motionPath": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "transitions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "conditions": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "If",
+                          "IfNot",
+                          "Greater",
+                          "Less",
+                          "Equals",
+                          "NotEqual"
+                        ],
+                        "type": "string"
+                      },
+                      "parameter": {
+                        "type": "string"
+                      },
+                      "threshold": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "parameter",
+                      "mode"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "duration": {
+                  "type": "number"
+                },
+                "exitTime": {
+                  "type": "number"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "hasExitTime": {
+                  "type": "boolean"
+                },
+                "to": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "controllerPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_animation_clip",
+      "description": "Create an AnimationClip asset from sprite frames with frame rate and loop settings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bindingPath": {
+            "type": "string"
+          },
+          "clipPath": {
+            "type": "string"
+          },
+          "frameRate": {
+            "type": "number"
+          },
+          "loopTime": {
+            "type": "boolean"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "spritePaths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "clipPath",
+          "spritePaths"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_animation_curves",
+      "description": "Read float curve bindings, keys, and tangent modes from an AnimationClip",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "binding": {
+            "additionalProperties": false,
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "property": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "component",
+              "property"
+            ],
+            "type": "object"
+          },
+          "clipPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "clipPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "edit_animation_curve",
+      "description": "Set, upsert, or remove float curve keys on a standalone AnimationClip",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "animationRoot": {
+            "type": "integer"
+          },
+          "binding": {
+            "additionalProperties": false,
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "property": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "component",
+              "property"
+            ],
+            "type": "object"
+          },
+          "clipPath": {
+            "type": "string"
+          },
+          "createIfMissing": {
+            "type": "boolean"
+          },
+          "keys": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "inTangent": {
+                  "type": "number"
+                },
+                "leftTangentMode": {
+                  "enum": [
+                    "Linear",
+                    "Constant",
+                    "Auto",
+                    "ClampedAuto",
+                    "Free"
+                  ],
+                  "type": "string"
+                },
+                "outTangent": {
+                  "type": "number"
+                },
+                "rightTangentMode": {
+                  "enum": [
+                    "Linear",
+                    "Constant",
+                    "Auto",
+                    "ClampedAuto",
+                    "Free"
+                  ],
+                  "type": "string"
+                },
+                "time": {
+                  "type": "number"
+                },
+                "value": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "time",
+                "value"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "operation": {
+            "enum": [
+              "set",
+              "upsert_keys",
+              "remove_keys",
+              "remove_curve"
+            ],
+            "type": "string"
+          },
+          "times": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "clipPath",
+          "animationRoot",
+          "binding",
+          "operation"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_sprite_atlas",
+      "description": "Create a SpriteAtlas asset with packables and packing settings",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "atlasPath": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "packables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "packingSettings": {
+            "additionalProperties": false,
+            "properties": {
+              "allowRotation": {
+                "type": "boolean"
+              },
+              "padding": {
+                "type": "integer"
+              },
+              "tightPacking": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "textureSettings": {
+            "additionalProperties": false,
+            "properties": {
+              "filterMode": {
+                "enum": [
+                  "Point",
+                  "Bilinear",
+                  "Trilinear"
+                ],
+                "type": "string"
+              },
+              "generateMipMaps": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "atlasPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "find_by_component",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentType": {
+            "type": "string"
+          },
+          "includeInactive": {
+            "type": "boolean"
+          },
+          "matchExactType": {
+            "type": "boolean"
+          },
+          "searchScope": {
+            "enum": [
+              "scene",
+              "prefabs",
+              "all"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "componentType"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_component_values",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentIndex": {
+            "type": "integer"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "gameObjectName": {
+            "type": "string"
+          },
+          "includeInherited": {
+            "type": "boolean"
+          },
+          "includePrivateFields": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gameObjectName",
+          "componentType"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_gameobject_details",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectName": {
+            "type": "string"
+          },
+          "includeChildren": {
+            "type": "boolean"
+          },
+          "includeComponents": {
+            "type": "boolean"
+          },
+          "includeMaterials": {
+            "type": "boolean"
+          },
+          "maxDepth": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "gameObjectName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_object_references",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectName": {
+            "type": "string"
+          },
+          "includeAssetReferences": {
+            "type": "boolean"
+          },
+          "includeHierarchyReferences": {
+            "type": "boolean"
+          },
+          "searchInPrefabs": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gameObjectName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "analyze_scene_contents",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "groupByType": {
+            "type": "boolean"
+          },
+          "includeInactive": {
+            "type": "boolean"
+          },
+          "includeMemoryInfo": {
+            "type": "boolean"
+          },
+          "includePrefabInfo": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "manage_asset_database",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "find_assets",
+              "get_asset_info",
+              "create_folder",
+              "delete_asset",
+              "move_asset",
+              "copy_asset",
+              "refresh",
+              "save"
+            ],
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "filter": {
+            "type": "string"
+          },
+          "folderPath": {
+            "type": "string"
+          },
+          "fromPath": {
+            "type": "string"
+          },
+          "searchInFolders": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "toPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "find_assets"
+                ],
+                "type": "string"
+              },
+              "filter": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "filter"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_asset_info"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "create_folder"
+                ],
+                "type": "string"
+              },
+              "folderPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "folderPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "delete_asset"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "move_asset"
+                ],
+                "type": "string"
+              },
+              "fromPath": {
+                "type": "string"
+              },
+              "toPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "fromPath",
+              "toPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "copy_asset"
+                ],
+                "type": "string"
+              },
+              "fromPath": {
+                "type": "string"
+              },
+              "toPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "fromPath",
+              "toPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "refresh"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "save"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "analyze_asset_dependencies",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get_dependencies",
+              "get_dependents",
+              "analyze_circular",
+              "find_unused",
+              "analyze_size_impact",
+              "validate_references"
+            ],
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "includeBuiltIn": {
+            "type": "boolean"
+          },
+          "recursive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_dependencies"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_dependents"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "analyze_circular"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "find_unused"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "analyze_size_impact"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "validate_references"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "manage_asset_import_settings",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "modify",
+              "apply_preset",
+              "reimport"
+            ],
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "preset": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "action",
+          "assetPath"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "modify"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "settings": {
+                "additionalProperties": true,
+                "properties": {},
+                "type": "object"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "settings"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply_preset"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "preset": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "preset"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "reimport"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_audio_mixer",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "create",
+              "get",
+              "add_group",
+              "expose_parameter"
+            ],
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "groupPath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parameter": {
+            "enum": [
+              "Volume"
+            ],
+            "type": "string"
+          },
+          "parameterName": {
+            "type": "string"
+          },
+          "parentGroup": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "assetPath"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "create",
+                  "get"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_group"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parentGroup": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "parentGroup",
+              "name"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "expose_parameter"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "groupPath": {
+                "type": "string"
+              },
+              "parameter": {
+                "enum": [
+                  "Volume"
+                ],
+                "type": "string"
+              },
+              "parameterName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "assetPath",
+              "groupPath",
+              "parameter",
+              "parameterName"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_material",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "copyFrom": {
+            "type": "string"
+          },
+          "materialPath": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "shader": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materialPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "modify_material",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "materialPath": {
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "shader": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materialPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_prefab",
+      "description": "Create a Prefab from a scene object or template; a connected Prefab instance root creates an inherited Variant",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "createFromTemplate": {
+            "type": "boolean"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "prefabPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prefabPath"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "prefabPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "prefabPath",
+              "gameObjectPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "createFromTemplate": {
+                "type": "boolean"
+              },
+              "prefabPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "prefabPath",
+              "createFromTemplate"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_prefab_overrides",
+      "description": "List structured property, object, added/removed component overrides and apply targets for a scene Prefab instance root",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "gameObjectPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "manage_prefab_overrides",
+      "description": "Apply or revert all or individual Prefab overrides; apply requires assetPath (Variant or ancestor Prefab); use IDs from get_prefab_overrides",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "apply",
+              "revert"
+            ],
+            "type": "string"
+          },
+          "assetComponentId": {
+            "type": "integer"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "instanceId": {
+            "type": "integer"
+          },
+          "propertyPath": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "all",
+              "property",
+              "object",
+              "added_component",
+              "removed_component"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "gameObjectPath",
+          "action",
+          "scope"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "scope": {
+                "enum": [
+                  "all"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "assetPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "propertyPath": {
+                "type": "string"
+              },
+              "scope": {
+                "enum": [
+                  "property"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "assetPath",
+              "instanceId",
+              "propertyPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "object"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "assetPath",
+              "instanceId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "added_component"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "assetPath",
+              "instanceId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              },
+              "assetComponentId": {
+                "type": "integer"
+              },
+              "assetPath": {
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "removed_component"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "assetPath",
+              "instanceId",
+              "assetComponentId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "revert"
+                ],
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "scope": {
+                "enum": [
+                  "all"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "revert"
+                ],
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "propertyPath": {
+                "type": "string"
+              },
+              "scope": {
+                "enum": [
+                  "property"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "instanceId",
+              "propertyPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "revert"
+                ],
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "object"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "instanceId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "revert"
+                ],
+                "type": "string"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "added_component"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "instanceId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "revert"
+                ],
+                "type": "string"
+              },
+              "assetComponentId": {
+                "type": "integer"
+              },
+              "gameObjectPath": {
+                "type": "string"
+              },
+              "instanceId": {
+                "type": "integer"
+              },
+              "scope": {
+                "enum": [
+                  "removed_component"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "gameObjectPath",
+              "action",
+              "scope",
+              "instanceId",
+              "assetComponentId"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "unpack_prefab",
+      "description": "Unpack a scene Prefab instance: Outermost preserves nested connections, Completely removes all connections",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "Outermost",
+              "Completely"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "gameObjectPath",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "exit_prefab_mode",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "saveChanges": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "instantiate_prefab",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "position": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "prefabPath": {
+            "type": "string"
+          },
+          "rotation": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "prefabPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "modify_prefab",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applyToInstances": {
+            "type": "boolean"
+          },
+          "modifications": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "prefabPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prefabPath",
+          "modifications"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "open_prefab",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "focusObject": {
+            "type": "string"
+          },
+          "isolateObject": {
+            "type": "boolean"
+          },
+          "prefabPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prefabPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "save_prefab",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "includeChildren": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "build_index",
+      "description": "Build the local code search index",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "excludePackageCache": {
+            "type": "boolean"
+          },
+          "outputPath": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "all",
+              "assets",
+              "packages",
+              "embedded",
+              "library"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "update_index",
+      "description": "Update the local code search index",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_index_status",
+      "description": "Get local code search index status",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_compilation_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeMessages": {
+            "type": "boolean"
+          },
+          "maxMessages": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "hot_reload_status",
+      "description": "Inspect optional FastScriptReload support, preview session and verified revision",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "hot_reload",
+      "description": "Preview method-body changes during Play; explicitly recover by stopping and recompiling",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "begin",
+              "apply",
+              "recover"
+            ],
+            "type": "string"
+          },
+          "expectedRevision": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "timeoutSeconds": {
+            "maximum": 60,
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "begin"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "path"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "apply"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "source",
+              "expectedRevision"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "recover"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "add_component",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentType": {
+            "type": "string"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "gameObjectPath",
+          "componentType"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "set_component_field",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "applyPrefabChanges": {
+            "type": "boolean"
+          },
+          "componentIndex": {
+            "type": "integer"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "createUndo": {
+            "type": "boolean"
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "enumValue": {
+            "type": "string"
+          },
+          "fieldPath": {
+            "type": "string"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "markSceneDirty": {
+            "type": "boolean"
+          },
+          "objectReference": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "prefabAssetPath": {
+            "type": "string"
+          },
+          "prefabObjectPath": {
+            "type": "string"
+          },
+          "runtime": {
+            "type": "boolean"
+          },
+          "scope": {
+            "enum": [
+              "scene",
+              "prefab_asset",
+              "prefab_mode",
+              "auto"
+            ],
+            "type": "string"
+          },
+          "serializedPropertyPath": {
+            "type": "string"
+          },
+          "value": {},
+          "valueType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "componentType",
+          "fieldPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_component_types",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "onlyAddable": {
+            "type": "boolean"
+          },
+          "search": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_components",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "includeProperties": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "gameObjectPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "modify_component",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentIndex": {
+            "type": "integer"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "gameObjectPath",
+          "componentType"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_component",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "componentIndex": {
+            "type": "integer"
+          },
+          "componentType": {
+            "type": "string"
+          },
+          "gameObjectPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "gameObjectPath",
+          "componentType"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "clear_console",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clearOnBuild": {
+            "type": "boolean"
+          },
+          "clearOnPlay": {
+            "type": "boolean"
+          },
+          "clearOnRecompile": {
+            "type": "boolean"
+          },
+          "preserveErrors": {
+            "type": "boolean"
+          },
+          "preserveWarnings": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "clear_logs",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "read_console",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "filterText": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string"
+          },
+          "groupBy": {
+            "type": "string"
+          },
+          "includeStackTrace": {
+            "type": "boolean"
+          },
+          "logTypes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sinceTimestamp": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "string"
+          },
+          "untilTimestamp": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "manage_layers",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "add",
+              "remove",
+              "get_by_name",
+              "get_by_index"
+            ],
+            "type": "string"
+          },
+          "layerIndex": {
+            "type": "integer"
+          },
+          "layerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add"
+                ],
+                "type": "string"
+              },
+              "layerName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "layerName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove"
+                ],
+                "type": "string"
+              },
+              "layerName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "layerName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_by_name"
+                ],
+                "type": "string"
+              },
+              "layerName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "layerName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_by_index"
+                ],
+                "type": "string"
+              },
+              "layerIndex": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "action",
+              "layerIndex"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "quit_editor",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_selection",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "set",
+              "clear",
+              "get_details"
+            ],
+            "type": "string"
+          },
+          "includeDetails": {
+            "type": "boolean"
+          },
+          "objectPaths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "set"
+                ],
+                "type": "string"
+              },
+              "objectPaths": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "action",
+              "objectPaths"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "clear"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_details"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_tags",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "add",
+              "remove"
+            ],
+            "type": "string"
+          },
+          "tagName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add"
+                ],
+                "type": "string"
+              },
+              "tagName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "tagName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove"
+                ],
+                "type": "string"
+              },
+              "tagName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "tagName"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_tools",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "activate",
+              "deactivate",
+              "refresh"
+            ],
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "toolName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "activate"
+                ],
+                "type": "string"
+              },
+              "toolName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "toolName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "deactivate"
+                ],
+                "type": "string"
+              },
+              "toolName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "toolName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "refresh"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_windows",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "get",
+              "focus",
+              "get_state"
+            ],
+            "type": "string"
+          },
+          "includeHidden": {
+            "type": "boolean"
+          },
+          "windowType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "focus"
+                ],
+                "type": "string"
+              },
+              "windowType": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "windowType"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_state"
+                ],
+                "type": "string"
+              },
+              "windowType": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "windowType"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_gameobject",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "layer": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentPath": {
+            "type": "string"
+          },
+          "position": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "primitiveType": {
+            "enum": [
+              "cube",
+              "sphere",
+              "cylinder",
+              "capsule",
+              "plane",
+              "quad"
+            ],
+            "type": "string"
+          },
+          "rotation": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "scale": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "tag": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "delete_gameobject",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeChildren": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "paths": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "paths"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "find_gameobject",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exactMatch": {
+            "type": "boolean"
+          },
+          "layer": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_hierarchy",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeComponents": {
+            "type": "boolean"
+          },
+          "includeInactive": {
+            "type": "boolean"
+          },
+          "includeLayers": {
+            "type": "boolean"
+          },
+          "includeTags": {
+            "type": "boolean"
+          },
+          "includeTransform": {
+            "type": "boolean"
+          },
+          "maxDepth": {
+            "type": "integer"
+          },
+          "maxObjects": {
+            "type": "integer"
+          },
+          "nameOnly": {
+            "type": "boolean"
+          },
+          "rootPath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "modify_gameobject",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "layer": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentPath": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "position": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "rotation": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "runtime": {
+            "type": "boolean"
+          },
+          "scale": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "type": "object"
+          },
+          "tag": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "add_input_action",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_action_map",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_action_map",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_input_action",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "analyze_input_actions_asset",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "includeJsonStructure": {
+            "type": "boolean"
+          },
+          "includeStatistics": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "assetPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_input_actions_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "includeBindings": {
+            "type": "boolean"
+          },
+          "includeControlSchemes": {
+            "type": "boolean"
+          },
+          "includeJsonStructure": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "assetName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "assetPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "assetPath"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "add_input_binding",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "string"
+          },
+          "interactions": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "processors": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName",
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_composite_binding",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "bindings": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "compositeType": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName",
+          "bindings"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_input_binding",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "bindingIndex": {
+            "type": "integer"
+          },
+          "bindingPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "bindingIndex": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "bindingIndex"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "bindingPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "bindingPath"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_all_bindings",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actionName": {
+            "type": "string"
+          },
+          "assetPath": {
+            "type": "string"
+          },
+          "mapName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "mapName",
+          "actionName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "manage_control_schemes",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "devices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "operation": {
+            "enum": [
+              "add",
+              "remove",
+              "modify"
+            ],
+            "type": "string"
+          },
+          "schemeName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assetPath",
+          "operation"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "input_gamepad",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "button",
+              "stick",
+              "trigger",
+              "dpad"
+            ],
+            "type": "string"
+          },
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "button": {
+            "type": "string"
+          },
+          "buttonAction": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "holdSeconds": {
+            "type": "number"
+          },
+          "stick": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "actions": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "actions"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "input_keyboard",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "press",
+              "release",
+              "type",
+              "combo"
+            ],
+            "type": "string"
+          },
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "holdSeconds": {
+            "type": "number"
+          },
+          "key": {
+            "type": "string"
+          },
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "actions": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "actions"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "input_mouse",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "absolute": {
+            "type": "boolean"
+          },
+          "action": {
+            "enum": [
+              "move",
+              "click",
+              "drag",
+              "scroll",
+              "button"
+            ],
+            "type": "string"
+          },
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "button": {
+            "type": "string"
+          },
+          "buttonAction": {
+            "type": "string"
+          },
+          "clickCount": {
+            "type": "integer"
+          },
+          "deltaX": {
+            "type": "number"
+          },
+          "deltaY": {
+            "type": "number"
+          },
+          "endX": {
+            "type": "number"
+          },
+          "endY": {
+            "type": "number"
+          },
+          "holdSeconds": {
+            "type": "number"
+          },
+          "startX": {
+            "type": "number"
+          },
+          "startY": {
+            "type": "number"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "actions": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "actions"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "input_touch",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "tap",
+              "swipe",
+              "pinch",
+              "multi"
+            ],
+            "type": "string"
+          },
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "centerX": {
+            "type": "number"
+          },
+          "centerY": {
+            "type": "number"
+          },
+          "duration": {
+            "type": "integer"
+          },
+          "endDistance": {
+            "type": "number"
+          },
+          "endX": {
+            "type": "number"
+          },
+          "endY": {
+            "type": "number"
+          },
+          "holdSeconds": {
+            "type": "number"
+          },
+          "startDistance": {
+            "type": "number"
+          },
+          "startX": {
+            "type": "number"
+          },
+          "startY": {
+            "type": "number"
+          },
+          "touchId": {
+            "type": "integer"
+          },
+          "touches": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "actions": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "actions"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_input_sequence",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "delayBetween": {
+            "type": "integer"
+          },
+          "sequence": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "params": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "params"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sequence"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_current_input_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "execute_menu_item",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "execute",
+              "get_available_menus"
+            ],
+            "type": "string"
+          },
+          "alias": {
+            "type": "string"
+          },
+          "menuPath": {
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "safetyCheck": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "alias": {
+                "type": "string"
+              },
+              "menuPath": {
+                "type": "string"
+              },
+              "parameters": {
+                "additionalProperties": true,
+                "properties": {},
+                "type": "object"
+              },
+              "safetyCheck": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "menuPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "execute"
+                ],
+                "type": "string"
+              },
+              "menuPath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "menuPath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "get_available_menus"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "eval_csharp",
+      "description": "Evaluate synchronous C# in the Editor; timeout does not cancel execution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "expression",
+              "statements"
+            ],
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_eval_status",
+      "description": "Get a C# evaluation result by requestId in the current Editor domain",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_eval_stats",
+      "description": "Get C# evaluation counters of the current Editor domain: loaded assemblies, caches and memory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collect": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "package_manager",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "search",
+              "list",
+              "add",
+              "install",
+              "remove",
+              "uninstall",
+              "info",
+              "recommend"
+            ],
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "includeBuiltIn": {
+            "type": "boolean"
+          },
+          "keyword": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "packageId": {
+            "type": "string"
+          },
+          "packageName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "search"
+                ],
+                "type": "string"
+              },
+              "keyword": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "keyword"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "list"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add"
+                ],
+                "type": "string"
+              },
+              "packageId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "packageId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "install"
+                ],
+                "type": "string"
+              },
+              "packageId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "packageId"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove"
+                ],
+                "type": "string"
+              },
+              "packageName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "packageName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "uninstall"
+                ],
+                "type": "string"
+              },
+              "packageName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "packageName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "info"
+                ],
+                "type": "string"
+              },
+              "packageName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "packageName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "recommend"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "registry_config",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "list",
+              "add_openupm",
+              "add_nuget",
+              "remove",
+              "add_scope",
+              "recommend"
+            ],
+            "type": "string"
+          },
+          "autoAddPopular": {
+            "type": "boolean"
+          },
+          "registry": {
+            "type": "string"
+          },
+          "registryName": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "list"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_openupm"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_nuget"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "remove"
+                ],
+                "type": "string"
+              },
+              "registryName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "registryName"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "add_scope"
+                ],
+                "type": "string"
+              },
+              "registryName": {
+                "type": "string"
+              },
+              "scope": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "action",
+              "registryName",
+              "scope"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "action": {
+                "enum": [
+                  "recommend"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_editor_info",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_editor_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "pause_game",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "play_game",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "delayMs": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "stop_game",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "profiler_get_metrics",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "listAvailable": {
+            "type": "boolean"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "profiler_start",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maxDurationSec": {
+            "type": "number"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "normal",
+              "deep"
+            ],
+            "type": "string"
+          },
+          "recordToFile": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "profiler_status",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "profiler_stop",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_scene",
+      "description": "Create a new scene",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "addToBuildSettings": {
+            "type": "boolean"
+          },
+          "loadScene": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "sceneName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sceneName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_scene_info",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeGameObjects": {
+            "type": "boolean"
+          },
+          "sceneName": {
+            "type": "string"
+          },
+          "scenePath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "start_scene_bake",
+      "description": "Start a scene bake job for Lighting, legacy NavMesh, NavMeshSurface, or Occlusion",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scenePath": {
+            "description": "Saved, clean, active scene under Assets; only one scene may be loaded",
+            "minLength": 1,
+            "type": "string"
+          },
+          "surfacePath": {
+            "description": "GameObject hierarchy path containing NavMeshSurface; required for navmesh-surface",
+            "minLength": 1,
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "lighting",
+              "navmesh-legacy",
+              "navmesh-surface",
+              "occlusion"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "scenePath"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "target": {
+                "enum": [
+                  "navmesh-surface"
+                ]
+              }
+            },
+            "required": [
+              "surfacePath"
+            ],
+            "type": "object"
+          },
+          {
+            "properties": {
+              "target": {
+                "enum": [
+                  "lighting",
+                  "navmesh-legacy",
+                  "occlusion"
+                ]
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_scene_bake_status",
+      "description": "Poll a bake job for progress, failure, and verified saved artifacts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_scenes",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeBuildScenesOnly": {
+            "type": "boolean"
+          },
+          "includeLoadedOnly": {
+            "type": "boolean"
+          },
+          "includePath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "load_scene",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "loadMode": {
+            "enum": [
+              "Single",
+              "Additive"
+            ],
+            "type": "string"
+          },
+          "sceneName": {
+            "type": "string"
+          },
+          "scenePath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "scenePath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "scenePath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "sceneName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sceneName"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "save_scene",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "saveAs": {
+            "type": "boolean"
+          },
+          "scenePath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "analyze_screenshot",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "analysisType": {
+            "type": "string"
+          },
+          "base64Data": {
+            "type": "string"
+          },
+          "imagePath": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "properties": {
+              "imagePath": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "imagePath"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": true,
+            "properties": {
+              "base64Data": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "base64Data"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "capture_screenshot",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "captureMode": {
+            "enum": [
+              "game",
+              "scene",
+              "window",
+              "explorer"
+            ],
+            "type": "string"
+          },
+          "encodeAsBase64": {
+            "type": "boolean"
+          },
+          "explorerSettings": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "includeUI": {
+            "type": "boolean"
+          },
+          "osFallback": {
+            "type": "boolean"
+          },
+          "width": {
+            "type": "integer"
+          },
+          "windowName": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "list_packages",
+      "description": "List installed packages",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "list_tools",
+      "description": "Discover project-local tools registered in the connected Editor",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "read",
+      "description": "Read a C# source file",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maxLines": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "startLine": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "find_refs",
+      "description": "Find symbol references",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maxBytes": {
+            "type": "integer"
+          },
+          "maxMatchesPerFile": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pageSize": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "snippetContext": {
+            "type": "integer"
+          },
+          "startAfter": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "search",
+      "description": "Search code by pattern",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "find_symbol",
+      "description": "Find symbol definitions",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "exact": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_symbols",
+      "description": "Get symbols in a C# source file",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "rename_symbol",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "namePath": {
+            "type": "string"
+          },
+          "newName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "namePath",
+          "newName"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "replace_symbol_body",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "body": {
+            "type": "string"
+          },
+          "namePath": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "namePath",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "insert_before_symbol",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "namePath": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "namePath",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "insert_after_symbol",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "namePath": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "namePath",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "remove_symbol",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "failOnReferences": {
+            "type": "boolean"
+          },
+          "namePath": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          },
+          "removeEmptyFile": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "namePath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "validate_text_edits",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "newText": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "relative": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "newText"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "write_csharp_file",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "format": {
+            "type": "boolean"
+          },
+          "newText": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "refresh": {
+            "type": "boolean"
+          },
+          "relative": {
+            "type": "string"
+          },
+          "updateIndex": {
+            "type": "boolean"
+          },
+          "validate": {
+            "type": "boolean"
+          },
+          "waitForCompile": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "newText"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_csharp_file",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "format": {
+            "type": "boolean"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "refresh": {
+            "type": "boolean"
+          },
+          "relative": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "updateIndex": {
+            "type": "boolean"
+          },
+          "validate": {
+            "type": "boolean"
+          },
+          "waitForCompile": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "apply_csharp_edits",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "apply": {
+            "type": "boolean"
+          },
+          "files": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "newText": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "relative": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "newText"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "format": {
+            "type": "boolean"
+          },
+          "refresh": {
+            "type": "boolean"
+          },
+          "updateIndex": {
+            "type": "boolean"
+          },
+          "validate": {
+            "type": "boolean"
+          },
+          "waitForCompile": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "create_class",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "folder": {
+            "type": "string"
+          },
+          "inherits": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_project_setting",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "set_project_setting",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "confirmChanges": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "value": {}
+        },
+        "required": [
+          "path",
+          "value",
+          "confirmChanges"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_project_settings",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeAudio": {
+            "type": "boolean"
+          },
+          "includeBuild": {
+            "type": "boolean"
+          },
+          "includeEditor": {
+            "type": "boolean"
+          },
+          "includeGraphics": {
+            "type": "boolean"
+          },
+          "includeInputManager": {
+            "type": "boolean"
+          },
+          "includePhysics": {
+            "type": "boolean"
+          },
+          "includePhysics2D": {
+            "type": "boolean"
+          },
+          "includePlayer": {
+            "type": "boolean"
+          },
+          "includeQuality": {
+            "type": "boolean"
+          },
+          "includeTags": {
+            "type": "boolean"
+          },
+          "includeTime": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_package_setting",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "package": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "project",
+              "user"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "package",
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "set_package_setting",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "confirmChanges": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string"
+          },
+          "package": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "project",
+              "user"
+            ],
+            "type": "string"
+          },
+          "value": {}
+        },
+        "required": [
+          "package",
+          "key",
+          "value",
+          "confirmChanges"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "update_project_settings",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "audio": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "confirmChanges": {
+            "type": "boolean"
+          },
+          "graphics": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "physics": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "player": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "time": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "confirmChanges"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_command_stats",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "ping",
+      "description": "Check Unity Editor connectivity",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "refresh_assets",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_test_status",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "includeFileContent": {
+            "type": "boolean"
+          },
+          "includeTestResults": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "run_tests",
+      "description": "Run EditMode/PlayMode tests",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "exportPath": {
+            "type": "string"
+          },
+          "filter": {
+            "type": "string"
+          },
+          "includeDetails": {
+            "type": "boolean"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "testMode": {
+            "enum": [
+              "EditMode",
+              "PlayMode",
+              "All"
+            ],
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "build_player",
+      "description": "Queue a standalone player build on the Unity Editor host",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "development": {
+            "default": false,
+            "type": "boolean"
+          },
+          "outputPath": {
+            "type": "string"
+          },
+          "scenes": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "target": {
+            "enum": [
+              "StandaloneWindows64",
+              "StandaloneOSX"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "target",
+          "scenes",
+          "outputPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "get_build_status",
+      "description": "Get player build status, report, and artifacts",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "buildId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "buildId"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "click_ui_element",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "clickType": {
+            "type": "string"
+          },
+          "elementPath": {
+            "type": "string"
+          },
+          "holdDuration": {
+            "type": "integer"
+          },
+          "position": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "elementPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "find_ui_elements",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "canvasFilter": {
+            "type": "string"
+          },
+          "elementType": {
+            "type": "string"
+          },
+          "includeInactive": {
+            "type": "boolean"
+          },
+          "namePattern": {
+            "type": "string"
+          },
+          "tagFilter": {
+            "type": "string"
+          },
+          "uiDocumentFilter": {
+            "type": "string"
+          },
+          "uiSystem": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "get_ui_element_state",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "elementPath": {
+            "type": "string"
+          },
+          "includeChildren": {
+            "type": "boolean"
+          },
+          "includeInteractableInfo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "elementPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "set_ui_element_value",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "elementPath": {
+            "type": "string"
+          },
+          "triggerEvents": {
+            "type": "boolean"
+          },
+          "value": {}
+        },
+        "required": [
+          "elementPath",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "simulate_ui_input",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "inputSequence": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "params": {
+                  "additionalProperties": true,
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "params"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "validateState": {
+            "type": "boolean"
+          },
+          "waitBetween": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inputSequence"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "capture_video_start",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "captureMode": {
+            "enum": [
+              "game"
+            ],
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "mp4",
+              "webm",
+              "png_sequence"
+            ],
+            "type": "string"
+          },
+          "fps": {
+            "type": "integer"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "includeUI": {
+            "type": "boolean"
+          },
+          "maxDurationSec": {
+            "type": "number"
+          },
+          "width": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "capture_video_status",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "capture_video_stop",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "reference_fetch",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "acceptLicense": {
+            "type": "boolean"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "force": {
+            "type": "boolean"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "reference_status",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_search",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "integer"
+          },
+          "maxResults": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "regex": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_grep",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "integer"
+          },
+          "fileGlob": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_view",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "maxLines": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "startLine": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_clean",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "dryRun": {
+            "type": "boolean"
+          },
+          "keep": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "reference_find_symbol",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_diff",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "maxSymbols": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_resolve_symbol_at",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "column": {
+            "type": "integer"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "projectRoot": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "line",
+          "column"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "reference_embed_build",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "reference_embed_search",
+      "description": "Unity CLI tool operation",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "projectRoot": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "topK": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "vfx_describe_graph",
+      "description": "Describe a Visual Effect Graph asset: contexts (with settings, blocks and slots), operators, exposed parameters, slot and flow links, validation + compile errors (`errors`, on by default), the last compile outcome (`compile`), and canvas layout diagnostics (`layout.overlapCount`). Large graphs describe big: narrow the payload with `include` (top-level sections to keep) and `includeSlots:false` (omit slot trees, which dominate the output)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "includeErrors": {
+            "type": "boolean"
+          },
+          "includeSlots": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "assetPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "vfx_list_library",
+      "description": "List available Visual Effect Graph descriptors (kind: block, operator, context, or parameter)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    },
+    {
+      "name": "vfx_apply",
+      "description": "Apply an authoring mutation to a Visual Effect Graph asset; every op response carries a `compile` summary of the recompile it triggered. Pass autoCompile:false to skip that recompile and batch edits, then one `compile` op to flush (ops: add_block, set_block_setting, set_block_enabled, reorder_block, move_block, move_node, group_nodes, remove_group, auto_layout, compile, duplicate_block, duplicate_operator, add_context, add_operator, add_parameter, set_parameter, link_slots, set_slot_value, set_slot_space, convert_to_property, convert_to_inline, unlink_slots, set_operator_setting, add_operator_input, remove_operator_input, set_operator_operand_type, rename_operator_input, reorder_operator_input, set_context_setting, remove_block, remove_operator, remove_parameter, rename_parameter, set_parameter_category, rename_category, reorder_category, reorder_parameter, duplicate_parameter, remove_context, delete_system, set_system_name, add_custom_attribute, link_flow, unlink_flow, set_bounds, add_sticky_note, update_sticky_note, remove_sticky_note, reorder_sticky_note, set_instancing, set_initial_event_name, create_subgraph_asset, create_from_template, insert_template, designate_template)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "attributeName": {
+            "type": "string"
+          },
+          "attributeType": {
+            "type": "string"
+          },
+          "autoCompile": {
+            "type": "boolean"
+          },
+          "avoidNodes": {
+            "type": "boolean"
+          },
+          "blockIndex": {
+            "type": "integer"
+          },
+          "blockName": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "integer"
+          },
+          "category": {
+            "type": "string"
+          },
+          "center": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "colorTheme": {
+            "type": "integer"
+          },
+          "contents": {
+            "type": "string"
+          },
+          "contextIndex": {
+            "type": "integer"
+          },
+          "contextName": {
+            "type": "string"
+          },
+          "contextType": {
+            "type": "string"
+          },
+          "contexts": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duplicateShared": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "eventName": {
+            "type": "string"
+          },
+          "exposed": {
+            "type": "boolean"
+          },
+          "exposedName": {
+            "type": "string"
+          },
+          "from": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "fromIndex": {
+            "type": "integer"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "isOutput": {
+            "type": "boolean"
+          },
+          "isReadOnly": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "linkFrom": {
+            "type": "string"
+          },
+          "max": {},
+          "min": {},
+          "mode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "newCategory": {
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "additionalProperties": true,
+              "properties": {},
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "note": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "op": {
+            "type": "string"
+          },
+          "operandType": {
+            "type": "string"
+          },
+          "operatorIndex": {
+            "type": "integer"
+          },
+          "operatorName": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "padding": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "parameterIndex": {
+            "type": "integer"
+          },
+          "parameterName": {
+            "type": "string"
+          },
+          "position": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "setting": {
+            "type": "string"
+          },
+          "settings": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "size": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "space": {
+            "type": "string"
+          },
+          "splitParameters": {
+            "type": "boolean"
+          },
+          "subPath": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "subgraphPath": {
+            "type": "string"
+          },
+          "target": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "targetPath": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string"
+          },
+          "textSize": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "to": {
+            "additionalProperties": true,
+            "properties": {},
+            "type": "object"
+          },
+          "toContextIndex": {
+            "type": "integer"
+          },
+          "toContextType": {
+            "type": "string"
+          },
+          "toIndex": {
+            "type": "integer"
+          },
+          "tooltip": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "value": {},
+          "valueFilter": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "op"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "vfx_runtime",
+      "description": "Control a VisualEffect component at runtime via its public API (ops: set_asset, set_float, set_int, set_bool, set_vector2/3/4, set_texture, set_mesh, send_event, set_initial_event_name, reinit, simulate, get_state)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assetPath": {
+            "type": "string"
+          },
+          "attributes": {},
+          "deltaTime": {
+            "type": "number"
+          },
+          "eventName": {
+            "type": "string"
+          },
+          "gameObject": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "op": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "integer"
+          },
+          "value": {}
+        },
+        "required": [
+          "op",
+          "gameObject"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "vfx_settings",
+      "description": "Read or write VFX environment settings — ops: get (read all), set (write one named setting). Scope: 'project' (default — ProjectSettings/VFXManager.asset; fixedTimeStep, maxDeltaTime, maxCapacity, ...) or 'preferences' (per-machine EditorPrefs via UnityEditor.VFX.VFXViewPreference; instancingEnabled, displayExperimentalOperator, multithreadUpdateEnabled, ...)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "setting": {
+            "type": "string"
+          },
+          "value": {}
+        },
+        "required": [
+          "op"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "vfx_bake_sdf",
+      "description": "Bake a Mesh asset into a Signed Distance Field Texture3D asset (programmatic SDF Bake Tool, via the public MeshToSDFBaker). Params: meshPath (source Mesh), outputPath (.asset to create), maxResolution (default 64), center/size ([x,y,z]; default = mesh bounds), signPassCount (default 1), threshold (default 0.5), sdfOffset (default 0), overwrite (default false). Requires compute shader support.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "center": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "maxResolution": {
+            "type": "integer"
+          },
+          "meshPath": {
+            "type": "string"
+          },
+          "outputPath": {
+            "type": "string"
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "sdfOffset": {
+            "type": "number"
+          },
+          "signPassCount": {
+            "type": "integer"
+          },
+          "size": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "threshold": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "meshPath",
+          "outputPath"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "mcp_probe_444",
+      "description": "Probe",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "test_badresult",
+      "description": "BadResult",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "test_spawn",
+      "description": "Create a light",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "intensity": {
+            "default": 1,
+            "maximum": 3.402823466385289e+38,
+            "minimum": -3.402823466385289e+38,
+            "type": "number"
+          },
+          "name": {
+            "description": "Object name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "test_throws",
+      "description": "Throws",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false
+      }
+    },
+    {
+      "name": "test_types",
+      "description": "Types",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "default": 0,
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "type": "integer"
+          },
+          "enabled": {
+            "default": false,
+            "type": "boolean"
+          },
+          "kind": {
+            "default": "Directional",
+            "enum": [
+              "Directional",
+              "Point"
+            ],
+            "type": "string"
+          },
+          "longCount": {
+            "default": 0,
+            "maximum": 9223372036854776000,
+            "minimum": -9223372036854776000,
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true
+      }
+    }
+  ]
+}
