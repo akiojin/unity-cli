@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-09-30T06:14:14Z",
+  "conditions": {
+    "os": "Darwin 26.5",
+    "arch": "arm64",
+    "project": "BenchProj",
+    "unity_editor_version": "6000.3.25f1",
+    "com.akiojin.unity-cli-bridge": "0.15.3 (local file: package from this repo)",
+    "com.unity.pipeline": "0.8.0-exp.1",
+    "iterations": 100,
+    "warmup": 3,
+    "sample": "wall-clock per CLI process invocation (spawn to exit), ms",
+    "order": "tools alternate within each iteration; order flips every iteration",
+    "unity_cli_version": "unity-cli 0.15.3",
+    "official_cli_version": "1.0.0-beta.11",
+    "unity_cli_port": 6471,
+    "editor_focus": "Unity Editor under test was the macOS frontmost app",
+    "cpu": "Apple M5 Max",
+    "memory_gb": 128
+  },
+  "results": {
+    "unity-cli": {
+      "create_gameobject": {
+        "n": 100,
+        "p50_ms": 18.15,
+        "p95_ms": 43.86,
+        "mean_ms": 23.48,
+        "min_ms": 13.05,
+        "max_ms": 182.74
+      },
+      "hierarchy": {
+        "n": 100,
+        "p50_ms": 35.34,
+        "p95_ms": 105.09,
+        "mean_ms": 47.47,
+        "min_ms": 26.7,
+        "max_ms": 175.46
+      },
+      "eval": {
+        "n": 100,
+        "p50_ms": 190.03,
+        "p95_ms": 275.19,
+        "mean_ms": 197.89,
+        "min_ms": 135.86,
+        "max_ms": 346.59
+      }
+    },
+    "official": {
+      "create_gameobject": {
+        "n": 100,
+        "p50_ms": 51.06,
+        "p95_ms": 101.79,
+        "mean_ms": 60.68,
+        "min_ms": 43.38,
+        "max_ms": 215.62
+      },
+      "hierarchy": {
+        "n": 100,
+        "p50_ms": 53.4,
+        "p95_ms": 97.35,
+        "mean_ms": 62.2,
+        "min_ms": 42.67,
+        "max_ms": 254.96
+      },
+      "eval": {
+        "n": 100,
+        "p50_ms": 52.4,
+        "p95_ms": 103.95,
+        "mean_ms": 59.44,
+        "min_ms": 32.76,
+        "max_ms": 269.32
+      }
+    }
+  }
+}

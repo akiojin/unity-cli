@@ -236,6 +236,7 @@ Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 ## Documentation
 
 - Full command and tool catalog: [docs/tools.md](docs/tools.md)
+- Comparison with the official Unity CLI (features, latency benchmark, using both together): [docs/comparison.md](docs/comparison.md)
 - Development workflow and CI: [docs/development.md](docs/development.md)
 - Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Release process: [RELEASE.md](RELEASE.md)

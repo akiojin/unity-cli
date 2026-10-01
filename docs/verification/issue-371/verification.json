@@ -1,0 +1,445 @@
+{
+  "timestamp": "2026-10-01T17:38:50.449582+00:00",
+  "launch_mode": "autonomous",
+  "user_verification_result": "n/a (autonomous)",
+  "agent_visual_check": "n/a (no UI surface)",
+  "source_commit_after_integration": "40282485807778f4335a79fedc3e533cff328fc1",
+  "benchmark_sha256": "a3e16c5e7047b6a32e49866e9fcc0340450ef92e0ffaa71f5885a3f937766144",
+  "public_measurements": [
+    {
+      "artifact": "docs/benchmarks/official-comparison-2026-10-02-process-frontmost.json",
+      "status": "PASS",
+      "mode": "process",
+      "focus": "frontmost",
+      "operations": 3,
+      "samples_per_tool_operation": 100,
+      "warmup": 3,
+      "sample_count": 600,
+      "start_load1": 8.41845703125,
+      "end_load1": 8.87744140625,
+      "source_commit": "6ca7f4542aad491a427cb6147b947680fbcc531f"
+    },
+    {
+      "artifact": "docs/benchmarks/official-comparison-2026-10-02-process-background.json",
+      "status": "PASS",
+      "mode": "process",
+      "focus": "background",
+      "operations": 3,
+      "samples_per_tool_operation": 100,
+      "warmup": 3,
+      "sample_count": 600,
+      "start_load1": 7.58203125,
+      "end_load1": 14.556640625,
+      "source_commit": "6ca7f4542aad491a427cb6147b947680fbcc531f"
+    },
+    {
+      "artifact": "docs/benchmarks/official-comparison-2026-10-02-resident-frontmost.json",
+      "status": "PASS",
+      "mode": "resident",
+      "focus": "frontmost",
+      "operations": 23,
+      "samples_per_tool_operation": 100,
+      "warmup": 3,
+      "sample_count": 4600,
+      "start_load1": 5.50537109375,
+      "end_load1": 7.88134765625,
+      "source_commit": "6ca7f4542aad491a427cb6147b947680fbcc531f"
+    },
+    {
+      "artifact": "docs/benchmarks/official-comparison-2026-10-02-resident-background.json",
+      "status": "PASS",
+      "mode": "resident",
+      "focus": "background",
+      "operations": 23,
+      "samples_per_tool_operation": 100,
+      "warmup": 3,
+      "sample_count": 4600,
+      "start_load1": 6.2548828125,
+      "end_load1": 10.91650390625,
+      "source_commit": "6ca7f4542aad491a427cb6147b947680fbcc531f"
+    }
+  ],
+  "post_integration_smokes": [
+    {
+      "mode": "process",
+      "focus": "frontmost",
+      "status": "PASS",
+      "operations": 3,
+      "iterations": 1,
+      "source_commit": "40282485807778f4335a79fedc3e533cff328fc1",
+      "unity_cli_sha256": "b12ed84b89da5fa12ad51322c070cc5b05c48cdf1d5ef80d951a13f0edf6cdbf",
+      "benchmark_sha256": "a3e16c5e7047b6a32e49866e9fcc0340450ef92e0ffaa71f5885a3f937766144",
+      "coexistence": {
+        "same_project": true,
+        "unity_version": "6000.3.25f1",
+        "official_state": "ready",
+        "project_identity_sha256": "46b8b9a0b9714d1a19523aa3817d255f1ba6aec52f35ef80118d7ade7a80a5e4"
+      }
+    },
+    {
+      "mode": "process",
+      "focus": "background",
+      "status": "PASS",
+      "operations": 3,
+      "iterations": 1,
+      "source_commit": "40282485807778f4335a79fedc3e533cff328fc1",
+      "unity_cli_sha256": "b12ed84b89da5fa12ad51322c070cc5b05c48cdf1d5ef80d951a13f0edf6cdbf",
+      "benchmark_sha256": "a3e16c5e7047b6a32e49866e9fcc0340450ef92e0ffaa71f5885a3f937766144",
+      "coexistence": {
+        "same_project": true,
+        "unity_version": "6000.3.25f1",
+        "official_state": "ready",
+        "project_identity_sha256": "46b8b9a0b9714d1a19523aa3817d255f1ba6aec52f35ef80118d7ade7a80a5e4"
+      }
+    },
+    {
+      "mode": "resident",
+      "focus": "frontmost",
+      "status": "PASS",
+      "operations": 23,
+      "iterations": 1,
+      "source_commit": "40282485807778f4335a79fedc3e533cff328fc1",
+      "unity_cli_sha256": "b12ed84b89da5fa12ad51322c070cc5b05c48cdf1d5ef80d951a13f0edf6cdbf",
+      "benchmark_sha256": "a3e16c5e7047b6a32e49866e9fcc0340450ef92e0ffaa71f5885a3f937766144",
+      "coexistence": {
+        "same_project": true,
+        "unity_version": "6000.3.25f1",
+        "official_state": "ready",
+        "project_identity_sha256": "46b8b9a0b9714d1a19523aa3817d255f1ba6aec52f35ef80118d7ade7a80a5e4"
+      }
+    },
+    {
+      "mode": "resident",
+      "focus": "background",
+      "status": "PASS",
+      "operations": 23,
+      "iterations": 1,
+      "source_commit": "40282485807778f4335a79fedc3e533cff328fc1",
+      "unity_cli_sha256": "b12ed84b89da5fa12ad51322c070cc5b05c48cdf1d5ef80d951a13f0edf6cdbf",
+      "benchmark_sha256": "a3e16c5e7047b6a32e49866e9fcc0340450ef92e0ffaa71f5885a3f937766144",
+      "coexistence": {
+        "same_project": true,
+        "unity_version": "6000.3.25f1",
+        "official_state": "ready",
+        "project_identity_sha256": "46b8b9a0b9714d1a19523aa3817d255f1ba6aec52f35ef80118d7ade7a80a5e4"
+      }
+    }
+  ],
+  "authenticated_coexistence": {
+    "unauthenticated_ping_code": "UNAUTHORIZED",
+    "authenticated_ping": "pong",
+    "official_status": "ready",
+    "unity_version": "6000.3.25f1",
+    "same_project": true
+  },
+  "python_command": "UNITY_CLI_NO_AUTO_UPDATE=1 python3 -m unittest discover -s tests/scripts -v",
+  "python_result": {
+    "run": 75,
+    "passed": 74,
+    "skipped": 1,
+    "failed": 0
+  },
+  "test_inventory": [
+    {
+      "test": "test_ambiguous_credentials_are_rejected_without_disclosing_tokens (test_bridge_auth.BridgeAuthTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_missing_and_malformed_lockfiles_do_not_break_readiness_polling (test_bridge_auth.BridgeAuthTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_only_live_matching_local_endpoint_supplies_credentials (test_bridge_auth.BridgeAuthTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_benchmark_entrypoint_exists (test_cli_latency.CliLatencyTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_normal_pass_and_30ms_transport_regression_fails (test_cli_latency.CliLatencyTests)",
+      "result": "skipped 'release binary integration opt-in'"
+    },
+    {
+      "test": "test_benchmark_does_not_reuse_another_projects_daemon_or_host (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_coexistence_rejects_a_different_editor_version (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_coexistence_rejects_a_different_project (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_empty_read_and_unapplied_material_are_not_success (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_eval_must_report_completed (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_failed_create_is_not_a_measurement (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_official_nested_failure_is_rejected (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_process_checks_accept_the_shared_cli_envelope (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_read_uses_same_asset_within_official_authoring_root (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_resident_operations_match_all_23_staff_operations (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_shell_rejects_in_band_failure (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_shell_rejects_mismatched_id (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_shell_reuses_process_and_correlates_responses (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_shell_timeout_is_bounded (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_transition_waits_for_completed_state (test_compare_official.CompareTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_all_readmes_link_comparison_and_relative_sources_exist (test_comparison_evidence.ComparisonEvidenceTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_document_tables_match_each_published_measurement (test_comparison_evidence.ComparisonEvidenceTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_each_feature_row_has_sources_in_both_languages (test_comparison_evidence.ComparisonEvidenceTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_four_runs_have_complete_raw_samples_and_correct_percentiles (test_comparison_evidence.ComparisonEvidenceTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_identical_versions_and_script_and_quiet_host_are_recorded (test_comparison_evidence.ComparisonEvidenceTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_closed_connection_does_not_block_same_port_restart (test_e2e_input_actions_persistence.RestartPortTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_live_listener_is_never_considered_available (test_e2e_input_actions_persistence.RestartPortTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_default_selection_appends_real_hot_reload_suites (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_exit_two_requires_actual_missing_module_evidence (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_extended_suites_use_selected_editor_cli_and_isolated_projects (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_failed_or_partial_suites_cannot_pass_report (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_fixture_is_isolated_and_ignores_package_hash_files (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_gui_fixture_regenerates_only_urp_upgrade_cache (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_missing_vfx_catalog_entry_is_not_silently_skipped (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_missing_windows_module_is_probed_on_current_editor (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_packages_follow_editor_catalog_and_preserve_bridge (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_perf_requires_gui_without_changing_other_suites (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_readiness_rejects_error_missing_and_busy_states (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_real_hot_reload_suites_need_backend_and_add_x64_editor_when_present (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_suite_timeout_terminates_the_owned_process (test_e2e_matrix.MatrixTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_default_target_preserves_mac (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_existing_editor_project_and_windows_target_arguments (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_mac_requires_bundle_data_and_report_files (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_missing_module_is_unsupported_but_target_mismatch_is_failure (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_windows_launch_target_requires_installed_playback_engine (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_windows_requires_executable_data_and_matching_report (test_e2e_player_build.PlayerBuildTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_background_other_operations_reject_any_frontmost_pid_change (test_perf_editor.EditorPerfTests)",
+      "result": "editor_state: focus changed (Editor 123, before 321, after 123)"
+    },
+    {
+      "test": "test_background_requires_a_known_different_frontmost_pid (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_background_screenshot_accepts_only_its_own_editor_activation (test_perf_editor.EditorPerfTests)",
+      "result": "screenshot: focus changed (Editor 123, before 321, after 456)"
+    },
+    {
+      "test": "test_exact_staff_operation_set_and_mutation_order (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_failures_and_os_screenshot_fallback_are_not_samples (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_focus_activation_waits_for_the_requested_pid (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_focus_loss_discards_complete_cycle_without_repeating_mutations (test_perf_editor.EditorPerfTests)",
+      "result": "editor_state: focus changed (Editor 123, before 123, after 321)"
+    },
+    {
+      "test": "test_game_view_focus_mode_is_scoped_and_restored (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_game_view_mode_update_must_be_observed (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_interrupt_records_incomplete_measurement (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_noop_material_and_missing_target_are_not_success (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_play_transition_waits_for_observed_state (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_screenshot_benchmark_explicitly_preserves_camera_only_capture (test_perf_editor.EditorPerfTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_absolute_boundary_and_missing_budget_fail_closed (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_completed_budget_failures_still_count_in_last_five_measurements (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_eval_history_conditions_exclude_run_specific_metadata (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_history_append_preserves_previous_lines (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_history_uses_latest_five_matching_runs_and_strict_twenty_percent (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_nearest_rank_and_empty_samples (test_perf_gate.PerfGateTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_asset_update_then_play_keeps_existing_route (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_built_cli_catalog_covers_benchmark_tools_and_keys (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_catalog_includes_tools_without_skill_command_examples (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_catalog_preserves_action_discriminators_from_examples (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_main_supplies_cli_schema_to_model (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_runtime_inspection_is_not_forced_to_binding_mutation (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_schema_catalog_keeps_top_level_keys_and_operation_enums (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_schema_failure_does_not_silently_use_incomplete_catalog (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_source_package_list_keeps_navigation_override (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    },
+    {
+      "test": "test_upm_list_is_not_forced_to_source_package_navigation (test_skill_routing.SkillRoutingTests)",
+      "result": "ok"
+    }
+  ],
+  "parent_spec_comment": "https://github.com/akiojin/unity-cli/issues/157#issuecomment-5936971952"
+}

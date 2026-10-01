@@ -116,6 +116,7 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 ## 文档
 
 - 完整命令与工具目录: [docs/tools.md](docs/tools.md)
+- 与官方 Unity CLI 的对比（功能、延迟基准、同时使用）: [docs/comparison.md](docs/comparison.md)
 - 开发流程与 CI: [docs/development.md](docs/development.md)
 - 贡献指南: [CONTRIBUTING.md](CONTRIBUTING.md)
 - 发布流程: [RELEASE.md](RELEASE.md)
