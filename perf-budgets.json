@@ -1,6 +1,34 @@
 {
   "schema_version": 1,
   "sample": "wall-clock per CLI process invocation (spawn to exit), ms; nearest-rank percentiles",
+  "two_phase_p50": [
+    {
+      "description": "Unity 6 background updates answer a remote call in a fast or a slow phase; the history gate compares p50 with the same phase (docs/development.md, Benchmark Policy). Budgets and the regression threshold are unchanged.",
+      "conditions": { "unity": "6000.3.25f1", "focus": "background" },
+      "operations": [
+        "editor_state",
+        "hierarchy",
+        "find_gameobject",
+        "transform",
+        "position",
+        "create_cube",
+        "add_component",
+        "remove_component",
+        "delete_gameobject",
+        "scene_info",
+        "scene_save",
+        "console",
+        "screenshot",
+        "material_search",
+        "asset_copy",
+        "asset_move",
+        "asset_delete",
+        "import_settings",
+        "material_modify",
+        "time_settings"
+      ]
+    }
+  ],
   "budgets": {
     "editor_eval": {
       "description": "unity-cli editor eval '1+2' against a real Editor, warm (after 3 warm-up calls), 100 samples",
