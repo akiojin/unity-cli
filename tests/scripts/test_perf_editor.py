@@ -113,6 +113,31 @@ class EditorPerfTests(unittest.TestCase):
             self.assertEqual(report["passed"], 0)
             self.assertTrue(args.history.is_file())
 
+    def test_two_phase_declaration_reaches_the_history_gate(self):
+        editor = Mock()
+        editor.setup.return_value = {"unity": {"unityVersion": "6000.3.25f1"}}
+        editor.raw.return_value = {"editor": {"enterPlayModeOptionsEnabled": True,
+                                              "enterPlayModeOptions": "DisableDomainReload"}}
+        editor.command.return_value = {"running": True, "connections": 1, "pid": 456}
+        names = [name for name, _, _ in self.bench.operations()]
+        declared = [{"conditions": {"unity": "6000.3.25f1", "focus": "background"}, "operations": ["hierarchy"]}]
+
+        def relative_violations(two_phase):
+            with tempfile.TemporaryDirectory() as directory, patch("builtins.print"), \
+                 patch.object(self.bench._focus, "listener_pid", return_value=123):
+                args = SimpleNamespace(port=6509, warmup=3, iterations=30,
+                                       history=Path(directory) / "history.jsonl", regression_percent=20)
+                for hierarchy in (75, 150, 75, 150, 75, 150):
+                    cycle = dict.fromkeys(names, 10.0) | {"hierarchy": float(hierarchy)}
+                    with patch.object(self.bench, "measure_cycle", return_value=cycle):
+                        report = self.bench.measure_focus(editor, "background", args, {}, *two_phase)
+                self.assertTrue(report["measurements_complete"])
+                return [v for v in report["violations"] if "median" in v]
+
+        self.assertEqual(len(relative_violations([])), 1)
+        self.assertEqual(relative_violations([declared]), [])
+        self.assertEqual(relative_violations([[dict(declared[0], operations=["console"])]])[0][:10], "hierarchy:")
+
     def test_background_screenshot_accepts_only_its_own_editor_activation(self):
         editor = Mock(last_elapsed_ms=1.0)
         screenshot_index = [op[0] for op in self.bench.operations()].index("screenshot")

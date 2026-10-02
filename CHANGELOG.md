@@ -1,5 +1,40 @@
 ## [Unreleased]
 
+## [0.18.1] - 2026-10-03
+
+### 📦 Distribution
+
+- Enable Homebrew tap publishing. Starting with this release the release workflow
+  pushes `Formula/unity-cli.rb` to
+  [akiojin/homebrew-tap](https://github.com/akiojin/homebrew-tap), so
+  `brew install akiojin/tap/unity-cli` installs unity-cli on macOS and Linux.
+
+### 🐛 Bug Fixes
+
+Windows-only defects found by the new Windows CI job
+([#460](https://github.com/akiojin/unity-cli/pull/460)):
+
+- *(reference)* Store reference index paths with `/` so `reference diff --path`
+  matches on Windows.
+- *(tooling)* Reject rooted and drive-prefixed paths (`/etc/passwd`, `C:file`)
+  in project-relative resolution; on Windows they are not absolute but still
+  replaced the project root.
+- *(discovery)* Treat PID 0 (System Idle Process) as not running, so a stale
+  Editor lockfile is no longer reported as alive.
+- *(screenshot)* Drop the `\\?\` verbatim prefix before the OS capture
+  fallback saves the image; with `--project-path` or `UNITY_PROJECT_ROOT` the
+  fallback previously wrote no file.
+
+### 🧪 Testing
+
+- *(ci)* Run `cargo test` on Windows and add Editor-less Windows and Linux
+  platform checks (lockfile discovery, `setup --dry-run`, OS screenshot
+  fallback, `install.ps1`).
+
+### 📚 Documentation
+
+- *(changelog)* Credit @jewer3330 for the #236 proposal in v0.18.0
+
 ## [0.18.0] - 2026-10-02
 
 ### Breaking changes and migration
@@ -74,6 +109,17 @@
 - Publish the official Unity CLI comparison and measured latency benchmarks.
 - Document the Development Player connection design. Runtime Player connectivity
   is not implemented by this release.
+
+### Acknowledgements
+
+- Thanks to @jewer3330, whose pull request
+  [#236](https://github.com/akiojin/unity-cli/pull/236) proposed a built-in MCP
+  stdio server (`unity-cli mcp`) and project-side custom tool registration
+  through C# attributes ahead of this release. v0.18.0 delivers the same
+  direction as separate implementations: the MCP stdio adapter
+  ([#454](https://github.com/akiojin/unity-cli/pull/454)) and `[UnityCliTool]`
+  project-local tools ([#453](https://github.com/akiojin/unity-cli/pull/453)).
+  #236 itself was not merged.
 
 ## [0.17.0] - 2026-10-01
 

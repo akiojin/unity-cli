@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 
-from perf_gate import append_history, check, read_history, regressions, summarize
+from perf_gate import append_history, check, read_history, regressions, summarize, two_phase_operations
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = "Assets/Scenes/Generated/E2E/Performance"
@@ -228,7 +228,7 @@ def measure_cycle(editor, focus, pid):
     return values if valid else None
 
 
-def measure_focus(editor, focus, args, budgets):
+def measure_focus(editor, focus, args, budgets, two_phase=()):
     started_at = datetime.now(timezone.utc).isoformat()
     results, violations, samples = {}, [], {name: [] for name, _, _ in operations()}
     report = {"started_at": started_at, "focus": focus, "results": results, "status": "FAIL",
@@ -277,7 +277,8 @@ def measure_focus(editor, focus, args, budgets):
         keys = {name: f"editor_{focus}_{name}" for name in results}
         report["budget_keys"] = keys
         violations += check(results, {name: budgets.get(key, {}) for name, key in keys.items()})
-        violations += regressions(results, conditions, read_history(args.history), args.regression_percent)
+        violations += regressions(results, conditions, read_history(args.history), args.regression_percent,
+                                  two_phase_operations(two_phase, conditions))
         report["status"] = "FAIL" if violations else "PASS"
     except KeyboardInterrupt:
         report["interrupted"] = True
@@ -317,7 +318,8 @@ def main():
     if not math.isfinite(args.regression_percent) or args.regression_percent < 0:
         parser.error("regression percent must be finite and non-negative")
     args.unity_cli, args.project = args.unity_cli.resolve(), args.project.resolve()
-    budgets = json.loads(args.budgets.read_text())["budgets"]
+    policy = json.loads(args.budgets.read_text())
+    budgets = policy["budgets"]
     env = dict(os.environ, UNITY_PROJECT_ROOT=str(args.project), UNITY_CLI_NO_AUTO_UPDATE="1", RUST_LOG="warn")
     editor = Editor(args, env)
     focuses = ["frontmost", "background"] if args.focus == "both" else [args.focus]
@@ -326,7 +328,7 @@ def main():
     cleanup_errors = []
     try:
         for focus in focuses:
-            run = measure_focus(editor, focus, args, budgets)
+            run = measure_focus(editor, focus, args, budgets, policy.get("two_phase_p50", []))
             runs.append(run)
             if run.get("interrupted"):
                 break

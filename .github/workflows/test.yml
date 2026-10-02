@@ -92,6 +92,82 @@ jobs:
           ./tests/scripts/install-ps1-text-test.ps1
           ./tests/scripts/install-ps1-test.ps1
 
+  # Editor-less Windows checks (#459). Anything that needs a real Unity Editor
+  # stays with the real-machine checks in #386.
+  windows-test:
+    name: Windows Tests
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run cargo test
+        # Serialized for the same reason as the Linux job. --no-fail-fast
+        # reports every failing target at once: there is no local Windows
+        # machine to rerun on.
+        run: cargo test --no-fail-fast -- --test-threads=1
+
+      - name: Build unity-cli
+        if: ${{ !cancelled() }}
+        run: cargo build --bin unity-cli
+
+      - name: Check Editor discovery, setup --dry-run and OS screenshot fallback
+        if: ${{ !cancelled() }}
+        # --real-home: Windows resolves the profile through the shell API, so
+        # the fake lockfiles go into the runner's real %USERPROFILE%.
+        run: python tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli.exe --real-home
+
+      - name: Install the built binary with install.ps1 and run it
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./tests/scripts/install-ps1-binary-test.ps1 -Binary target/debug/unity-cli.exe
+
+  linux-platform-checks:
+    name: Linux Platform Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Xvfb and X11 screenshot tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb imagemagick scrot maim
+
+      - name: Build unity-cli
+        run: cargo build --bin unity-cli
+
+      - name: Check Editor discovery, setup --dry-run and OS screenshot fallback
+        run: >
+          xvfb-run -a -s "-screen 0 1280x720x24"
+          python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli
+
   lsp-test:
     name: LSP Tests (required)
     runs-on: ubuntu-latest

@@ -31,9 +31,10 @@ fn dry_run_prints_only_paths_without_creating_files() {
         root.path(),
         &["skills", "install", "cursor", "--local", "--dry-run"],
     ));
+    // Compare path components: the separator is `\` on Windows.
     assert!(output
         .lines()
-        .any(|p| p.ends_with("unity-scene-create/SKILL.md")));
+        .any(|p| Path::new(p).ends_with("unity-scene-create/SKILL.md")));
     let resolved_root = root.path().canonicalize().unwrap();
     assert!(output
         .lines()
@@ -184,6 +185,12 @@ fn all_clients_install_embedded_references_and_show_works_outside_repository() {
             .join(local)
             .join("unity-scene-create/references/runtime-checklist.md")
             .is_file());
+        // Windows resolves the home directory through the shell API, not
+        // %USERPROFILE%, so a global install cannot be redirected into the
+        // temp root and would write into the real user profile.
+        if cfg!(windows) {
+            continue;
+        }
         ok(run(root.path(), &["skills", "install", client]));
         assert!(root
             .path()

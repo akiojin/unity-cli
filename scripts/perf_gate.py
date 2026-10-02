@@ -28,21 +28,50 @@ def check(results, budgets):
     return failures
 
 
-def regressions(results, conditions, history, percent):
+def two_phase_operations(declarations, conditions):
+    """Operations declared two-phase (perf-budgets.json `two_phase_p50`) for exactly these conditions."""
+    operations = set()
+    for entry in declarations:
+        declared, names = entry.get("conditions"), entry.get("operations")
+        if not declared or not names:
+            raise ValueError("two-phase declaration needs conditions and operations")
+        if all(key in conditions and conditions[key] == value for key, value in declared.items()):
+            operations.update(names)
+    return operations
+
+
+def _baseline(values, current, percent):
+    """Median of the latest five p50s; of the current value's own phase when the history has two."""
+    ordered = sorted(values)
+    plain = statistics.median(values[-5:]), ""
+    if ordered[0] <= 0:
+        return plain
+    low, high = max(zip(ordered, ordered[1:]), key=lambda edge: edge[1] / edge[0])
+    # Phases closer than the threshold itself are one phase: the plain rule already tolerates that gap.
+    if high <= low * (1 + percent / 100):
+        return plain
+    boundary = math.sqrt(low * high)
+    phase = [value for value in values if (value > boundary) == (current > boundary)][-5:]
+    # A phase needs its own five runs, exactly as a condition does; absolute budgets still apply.
+    return (statistics.median(phase) if len(phase) == 5 else None), "high-phase " if current > boundary else "low-phase "
+
+
+def regressions(results, conditions, history, percent, two_phase=()):
     if not math.isfinite(percent) or percent < 0:
         raise ValueError("regression percent must be finite and non-negative")
-    rows = [row for row in history if row.get("measurements_complete", True)
-            and row.get("conditions") == conditions
-            and all(name in row.get("results", {}) for name in results)][-5:]
+    matching = [row for row in history if row.get("measurements_complete", True)
+                and row.get("conditions") == conditions
+                and all(name in row.get("results", {}) for name in results)]
     failures = []
-    if len(rows) < 5:
+    if len(matching) < 5:
         return failures
     for name, result in results.items():
-        if not all(name in row["results"] for row in rows):
-            continue
-        baseline = statistics.median(row["results"][name]["p50_ms"] for row in rows)
-        if result["p50_ms"] > baseline * (1 + percent / 100):
-            failures.append(f"{name}: p50 {result['p50_ms']:.3f} ms > last-five median "
+        values = [row["results"][name]["p50_ms"] for row in matching]
+        # Background update scheduling moves declared operations between a fast and a slow phase.
+        baseline, phase = _baseline(values, result["p50_ms"], percent) if name in two_phase \
+            else (statistics.median(values[-5:]), "")
+        if baseline is not None and result["p50_ms"] > baseline * (1 + percent / 100):
+            failures.append(f"{name}: p50 {result['p50_ms']:.3f} ms > last-five {phase}median "
                             f"{baseline:.3f} ms + {percent}%")
     return failures
 
