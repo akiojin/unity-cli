@@ -51,8 +51,9 @@ def _baseline(values, current, percent):
     if high <= low * (1 + percent / 100):
         return plain
     boundary = math.sqrt(low * high)
-    phase = [value for value in values if (value > boundary) == (current > boundary)]
-    return statistics.median(phase[-5:]), "high-phase " if current > boundary else "low-phase "
+    phase = [value for value in values if (value > boundary) == (current > boundary)][-5:]
+    # A phase needs its own five runs, exactly as a condition does; absolute budgets still apply.
+    return (statistics.median(phase) if len(phase) == 5 else None), "high-phase " if current > boundary else "low-phase "
 
 
 def regressions(results, conditions, history, percent, two_phase=()):
@@ -69,7 +70,7 @@ def regressions(results, conditions, history, percent, two_phase=()):
         # Background update scheduling moves declared operations between a fast and a slow phase.
         baseline, phase = _baseline(values, result["p50_ms"], percent) if name in two_phase \
             else (statistics.median(values[-5:]), "")
-        if result["p50_ms"] > baseline * (1 + percent / 100):
+        if baseline is not None and result["p50_ms"] > baseline * (1 + percent / 100):
             failures.append(f"{name}: p50 {result['p50_ms']:.3f} ms > last-five {phase}median "
                             f"{baseline:.3f} ms + {percent}%")
     return failures
