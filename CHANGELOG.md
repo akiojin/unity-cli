@@ -75,6 +75,17 @@
 - Document the Development Player connection design. Runtime Player connectivity
   is not implemented by this release.
 
+### Acknowledgements
+
+- Thanks to @jewer3330, whose pull request
+  [#236](https://github.com/akiojin/unity-cli/pull/236) proposed a built-in MCP
+  stdio server (`unity-cli mcp`) and project-side custom tool registration
+  through C# attributes ahead of this release. v0.18.0 delivers the same
+  direction as separate implementations: the MCP stdio adapter
+  ([#454](https://github.com/akiojin/unity-cli/pull/454)) and `[UnityCliTool]`
+  project-local tools ([#453](https://github.com/akiojin/unity-cli/pull/453)).
+  #236 itself was not merged.
+
 ## [0.17.0] - 2026-10-01
 
 ### 🚀 Features
