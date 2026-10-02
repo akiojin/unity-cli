@@ -10,6 +10,12 @@
   - markdownlint + commitlint
 - `test.yml`
   - `cargo test`
+  - Windows (`windows-latest`): `cargo test`, then the built binary runs
+    `tests/scripts/platform-checks.py` (lockfile Editor discovery,
+    `setup --dry-run`, OS screenshot fallback) and is installed through
+    `scripts/install.ps1`
+  - Linux: the same `platform-checks.py` under Xvfb with the X11 screenshot
+    tools; none of these checks need a Unity Editor
   - `dotnet test lsp/Server.Tests.csproj`
   - `cargo llvm-cov` (Rust coverage gate, line >= 90%)
   - `dotnet test ... /p:CollectCoverage=true` (LSP coverage gate, line >= 90%)
