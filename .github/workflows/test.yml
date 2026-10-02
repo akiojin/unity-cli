@@ -114,30 +114,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: TEMP diagnose GDI capture (#459, remove before Ready)
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $plain = Join-Path $env:TEMP 'diag-plain.png'
-          $long = (Get-Item $env:TEMP).FullName
-          foreach ($p in @($plain, (Join-Path $long 'diag-long.png'), ('\\?\' + (Join-Path $long 'diag-verbatim.png')))) {
-            $env:UNITY_CLI_OS_CAPTURE_PATH = $p
-            try {
-              Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-              $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
-              Write-Host "screen: $b session: $([System.Diagnostics.Process]::GetCurrentProcess().SessionId) interactive: $([Environment]::UserInteractive)"
-              $bmp = New-Object System.Drawing.Bitmap $b.Width,$b.Height
-              $g = [System.Drawing.Graphics]::FromImage($bmp)
-              $g.CopyFromScreen($b.Left,$b.Top,0,0,$bmp.Size)
-              Write-Host "copied for $p"
-              $bmp.Save($env:UNITY_CLI_OS_CAPTURE_PATH,[System.Drawing.Imaging.ImageFormat]::Png)
-              Write-Host "saved $p exists=$([System.IO.File]::Exists($p))"
-            } catch {
-              Write-Host "ERROR for $p : $($_.Exception.ToString())"
-            }
-          }
-          exit 0
-
       - name: Run cargo test
         # Serialized for the same reason as the Linux job. --no-fail-fast
         # reports every failing target at once: there is no local Windows
