@@ -70,7 +70,7 @@ pub fn capture_desktop(capture_mode: &str) -> Result<Value> {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis();
-    let path = output_path(project.as_deref(), millis);
+    let path = non_verbatim(output_path(project.as_deref(), millis));
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| anyhow!("Failed to create {}: {e}", parent.display()))?;
@@ -85,6 +85,19 @@ fn output_path(project: Option<&Path>, millis: u128) -> PathBuf {
         .map(|root| root.join(".unity"))
         .unwrap_or_else(|| std::env::temp_dir().join("unity-cli"));
     base.join("capture").join(format!("image_os_{millis}.png"))
+}
+
+/// Drops the Windows verbatim prefix (`\\?\C:\x` -> `C:\x`). A canonicalized
+/// project root carries it, and Windows PowerShell's `Image.Save` rejects it.
+fn non_verbatim(path: PathBuf) -> PathBuf {
+    let text = path.to_string_lossy().into_owned();
+    if let Some(unc) = text.strip_prefix(r"\\?\UNC\") {
+        PathBuf::from(format!(r"\\{unc}"))
+    } else if let Some(rest) = text.strip_prefix(r"\\?\") {
+        PathBuf::from(rest)
+    } else {
+        path
+    }
 }
 
 struct Candidate {
@@ -303,6 +316,22 @@ mod tests {
         )];
         let error = capture_with(&candidates, &dir.path().join("x.png"), "game").unwrap_err();
         assert!(format!("{error:#}").contains("definitely-missing-screenshot-tool"));
+    }
+
+    #[test]
+    fn verbatim_prefix_is_dropped_before_the_path_reaches_os_tools() {
+        assert_eq!(
+            non_verbatim(PathBuf::from(r"\\?\C:\proj\.unity\capture\a.png")),
+            PathBuf::from(r"C:\proj\.unity\capture\a.png")
+        );
+        assert_eq!(
+            non_verbatim(PathBuf::from(r"\\?\UNC\server\share\a.png")),
+            PathBuf::from(r"\\server\share\a.png")
+        );
+        assert_eq!(
+            non_verbatim(PathBuf::from("/proj/a.png")),
+            PathBuf::from("/proj/a.png")
+        );
     }
 
     #[test]

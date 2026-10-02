@@ -200,8 +200,13 @@ pub fn build_or_update_index(version_dir: &Path) -> Result<ReferenceSymbolIndex>
         if path.extension().and_then(|s| s.to_str()) != Some("cs") {
             continue;
         }
+        // Always `/`-separated so `--path Runtime/Export` matches on Windows too.
         let rel = match path.strip_prefix(version_dir) {
-            Ok(p) => p.to_string_lossy().to_string(),
+            Ok(p) => p
+                .components()
+                .map(|component| component.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/"),
             Err(_) => continue,
         };
         if rel.starts_with(".unity-cli-index") || rel.starts_with(".git") {
@@ -529,6 +534,8 @@ mod tests {
         }
         let index = build_or_update_index(version_dir).unwrap();
         assert!(index.files.len() >= 2);
+        assert!(index.files.keys().all(|rel| !rel.contains('\\')));
+        assert!(index.files.keys().any(|rel| rel.contains('/')));
         let hits = find_symbol(&index, "Animator", Some("class"), None);
         assert!(!hits.is_empty(), "Animator class should be discovered");
     }
