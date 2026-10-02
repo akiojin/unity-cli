@@ -87,20 +87,6 @@ fn output_path(project: Option<&Path>, millis: u128) -> PathBuf {
     base.join("capture").join(format!("image_os_{millis}.png"))
 }
 
-/// Drops the verbatim prefix (`\\?\C:\...`, `\\?\UNC\server\share\...`) that
-/// `std::fs::canonicalize` puts on an explicit project path on Windows. GDI+ in
-/// Windows PowerShell rejects it ("The given path's format is not supported").
-#[cfg(any(windows, test))]
-fn strip_verbatim_prefix(path: &str) -> String {
-    if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
-        return format!(r"\\{unc}");
-    }
-    match path.strip_prefix(r"\\?\") {
-        Some(rest) if rest.as_bytes().get(1) == Some(&b':') => rest.to_string(),
-        _ => path.to_string(),
-    }
-}
-
 /// Drops the Windows verbatim prefix (`\\?\C:\x` -> `C:\x`). A canonicalized
 /// project root carries it, and Windows PowerShell's `Image.Save` rejects it.
 fn non_verbatim(path: PathBuf) -> PathBuf {
