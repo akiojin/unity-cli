@@ -1002,13 +1002,19 @@ fn resolve_existing_project_path(root: &Path, rel: &str) -> Result<PathBuf> {
 }
 
 fn resolve_candidate_project_path(root: &Path, rel: &str) -> Result<PathBuf> {
+    use std::path::Component;
     let rel_path = Path::new(rel);
-    if rel_path.is_absolute() {
+    // On Windows `/etc/passwd` and `C:file` are not `is_absolute()`, yet
+    // `join` would still replace `root` with them.
+    if rel_path
+        .components()
+        .any(|component| matches!(component, Component::Prefix(_) | Component::RootDir))
+    {
         return Err(anyhow!("path must be project-relative"));
     }
     if rel_path
         .components()
-        .any(|component| matches!(component, std::path::Component::ParentDir))
+        .any(|component| matches!(component, Component::ParentDir))
     {
         return Err(anyhow!("path must not include `..`"));
     }

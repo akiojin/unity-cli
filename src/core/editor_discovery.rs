@@ -243,6 +243,10 @@ pub(crate) fn pid_alive(pid: u32) -> bool {
 
 #[cfg(windows)]
 pub(crate) fn pid_alive(pid: u32) -> bool {
+    // PID 0 is the System Idle Process, which tasklist reports as running.
+    if pid == 0 {
+        return false;
+    }
     std::process::Command::new("tasklist")
         .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
         .output()
@@ -330,6 +334,12 @@ pub(crate) mod tests {
 
         let reason = editors[0].stale_reason.as_deref().expect("should be stale");
         assert!(reason.contains("not running"), "{reason}");
+    }
+
+    #[test]
+    fn pid_zero_is_never_alive() {
+        assert!(!pid_alive(0));
+        assert!(pid_alive(live_pid()));
     }
 
     #[test]
