@@ -120,6 +120,25 @@ class PerfGateTests(unittest.TestCase):
         current["ping"]["p50_ms"] = 500
         self.assertEqual(self.gate.regressions(current, condition, rows[:4], 20, {"ping"}), [])
 
+    def test_two_phase_baseline_needs_five_runs_of_that_phase(self):
+        condition = {"focus": "background"}
+        rows = [{"conditions": condition, "results": {"ping": {"p50_ms": value}}}
+                for value in [75, 150, 75, 150, 75, 150, 75, 150, 75, 75]]
+        slow, fast = {"ping": {"p50_ms": 300.0}}, {"ping": {"p50_ms": 97.5}}
+        self.assertEqual(self.gate.regressions(slow, condition, rows, 20, {"ping"}), [])
+        self.assertTrue(self.gate.regressions(fast, condition, rows, 20, {"ping"}))
+        rows.append({"conditions": condition, "results": {"ping": {"p50_ms": 150}}})
+        self.assertTrue(self.gate.regressions(slow, condition, rows, 20, {"ping"}))
+
+        # Issue #397: one earlier slow-phase run (134.5 ms) is no baseline for editor_state at 162.3 ms,
+        # and two fast-phase runs are none for the asset_delete at 88.0 ms measured after this snapshot.
+        history = self.gate.read_history(HISTORY)
+        for row, violations in self.replay(history, "6000.3.25f1", "background", self.declarations()):
+            self.assertFalse([v for v in violations if v.startswith("editor_state:")], row["started_at"])
+        conditions = row["conditions"]
+        self.assertEqual(self.gate.regressions({"asset_delete": {"p50_ms": 88.022}}, conditions, history, 20,
+                                               {"asset_delete"}), [])
+
     def test_single_phase_judgments_are_unchanged(self):
         history = self.gate.read_history(HISTORY)
         recorded_relative = 0

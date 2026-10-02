@@ -729,25 +729,28 @@ condition and its 20 single-request remote operations. For a declared operation 
 1. sorts the p50 values of all matching complete runs and splits them at the largest
    relative gap between neighbours;
 2. assigns the current p50 to the phase on its side of that gap's geometric midpoint;
-3. compares it with the median of the last five runs of that phase (fewer when the
-   phase has fewer) and fails above the same +20%.
+3. compares it with the median of the last five runs of that phase and fails above
+   the same +20%.
 
-A gap no wider than the threshold is a single phase and keeps the plain last-five
-median, so an operation that has only shown one phase still fails on its first slow
-value. The threshold, the five matching runs needed for a baseline, the sample counts
-and all absolute budgets are unchanged. C# `read` (local), Play/Stop (polled across many
+A phase with fewer than five runs has no relative baseline yet, exactly like a condition
+with fewer than five matching runs; absolute budgets still apply. A gap no wider than the
+threshold is a single phase and keeps the plain last-five median, so an operation that
+has only shown one phase still fails on its first slow value. The threshold, the five-run
+baseline, the sample counts and all absolute budgets are unchanged. C# `read` (local), Play/Stop (polled across many
 updates), 2022.3.62f3 background and both frontmost conditions are not declared; their
 judgments are identical to the plain rule.
 
-A uniform 30% slowdown of either phase fails. Three limits remain, and the absolute
-budgets bound them: a fast-phase run that slows past the midpoint (about +35% with
-75/150 ms phases) reads as the slow phase; operations whose samples mix both phases
-inside one run (`material_search`, `asset_delete`, `console`) report p50 values between
-the phases and can still fail; a phase seen in few runs has a noisy baseline. Replaying
-the Issue #397 history (`tests/fixtures/perf/editor-ops-history-issue-397.jsonl`), the
-plain rule failed all 9 gated runs of this condition; the two-phase rule passes 5 and
-fails 4 on those mixed or sparsely observed operations. Repeat such a failure on an idle
-host. Change the declaration only with history showing both phases for an unchanged binary.
+A uniform 30% slowdown of either established phase fails. Three limits remain, and the
+absolute budgets bound them: a fast-phase run that slows past the midpoint (about +35%
+with 75/150 ms phases) reads as the slow phase; after a never-seen slow value fails, the
+next four values of that new phase are not compared, so investigate that first failure
+instead of re-running; operations whose samples mix both phases inside one run
+(`material_search`, `asset_delete`, `console`) report p50 values between the phases and
+can still fail while their history is short. Replaying the Issue #397 history
+(`tests/fixtures/perf/editor-ops-history-issue-397.jsonl`), the plain rule failed all 9
+gated runs of this condition; the two-phase rule passes 6 and fails 3, all on those mixed
+operations. Repeat such a failure on an idle host. Change the declaration only with
+history showing both phases for an unchanged binary.
 
 `UNITY_CLI_PERF_REGRESSION_PERCENT` (or `--regression-percent`) overrides the
 relative threshold; it never disables absolute budgets. Diagnose a failure from
@@ -1325,21 +1328,24 @@ Unity・フォーカス・Play Mode 設定・計測方式で完全に計測で�
 
 1. 条件が一致する完了計測すべての p50 を並べ、隣り合う値の比が最大の位置で二相に分ける
 2. 今回の p50 を、その境目の幾何平均より上か下かで相に割り当てる
-3. 同じ相の直近 5 回（5 回未満ならある分）の中央値と比べ、+20% を超えたら失敗
+3. 同じ相の直近 5 回の中央値と比べ、+20% を超えたら失敗
 
-境目の比がしきい値以下なら一相とみなし、従来どおり直近 5 回の中央値で判定します。
-一相しか出ていない操作が初めて遅くなった場合は、これまでどおり失敗です。
-しきい値、基準に必要な 5 回、サンプル数、絶対予算は変えていません。
+観測が 5 回に満たない相は、条件全体が 5 回未満のときと同じく相対基準が未確立です
+（絶対予算は適用します）。境目の比がしきい値以下なら一相とみなし、従来どおり直近 5 回の
+中央値で判定します。一相しか出ていない操作が初めて遅くなった場合は、これまでどおり失敗です。
+しきい値、基準に使う 5 回、サンプル数、絶対予算は変えていません。
 C# 読取（ローカル）、Play/Stop（複数回の更新をまたぐ）、2022.3.62f3 背景、最前面の
 各条件は宣言しておらず、判定結果は従来と同じです。
 
-どちらかの相が一様に 30% 遅くなれば失敗します。次の 3 点は限界として残り、絶対予算で抑えます。
+基準が確立した相は、一様に 30% 遅くなれば失敗します。次の 3 点は限界として残り、絶対予算で抑えます。
 速い相の回が境目（75/150 ms の相なら約 +35%）を超えて遅くなると、遅い相と区別できません。
+初めて現れた遅い値が失敗したあと、その新しい相の続く 4 回は比較されません。
+再計測で通すのではなく、最初の失敗を調べてください。
 1 回の計測内で両相が混ざる操作（`material_search`、`asset_delete`、`console`）は p50 が
-中間の値になり、失敗することがあります。観測回数の少ない相は基準が安定しません。
+中間の値になり、履歴が短いうちは失敗することがあります。
 Issue #397 の実履歴（`tests/fixtures/perf/editor-ops-history-issue-397.jsonl`）を再判定すると、
-この条件でゲートが有効だった 9 回は従来すべて失敗、二相対応後は 5 回通過し、残り 4 回は
-上記の混在または観測の少ない操作で失敗します。この種の失敗は低負荷で再計測してください。
+この条件でゲートが有効だった 9 回は従来すべて失敗、二相対応後は 6 回通過し、残り 3 回は
+上記の混在する操作で失敗します。この種の失敗は低負荷で再計測してください。
 宣言の変更は、同一バイナリで二相が確認できる履歴がある場合に限ります。
 
 失敗時は `violations` と条件を確認し、低負荷で再計測して実際の回帰を修正します。
