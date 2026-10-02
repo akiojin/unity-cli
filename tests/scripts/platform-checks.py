@@ -275,7 +275,9 @@ def check_screenshot(runner: Runner) -> None:
                 "raw", "capture_screenshot", "--json", '{"captureMode":"game"}',
                 path=path, timeout=120,
             )
-            data = envelope(process).get("data") or {}
+            report = envelope(process)
+            data = report.get("data") or {}
+            errors = "; ".join(error.get("message", "") for error in report.get("errors", []))
             image = Path(data.get("path") or project / "missing.png")
             size = png_size(image) if image.is_file() else None
             check(
@@ -287,7 +289,7 @@ def check_screenshot(runner: Runner) -> None:
                 and size is not None
                 and min(size) > 0
                 and [data.get("width"), data.get("height")] == list(size),
-                f"exit={process.returncode} size={size} bytes={data.get('fileSize')} path={image} {process.stderr.strip()[-400:]}",
+                f"exit={process.returncode} size={size} bytes={data.get('fileSize')} path={image} {errors}",
             )
     finally:
         editor.close()
