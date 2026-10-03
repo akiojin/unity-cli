@@ -11,16 +11,40 @@ MCP profile 修正後の [最終ソース・バイナリ SHA256](environment-fin
 **Overall: FAIL — Issue 全体は未完了。PR は未作成。**
 Windows の成功を Linux、通常の Domain Reload、winget 導入や原資料の全シナリオへ拡張しない。
 
+## 2026-10-04 の継続検証
+
+前回の停止条件を解消する作業を継続した。Windows Git placeholder の参照を正しく検証する
+修正後、native Cargo 全件は **607 PASS / 0 FAIL**、skills lint は **23 skills / 0 violations**。
+fmt / clippy と実 Unity の SceneHandlerTests 11件も成功した。
+公開23操作、実 Editor のモーダルによる GDI fallback、公開版 CLI の実 Editor ping を再実行した。
+
+WSL Ubuntu 24.04 に各デスクトップ環境を導入し、実 CLI から grim / gnome-screenshot /
+spectacle と X11 の import / scrot / maim で実 PNG を生成した。
+これらは応答しない TCP fixture を使う OS capture の検証で、Linux 実 Unity の成功とは区別する。
+公式 Linux Unity 6000.4.4f1 は展開・起動済みだが、ライセンスがなく exit 198 で停止した。
+Unity Hub 3.22.2 の checksum と起動を確認し、認証可能な環境を用意した。
+
+winget 初回提出用の3ファイルを [packaging/winget](../../../packaging/winget/README.md) に用意し、
+`winget validate` が成功した。公開 source への提出・反映と `WINGET_TOKEN` 設定は未完了。
+正式 `verify.run` は再度1500秒待機して deferred。
+また、blocked 復旧用の `derive:true` が library のない本プロジェクトに `cargo test --workspace --lib`
+を生成し、Cargo が `no library targets found` と拒否するツール側の問題も PM に報告した。
+派生記録の編集や空 library の追加による回避は行っていない。
+
+スタッフ原資料の代替調査では #243–260 / #390–395 に、23操作以外の入力・bake・build・動画・
+Animation・InputActions・C# reference の確認項目があると分かった。原資料との一致は未確認で、
+Windows の追加検証を進めている。下記の旧605成功・1失敗などの証跡は初回検証の記録として残す。
+
 ## 受け入れ基準の実測状況
 
 | AC | 結果 | 証跡・残る条件 |
 | --- | --- | --- |
 | 1: Windows lockfile / PID / 自動発見 | PASS | 実 Editor が `%USERPROFILE%\.unity-cli\editors` に発行した [lockfile（認証情報除去）](lockfiles.json)、`tasklist`、[自動発見](fresh-setup-summary.json)。 |
 | 2: 実 setup / Bridge 導入・接続 | PASS | 空の隔離プロジェクトで `setup --launch-editor --wait-secs 420` を実行。40.549秒、exit 0、`projectMatches: true`。[結果](setup.stdout.json)、[実行時間と ping](fresh-setup-summary.json)。dry-run ではない。 |
-| 3: 証跡の Issue / PR 記録 | PASS | 本資料と [Issue コメント](https://github.com/akiojin/unity-cli/issues/386#issuecomment-5970471700) に成功・失敗・未検証条件を記録。全件ゲート未通過のため PR 未作成。 |
-| 4: Windows / Linux OS フォールバック | Windows PASS / Linux 未検証 | 実 Editor の `EditorUtility.DisplayDialog` でメインスレッドを止め、PowerShell + GDI の OS キャプチャが成功。Linux の実 Editor と Wayland/X11 キャプチャツールは本環境で揃わない。 |
+| 3: 証跡の Issue / PR 記録 | PASS | 本資料と [Issue コメント](https://github.com/akiojin/unity-cli/issues/386#issuecomment-5970471700) に成功・失敗・未検証条件を記録。正式検証記録が未取得のため PR 未作成。 |
+| 4: Windows / Linux OS フォールバック | Windows PASS / Linux 部分 | Windows 実 Editor のモーダルで PowerShell + GDI が成功。Linux Wayland / X11 の6ツールは実 PNG 生成成功、Linux 実 Editor はライセンス認証待ち。 |
 | 5: スタッフ原資料の全シナリオ・比較表 | 部分 | 公開済み23操作は既存比較と同じ設定で23/23 PASS。[一覧](staff-final-operations.json)。原資料 `pm-scratch/staff-report.md` は未取得。公式 CLI の Windows 比較・原資料との網羅性確認は未実施。 |
-| 6: 公開 install.ps1 / winget / ping | PowerShell PASS / winget 未検証 | 公開 installer で Release 0.18.1 を隔離 tools root へ導入し、実 Editor に ping 成功。winget source に `akiojin.unity-cli` がなく、repository に `WINGET_TOKEN` もない。 |
+| 6: 公開 install.ps1 / winget / ping | PowerShell PASS / winget 未検証 | 公開 installer と実 Editor ping 成功。初回 manifest の validate 成功。公開 package / `WINGET_TOKEN` がなく、winget install / ping は未実施。 |
 
 ## 実機で発見して修正した問題
 
@@ -39,9 +63,6 @@ Windows の成功を Linux、通常の Domain Reload、winget 導入や原資料
    AssetDatabase に渡す前に区切り文字を `/` に揃えた。
    深いフォルダへの作成・保存の回帰テストを追加し、実 Unity で RED → GREEN を確認した。
 
-Windows の clippy で検出された既存の Unix 専用テストの未使用 import / helper には
-`cfg(unix)` を付けた。LSP の動作変更はない。
-
 4. 全件検証で MCP configure の Windows profile 解決も確認した。
    `dirs::home_dir` の Windows shell API はプロセスの `USERPROFILE` 上書きを参照しないため、
    Windsurf の設定テストが実ユーザープロファイルへ書き込んでいた。
@@ -51,6 +72,21 @@ Windows の clippy で検出された既存の Unix 専用テストの未使用 
    修正後は MCP / auth warning / tool list の11件が成功した。
    今回生成された実プロファイルの設定ファイルは、内容・SHA256・作成時刻で検証実行の生成物と
    確認して削除した。[削除前のメタデータと削除結果](profile-audit.json)。
+
+5. Windows の `core.symlinks=false` checkout は、Git の symlink を参照先文字列の
+   通常ファイルとして展開する。skills lint はこの正規の展開形式を誤った参照先と扱っていた。
+   Windows ではこの相対参照を解決し、従来どおり canonical skill の実ディレクトリと照合する。
+   欠落・異なる skill・存在しない参照先・複数行の不正ファイルは回帰テストで拒否を確認した。
+   checkout ファイル、Git index、Developer Mode の設定は変更していない。
+
+Windows の clippy で検出された既存の Unix 専用テストの未使用 import / helper には
+`cfg(unix)` を付けた。LSP の動作変更はない。
+
+Windows の Python E2E helper も修正した。`os.kill(pid, 0)` は Windows では Unix の
+生存確認と異なり、コンソール制御イベントになる。終了済み PID を生存扱いする RED を確認した。
+`OpenProcess(SYNCHRONIZE)` と `WaitForSingleObject(0)` に置き換え、実行中の子が終了しないこと、
+終了済み・無効 PID の拒否、終了コード259の判定を Windows native の4テストで確認した。
+既存 authentication の3テストと Linux の回帰テストも成功した。
 
 ## Windows OS キャプチャ
 
@@ -103,7 +139,7 @@ Release 0.18.1 の Windows バイナリを SHA256SUMS 検証後に導入し、
 [repository secret の名前一覧](repository-secret-names.json) に `WINGET_TOKEN` はない。
 トークン値は読み取っていない。winget での install / ping、初回公開提出とトークン設定は未実施。
 
-## Verification Report
+## 初回の Verification Report（履歴）
 
 Mode: full。Launch mode: interactive (`launch_route: manual`)。
 Baseline: `origin/develop` / HEAD `338f426119b61123567b74028e7e8fe3bd99caa5`。
@@ -147,8 +183,7 @@ Agent Visual Check: n/a（CLI と Editor 連携を検証。Web/TUI の表示変�
 
 ## 再開条件
 
-1. Windows checkout の正規 skill リンクを作成できる実行環境で、全件 test / lint を再実行する。
-2. 原資料 `pm-scratch/staff-report.md` の所在を確認し、公開23操作との差分を検証する。
-3. Linux の実 Unity Editor と Wayland / X11 のキャプチャ環境で AC-4 を実行する。
-4. winget 初回公開の担当と `WINGET_TOKEN` の設定を確定し、公開 source から install / ping を検証する。
-5. 共通検証枠を確保し、正式な自動ゲートと必要なユーザー確認が通ってから Ready PR を作成する。
+1. 原資料 `pm-scratch/staff-report.md` の所在を確認し、追加した Windows 検証との網羅性を照合する。
+2. 用意した Linux Editor / Unity Hub でライセンス認証し、実 Editor を含む AC-4 を実行する。
+3. winget 初回公開と `WINGET_TOKEN` の設定を行い、公開 source から install / ping を検証する。
+4. 派生検証の binary-only Cargo 対応と共通検証枠を確保し、正式記録と必要なユーザー確認後に Ready PR を作成する。

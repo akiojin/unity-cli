@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+PackageIdentifier: akiojin.unity-cli
+PackageVersion: 0.18.1
+PackageLocale: en-US
+Publisher: akiojin
+PublisherUrl: https://github.com/akiojin
+PublisherSupportUrl: https://github.com/akiojin/unity-cli/issues
+PackageName: unity-cli
+PackageUrl: https://github.com/akiojin/unity-cli
+License: MIT
+LicenseUrl: https://github.com/akiojin/unity-cli/blob/v0.18.1/LICENSE
+ShortDescription: CLI for Unity Editor automation over the Unity TCP protocol
+Moniker: unity-cli
+Tags:
+  - automation
+  - unity
+  - unity-editor
+ReleaseNotesUrl: https://github.com/akiojin/unity-cli/releases/tag/v0.18.1
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0

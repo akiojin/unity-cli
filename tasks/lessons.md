@@ -10,6 +10,12 @@
 
 ## Entries
 
+### 2026-10-04 — #386 環境不足の解消を先に試す
+
+- Context: 実機検証を一部完了後、ユーザーから「全部終わらせて」と継続を指示された。
+- Rule: ツール未導入やリンク作成エラーを即座に最終 blocker にせず、管理者不要の代替、隔離インストール、既存認証、原資料の別保存先を試す。成功条件を緩めたり、未実施を PASS にしたりはしない。
+- Checkpoint: 実行可能な残作業を完了し、外部入力が必須な条件だけ具体的な場所・認証・結果とともに残す。Markdown を含む gwtd body は literal JSON ファイルから渡し、shell の command substitution を起こさない。
+
 ### 2026-02-27
 
 - Context: Markdown Lint を `npm run lint:md` で実行した際、ローカルに `markdownlint` が存在しなかった。
