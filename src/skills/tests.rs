@@ -11,7 +11,9 @@ use tempfile::TempDir;
 use super::loader::load_skills;
 use super::model::{allowed_tool_set, RuleId, Severity, Violation};
 use super::report::{render, ReportFormat};
-use super::rules::{rule_r18, rule_r19, rule_r20, rule_r21, run_all, RuleContext};
+use super::rules::{rule_r18, rule_r19, run_all, RuleContext};
+#[cfg(unix)]
+use super::rules::{rule_r20, rule_r21};
 use super::runner::{discover_root, lint, LintOptions, LintOutcome};
 
 const VALID_DESC: &str = "Manage Unity prefab assets with unity-cli. Use when the user asks to create a prefab from a scene object or open a prefab in edit mode. Do not use for general scene object editing; use `unity-gameobject-edit` instead.";

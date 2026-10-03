@@ -37,10 +37,11 @@ pub(super) fn running(root: &Path) -> Option<u32> {
 }
 
 pub(super) fn launch_command(editor: &Path, root: &Path, headless: bool) -> Command {
+    let root = unity_argument_path(root);
     let mut command = Command::new(editor);
     command
         .arg("-projectPath")
-        .arg(root)
+        .arg(&root)
         .arg("-logFile")
         .arg(root.join("Logs/unity-cli-editor.log"))
         .stdin(Stdio::null())
@@ -57,6 +58,21 @@ pub(super) fn launch_command(editor: &Path, root: &Path, headless: bool) -> Comm
         command.process_group(0);
     }
     command
+}
+
+pub(super) fn unity_argument_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        // Unity's command-line parser does not accept canonical Win32 verbatim paths.
+        let text = path.to_string_lossy();
+        if let Some(unc) = text.strip_prefix(r"\\?\UNC\") {
+            return PathBuf::from(format!(r"\\{unc}"));
+        }
+        if let Some(local) = text.strip_prefix(r"\\?\") {
+            return PathBuf::from(local);
+        }
+    }
+    path.to_path_buf()
 }
 
 pub async fn open(cli: &Cli, headless: bool, wait_ready: u64) -> Result<Value> {
@@ -85,8 +101,7 @@ pub async fn open(cli: &Cli, headless: bool, wait_ready: u64) -> Result<Value> {
             command.env("UNITY_CLI_PORT_OVERRIDE", port.to_string());
         }
         Some(
-            command
-                .spawn()
+            crate::daemon::spawn::spawn_detached(&mut command)
                 .with_context(|| format!("Failed to launch {}", editor.display()))?,
         )
     } else {
@@ -225,4 +240,30 @@ pub async fn status(cli: &Cli) -> Result<Value> {
         }
     };
     Ok(json!({"state": label, "projectPath": root, "diagnostic": diagnostic}))
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn editor_launch_uses_paths_supported_by_unity() {
+        for (root, expected) in [
+            (r"\\?\C:\Projects\With spaces", r"C:\Projects\With spaces"),
+            (r"\\?\UNC\server\share\Project", r"\\server\share\Project"),
+        ] {
+            let command = launch_command(Path::new("Unity.exe"), Path::new(root), true);
+            let args: Vec<_> = command
+                .get_args()
+                .map(|arg| arg.to_string_lossy())
+                .collect();
+            assert_eq!(args[1], expected);
+            assert_eq!(
+                args[3],
+                Path::new(expected)
+                    .join("Logs/unity-cli-editor.log")
+                    .to_string_lossy()
+            );
+        }
+    }
 }

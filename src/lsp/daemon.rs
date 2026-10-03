@@ -561,7 +561,9 @@ fn cleanup_stale_files_on_start() {
 mod tests {
     use super::*;
     use serde_json::json;
-    use std::io::{self, BufRead, BufReader, Write};
+    use std::io::{self, Write};
+    #[cfg(unix)]
+    use std::io::{BufRead, BufReader};
     use tempfile::tempdir;
 
     fn env_lock() -> &'static std::sync::Mutex<()> {
@@ -602,6 +604,7 @@ mod tests {
         (dir, env)
     }
 
+    #[cfg(unix)]
     fn ensure_local_lsp_binary() {
         let binary = crate::lsp_manager::binary_path().expect("binary path should resolve");
         if let Some(parent) = binary.parent() {

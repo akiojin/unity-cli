@@ -1,0 +1,70 @@
+{
+  "started_at": "2026-10-03T14:30:44.503670+00:00",
+  "source_commit": "338f426119b61123567b74028e7e8fe3bd99caa5",
+  "binary_sha256": "abb04eca3cee68b3260c4701f6a10b2b053c87c1eaef95423117143cf4288eeb",
+  "cases": {
+    "setup": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+        "--port",
+        "6488",
+        "setup",
+        "--launch-editor",
+        "--wait-secs",
+        "420"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 40.549,
+      "success": true
+    },
+    "ping": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+        "system",
+        "ping"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.212,
+      "success": true
+    },
+    "auto-discovery": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+        "instances",
+        "list"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.259,
+      "success": true
+    },
+    "release-ping": {
+      "argv": [
+        "<worktree>\\.cache\\issue-386\\installed-tools\\unity-cli\\win-x64\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+        "system",
+        "ping"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.552,
+      "success": true
+    }
+  },
+  "editor_pid": 14140,
+  "unity_version": "6000.4.4f1",
+  "finished_at": "2026-10-03T14:31:30.524967+00:00"
+}

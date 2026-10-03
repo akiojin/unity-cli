@@ -1,0 +1,44 @@
+{
+  "directory": "%USERPROFILE%\\.unity-cli\\editors",
+  "locks": [
+    {
+      "schemaVersion": 1,
+      "pid": 14140,
+      "projectPath": "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+      "host": "127.0.0.1",
+      "port": 6488,
+      "configuredPort": 6488,
+      "unityVersion": "6000.4.4f1",
+      "bridgeVersion": "0.18.1",
+      "state": "ready",
+      "startedAt": 1791037874.9763892,
+      "heartbeatAt": 1791039672.4251444
+    },
+    {
+      "schemaVersion": 1,
+      "pid": 44232,
+      "projectPath": "<worktree>\\.cache\\issue-386\\setup-project",
+      "host": "127.0.0.1",
+      "port": 6486,
+      "configuredPort": 6486,
+      "unityVersion": "6000.4.4f1",
+      "bridgeVersion": "0.18.1",
+      "state": "ready",
+      "startedAt": 1791001895.7939308,
+      "heartbeatAt": 1791039677.1909142
+    },
+    {
+      "schemaVersion": 1,
+      "pid": 52408,
+      "projectPath": "<worktree>\\.cache\\issue-386\\red-project",
+      "host": "127.0.0.1",
+      "port": 6487,
+      "configuredPort": 6487,
+      "unityVersion": "6000.4.4f1",
+      "bridgeVersion": "0.18.1",
+      "state": "ready",
+      "startedAt": 1791039377.3480923,
+      "heartbeatAt": 1791039672.755435
+    }
+  ]
+}

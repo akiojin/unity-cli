@@ -186,6 +186,11 @@ fn configure_all_clients_preserves_other_servers_and_dry_run() {
             "{client}: {}",
             String::from_utf8_lossy(&preview.stderr)
         );
+        assert!(
+            String::from_utf8_lossy(&preview.stdout)
+                .contains(dir.path().canonicalize().unwrap().to_str().unwrap()),
+            "{client}: preview must target the isolated configuration directory"
+        );
         assert!(String::from_utf8_lossy(&preview.stdout).contains("+"));
         assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
         let write = run(false);
@@ -195,6 +200,15 @@ fn configure_all_clients_preserves_other_servers_and_dry_run() {
             String::from_utf8_lossy(&write.stderr)
         );
         let after = std::fs::read_to_string(&path).unwrap();
+        if !toml {
+            let configured: Value = serde_json::from_str(&after).unwrap();
+            let key = if client == "vscode" {
+                "servers"
+            } else {
+                "mcpServers"
+            };
+            assert_eq!(configured[key]["unity-cli"]["command"], "unity-cli");
+        }
         assert!(after.contains("keep"));
         assert!(after.contains("unity-cli"));
         assert!(
