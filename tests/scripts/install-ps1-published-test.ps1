@@ -21,7 +21,8 @@ $expected = "unity-cli $($tag.TrimStart('v'))"
 foreach ($name in 'UNITY_CLI_VERSION', 'UNITY_CLI_RELEASE_BASE_URL', 'UNITY_CLI_TOOLS_ROOT', 'UNITY_CLI_SKIP_PATH_UPDATE') {
     Remove-Item "Env:$name" -ErrorAction SilentlyContinue
 }
-Invoke-RestMethod -Uri $installerUrl | Invoke-Expression
+# A child scope keeps the installer's own variables out of this script.
+& { Invoke-RestMethod -Uri $installerUrl | Invoke-Expression }
 
 $installed = Join-Path $HOME '.unity\tools\unity-cli\win-x64\unity-cli.exe'
 Assert (Test-Path $installed) "binary must be installed at $installed"
