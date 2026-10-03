@@ -1,0 +1,35 @@
+name: Published Install
+
+# Installs the latest published release on a clean runner (#465). It depends on
+# the network and on the state of the published release, so it stays off the
+# per-PR path: it runs after a release, weekly, on demand, and for PRs that
+# change this check itself.
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/published-install.yml
+      - tests/scripts/install-ps1-published-test.ps1
+
+permissions:
+  contents: read
+
+jobs:
+  windows-published-install:
+    name: Windows Published Install
+    runs-on: windows-latest
+    timeout-minutes: 15
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the latest release with install.ps1 and check its version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./tests/scripts/install-ps1-published-test.ps1

@@ -155,10 +155,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install Xvfb and X11 screenshot tools
+      - name: Install Xvfb, X11 screenshot tools, sway and grim
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb imagemagick scrot maim
+          sudo apt-get install -y xvfb imagemagick scrot maim sway grim
 
       - name: Build unity-cli
         run: cargo build --bin unity-cli
@@ -167,6 +167,33 @@ jobs:
         run: >
           xvfb-run -a -s "-screen 0 1280x720x24"
           python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli
+
+      - name: Check the grim OS screenshot fallback under headless sway
+        # A wlroots compositor on the headless backend with the software
+        # renderer; WAYLAND_DISPLAY switches the check to grim (#465).
+        env:
+          WLR_BACKENDS: headless
+          WLR_LIBINPUT_NO_DEVICES: '1'
+          WLR_RENDERER: pixman
+        run: |
+          XDG_RUNTIME_DIR="$(mktemp -d)"
+          export XDG_RUNTIME_DIR
+          chmod 700 "$XDG_RUNTIME_DIR"
+          sway -c /dev/null > "$RUNNER_TEMP/sway.log" 2>&1 &
+          socket=""
+          for _ in $(seq 1 50); do
+            socket="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' | head -n 1)"
+            [ -n "$socket" ] && break
+            sleep 0.2
+          done
+          if [ -z "$socket" ]; then
+            cat "$RUNNER_TEMP/sway.log"
+            echo "sway did not create a Wayland socket" >&2
+            exit 1
+          fi
+          WAYLAND_DISPLAY="$(basename "$socket")"
+          export WAYLAND_DISPLAY
+          python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli --checks screenshot
 
   lsp-test:
     name: LSP Tests (required)

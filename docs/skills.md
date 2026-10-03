@@ -63,7 +63,8 @@ unity-cli skills show unity-scene-create
 | `vscode` | `.github/skills/` | `~/.copilot/skills/` |
 
 These clients read `SKILL.md` directories directly; reference files retain their
-relative paths. See the client documentation for
+relative paths. The home directory is `$HOME` on Unix and `%USERPROFILE%` on
+Windows, the same location the clients read. See the client documentation for
 [Claude Code](https://code.claude.com/docs/en/skills),
 [Cursor](https://cursor.com/docs/skills),
 [Windsurf](https://docs.windsurf.com/windsurf/cascade/skills), and
