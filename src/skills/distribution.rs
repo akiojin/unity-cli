@@ -66,7 +66,9 @@ fn scope_root(local: bool) -> Result<PathBuf> {
     let root = if local {
         std::env::current_dir()?
     } else {
-        dirs::home_dir().context("cannot determine the user home directory")?
+        // Not `dirs::home_dir`: Windows clients resolve their home from
+        // %USERPROFILE%, which the shell API behind `dirs` ignores.
+        std::env::home_dir().context("cannot determine the user home directory")?
     };
     ensure!(
         !fs::symlink_metadata(&root)?.file_type().is_symlink(),

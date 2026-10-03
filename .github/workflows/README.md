@@ -15,7 +15,8 @@
     `setup --dry-run`, OS screenshot fallback) and is installed through
     `scripts/install.ps1`
   - Linux: the same `platform-checks.py` under Xvfb with the X11 screenshot
-    tools; none of these checks need a Unity Editor
+    tools, then its screenshot check again with `grim` under a headless `sway`
+    (Wayland); none of these checks need a Unity Editor
   - `dotnet test lsp/Server.Tests.csproj`
   - `cargo llvm-cov` (Rust coverage gate, line >= 90%)
   - `dotnet test ... /p:CollectCoverage=true` (LSP coverage gate, line >= 90%)
@@ -23,6 +24,12 @@
   - runs after `chore(release):` pushes to `main` or manual dispatch
   - creates the release tag, builds release binaries for Linux/macOS/Windows
   - publishes GitHub Release assets
+- `published-install.yml`
+  - installs the latest published release on `windows-latest` with
+    `irm .../main/scripts/install.ps1 | iex` and checks `unity-cli --version`
+  - runs after the `Release` workflow, weekly, on manual dispatch, and for PRs
+    that change the check itself (not on every PR: it depends on the network
+    and on the published release)
 - `main-pr-policy.yml`
   - branch policy for PRs into `main`
 - `auto-merge.yml`

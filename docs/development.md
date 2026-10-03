@@ -585,7 +585,7 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI Overview
 
-CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and `.github/workflows/skill-routing-eval.yml`.
+CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, `.github/workflows/published-install.yml`, and `.github/workflows/skill-routing-eval.yml`.
 
 | Job                            | Trigger                 | Description                                                                           |
 | ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
@@ -595,6 +595,7 @@ CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh` (full cases + history artifact)                           |
 | CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py` (p50/p95 budgets + injected-delay evidence)            |
 | Skill Routing Eval             | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
+| Windows Published Install      | release / cron / manual | latest release via `install.ps1` (`.github/workflows/published-install.yml`)          |
 
 Skill Contract Check, Rust Tests, LSP Tests, LSP Performance, and CLI Latency are required checks for PR merges.
 
@@ -1240,7 +1241,7 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI の概要
 
-CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
+CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/published-install.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
 
 | ジョブ                         | トリガー                | 内容                                                                                   |
 | ------------------------------ | ----------------------- | -------------------------------------------------------------------------------------- |
@@ -1250,6 +1251,7 @@ CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/wo
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact）                             |
 | CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py`（p50/p95 予算 + 遅延注入の証跡）                        |
 | Skill Routing Eval             | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
+| Windows Published Install      | Release 後/週次/手動    | 最新の公開版を `install.ps1` で導入（`.github/workflows/published-install.yml`）       |
 
 Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency は PR マージの必須チェックです。
 
