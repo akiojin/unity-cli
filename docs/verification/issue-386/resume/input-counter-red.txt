@@ -1,0 +1,3 @@
+Started headless Editor (pid 26584)
+11 tests, 3 failed; report: <workspace>\.cache\issue-386\resume\InputSimulationAutomationPlayModeTests-counter-red.xml
+TEST_FAILED: Unity command failed (code: UNKNOWN_ERROR)

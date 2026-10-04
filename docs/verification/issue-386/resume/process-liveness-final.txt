@@ -1,0 +1,9 @@
+test_exit_code_still_active_does_not_mean_process_is_running (test_process_liveness.ProcessLivenessTests.test_exit_code_still_active_does_not_mean_process_is_running) ... ok
+test_exited_process_is_not_alive_or_eligible_for_authentication (test_process_liveness.ProcessLivenessTests.test_exited_process_is_not_alive_or_eligible_for_authentication) ... ok
+test_invalid_process_ids_are_not_alive_or_eligible_for_authentication (test_process_liveness.ProcessLivenessTests.test_invalid_process_ids_are_not_alive_or_eligible_for_authentication) ... ok
+test_live_process_survives_authentication_and_lifecycle_probes (test_process_liveness.ProcessLivenessTests.test_live_process_survives_authentication_and_lifecycle_probes) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.782s
+
+OK

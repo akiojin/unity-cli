@@ -1,0 +1,49 @@
+{
+  "editor": "6000.4.4f1 Windows x64",
+  "port": "6492",
+  "project": "<workspace>\\.cache\\issue-386\\resume\\hot-reload-windows\\Project",
+  "command": [
+    "C:/Program Files/Unity/Hub/Editor/6000.4.4f1/Editor/Unity.exe",
+    "-batchmode",
+    "-nographics",
+    "-projectPath",
+    "<workspace>\\.cache\\issue-386\\resume\\hot-reload-windows\\Project",
+    "-executeMethod",
+    "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+    "-logFile",
+    "<workspace>\\.cache\\issue-386\\resume\\hot-reload-windows\\editor.log"
+  ],
+  "fsr": {
+    "url": "https://codeload.github.com/handzlikchris/FastScriptReload/zip/51140b71d9e5df1de231b33ec20ee089b18bebec",
+    "commit": "51140b71d9e5df1de231b33ec20ee089b18bebec",
+    "version": "1.8.0",
+    "package": "com.handzlikchris.fastscriptreload",
+    "archive_bytes": 14083364,
+    "archive_sha256": "5f04d854dd63bf7e6c285476e2d725cba0694b284cc2d82390b345d88b1f4435",
+    "assets": "<workspace>\\.cache\\issue-386\\fsr-pinned\\FastScriptReload-51140b71d9e5df1de231b33ec20ee089b18bebec\\Assets"
+  },
+  "started_at": "2026-10-03T23:03:53.394825+00:00",
+  "cli_sha256": "087d057cd62483c3c0aa64ceb85a77421349f2ace1ba236a13c1ddcffe909d35",
+  "pid": 5188,
+  "test_command": [
+    "py",
+    "-3",
+    "-X",
+    "utf8",
+    "-B",
+    "<workspace>\\scripts\\e2e-hot-reload.py",
+    "--project",
+    "<workspace>\\.cache\\issue-386\\resume\\hot-reload-windows\\Project",
+    "--port",
+    "6492",
+    "--unity-cli",
+    "<workspace>\\target\\debug\\unity-cli.exe",
+    "--expect",
+    "supported",
+    "--require-arch",
+    "X64"
+  ],
+  "exit_code": 0,
+  "editor_exit_code": 4294967295,
+  "finished_at": "2026-10-03T23:08:21.043376+00:00"
+}

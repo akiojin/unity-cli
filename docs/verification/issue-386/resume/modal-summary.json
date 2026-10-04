@@ -1,0 +1,49 @@
+{
+  "started_at": "2026-10-03T20:33:31.809137+00:00",
+  "source_commit": "0458d7fa83d55a3e77cb833ba74c705b65927a30",
+  "binary_sha256": "0038934812c1881055a67f05e463719dac55813293402991e78ba75aa63dfd7a",
+  "cases": {
+    "modal-os-fallback": {
+      "argv": [
+        "<workspace>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<workspace>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "1000",
+        "raw",
+        "capture_screenshot",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.712,
+      "success": true
+    },
+    "modal-fallback-disabled": {
+      "argv": [
+        "<workspace>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<workspace>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "1000",
+        "raw",
+        "capture_screenshot",
+        "--json",
+        "{\"osFallback\":false}"
+      ],
+      "exit_code": 6,
+      "elapsed_seconds": 1.381,
+      "success": false
+    }
+  },
+  "png": {
+    "width": 1512,
+    "height": 949,
+    "sha256": "031d61efffff00d2c99dc2539edde622facb7bfb63ee0d7ef99592d5a1aee438"
+  },
+  "finished_at": "2026-10-03T20:33:36.765486+00:00"
+}

@@ -1,0 +1,61 @@
+{
+  "conditions": {
+    "started_at": "2026-10-03T23:33:26.503448+00:00",
+    "os": "Windows-11-10.0.26300-SP0",
+    "arch": "AMD64",
+    "logical_cpus": 32,
+    "unity": "6000.4.4f1",
+    "editor_pid": 34324,
+    "iterations": 100,
+    "warmup": 3,
+    "unity_cli_build": "native Windows debug 0.18.1",
+    "official_cli_version": "1.0.0-beta.11",
+    "pipeline_version": "0.8.0-exp.1",
+    "unity_cli_sha256": "087d057cd62483c3c0aa64ceb85a77421349f2ace1ba236a13c1ddcffe909d35",
+    "official_cli_sha256": "4cad9230dd98cc8d123d3ef9d18fef5e7ee65f353814c3cf9d94d9129293dda3",
+    "benchmark_sha256": "857569c8c542221f43a27423ecfa8fce3d11a690ed979985ebc670a56912f372",
+    "windows_adapter_sha256": "1d72ca848808f1fcce45a46b133691c7c6119f908e67e9519f72759a19d5af7b",
+    "windows_adapter": "Original benchmark operations, validation, focus-discard and alternating order; Windows HWND foreground inspection and bounded reader thread replace macOS focus and POSIX select. No platform spoofing.",
+    "background_condition": "Owned Editor minimized, because Windows refused activation of the existing GWT background window. This differs from macOS visible-background measurements.",
+    "host_contention": "Other project canonical verification was active on this host; results are observations, no Windows budget or prior baseline was enforced.",
+    "coexistence": {
+      "same_project": true,
+      "unity_version": "6000.4.4f1",
+      "official_state": "ready",
+      "project_identity_sha256": "f87f40b8af586b040ebc3f0d64bf076a0bebf421cd38cb9af459bc31f2a0c69a"
+    },
+    "play_settings": {
+      "assetNamingUsesSpace": true,
+      "defaultBehaviorMode": "Mode3D",
+      "enterPlayModeOptions": "DisableDomainReload",
+      "enterPlayModeOptionsEnabled": true,
+      "prefabModeRegularEnvironment": "None",
+      "prefabModeUIEnvironment": "None",
+      "serializationMode": "ForceText",
+      "unityRemote": "",
+      "unityRemoteCompression": "",
+      "unityRemoteResolution": ""
+    },
+    "unityd_pid": 52020
+  },
+  "runs": [
+    {
+      "mode": "process",
+      "focus": "frontmost",
+      "status": "PASS",
+      "source": "previous completed run, original conditions preserved"
+    },
+    {
+      "mode": "process",
+      "focus": "background",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "mode": "resident",
+      "focus": "frontmost",
+      "status": "FAIL",
+      "error": "Invalid official NDJSON response: {'id': '15', 'exitCode': 6, 'envelope': {'success': False, 'command': 'unity command find_assets', 'data': None, 'errors': [{'code': 'COMMAND_FAILED', 'message': 'Pipeline server returned 400 Bad Request: Parameter Validation Failed. Illegal characters in path.'}], 'warnings': []}}"
+    }
+  ]
+}

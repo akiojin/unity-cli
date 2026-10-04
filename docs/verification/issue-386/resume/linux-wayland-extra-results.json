@@ -1,0 +1,35 @@
+[
+  {
+    "tool": "spectacle",
+    "started_at": "2026-10-03T20:55:11.313451+00:00",
+    "real_editor": false,
+    "exit_code": 0,
+    "stdout": {
+      "command": "raw capture_screenshot",
+      "data": {
+        "captureMode": "game",
+        "fallback": "os",
+        "fallbackTool": "spectacle",
+        "fileSize": 5327,
+        "height": 720,
+        "message": "Desktop screenshot captured by the OS (Unity Editor did not respond)",
+        "note": "Unity Editor did not respond (OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)); captured the whole desktop with an OS screenshot instead. The Editor main thread may be blocked by a modal dialog. Pass \"osFallback\": false to get the timeout error instead.",
+        "path": "/tmp/issue386-spectacle-9wpjr84r/CaptureProject/.unity/capture/image_os_1791060914678.png",
+        "width": 1280
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    },
+    "stderr": "\u001b[2m2026-10-03T20:55:14.676790Z\u001b[0m \u001b[33m WARN\u001b[0m Unity did not respond; falling back to OS screenshot \u001b[3merror\u001b[0m\u001b[2m=\u001b[0mOPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)\n",
+    "png": {
+      "size": [
+        1280,
+        720
+      ],
+      "sha256": "8dc98e7f34604d19f8d0c2e0654c36e47ebd63193de9da301fe395df74969b26"
+    },
+    "passed": true,
+    "finished_at": "2026-10-03T20:55:15.796264+00:00"
+  }
+]

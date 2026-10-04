@@ -1,0 +1,27 @@
+[
+  {
+    "mode": "anonymous",
+    "exit_code": 0,
+    "found_branch": true
+  },
+  {
+    "mode": "current-token",
+    "exit_code": 128,
+    "found_branch": false
+  },
+  {
+    "mode": "current-basic",
+    "exit_code": 0,
+    "found_branch": true
+  },
+  {
+    "mode": "gh-token",
+    "exit_code": 128,
+    "found_branch": false
+  },
+  {
+    "mode": "gh-basic",
+    "exit_code": 0,
+    "found_branch": true
+  }
+]

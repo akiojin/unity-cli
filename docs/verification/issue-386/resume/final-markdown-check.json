@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "bunx",
+    "markdownlint-cli2",
+    "docs/comparison.md",
+    "docs/hot-reload.md",
+    "docs/verification/issue-386/README.md",
+    "docs/verification/issue-386/resume/*.md",
+    "packaging/winget/README.md",
+    "tasks/lessons.md"
+  ],
+  "started_at": "2026-10-04T00:07:27.072912+00:00",
+  "exit_code": 0,
+  "finished_at": "2026-10-04T00:07:28.544136+00:00",
+  "log": "markdownlint-final.txt"
+}

@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-10-03T20:40:53.902978+00:00",
+  "real_editor": false,
+  "compositor": "GNOME Shell 46 nested Wayland",
+  "shell_pid": 1506028,
+  "exit_code": 0,
+  "stdout": {
+    "command": "raw capture_screenshot",
+    "data": {
+      "captureMode": "game",
+      "fallback": "os",
+      "fallbackTool": "gnome-screenshot",
+      "fileSize": 16225,
+      "height": 600,
+      "message": "Desktop screenshot captured by the OS (Unity Editor did not respond)",
+      "note": "Unity Editor did not respond (OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)); captured the whole desktop with an OS screenshot instead. The Editor main thread may be blocked by a modal dialog. Pass \"osFallback\": false to get the timeout error instead.",
+      "path": "/tmp/issue386-gnome-ssj55wmm/CaptureProject/.unity/capture/image_os_1791060058291.png",
+      "width": 800
+    },
+    "errors": [],
+    "success": true,
+    "warnings": []
+  },
+  "stderr": "\u001b[2m2026-10-03T20:40:58.289725Z\u001b[0m \u001b[33m WARN\u001b[0m Unity did not respond; falling back to OS screenshot \u001b[3merror\u001b[0m\u001b[2m=\u001b[0mOPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)\n",
+  "png": {
+    "size": [
+      800,
+      600
+    ],
+    "sha256": "bb8d1f1f9236430fc6567fa822e63e04ef5cd0d9747ad66c346d20d9e1766f26"
+  },
+  "passed": true,
+  "finished_at": "2026-10-03T20:41:01.353274+00:00"
+}

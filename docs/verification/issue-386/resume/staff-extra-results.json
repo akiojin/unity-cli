@@ -1,0 +1,126 @@
+[
+  {
+    "name": "prefab",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "-B",
+      "scripts/e2e-prefab.py",
+      "--unity-cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--project-root",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--port",
+      "6487",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\prefab-final",
+      "--editmode"
+    ],
+    "started_at": "2026-10-03T21:05:32.803502+00:00",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T21:07:27.701078+00:00"
+  },
+  {
+    "name": "timeline",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "-B",
+      "scripts/e2e-timeline.py",
+      "--unity-cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487"
+    ],
+    "started_at": "2026-10-03T21:07:27.701498+00:00",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T21:07:38.628970+00:00"
+  },
+  {
+    "name": "eval",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "scripts/e2e-eval.py",
+      "--unity-cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "--soak-iterations",
+      "1000"
+    ],
+    "started_at": "2026-10-03T21:07:38.629402+00:00",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T21:25:25.741501+00:00"
+  },
+  {
+    "name": "bake",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "-B",
+      "scripts/e2e-bake.py",
+      "--unity-cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "--project-root",
+      "<workspace>\\.cache\\issue-386\\staff-project"
+    ],
+    "started_at": "2026-10-03T21:25:25.741912+00:00",
+    "exit_code": 1,
+    "finished_at": "2026-10-03T21:25:28.565921+00:00"
+  },
+  {
+    "name": "domain-reload",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "-B",
+      "scripts/e2e-test-domain-reload.py",
+      "--cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\domain-reload.json"
+    ],
+    "started_at": "2026-10-03T21:25:28.566314+00:00",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T21:25:44.845566+00:00"
+  },
+  {
+    "name": "player-build",
+    "command": [
+      "py",
+      "-3",
+      "-X",
+      "utf8",
+      "-B",
+      "scripts/e2e-player-build.py",
+      "--cli",
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--unity",
+      "C:/Program Files/Unity/Hub/Editor/6000.4.4f1/Editor/Unity.exe",
+      "--project-path",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--port",
+      "6487",
+      "--target",
+      "StandaloneWindows64"
+    ],
+    "started_at": "2026-10-03T21:25:44.846047+00:00",
+    "exit_code": 1,
+    "finished_at": "2026-10-03T21:25:55.110575+00:00"
+  }
+]

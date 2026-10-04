@@ -1,0 +1,8 @@
+Editor: {"assetsPath": "<workspace>/.cache/issue-386/staff-project/Assets", "codeIndexRoot": "<workspace>/.cache/issue-386/staff-project/.unity/cache/code-index", "packagesPath": "<workspace>/.cache/issue-386/staff-project/Packages", "projectRoot": "<workspace>/.cache/issue-386/staff-project", "unity": {"platform": "WindowsEditor", "productName": "staff-project", "unityVersion": "6000.4.4f1"}}
+PASS: live Editor readiness
+PASS: branch-only real fetch
+PASS: branch-only cache reuse
+PASS: omitted branch preserves cached provenance
+PASS: explicit version and branch
+Passed: 5; Failed: 0; Total: 5
+Artifacts: <workspace>\.cache\issue-386\resume\reference-fixed\reference-fetch

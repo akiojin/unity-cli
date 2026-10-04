@@ -1,0 +1,13 @@
+Video format E2E: 127.0.0.1:6487; artifacts=<workspace>\.cache\issue-386\resume\video-final
+PASS recording outside Play Mode returns error
+PASS invalid format returns error
+Output mp4: <workspace>\.cache\issue-386\staff-project\.unity\capture\video_game_2026-10-04_06-46-00_b4345be096744e71a48455453419794c.mp4 (83309 bytes, header=00000018667479706d703432000000006d70343169736f6d0000002875756964)
+PASS mp4 file format and session lifecycle
+Output webm: <workspace>\.cache\issue-386\staff-project\.unity\capture\video_game_2026-10-04_06-46-03_68bdf052a04c45adae01da6c6126430d.webm (6079 bytes, header=1a45dfa39f4286810142f7810142f2810442f381084282847765626d42878102)
+PASS webm file format and session lifecycle
+PNG sequence: 24 frames in <workspace>\.cache\issue-386\staff-project\.unity\capture\video_game_2026-10-04_06-46-07_389fff53335e4bbab47ba05c8a6eec8f
+Output png_sequence: <workspace>\.cache\issue-386\staff-project\.unity\capture\video_game_2026-10-04_06-46-07_389fff53335e4bbab47ba05c8a6eec8f\frame_0000.png (22843 bytes, header=89504e470d0a1a0a0000000d4948445200000140000000b40806000000e5e4f5)
+PASS png_sequence file format and session lifecycle
+Output mp4: <workspace>\.cache\issue-386\staff-project\.unity\capture\video_game_2026-10-04_06-46-10_40e3f4e2d6e94e8c86b32cff6a25d3f7.mp4 (71048 bytes, header=00000018667479706d703432000000006d70343169736f6d0000002875756964)
+PASS mp4 file format and session lifecycle
+Passed: 6; Failed: 0; Total: 6

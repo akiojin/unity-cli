@@ -66,6 +66,7 @@ namespace UnityCliBridge.Tests.PlayMode
         public void SetUp()
         {
             Assert.IsTrue(Application.isPlaying);
+            Application.logMessageReceived += ExpectBridgeConnectionLog;
             previousFrameRate = Application.targetFrameRate;
             previousVSync = QualitySettings.vSyncCount;
             previousRunInBackground = Application.runInBackground;
@@ -105,6 +106,14 @@ namespace UnityCliBridge.Tests.PlayMode
             InputSystem.settings.editorInputBehaviorInPlayMode = previousEditorInputBehavior;
             InputSystem.settings.updateMode = previousUpdateMode;
             Time.fixedDeltaTime = previousFixedDeltaTime;
+            Application.logMessageReceived -= ExpectBridgeConnectionLog;
+        }
+
+        private static void ExpectBridgeConnectionLog(string message, string stackTrace, LogType type)
+        {
+            if (type == LogType.Log && System.Text.RegularExpressions.Regex.IsMatch(message,
+                @"^\[unity-cli-bridge\] Client connected from 127\.0\.0\.1:\d+$"))
+                LogAssert.Expect(type, message);
         }
 
         [UnityTest]

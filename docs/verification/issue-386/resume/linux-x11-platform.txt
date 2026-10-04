@@ -1,0 +1,14 @@
+unity-cli: unity-cli 0.18.1 (linux, home=/tmp/unity-cli-platform-checks-acyvccna/home)
+[PASS] discovery: instances list succeeds: exit=0
+[PASS] discovery: live PID is discovered from its lockfile: {"active": false, "host": "127.0.0.1", "id": "127.0.0.1:59475", "last_checked_at": "1791059172", "lockfile": "/tmp/unity-cli-platform-checks-acyvccna/home/.unity-cli/editors/1492255.json", "pid": 1492255, "port": 59475, "project_path": "/tmp/unity-cli-platform-checks-acyvccna/LiveProject", "source": "lockfile", "state": "ready", "status": "down", "unity_version": "6000.3.25f1"}
+[PASS] discovery: exited PID is listed as unreachable: {"active": false, "host": "127.0.0.1", "id": "127.0.0.1:34399", "last_checked_at": "1791059172", "lockfile": "/tmp/unity-cli-platform-checks-acyvccna/home/.unity-cli/editors/1492256.json", "pid": 1492256, "port": 34399, "project_path": "/tmp/unity-cli-platform-checks-acyvccna/DeadProject", "source": "lockfile", "stale_reason": "process 1492256 is not running", "state": "ready", "status": "unreachable", "unity_version": "6000.3.25f1"}
+[PASS] discovery: exited PID is excluded from target selection: exit=7 codes=['EDITOR_NOT_FOUND'] candidates=[1492255] live=1492255
+[PASS] setup: --dry-run succeeds: exit=0
+[PASS] setup: plan lists binary, bridge, launch and wait steps: ["binary", "bridge", "launch", "wait"]
+[PASS] setup: plan installs the Bridge into the project manifest: {"action": "install", "declared": "0.18.1", "dryRun": true, "inputBackends": {"changed": true, "previous": 0}, "installed": true, "manifestChanged": true, "manifestPath": "/tmp/unity-cli-platform-checks-acyvccna/Setup Project/Packages/manifest.json", "notes": ["Set PlayerSettings activeInputHandler to Both (2) so the Input System dependency imports without a restart prompt"], "package": "com.akiojin.unity-cli-bridge", "projectPath": "/tmp/unity-cli-platform-checks-acyvccna/Setup Project", "registry": true, "resolvedVersion": null, "source": "registry", "versionCheck": {"bridgeVersion": "0.18.1", "cliVersion": "0.18.1", "message": "CLI and bridge are both 0.18.1", "status": "match"}}
+[PASS] setup: no Editor is contacted: {"checked": false, "endpoint": "127.0.0.1:59131"}
+[PASS] setup: the manifest is left untouched
+[PASS] screenshot: import writes a PNG after the Editor times out: exit=0 size=(1280, 720) bytes=250 path=/tmp/unity-cli-platform-checks-acyvccna/CaptureProject/.unity/capture/image_os_1791059176319.png
+[PASS] screenshot: scrot writes a PNG after the Editor times out: exit=0 size=(1280, 720) bytes=2774 path=/tmp/unity-cli-platform-checks-acyvccna/CaptureProject/.unity/capture/image_os_1791059179434.png
+[PASS] screenshot: maim writes a PNG after the Editor times out: exit=0 size=(1280, 720) bytes=5446 path=/tmp/unity-cli-platform-checks-acyvccna/CaptureProject/.unity/capture/image_os_1791059182508.png
+12/12 checks passed

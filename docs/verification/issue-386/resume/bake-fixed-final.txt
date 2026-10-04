@@ -1,0 +1,35 @@
+get_editor_info {"assetsPath": "<workspace>/.cache/issue-386/staff-project/Assets", "codeIndexRoot": "<workspace>/.cache/issue-386/staff-project/.unity/cache/code-index", "packagesPath": "<workspace>/.cache/issue-386/staff-project/Packages", "projectRoot": "<workspace>/.cache/issue-386/staff-project", "unity": {"platform": "WindowsEditor", "productName": "staff-project", "unityVersion": "6000.4.4f1"}}
+PASS get_scene_bake_status returns a genuine error
+PASS get_scene_bake_status rejects with JOB_NOT_FOUND: {"command":"raw get_scene_bake_status","data":{"code":"JOB_NOT_FOUND","error":"No bake job exists for this jobId in this Editor session.","reason":"No bake job exists for this jobId in this Editor session.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"JOB_NOT_FOUND","message":"No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"}],"success":false,"warnings":[]}
+
+execute_menu_item {"executed": true, "executionTime": 460, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Lighting", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Lighting
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+start_scene_bake {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS lighting starts tracked asynchronous job
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "76215e87e1564dd3b2f947467c9870b0", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+FAIL TimeoutExpired(['<workspace>\\target\\debug\\unity-cli.exe', 'raw', 'get_scene_bake_status', '--json', '{"jobId": "76215e87e1564dd3b2f947467c9870b0"}', '--host', '127.0.0.1', '--port', '6487', '--timeout-ms', '120000', '--output', 'json'], 150)
+Baking E2E: passed=17 failed=1

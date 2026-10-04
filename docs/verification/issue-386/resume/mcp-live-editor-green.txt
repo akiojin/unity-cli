@@ -1,0 +1,10 @@
+   Compiling unity-cli v0.18.1 (<workspace>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.08s
+     Running tests\mcp.rs (target\debug\deps\mcp-9035db26334793d1.exe)
+
+running 3 tests
+test configure_all_clients_preserves_other_servers_and_dry_run ... ok
+test malformed_requests_do_not_end_session_or_execute_tools_before_initialization ... ok
+test stdio_catalog_and_failure_contract_without_editor ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.71s

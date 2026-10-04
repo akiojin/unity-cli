@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
+use base64::Engine;
 
 pub const UNITY_CS_REFERENCE_URL: &str =
     "https://github.com/Unity-Technologies/UnityCsReference.git";
@@ -101,7 +102,7 @@ pub fn fetch_selected(
             dest,
         );
     }
-    git_output(Command::new("git").arg("init").arg("--").arg(dest), "init")?;
+    git_output(git_command().arg("init").arg("--").arg(dest), "init")?;
     git_output(
         authenticated_git()
             .arg("-C")
@@ -110,14 +111,14 @@ pub fn fetch_selected(
         "fetch",
     )?;
     git_output(
-        Command::new("git")
+        git_command()
             .arg("-C")
             .arg(dest)
             .args(["checkout", "--detach", "FETCH_HEAD"]),
         "checkout",
     )?;
     let actual = git_output(
-        Command::new("git")
+        git_command()
             .arg("-C")
             .arg(dest)
             .args(["rev-parse", "HEAD"]),
@@ -132,13 +133,22 @@ pub fn fetch_selected(
     Ok(())
 }
 
-fn authenticated_git() -> Command {
+fn git_command() -> Command {
     let mut command = Command::new("git");
+    #[cfg(windows)]
+    command.args(["-c", "core.longpaths=true"]);
     command.env("GIT_TERMINAL_PROMPT", "0");
+    command
+}
+
+fn authenticated_git() -> Command {
+    let mut command = git_command();
     if let Some(token) = github_token() {
-        command
-            .arg("-c")
-            .arg(format!("http.extraHeader=Authorization: token {token}"));
+        let credentials =
+            base64::engine::general_purpose::STANDARD.encode(format!("x-access-token:{token}"));
+        command.arg("-c").arg(format!(
+            "http.extraHeader=Authorization: Basic {credentials}"
+        ));
     }
     command
 }
@@ -220,11 +230,7 @@ pub fn run_clone(
 }
 
 fn run_clone_via_git(url: &str, branch: &str, dest: &Path, depth: u32) -> Result<()> {
-    let mut cmd = Command::new("git");
-    if let Some(token) = github_token() {
-        cmd.arg("-c")
-            .arg(format!("http.extraHeader=Authorization: token {token}"));
-    }
+    let mut cmd = authenticated_git();
     cmd.arg("clone");
     for arg in build_clone_args(url, branch, dest, depth) {
         cmd.arg(arg);
@@ -536,6 +542,43 @@ mod tests {
         assert!(!dest.exists());
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn fetch_selected_checks_out_long_windows_paths_without_global_configuration() {
+        let _guard = env_lock().lock().unwrap();
+        let _count = EnvVarGuard::set("GIT_CONFIG_COUNT", "1");
+        let _key = EnvVarGuard::set("GIT_CONFIG_KEY_0", "core.longpaths");
+        let _value = EnvVarGuard::set("GIT_CONFIG_VALUE_0", "false");
+        let (repo, _) = fixture_repo();
+        let relative = PathBuf::from("Module".repeat(7))
+            .join("GraphToolkit".repeat(4))
+            .join("CommandStateObserver".repeat(3))
+            .join("PersistedStateComponent.cs");
+        let source = repo.path().join(&relative);
+        fs::create_dir_all(source.parent().unwrap()).unwrap();
+        fs::write(&source, "long path fixture").unwrap();
+        fixture_git(repo.path(), &["-c", "core.longpaths=true", "add", "."]);
+        fixture_git(
+            repo.path(),
+            &["-c", "core.longpaths=true", "commit", "-m", "long path"],
+        );
+        let selection = super::super::version::RefSelection {
+            source_ref: "refs/heads/6000.0".into(),
+            commit_sha: fixture_git(repo.path(), &["rev-parse", "HEAD"]),
+            exact_match: false,
+            selection_reason: "long Windows path fixture".into(),
+        };
+        let root = tempfile::tempdir().unwrap();
+        let dest = root.path().join("reference-cache").join("nested".repeat(8));
+        assert!(dest.join(&relative).as_os_str().len() > 260);
+        fetch_selected(repo.path().to_str().unwrap(), &selection, &dest, true).unwrap();
+        assert_eq!(
+            fs::read_to_string(dest.join(relative)).unwrap(),
+            "long path fixture"
+        );
+        assert_eq!(env::var("GIT_CONFIG_VALUE_0").unwrap(), "false");
+    }
+
     #[test]
     fn build_clone_args_emits_shallow_single_branch() {
         let dest = PathBuf::from("/tmp/unity-cs-reference/2023.2.20f1");
@@ -600,6 +643,49 @@ mod tests {
         let _g1 = EnvVarGuard::set("GITHUB_TOKEN", "");
         let _g2 = EnvVarGuard::set("GH_TOKEN", "ghp_test_value");
         assert_eq!(github_token().as_deref(), Some("ghp_test_value"));
+    }
+
+    #[test]
+    fn public_refs_use_basic_authentication_for_git_http() {
+        use std::io::Write;
+        use std::net::TcpListener;
+
+        let _guard = env_lock().lock().unwrap();
+        let _token = EnvVarGuard::set("GITHUB_TOKEN", "fixture-token");
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+                .unwrap();
+            let mut request = Vec::new();
+            while !request.ends_with(b"\r\n\r\n") {
+                let mut byte = [0];
+                stream.read_exact(&mut byte).unwrap();
+                request.push(byte[0]);
+            }
+            let reference = format!("{} refs/heads/6000.4\0multi_ack\n", "a".repeat(40));
+            let body = format!(
+                "001e# service=git-upload-pack\n0000{:04x}{}0000",
+                reference.len() + 4,
+                reference
+            );
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/x-git-upload-pack-advertisement\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+            String::from_utf8(request).unwrap()
+        });
+        let refs = list_public_refs(&format!("http://{address}/fixture.git")).unwrap();
+        let request = server.join().unwrap();
+        assert!(
+            request.lines().any(|line| line.eq_ignore_ascii_case(
+                "Authorization: Basic eC1hY2Nlc3MtdG9rZW46Zml4dHVyZS10b2tlbg=="
+            )),
+            "Git HTTP must authenticate with username and token credentials"
+        );
+        assert!(refs
+            .iter()
+            .any(|reference| reference.name == "refs/heads/6000.4"
+                && reference.commit_sha == "a".repeat(40)));
     }
 
     #[test]

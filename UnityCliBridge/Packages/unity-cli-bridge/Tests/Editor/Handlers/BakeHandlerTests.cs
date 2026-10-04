@@ -133,6 +133,22 @@ namespace UnityCliBridge.Tests
             Assert.That(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), Is.EqualTo(original));
         }
 
+        [Test] public void PreviewSceneDoesNotBlockSavedScene()
+        {
+            var preview = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                Assert.That(UnityEngine.SceneManagement.SceneManager.sceneCount, Is.EqualTo(1));
+                Assert.That(EditorSceneManager.previewSceneCount, Is.GreaterThan(0));
+                var accepted = QueueBake();
+                Assert.That((string)accepted["status"], Is.EqualTo("running"), accepted.ToString());
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(preview);
+            }
+        }
+
         [Test] public void DirtySceneIsRejected()
         {
             EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());

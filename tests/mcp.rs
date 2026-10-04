@@ -123,7 +123,10 @@ fn stdio_catalog_and_failure_contract_without_editor() {
         .iter()
         .map(|t| t["name"].as_str().unwrap().to_string())
         .collect();
-    let list = cli().args(["tool", "list"]).output().unwrap();
+    let list = cli()
+        .args(["--port", "1", "tool", "list"])
+        .output()
+        .unwrap();
     let mut expected: Vec<_> = String::from_utf8(list.stdout)
         .unwrap()
         .lines()

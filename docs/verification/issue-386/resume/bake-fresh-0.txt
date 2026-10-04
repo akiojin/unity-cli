@@ -1,0 +1,11 @@
+get_editor_info {"assetsPath": "<workspace>/.cache/issue-386/staff-project/Assets", "codeIndexRoot": "<workspace>/.cache/issue-386/staff-project/.unity/cache/code-index", "packagesPath": "<workspace>/.cache/issue-386/staff-project/Packages", "projectRoot": "<workspace>/.cache/issue-386/staff-project", "unity": {"platform": "WindowsEditor", "productName": "staff-project", "unityVersion": "6000.4.4f1"}}
+PASS get_scene_bake_status returns a genuine error
+PASS get_scene_bake_status rejects with JOB_NOT_FOUND: {"command":"raw get_scene_bake_status","data":{"code":"JOB_NOT_FOUND","error":"No bake job exists for this jobId in this Editor session.","reason":"No bake job exists for this jobId in this Editor session.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"JOB_NOT_FOUND","message":"No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"}],"success":false,"warnings":[]}
+
+execute_menu_item {"executed": true, "executionTime": 595, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Lighting", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Lighting
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+FAIL AssertionError(('start_scene_bake', '{"command":"raw start_scene_bake","data":{"code":"MULTIPLE_SCENES","error":"Load only the target scene before baking.","reason":"Load only the target scene before baking.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"MULTIPLE_SCENES","message":"Load only the target scene before baking. (code: MULTIPLE_SCENES)"}],"success":false,"warnings":[]}\n'))
+Baking E2E: passed=5 failed=1

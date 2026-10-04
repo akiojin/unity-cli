@@ -77,7 +77,7 @@ namespace UnityCliBridge.Handlers
             string path = args?["scenePath"]?.Value<string>();
             if (string.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) || !path.EndsWith(".unity", StringComparison.Ordinal) || path != scene.path || !File.Exists(path))
                 return Error("SCENE_MISMATCH", "scenePath must identify the saved active scene under Assets/.");
-            if (SceneManager.sceneCount != 1 || EditorSceneManager.previewSceneCount != 0)
+            if (SceneManager.sceneCount != 1 || EditorSceneManager.IsPreviewScene(scene))
                 return Error("MULTIPLE_SCENES", "Load only the target scene before baking.");
             if (scene.isDirty) return Error("SCENE_DIRTY", "Save the scene before baking.");
             Component surface = null;

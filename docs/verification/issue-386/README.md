@@ -9,14 +9,22 @@ MCP profile 修正後の [最終ソース・バイナリ SHA256](environment-fin
 先に測定した Windows 操作にはその測定時点のバイナリ SHA256 を残している。
 
 **Overall: FAIL — Issue 全体は未完了。PR は未作成。**
-Windows の成功を Linux、通常の Domain Reload、winget 導入や原資料の全シナリオへ拡張しない。
+個別の成功を Linux 実 Editor、winget 導入や原資料の全シナリオへ拡張しない。
 
 ## 2026-10-04 の継続検証
 
 前回の停止条件を解消する作業を継続した。Windows Git placeholder の参照を正しく検証する
-修正後、native Cargo 全件は **607 PASS / 0 FAIL**、skills lint は **23 skills / 0 violations**。
+修正後、native Cargo 全件は **610 PASS / 0 FAIL**、skills lint は **23 skills / 0 violations**。
 fmt / clippy と実 Unity の SceneHandlerTests 11件も成功した。
 公開23操作、実 Editor のモーダルによる GDI fallback、公開版 CLI の実 Editor ping を再実行した。
+
+[継続検証の全コマンド・テスト名・証跡](resume/README.md)を追加した。
+Prefab45+22、Timeline40、eval18+1000連続実行、InputActions保存/再起動50、動画6、Animation25+26、
+参照取得/解決9、Bake4 backendの101チェック、Windows Playerの実ビルドとGUI描画が成功した。
+Domain Reload有効/無効の4件、InputActions型12・通知4、Gamepad2・Touch15も成功した。
+隔離したWindows x64 / FSR1.8.0で実Hot Reload25件が成功し、状態保持・部分適用・復旧を確認した。
+複合入力の失敗はCRLFを読めないテストhelperが原因で、改行回帰4件を含む11件がheadlessで成功した。
+原資料との網羅性と公式CLIのWindows比較の全条件は未確認である。
 
 WSL Ubuntu 24.04 に各デスクトップ環境を導入し、実 CLI から grim / gnome-screenshot /
 spectacle と X11 の import / scrot / maim で実 PNG を生成した。
@@ -33,7 +41,7 @@ winget 初回提出用の3ファイルを [packaging/winget](../../../packaging/
 
 スタッフ原資料の代替調査では #243–260 / #390–395 に、23操作以外の入力・bake・build・動画・
 Animation・InputActions・C# reference の確認項目があると分かった。原資料との一致は未確認で、
-Windows の追加検証を進めている。下記の旧605成功・1失敗などの証跡は初回検証の記録として残す。
+Windows の追加検証を収録した。下記の旧605成功・1失敗などの証跡は初回検証の記録として残す。
 
 ## 受け入れ基準の実測状況
 
@@ -43,7 +51,7 @@ Windows の追加検証を進めている。下記の旧605成功・1失敗な�
 | 2: 実 setup / Bridge 導入・接続 | PASS | 空の隔離プロジェクトで `setup --launch-editor --wait-secs 420` を実行。40.549秒、exit 0、`projectMatches: true`。[結果](setup.stdout.json)、[実行時間と ping](fresh-setup-summary.json)。dry-run ではない。 |
 | 3: 証跡の Issue / PR 記録 | PASS | 本資料と [Issue コメント](https://github.com/akiojin/unity-cli/issues/386#issuecomment-5970471700) に成功・失敗・未検証条件を記録。正式検証記録が未取得のため PR 未作成。 |
 | 4: Windows / Linux OS フォールバック | Windows PASS / Linux 部分 | Windows 実 Editor のモーダルで PowerShell + GDI が成功。Linux Wayland / X11 の6ツールは実 PNG 生成成功、Linux 実 Editor はライセンス認証待ち。 |
-| 5: スタッフ原資料の全シナリオ・比較表 | 部分 | 公開済み23操作は既存比較と同じ設定で23/23 PASS。[一覧](staff-final-operations.json)。原資料 `pm-scratch/staff-report.md` は未取得。公式 CLI の Windows 比較・原資料との網羅性確認は未実施。 |
+| 5: スタッフ原資料の全シナリオ・比較表 | 部分 | 公開済み23操作と、多数の[追加実機シナリオ](resume/README.md)が成功。複合入力も改行修正後11件成功。原資料 `pm-scratch/staff-report.md` は未取得。公式 CLI の Windows 比較は全条件未達で、原資料との網羅性は未確認。 |
 | 6: 公開 install.ps1 / winget / ping | PowerShell PASS / winget 未検証 | 公開 installer と実 Editor ping 成功。初回 manifest の validate 成功。公開 package / `WINGET_TOKEN` がなく、winget install / ping は未実施。 |
 
 ## 実機で発見して修正した問題
@@ -87,6 +95,10 @@ Windows の Python E2E helper も修正した。`os.kill(pid, 0)` は Windows �
 `OpenProcess(SYNCHRONIZE)` と `WaitForSingleObject(0)` に置き換え、実行中の子が終了しないこと、
 終了済み・無効 PID の拒否、終了コード259の判定を Windows native の4テストで確認した。
 既存 authentication の3テストと Linux の回帰テストも成功した。
+
+継続検証ではGit HTTP認証形式、Windowsの長いreferenceパス、batchの診断喪失、
+Preview SceneによるBakeの誤判定も再現して修正した。
+各RED→GREENと実取得・実アセットの証跡は[継続検証](resume/README.md)に収録した。
 
 ## Windows OS キャプチャ
 
@@ -187,3 +199,4 @@ Agent Visual Check: n/a（CLI と Editor 連携を検証。Web/TUI の表示変�
 2. 用意した Linux Editor / Unity Hub でライセンス認証し、実 Editor を含む AC-4 を実行する。
 3. winget 初回公開と `WINGET_TOKEN` の設定を行い、公開 source から install / ping を検証する。
 4. 派生検証の binary-only Cargo 対応と共通検証枠を確保し、正式記録と必要なユーザー確認後に Ready PR を作成する。
+5. 原資料の全シナリオと公式CLIのWindows比較の全条件を照合する。

@@ -46,9 +46,17 @@ Each table row links to its evidence:
 Windows validation was added separately in [Issue #386 evidence](verification/issue-386/README.md):
 CLI / Bridge 0.18.1 with Unity 6000.4.4f1 verified real setup, lockfile discovery,
 OS screenshot fallback during an Editor modal, and all 23 listed operations with
-DisableDomainReload / PlayUnfocused. The official CLI was not rerun on Windows;
-the timings below remain macOS measurements. Normal Domain Reload still produced
-connection errors, and Linux, winget and the original staff report remain unverified.
+DisableDomainReload / PlayUnfocused. A separate Windows comparison with official CLI
+1.0.0-beta.11 and Pipeline 0.8.0-exp.1 measured 100 process samples per operation
+with the Editor frontmost and minimized; resident measurements are in progress.
+The timings below remain macOS measurements. [Additional functional evidence](verification/issue-386/resume/README.md)
+includes successful dedicated checks with Domain Reload enabled and disabled,
+Prefab, Timeline, InputActions persistence, animation, video, reference fetching,
+baking, real Hot Reload, and a built Windows Player. Complex input passed 11 checks
+after correcting the test's CRLF counter parsing.
+Linux screenshot tools produced real images using TCP fixtures; a licensed Linux
+Unity Editor, winget installation, and comparison with the original staff report
+remain unverified.
 
 ### Coexistence
 
@@ -175,8 +183,13 @@ Editor 側の **Pipeline**（`com.unity.pipeline`）を提供しています。
 Windows の実機確認は [Issue #386 の証跡](verification/issue-386/README.md) を追加しました。
 CLI / Bridge 0.18.1、Unity 6000.4.4f1 で実 setup、lockfile 発見、Editor モーダル中の OS
 画面取得、および DisableDomainReload / PlayUnfocused 条件で公開23操作を確認しています。
-公式 CLI の Windows 再測定は行っておらず、下の速度比較は macOS の計測です。
-通常の Domain Reload では接続エラーが出ており、Linux、winget、スタッフ原資料との網羅性確認は未検証です。
+公式 CLI 1.0.0-beta.11 / Pipeline 0.8.0-exp.1 の Windows 比較では、プロセス方式を
+各操作100回、Editor 前面・最小化の2条件で計測しました。常駐方式は計測中です。
+下の速度比較は macOS の計測です。
+[追加の機能検証](verification/issue-386/resume/README.md)では、Domain Reload 有効・無効の専用検証、
+Prefab、Timeline、InputActions 保存、Animation、Video、Reference、Bake、実 Hot Reload、実 Windows Player が成功しました。
+複合入力はテストのCRLFカウンター読取を修正して11件成功しました。Linux の画面取得ツールは TCP fixture で実画像を生成しましたが、
+認証済み Linux Unity Editor、winget 導入、スタッフ原資料との網羅性確認は未検証です。
 
 ### 同一プロジェクトでの併用
 
