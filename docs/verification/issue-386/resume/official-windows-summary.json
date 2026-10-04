@@ -1,6 +1,6 @@
 {
   "conditions": {
-    "started_at": "2026-10-03T23:33:26.503448+00:00",
+    "started_at": "2026-10-04T00:00:25.043499+00:00",
     "os": "Windows-11-10.0.26300-SP0",
     "arch": "AMD64",
     "logical_cpus": 32,
@@ -13,8 +13,8 @@
     "pipeline_version": "0.8.0-exp.1",
     "unity_cli_sha256": "087d057cd62483c3c0aa64ceb85a77421349f2ace1ba236a13c1ddcffe909d35",
     "official_cli_sha256": "4cad9230dd98cc8d123d3ef9d18fef5e7ee65f353814c3cf9d94d9129293dda3",
-    "benchmark_sha256": "857569c8c542221f43a27423ecfa8fce3d11a690ed979985ebc670a56912f372",
-    "windows_adapter_sha256": "1d72ca848808f1fcce45a46b133691c7c6119f908e67e9519f72759a19d5af7b",
+    "benchmark_sha256": "8b4a77c97260fec724a5d1187c1561a7a0f25d9c3734fe8eada1c0a3ca4bc1e6",
+    "windows_adapter_sha256": "c47d896f41e81c6db8ba63ced94e927388b55cc81796b54578b3135685929c8a",
     "windows_adapter": "Original benchmark operations, validation, focus-discard and alternating order; Windows HWND foreground inspection and bounded reader thread replace macOS focus and POSIX select. No platform spoofing.",
     "background_condition": "Owned Editor minimized, because Windows refused activation of the existing GWT background window. This differs from macOS visible-background measurements.",
     "host_contention": "Other project canonical verification was active on this host; results are observations, no Windows budget or prior baseline was enforced.",
@@ -36,7 +36,7 @@
       "unityRemoteCompression": "",
       "unityRemoteResolution": ""
     },
-    "unityd_pid": 52020
+    "unityd_pid": 56288
   },
   "runs": [
     {
@@ -49,13 +49,19 @@
       "mode": "process",
       "focus": "background",
       "status": "PASS",
-      "error": null
+      "source": "previous completed run, original conditions preserved"
     },
     {
       "mode": "resident",
       "focus": "frontmost",
-      "status": "FAIL",
-      "error": "Invalid official NDJSON response: {'id': '15', 'exitCode': 6, 'envelope': {'success': False, 'command': 'unity command find_assets', 'data': None, 'errors': [{'code': 'COMMAND_FAILED', 'message': 'Pipeline server returned 400 Bad Request: Parameter Validation Failed. Illegal characters in path.'}], 'warnings': []}}"
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "mode": "resident",
+      "focus": "background",
+      "status": "PASS",
+      "error": null
     }
   ]
 }

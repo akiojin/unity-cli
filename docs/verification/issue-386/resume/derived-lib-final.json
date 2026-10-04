@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--lib",
+    "--all-features",
+    "--",
+    "--test-threads=1"
+  ],
+  "started_at": "2026-10-04T00:59:42.307486+00:00",
+  "source_commit": "d0c5ce21d85d171b285162b06edff03acdef53c9",
+  "canonical": false,
+  "exit_code": 101,
+  "finished_at": "2026-10-04T00:59:43.857498+00:00",
+  "stdout": "",
+  "stderr": "error: no library targets found in package `unity-cli`\n"
+}

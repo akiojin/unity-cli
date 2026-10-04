@@ -1,0 +1,10 @@
+test_all_readmes_link_comparison_and_relative_sources_exist (test_comparison_evidence.ComparisonEvidenceTests.test_all_readmes_link_comparison_and_relative_sources_exist) ... ok
+test_document_tables_match_each_published_measurement (test_comparison_evidence.ComparisonEvidenceTests.test_document_tables_match_each_published_measurement) ... ok
+test_each_feature_row_has_sources_in_both_languages (test_comparison_evidence.ComparisonEvidenceTests.test_each_feature_row_has_sources_in_both_languages) ... ok
+test_four_runs_have_complete_raw_samples_and_correct_percentiles (test_comparison_evidence.ComparisonEvidenceTests.test_four_runs_have_complete_raw_samples_and_correct_percentiles) ... ok
+test_identical_versions_and_script_and_quiet_host_are_recorded (test_comparison_evidence.ComparisonEvidenceTests.test_identical_versions_and_script_and_quiet_host_are_recorded) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.415s
+
+OK

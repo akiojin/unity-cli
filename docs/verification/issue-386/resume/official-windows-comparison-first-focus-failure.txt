@@ -1,0 +1,5 @@
+process frontmost FAIL Unable to establish actual Windows frontmost focus
+Traceback (most recent call last):
+  File "<workspace>\.cache\issue-386\windows-comparison.py", line 151, in <module>
+    raise RuntimeError(report['error'])
+RuntimeError: Unable to establish actual Windows frontmost focus

@@ -1,6 +1,6 @@
 {
-  "recorded_at": "2026-10-04T00:10:05.758930+00:00",
-  "source_git_head_before_evidence_commit": "342f499fffba1d28c6e0839cd3c109b595083841",
+  "recorded_at": "2026-10-04T01:35:08.912579+00:00",
+  "source_git_head_before_evidence_commit": "d0c5ce21d85d171b285162b06edff03acdef53c9",
   "working_file_hashes": {
     "Cargo.lock": "0189b962ae9a4c0d8cbf492b3994ddc964a61b7fb3684b1bda27bc5b463d887f",
     "Cargo.toml": "d701e98bf9734c3bddea1f3f3bfdf49617141e598982bc09f309d09e6fe662bc",

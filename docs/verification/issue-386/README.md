@@ -21,10 +21,13 @@ fmt / clippy と実 Unity の SceneHandlerTests 11件も成功した。
 [継続検証の全コマンド・テスト名・証跡](resume/README.md)を追加した。
 Prefab45+22、Timeline40、eval18+1000連続実行、InputActions保存/再起動50、動画6、Animation25+26、
 参照取得/解決9、Bake4 backendの101チェック、Windows Playerの実ビルドとGUI描画が成功した。
-Domain Reload有効/無効の4件、InputActions型12・通知4、Gamepad2・Touch15も成功した。
+Test RunnerのDomain Reload有効/無効の4件、InputActions型12・通知4、Gamepad2・Touch15も成功した。
 隔離したWindows x64 / FSR1.8.0で実Hot Reload25件が成功し、状態保持・部分適用・復旧を確認した。
-複合入力の失敗はCRLFを読めないテストhelperが原因で、改行回帰4件を含む11件がheadlessで成功した。
-原資料との網羅性と公式CLIのWindows比較の全条件は未確認である。
+複合入力の失敗はCRLFを読めないテストhelperが原因で、改行回帰4件を含む11件がheadlessと最終GUIで成功した。
+GUI再起動後のTouch15件・入力11件はerror / skip 0だった。
+公式CLIのWindows比較はプロセス/常駐・前面/最小化の4条件を各操作100回、計10,400測定完了。
+[Windows計測値](resume/windows-comparison.md)に全p50・p95、debugビルドとhost負荷、背景条件の違いを記録した。
+スタッフ原資料との網羅性は未確認である。
 
 WSL Ubuntu 24.04 に各デスクトップ環境を導入し、実 CLI から grim / gnome-screenshot /
 spectacle と X11 の import / scrot / maim で実 PNG を生成した。
@@ -199,4 +202,4 @@ Agent Visual Check: n/a（CLI と Editor 連携を検証。Web/TUI の表示変�
 2. 用意した Linux Editor / Unity Hub でライセンス認証し、実 Editor を含む AC-4 を実行する。
 3. winget 初回公開と `WINGET_TOKEN` の設定を行い、公開 source から install / ping を検証する。
 4. 派生検証の binary-only Cargo 対応と共通検証枠を確保し、正式記録と必要なユーザー確認後に Ready PR を作成する。
-5. 原資料の全シナリオと公式CLIのWindows比較の全条件を照合する。
+5. 原資料の全シナリオを今回のWindows実測と照合し、追加の条件があれば検証する。
