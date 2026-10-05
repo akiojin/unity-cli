@@ -34,6 +34,10 @@ updates:
       cargo:
         patterns:
           - "*"
+    ignore:
+      # bincode 3.0.0 is a compile_error!-only release; stay on 1.x (#342, #472).
+      - dependency-name: "bincode"
+        versions: [">=3"]
     commit-message:
       prefix: "chore(deps)"
     labels:
