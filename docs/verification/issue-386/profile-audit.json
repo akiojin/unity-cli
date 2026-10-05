@@ -1,0 +1,19 @@
+{
+  "path": "%USERPROFILE%/.codeium/windsurf/mcp_config.json",
+  "created_at": "2026-10-03T15:14:29.659230+00:00",
+  "modified_at": "2026-10-03T15:14:29.660750+00:00",
+  "sha256": "29153948358c2c3e6db04ed03afe13bbe1f3eb6b738d8b6dc2bc8978761b4d10",
+  "top_level_keys": [
+    "mcpServers"
+  ],
+  "server_names": [
+    "unity-cli"
+  ],
+  "only_generated_entry": true,
+  "generated_file_removed": true,
+  "generated_file_still_absent_after_green": true,
+  "removed_empty_directories_created_by_test": [
+    ".codeium/windsurf",
+    ".codeium"
+  ]
+}

@@ -1,0 +1,28 @@
+Unity: 6000.4.4f1 architecture: X64 mode: supported
+PASS Editor process architecture is X64
+Backend: {"applied": [], "appliedRevision": null, "available": true, "backend": "FastScriptReload", "baselineRevision": null, "code": null, "failed": [], "limitation": null, "path": null, "platformSupported": true, "recovery": null, "recoveryRequired": false, "requestedRevision": null, "state": "idle", "supported": true, "transaction": null, "unverified": []}
+PASS baseline calculation runs in real Play Mode
+PASS Editor update observer records runtime and backend status without a queued request
+PASS backend supports this actual Editor
+PASS recovery stops Play without restarting
+PASS recovery records compiled source checksum for next session
+PASS recovery checksum matches actual compiled assembly
+PASS new Play session executes original disk baseline after recovery
+PASS hot_reload rejects: STALE /
+PASS hot_reload rejects: SYNTAX /
+PASS hot_reload rejects: UNSUPPORTED /
+PASS preflight failures preserve verified revision
+PASS Play continues with expected calculation
+PASS scene/object identity, position, HP, score, static and nonserialized state preserved
+PASS new revision follows verified natural execution
+PASS Play continues with expected calculation
+PASS scene/object identity, position, HP, score, static and nonserialized state preserved
+PASS successful preview leaves disk source unchanged
+PASS partially executing preview clears whole-version claim while verification is pending
+PASS hot_reload rejects: HOT_RELOAD_VERIFICATION_FAILED /
+PASS unverified partial transaction clears whole-version claim and requires recovery
+PASS recovery stops Play without restarting
+PASS recovery records compiled source checksum for next session
+PASS recovery checksum matches actual compiled assembly
+PASS new Play session executes original disk baseline after recovery
+RESULT pass=25 fail=0

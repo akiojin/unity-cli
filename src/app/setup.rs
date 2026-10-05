@@ -211,7 +211,7 @@ fn launch_editor(root: &Path, port: u16) -> Result<Value> {
     let mut command = std::process::Command::new(&editor);
     command
         .arg("-projectPath")
-        .arg(root)
+        .arg(super::editor::unity_argument_path(root))
         .env("UNITY_CLI_PORT", port.to_string())
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
@@ -222,8 +222,7 @@ fn launch_editor(root: &Path, port: u16) -> Result<Value> {
         // Detach from the caller's process group so the Editor outlives it.
         command.process_group(0);
     }
-    let child = command
-        .spawn()
+    let child = crate::daemon::spawn::spawn_detached(&mut command)
         .with_context(|| format!("Failed to launch {}", editor.display()))?;
     Ok(json!({
         "launched": true,

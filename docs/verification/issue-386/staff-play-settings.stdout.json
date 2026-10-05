@@ -1,0 +1,25 @@
+{
+  "command": "editor eval",
+  "data": {
+    "diagnostics": [
+      {
+        "column": 1,
+        "id": "CS0162",
+        "line": 19,
+        "message": "Unreachable code detected",
+        "severity": "warning"
+      }
+    ],
+    "exception": null,
+    "logs": [],
+    "requestId": "cli-23136-18db0ceda6f62ce8-0",
+    "state": "completed",
+    "value": {
+      "enabled": false,
+      "options": "None"
+    }
+  },
+  "errors": [],
+  "success": true,
+  "warnings": []
+}

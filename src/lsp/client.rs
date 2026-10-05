@@ -1410,12 +1410,13 @@ mod tests {
     use std::sync::{Mutex, OnceLock};
 
     use super::{
-        build_remove_symbol_request, collect_document_symbols, execute_direct, file_uri, get_apply,
-        id_matches, is_retryable_session_error, kind_from_lsp, maybe_execute,
-        normalize_lsp_write_result, normalize_rel_path, path_matches_scope, read_message, ref_path,
-        require_name_path, require_relative_path, reset_cached_session, to_project_relative_or_raw,
-        uri_to_rel_path,
+        build_remove_symbol_request, collect_document_symbols, file_uri, get_apply, id_matches,
+        is_retryable_session_error, kind_from_lsp, normalize_lsp_write_result, normalize_rel_path,
+        path_matches_scope, ref_path, require_name_path, require_relative_path,
+        to_project_relative_or_raw, uri_to_rel_path,
     };
+    #[cfg(unix)]
+    use super::{execute_direct, maybe_execute, read_message, reset_cached_session};
 
     #[cfg(unix)]
     fn env_lock() -> &'static Mutex<()> {

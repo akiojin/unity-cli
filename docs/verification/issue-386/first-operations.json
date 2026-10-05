@@ -1,0 +1,140 @@
+[
+  {
+    "name": "editor_state",
+    "tool": "get_editor_state",
+    "status": "PASS",
+    "elapsed_seconds": 0.159
+  },
+  {
+    "name": "hierarchy",
+    "tool": "get_hierarchy",
+    "status": "PASS",
+    "elapsed_seconds": 0.072
+  },
+  {
+    "name": "find_gameobject",
+    "tool": "find_gameobject",
+    "status": "PASS",
+    "elapsed_seconds": 0.217
+  },
+  {
+    "name": "transform",
+    "tool": "get_component_values",
+    "status": "PASS",
+    "elapsed_seconds": 0.117
+  },
+  {
+    "name": "position",
+    "tool": "modify_gameobject",
+    "status": "PASS",
+    "elapsed_seconds": 0.08
+  },
+  {
+    "name": "create_cube",
+    "tool": "create_gameobject",
+    "status": "PASS",
+    "elapsed_seconds": 0.292
+  },
+  {
+    "name": "add_component",
+    "tool": "add_component",
+    "status": "PASS",
+    "elapsed_seconds": 0.108
+  },
+  {
+    "name": "remove_component",
+    "tool": "remove_component",
+    "status": "PASS",
+    "elapsed_seconds": 0.194
+  },
+  {
+    "name": "delete_gameobject",
+    "tool": "delete_gameobject",
+    "status": "PASS",
+    "elapsed_seconds": 0.302
+  },
+  {
+    "name": "scene_info",
+    "tool": "get_scene_info",
+    "status": "PASS",
+    "elapsed_seconds": 0.393
+  },
+  {
+    "name": "scene_save",
+    "tool": "save_scene",
+    "status": "PASS",
+    "elapsed_seconds": 0.431
+  },
+  {
+    "name": "console",
+    "tool": "read_console",
+    "status": "PASS",
+    "elapsed_seconds": 0.626
+  },
+  {
+    "name": "screenshot",
+    "tool": "capture_screenshot",
+    "status": "PASS",
+    "elapsed_seconds": 0.459
+  },
+  {
+    "name": "material_search",
+    "tool": "manage_asset_database",
+    "status": "PASS",
+    "elapsed_seconds": 0.092
+  },
+  {
+    "name": "asset_copy",
+    "tool": "manage_asset_database",
+    "status": "FAIL",
+    "error": "Command '['E:\\\\unity-cli\\\\work\\\\issue-386\\\\target\\\\debug\\\\unity-cli.exe', '--output', 'json', '--project-path', 'E:\\\\unity-cli\\\\work\\\\issue-386\\\\.cache\\\\issue-386\\\\red-project', '--timeout-ms', '60000', 'raw', 'manage_asset_database', '--json', '{\"action\": \"copy_asset\", \"fromPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfSource.mat\", \"toPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfCopy.mat\"}']' timed out after 120 seconds"
+  },
+  {
+    "name": "asset_move",
+    "tool": "manage_asset_database",
+    "status": "FAIL",
+    "error": "Command '['E:\\\\unity-cli\\\\work\\\\issue-386\\\\target\\\\debug\\\\unity-cli.exe', '--output', 'json', '--project-path', 'E:\\\\unity-cli\\\\work\\\\issue-386\\\\.cache\\\\issue-386\\\\red-project', '--timeout-ms', '60000', 'raw', 'manage_asset_database', '--json', '{\"action\": \"move_asset\", \"fromPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfCopy.mat\", \"toPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfMoved.mat\"}']' timed out after 120 seconds"
+  },
+  {
+    "name": "asset_delete",
+    "tool": "manage_asset_database",
+    "status": "FAIL",
+    "error": "Command '['E:\\\\unity-cli\\\\work\\\\issue-386\\\\target\\\\debug\\\\unity-cli.exe', '--output', 'json', '--project-path', 'E:\\\\unity-cli\\\\work\\\\issue-386\\\\.cache\\\\issue-386\\\\red-project', '--timeout-ms', '60000', 'raw', 'manage_asset_database', '--json', '{\"action\": \"delete_asset\", \"assetPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfMoved.mat\"}']' timed out after 120 seconds"
+  },
+  {
+    "name": "import_settings",
+    "tool": "manage_asset_import_settings",
+    "status": "PASS",
+    "elapsed_seconds": 8.369
+  },
+  {
+    "name": "material_modify",
+    "tool": "modify_material",
+    "status": "PASS",
+    "elapsed_seconds": 0.072
+  },
+  {
+    "name": "time_settings",
+    "tool": "get_project_settings",
+    "status": "PASS",
+    "elapsed_seconds": 0.041
+  },
+  {
+    "name": "read_csharp",
+    "tool": "read",
+    "status": "PASS",
+    "elapsed_seconds": 0.039
+  },
+  {
+    "name": "play_until_ready",
+    "tool": "play_game",
+    "status": "FAIL",
+    "error": "{'code': 'OPERATION_FAILED', 'error': 'OPERATION_FAILED: early eof', 'status': 'error'}"
+  },
+  {
+    "name": "stop_until_ready",
+    "tool": "stop_game",
+    "status": "FAIL",
+    "error": "{'code': 'UNAUTHORIZED', 'error': 'Missing or invalid authentication token', 'id': '1', 'status': 'error'}"
+  }
+]

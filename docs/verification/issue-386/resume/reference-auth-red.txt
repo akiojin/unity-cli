@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-66a997df271e997b.exe)
+
+running 1 test
+test reference::fetcher::tests::public_refs_use_basic_authentication_for_git_http ... FAILED
+
+failures:
+
+---- reference::fetcher::tests::public_refs_use_basic_authentication_for_git_http stdout ----
+
+thread 'reference::fetcher::tests::public_refs_use_basic_authentication_for_git_http' (47892) panicked at src\reference\fetcher.rs:630:9:
+Git HTTP must authenticate with username and token credentials
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    reference::fetcher::tests::public_refs_use_basic_authentication_for_git_http
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 555 filtered out; finished in 0.43s
+
+error: test failed, to rerun pass `--bin unity-cli`

@@ -1,0 +1,9 @@
+done: create_gameobject
+done: hierarchy
+done: eval
+process frontmost PASS
+process background FAIL Unable to establish actual Windows background focus
+Traceback (most recent call last):
+  File "<workspace>\.cache\issue-386\windows-comparison.py", line 159, in <module>
+    raise RuntimeError(report['error'])
+RuntimeError: Unable to establish actual Windows background focus

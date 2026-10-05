@@ -1,0 +1,22 @@
+   Compiling unity-cli v0.18.1 (<worktree>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.06s
+     Running tests\mcp.rs (target\debug\deps\mcp-86a7609ca7ad34e1.exe)
+
+running 1 test
+test configure_all_clients_preserves_other_servers_and_dry_run ... FAILED
+
+failures:
+
+---- configure_all_clients_preserves_other_servers_and_dry_run stdout ----
+
+thread 'configure_all_clients_preserves_other_servers_and_dry_run' (49484) panicked at tests\mcp.rs:189:9:
+windsurf: preview must target the isolated configuration directory
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    configure_all_clients_preserves_other_servers_and_dry_run
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.77s
+
+error: test failed, to rerun pass `--test mcp`

@@ -1,0 +1,17 @@
+{
+  "command": "raw capture_screenshot",
+  "data": {
+    "captureMode": "game",
+    "fallback": "os",
+    "fallbackTool": "powershell",
+    "fileSize": 637755,
+    "height": 949,
+    "message": "Desktop screenshot captured by the OS (Unity Editor did not respond)",
+    "note": "Unity Editor did not respond (OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)); captured the whole desktop with an OS screenshot instead. The Editor main thread may be blocked by a modal dialog. Pass \"osFallback\": false to get the timeout error instead.",
+    "path": "<worktree>\\.cache\\issue-386\\setup-project\\.unity\\capture\\image_os_1791037847148.png",
+    "width": 1512
+  },
+  "errors": [],
+  "success": true,
+  "warnings": []
+}

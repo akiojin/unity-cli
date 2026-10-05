@@ -25,11 +25,15 @@ pub struct UnityCommandError {
 
 impl UnityCommandError {
     pub fn new(response: Value) -> Self {
-        let error = response
+        let detail = response
+            .as_array()
+            .and_then(|items| items.iter().find(|item| item["ok"] == false))
+            .unwrap_or(&response);
+        let error = detail
             .get("error")
             .and_then(Value::as_str)
             .unwrap_or_else(|| {
-                if response
+                if detail
                     .get("status")
                     .and_then(Value::as_str)
                     .is_some_and(|status| status.eq_ignore_ascii_case("error"))
@@ -39,7 +43,7 @@ impl UnityCommandError {
                     "Unity command failed"
                 }
             });
-        let code = response
+        let code = detail
             .get("code")
             .and_then(Value::as_str)
             .unwrap_or("UNKNOWN_ERROR");
@@ -149,4 +153,24 @@ pub fn classify(error: &Error) -> Failure {
 pub fn batch_error(error: &Error) -> Value {
     let failure = classify(error);
     serde_json::json!({"ok":false, "code":failure.code, "error":failure.message, "details":failure.data})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failed_batch_preserves_first_failure_message_and_all_results() {
+        let response = serde_json::json!([
+            {"ok": true, "result": {"message": "pong"}},
+            {"ok": false, "code": "EDITOR_UNREACHABLE", "error": "Failed to connect to Unity at 127.0.0.1:9"},
+            {"ok": false, "code": "UNAUTHORIZED", "error": "Missing credential"}
+        ]);
+        let error = check_response(&response).unwrap_err();
+        assert!(format!("{error:#}").contains("Failed to connect to Unity at 127.0.0.1:9"));
+        let failure = classify(&error);
+        assert_eq!(failure.code, "EDITOR_UNREACHABLE");
+        assert_eq!(failure.exit, exit_code::EDITOR_UNREACHABLE);
+        assert_eq!(failure.data, response);
+    }
 }

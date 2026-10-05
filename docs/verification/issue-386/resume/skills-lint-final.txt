@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on package cache
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.26s
+     Running `target\debug\unity-cli.exe skills lint --severity error`
+
+23 skills checked, 0 violations

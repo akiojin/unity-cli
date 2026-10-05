@@ -1,0 +1,2 @@
+    Checking unity-cli v0.18.1 (<workspace>)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.80s

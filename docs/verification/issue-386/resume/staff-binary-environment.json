@@ -1,0 +1,26 @@
+{
+  "head": "342f499fffba1d28c6e0839cd3c109b595083841",
+  "source_file_sha256": {
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/SceneHandler.cs": "3d44351bdbeda87ffb1a432f3ac013e6c86f2709935bbc7462e01e057a3cc2f9",
+    "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/Handlers/SceneHandlerTests.cs": "381ffee4c4341d6ab7442523ff4e4cec82ae3d9fe8d8239de1edfbbb7bda4717",
+    "src/app/editor.rs": "12ea2e975445003f9f47e5a8b9e62bbf9c5c7be5ca5e1393ef6bfab022c67199",
+    "src/app/setup.rs": "02f1150b2f6bccf6e77e2b2de772190f28dfd0b7c569c3a3d6b75a405c949228",
+    "src/app/test_runner.rs": "f8023e20459795926704614160cbb05b782f1fdc8b32e6c196d7695b38ae5691",
+    "src/daemon/unityd.rs": "15b55ff881abdd288d86ab0f05dc8762bf4d8f748c8176d2b002503930b419e4",
+    "src/lsp/client.rs": "3986aee934cb3ef91456bc309e3414d84b58450889c14728f6e5117103f6ea04",
+    "src/lsp/daemon.rs": "e9dddc765c4d0ee1f464919586bf68d7e121f16f307760ffd8cae9c41f43c154",
+    "src/skills/tests.rs": "047a67747538d40f650a88286d31c79592a50f9b8c5262ad2093f84445821ccd",
+    "tests/setup_dry_run.rs": "b833e5151da71df57eba9770fa88d446a6142c605c5c56a94ae76f0e64344ea8",
+    "src/mcp/configure.rs": "1c9b0401180bd9f560e074cfe686af17d752e613e58df3fcec6ff48d6ad78154",
+    "tests/mcp.rs": "bcecb2c5333ddff5d980c9d8f62bfcd6a0e802bda8b8e18b04e213ad7c73a9c8",
+    "src/skills/rules.rs": "8cd1c7333df34993769ec87c1fdafbb39f7a72072ef8a1ecc0c1eb04a17b6ce4",
+    "src/skills/distribution.rs": "6780927176d77454bdc6a35b4ba86759ce6a3c17a21806580a70bb728c52463f",
+    "scripts/bridge_auth.py": "8db17ca2a62d196462d87f7c0496401864963a0e00ebc39b56a154c53f3cad2c",
+    "scripts/e2e-editor-lifecycle.py": "1c9dabc140a843f687c2ae38aa8828a25dd0ec6dd9c4aed41a464369e8ca5be6",
+    "src/reference/fetcher.rs": "6462cd154d02efb70ede92b580c96a42fe58494d6718baeba4e0436e70bcf21e",
+    "Cargo.toml": "dd4620b7ab39892cba9ee092439762ce98231f10fa41b8f477a67f60f9c764e0",
+    "Cargo.lock": "71cdc258ee55f9e495ad99b150b95b3a2da0a83c79bb55e27f822631bb2142cd"
+  },
+  "binary_sha256": "f51a12aa3ec63237a3185dceb4635758b35f4c9f4a37884c2a05a04d6a74998b",
+  "note": "The running staff suites use the binary built from this committed source. The later Git HTTP authentication fix is being validated separately; unsuccessful rebuilds did not replace this binary."
+}

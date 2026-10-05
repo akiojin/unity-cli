@@ -10,15 +10,13 @@ import subprocess
 import tempfile
 import time
 
+from bridge_auth import process_alive
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def alive(pid):
-    try:
-        os.kill(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
+    return process_alive(pid)
 
 
 def data(value):

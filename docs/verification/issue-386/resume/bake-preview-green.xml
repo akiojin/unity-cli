@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="1" failures="0" errors="0" skipped="0" time="0.522"><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="PreviewSceneDoesNotBlockSavedScene" time="0.522"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.PreviewSceneDoesNotBlockSavedScene
+</system-out></testcase></testsuite></testsuites>

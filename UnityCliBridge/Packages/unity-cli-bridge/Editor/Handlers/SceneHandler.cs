@@ -62,7 +62,7 @@ namespace UnityCliBridge.Handlers
                 }
 
                 // Ensure directory exists
-                var directory = Path.GetDirectoryName(scenePath);
+                var directory = Path.GetDirectoryName(scenePath).Replace('\\', '/');
                 if (!AssetDatabase.IsValidFolder(directory))
                 {
                     // Create directory structure
@@ -310,7 +310,7 @@ namespace UnityCliBridge.Handlers
                     }
                     
                     // Ensure directory exists
-                    var directory = Path.GetDirectoryName(savePath);
+                    var directory = Path.GetDirectoryName(savePath).Replace('\\', '/');
                     if (!AssetDatabase.IsValidFolder(directory))
                     {
                         // Create directory structure

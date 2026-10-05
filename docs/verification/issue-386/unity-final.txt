@@ -1,0 +1,2 @@
+Started headless Editor (pid 44188)
+11 tests, 0 failed; report: <worktree>\.cache\issue-386\green-results.xml

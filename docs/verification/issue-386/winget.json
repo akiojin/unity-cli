@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "winget",
+    "show",
+    "--id",
+    "akiojin.unity-cli",
+    "--exact",
+    "--source",
+    "winget",
+    "--accept-source-agreements",
+    "--disable-interactivity"
+  ],
+  "exit_code": 2316632084,
+  "stdout": "入力条件に一致するパッケージが見つかりませんでした。\n",
+  "stderr": "",
+  "observed_at": "2026-10-03T15:01:20.627834+00:00"
+}

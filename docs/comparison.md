@@ -43,6 +43,23 @@ Each table row links to its evidence:
 | Editor / project lifecycle | Bridge setup and installed Editor open/close/headless lifecycle; use Unity Hub or the official CLI for Editor installation and licenses. [Setup](../src/app/setup.rs), [lifecycle implementation](../src/app/editor.rs).                                   | Editor/module install, licensing, project creation/opening, builds, tests and version control. [Official skill][official-skill].                                                                                                                                                                         |
 | Agent integration          | Claude Code plugin and Codex skills. [Skill contract](skills.md).                                                                                                                                                                                          | Claude Code / Codex plugin, task skills and `unity mcp`. [Official skill][official-skill], [integration guide][official-integration].                                                                                                                                                                    |
 
+Windows validation was added separately in [Issue #386 evidence](verification/issue-386/README.md):
+CLI / Bridge 0.18.1 with Unity 6000.4.4f1 verified real setup, lockfile discovery,
+OS screenshot fallback during an Editor modal, and all 23 listed operations with
+DisableDomainReload / PlayUnfocused. A separate Windows comparison with official CLI
+1.0.0-beta.11 and Pipeline 0.8.0-exp.1 measured 100 process samples per operation
+with the Editor frontmost and minimized. Resident measurements covered all 23
+operations with 100 samples per tool and condition. [Windows timings](verification/issue-386/resume/windows-comparison.md)
+record the debug build, a contended host, and the minimized background condition.
+The timings below remain macOS measurements. [Additional functional evidence](verification/issue-386/resume/README.md)
+includes successful Test Runner result collection with Domain Reload enabled and disabled,
+Prefab, Timeline, InputActions persistence, animation, video, reference fetching,
+baking, real Hot Reload, and a built Windows Player. Complex input passed 11 checks
+after correcting the test's CRLF counter parsing.
+Linux screenshot tools produced real images using TCP fixtures; a licensed Linux
+Unity Editor, winget installation, and comparison with the original staff report
+remain unverified.
+
 ### Coexistence
 
 Both packages were loaded into **one real Unity 6000.3.25f1 Editor project** on
@@ -164,6 +181,18 @@ Editor 側の **Pipeline**（`com.unity.pipeline`）を提供しています。
 | C# コード解析            | Editor なしで LSP のシンボル検索・参照検索・リネーム・構造編集。[LSP](../lsp)、[ツール](tools.md)。                                                                                                           | ファイル読書きと eval。公開 CLI のコマンド群に C# LSP はありません。[公式資料][official-skill]、[カタログ][catalog]。                                                                                    |
 | Editor・プロジェクト管理 | Bridge 導入、導入済み Editor の起動・終了・headless運用。Editor インストールやライセンスは Hub / 公式 CLI を利用。[setup](../src/app/setup.rs)、[ライフサイクル](../src/app/editor.rs)。                      | Editor / モジュール導入、ライセンス、プロジェクト作成・起動、ビルド、テスト、VCS。[公式資料][official-skill]。                                                                                           |
 | エージェント連携         | Claude Code プラグイン / Codex スキル。[契約](skills.md)。                                                                                                                                                    | Claude Code / Codex プラグイン、タスクスキル、`unity mcp`。[公式スキル][official-skill]、[連携ガイド][official-integration]。                                                                            |
+
+Windows の実機確認は [Issue #386 の証跡](verification/issue-386/README.md) を追加しました。
+CLI / Bridge 0.18.1、Unity 6000.4.4f1 で実 setup、lockfile 発見、Editor モーダル中の OS
+画面取得、および DisableDomainReload / PlayUnfocused 条件で公開23操作を確認しています。
+公式 CLI 1.0.0-beta.11 / Pipeline 0.8.0-exp.1 の Windows 比較では、プロセス方式を
+各操作100回、Editor 前面・最小化の2条件で計測しました。常駐方式も23操作を各100回完了しました。
+[Windows計測値](verification/issue-386/resume/windows-comparison.md)に、debugビルド・他の処理が稼働中のhost・最小化した背景条件を記録しています。
+下の速度比較は macOS の計測です。
+[追加の機能検証](verification/issue-386/resume/README.md)では、Domain Reload 有効・無効でのTest Runnerの結果取得、
+Prefab、Timeline、InputActions 保存、Animation、Video、Reference、Bake、実 Hot Reload、実 Windows Player が成功しました。
+複合入力はテストのCRLFカウンター読取を修正して11件成功しました。Linux の画面取得ツールは TCP fixture で実画像を生成しましたが、
+認証済み Linux Unity Editor、winget 導入、スタッフ原資料との網羅性確認は未検証です。
 
 ### 同一プロジェクトでの併用
 

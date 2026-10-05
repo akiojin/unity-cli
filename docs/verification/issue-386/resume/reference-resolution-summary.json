@@ -1,0 +1,22 @@
+{
+  "passed": 4,
+  "failed": 0,
+  "results": [
+    {
+      "name": "live Editor readiness",
+      "passed": true
+    },
+    {
+      "name": "real project automatic fetch/status/grep",
+      "passed": true
+    },
+    {
+      "name": "6000.4.12f1 automatic exact tag/status/grep",
+      "passed": true
+    },
+    {
+      "name": "6000.4 explicit public ref/status/grep",
+      "passed": true
+    }
+  ]
+}

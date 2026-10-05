@@ -1,0 +1,16 @@
+{
+  "command": "raw capture_screenshot",
+  "data": {
+    "code": "TIMEOUT",
+    "error": "OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed",
+    "status": "error"
+  },
+  "errors": [
+    {
+      "code": "TIMEOUT",
+      "message": "OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)"
+    }
+  ],
+  "success": false,
+  "warnings": []
+}

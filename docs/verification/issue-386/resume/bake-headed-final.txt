@@ -1,0 +1,164 @@
+get_editor_info {"assetsPath": "<workspace>/.cache/issue-386/staff-project/Assets", "codeIndexRoot": "<workspace>/.cache/issue-386/staff-project/.unity/cache/code-index", "packagesPath": "<workspace>/.cache/issue-386/staff-project/Packages", "projectRoot": "<workspace>/.cache/issue-386/staff-project", "unity": {"platform": "WindowsEditor", "productName": "staff-project", "unityVersion": "6000.4.4f1"}}
+PASS get_scene_bake_status returns a genuine error
+PASS get_scene_bake_status rejects with JOB_NOT_FOUND: {"command":"raw get_scene_bake_status","data":{"code":"JOB_NOT_FOUND","error":"No bake job exists for this jobId in this Editor session.","reason":"No bake job exists for this jobId in this Editor session.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"JOB_NOT_FOUND","message":"No bake job exists for this jobId in this Editor session. (code: JOB_NOT_FOUND)"}],"success":false,"warnings":[]}
+
+execute_menu_item {"executed": true, "executionTime": 400, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Lighting", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Lighting
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+start_scene_bake {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS lighting starts tracked asynchronous job
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "lighting", "code": "BAKE_STARTED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset", "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_light.exr", "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_dir.png"], "backend": "lighting", "code": "BAKE_SUCCEEDED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": null, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS stable job identity
+PASS lighting genuine success: {'artifacts': ['Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset', 'Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_light.exr', 'Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_dir.png'], 'backend': 'lighting', 'code': 'BAKE_SUCCEEDED', 'jobId': '3749cee9acaf46a1a1eba2fc20402ae1', 'phase': 'complete', 'reason': 'Bake artifacts and saved scene references verified.', 'scenePath': 'Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity', 'status': 'succeeded', 'unityVersion': '6000.4.4f1', 'verification': {'generatedThisRun': True, 'navigationQuery': None, 'passed': True, 'persisted': True, 'sceneReferenced': True}}
+PASS lighting reports version, backend and phase
+PASS lighting reports nonempty artifact paths
+PASS lighting artifact exists: Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset
+PASS lighting artifact exists: Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_light.exr
+PASS lighting artifact exists: Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_dir.png
+execute_menu_item {"executed": true, "executionTime": 565, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Lighting", "message": "Menu item executed successfully", "success": true}
+PASS Validate Lighting
+PASS lighting persisted reload validation: {'target': 'Lighting', 'unityVersion': '6000.4.4f1', 'passed': True, 'error': '', 'lightmapCount': 1, 'pathCorners': 0, 'persistedAsset': 'Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset'}
+PASS fresh validation evidence belongs to lighting
+EVIDENCE {"target": "Lighting", "unityVersion": "6000.4.4f1", "passed": true, "error": "", "lightmapCount": 1, "pathCorners": 0, "persistedAsset": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset"}
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset", "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_light.exr", "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_dir.png"], "backend": "lighting", "code": "BAKE_SUCCEEDED", "jobId": "3749cee9acaf46a1a1eba2fc20402ae1", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": null, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS lighting terminal result remains queryable after scene reload
+execute_menu_item {"executed": true, "executionTime": 346, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Legacy", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Legacy
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+start_scene_bake {"artifacts": [], "backend": "navmesh-legacy", "code": "BAKE_STARTED", "jobId": "1ff5ce13e5d249b3bff5a0b1a7750164", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS navmesh-legacy starts tracked asynchronous job
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-legacy", "code": "BAKE_STARTED", "jobId": "1ff5ce13e5d249b3bff5a0b1a7750164", "phase": "baking", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset"], "backend": "navmesh-legacy", "code": "BAKE_SUCCEEDED", "jobId": "1ff5ce13e5d249b3bff5a0b1a7750164", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": true, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS stable job identity
+PASS navmesh-legacy genuine success: {'artifacts': ['Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset'], 'backend': 'navmesh-legacy', 'code': 'BAKE_SUCCEEDED', 'jobId': '1ff5ce13e5d249b3bff5a0b1a7750164', 'phase': 'complete', 'reason': 'Bake artifacts and saved scene references verified.', 'scenePath': 'Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity', 'status': 'succeeded', 'unityVersion': '6000.4.4f1', 'verification': {'generatedThisRun': True, 'navigationQuery': True, 'passed': True, 'persisted': True, 'sceneReferenced': True}}
+PASS navmesh-legacy reports version, backend and phase
+PASS navmesh-legacy reports nonempty artifact paths
+PASS navmesh-legacy artifact exists: Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset
+execute_menu_item {"executed": true, "executionTime": 579, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Legacy", "message": "Menu item executed successfully", "success": true}
+PASS Validate Legacy
+PASS navmesh-legacy persisted reload validation: {'target': 'Legacy', 'unityVersion': '6000.4.4f1', 'passed': True, 'error': '', 'lightmapCount': 0, 'pathCorners': 2, 'persistedAsset': 'Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset'}
+PASS fresh validation evidence belongs to navmesh-legacy
+EVIDENCE {"target": "Legacy", "unityVersion": "6000.4.4f1", "passed": true, "error": "", "lightmapCount": 0, "pathCorners": 2, "persistedAsset": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset"}
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset"], "backend": "navmesh-legacy", "code": "BAKE_SUCCEEDED", "jobId": "1ff5ce13e5d249b3bff5a0b1a7750164", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": true, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS navmesh-legacy terminal result remains queryable after scene reload
+execute_menu_item {"executed": true, "executionTime": 325, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Surface", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Surface
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with surfacePath: {"command":"raw start_scene_bake","data":null,"errors":[{"code":"INVALID_ARGUMENT","message":"INVALID_ARGUMENT: Invalid parameters for tool `start_scene_bake`: $ must satisfy exactly one schema variant (matched 0); details: $.surfacePath is required"}],"success":false,"warnings":[]}
+
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SURFACE_NOT_FOUND: {"command":"raw start_scene_bake","data":{"code":"SURFACE_NOT_FOUND","error":"surfacePath must identify exactly one NavMeshSurface in the target scene.","reason":"surfacePath must identify exactly one NavMeshSurface in the target scene.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SURFACE_NOT_FOUND","message":"surfacePath must identify exactly one NavMeshSurface in the target scene. (code: SURFACE_NOT_FOUND)"}],"success":false,"warnings":[]}
+
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+start_scene_bake {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "1460193e843a4c22b9df488c8680ff44", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS navmesh-surface starts tracked asynchronous job
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "1460193e843a4c22b9df488c8680ff44", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset"], "backend": "navmesh-surface", "code": "BAKE_SUCCEEDED", "jobId": "1460193e843a4c22b9df488c8680ff44", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": true, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS stable job identity
+PASS navmesh-surface genuine success: {'artifacts': ['Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset'], 'backend': 'navmesh-surface', 'code': 'BAKE_SUCCEEDED', 'jobId': '1460193e843a4c22b9df488c8680ff44', 'phase': 'complete', 'reason': 'Bake artifacts and saved scene references verified.', 'scenePath': 'Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity', 'status': 'succeeded', 'unityVersion': '6000.4.4f1', 'verification': {'generatedThisRun': True, 'navigationQuery': True, 'passed': True, 'persisted': True, 'sceneReferenced': True}}
+PASS navmesh-surface reports version, backend and phase
+PASS navmesh-surface reports nonempty artifact paths
+PASS navmesh-surface artifact exists: Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset
+execute_menu_item {"executed": true, "executionTime": 622, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Surface", "message": "Menu item executed successfully", "success": true}
+PASS Validate Surface
+PASS navmesh-surface persisted reload validation: {'target': 'Surface', 'unityVersion': '6000.4.4f1', 'passed': True, 'error': '', 'lightmapCount': 0, 'pathCorners': 2, 'persistedAsset': 'Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset'}
+PASS fresh validation evidence belongs to navmesh-surface
+EVIDENCE {"target": "Surface", "unityVersion": "6000.4.4f1", "passed": true, "error": "", "lightmapCount": 0, "pathCorners": 2, "persistedAsset": "Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset"}
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset"], "backend": "navmesh-surface", "code": "BAKE_SUCCEEDED", "jobId": "1460193e843a4c22b9df488c8680ff44", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": true, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS navmesh-surface terminal result remains queryable after scene reload
+start_scene_bake {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "e93b59e165ad4e07a7d2c53838f25092", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS rebake has an independent job identity
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "e93b59e165ad4e07a7d2c53838f25092", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-e93b59e165ad4e07a7d2c53838f25092.asset"], "backend": "navmesh-surface", "code": "BAKE_SUCCEEDED", "jobId": "e93b59e165ad4e07a7d2c53838f25092", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": true, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS stable job identity
+PASS same-scene rebake succeeds
+PASS rebake writes fresh artifacts
+execute_menu_item {"executed": true, "executionTime": 527, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Surface", "message": "Menu item executed successfully", "success": true}
+PASS Validate Surface
+PASS rebake persists usable NavMesh
+execute_menu_item {"executed": true, "executionTime": 143, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Exclude Surface Geometry", "message": "Menu item executed successfully", "success": true}
+PASS Exclude Surface Geometry
+start_scene_bake {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "633a415774ed4665b614afb8f1f76942", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "633a415774ed4665b614afb8f1f76942", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "ARTIFACT_VERIFICATION_FAILED", "jobId": "633a415774ed4665b614afb8f1f76942", "phase": "failed", "reason": "Generated NavMesh cannot answer a complete path query.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity", "status": "failed", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+PASS empty rebake cannot reuse old NavMesh as success
+execute_menu_item {"executed": true, "executionTime": 545, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Surface", "message": "Menu item executed successfully", "success": true}
+PASS Validate Surface
+PASS failed rebake preserves prior usable Surface data and scene assignment
+execute_menu_item {"executed": true, "executionTime": 364, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Occlusion", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Occlusion
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with SCENE_MISMATCH: {"command":"raw start_scene_bake","data":{"code":"SCENE_MISMATCH","error":"scenePath must identify the saved active scene under Assets/.","reason":"scenePath must identify the saved active scene under Assets/.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"SCENE_MISMATCH","message":"scenePath must identify the saved active scene under Assets/. (code: SCENE_MISMATCH)"}],"success":false,"warnings":[]}
+
+start_scene_bake {"artifacts": [], "backend": "occlusion", "code": "BAKE_STARTED", "jobId": "5803ae1102d54f75a7bfaed2fcd834a3", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS occlusion starts tracked asynchronous job
+get_scene_bake_status {"artifacts": [], "backend": "occlusion", "code": "BAKE_STARTED", "jobId": "5803ae1102d54f75a7bfaed2fcd834a3", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset"], "backend": "occlusion", "code": "BAKE_SUCCEEDED", "jobId": "5803ae1102d54f75a7bfaed2fcd834a3", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": null, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS stable job identity
+PASS occlusion genuine success: {'artifacts': ['Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset'], 'backend': 'occlusion', 'code': 'BAKE_SUCCEEDED', 'jobId': '5803ae1102d54f75a7bfaed2fcd834a3', 'phase': 'complete', 'reason': 'Bake artifacts and saved scene references verified.', 'scenePath': 'Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity', 'status': 'succeeded', 'unityVersion': '6000.4.4f1', 'verification': {'generatedThisRun': True, 'navigationQuery': None, 'passed': True, 'persisted': True, 'sceneReferenced': True}}
+PASS occlusion reports version, backend and phase
+PASS occlusion reports nonempty artifact paths
+PASS occlusion artifact exists: Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset
+execute_menu_item {"executed": true, "executionTime": 600, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Validate Occlusion", "message": "Menu item executed successfully", "success": true}
+PASS Validate Occlusion
+PASS occlusion persisted reload validation: {'target': 'Occlusion', 'unityVersion': '6000.4.4f1', 'passed': True, 'error': '', 'lightmapCount': 0, 'pathCorners': 0, 'persistedAsset': 'Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset'}
+PASS fresh validation evidence belongs to occlusion
+EVIDENCE {"target": "Occlusion", "unityVersion": "6000.4.4f1", "passed": true, "error": "", "lightmapCount": 0, "pathCorners": 0, "persistedAsset": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset"}
+get_scene_bake_status {"artifacts": ["Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset"], "backend": "occlusion", "code": "BAKE_SUCCEEDED", "jobId": "5803ae1102d54f75a7bfaed2fcd834a3", "phase": "complete", "reason": "Bake artifacts and saved scene references verified.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity", "status": "succeeded", "unityVersion": "6000.4.4f1", "verification": {"generatedThisRun": true, "navigationQuery": null, "passed": true, "persisted": true, "sceneReferenced": true}}
+PASS occlusion terminal result remains queryable after scene reload
+execute_menu_item {"executed": true, "executionTime": 433, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare NoOutput", "message": "Menu item executed successfully", "success": true}
+PASS Prepare NoOutput
+start_scene_bake {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "b3bc45b27e8b470ebbc5a39cc517ff2e", "phase": "queued", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/NoOutput/NoOutput.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "BAKE_STARTED", "jobId": "b3bc45b27e8b470ebbc5a39cc517ff2e", "phase": "finalizing", "reason": "Bake accepted; poll get_scene_bake_status for verified completion.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/NoOutput/NoOutput.unity", "status": "running", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+get_scene_bake_status {"artifacts": [], "backend": "navmesh-surface", "code": "ARTIFACT_VERIFICATION_FAILED", "jobId": "b3bc45b27e8b470ebbc5a39cc517ff2e", "phase": "failed", "reason": "Generated NavMesh cannot answer a complete path query.", "scenePath": "Assets/Scenes/Generated/E2E/Baking/NoOutput/NoOutput.unity", "status": "failed", "unityVersion": "6000.4.4f1", "verification": {"passed": false}}
+PASS stable job identity
+PASS backend completion without navigable output is a failed job
+PASS no-output job reports diagnostic code and reason
+PASS failed no-output job does not report successful artifacts
+PASS no-output job does not persist unusable NavMeshData
+execute_menu_item {"executed": true, "executionTime": 330, "menuExists": true, "menuPath": "Tools/Unity CLI/Baking/Prepare Empty", "message": "Menu item executed successfully", "success": true}
+PASS Prepare Empty
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with NO_GEOMETRY: {"command":"raw start_scene_bake","data":{"code":"NO_GEOMETRY","error":"The target scene contains no active geometry to bake.","reason":"The target scene contains no active geometry to bake.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"NO_GEOMETRY","message":"The target scene contains no active geometry to bake. (code: NO_GEOMETRY)"}],"success":false,"warnings":[]}
+
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with NO_GEOMETRY: {"command":"raw start_scene_bake","data":{"code":"NO_GEOMETRY","error":"The target scene contains no active geometry to bake.","reason":"The target scene contains no active geometry to bake.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"NO_GEOMETRY","message":"The target scene contains no active geometry to bake. (code: NO_GEOMETRY)"}],"success":false,"warnings":[]}
+
+PASS start_scene_bake returns a genuine error
+PASS start_scene_bake rejects with NO_GEOMETRY: {"command":"raw start_scene_bake","data":{"code":"NO_GEOMETRY","error":"The target scene contains no active geometry to bake.","reason":"The target scene contains no active geometry to bake.","status":"error","unityVersion":"6000.4.4f1"},"errors":[{"code":"NO_GEOMETRY","message":"The target scene contains no active geometry to bake. (code: NO_GEOMETRY)"}],"success":false,"warnings":[]}
+
+PASS empty scene rejection creates no bake artifacts
+Baking E2E: passed=101 failed=0

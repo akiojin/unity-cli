@@ -1,0 +1,2 @@
+Reusing Editor (pid 28772)
+15 tests, 0 failed; report: <workspace>\.cache\issue-386\resume\TouchGesturePlayModeTests-gui-final.xml

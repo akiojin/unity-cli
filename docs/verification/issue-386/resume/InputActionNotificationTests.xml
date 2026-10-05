@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="4" failures="0" errors="0" skipped="0" time="4.109"><testcase classname="UnityCliBridge.Tests.InputActionNotificationTests" name="EditorUpdates_DeliverKeyboardMouseAndGamepadPressAndRelease" time="1.135"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverKeyboardMouseAndGamepadPressAndRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverKeyboardMouseAndGamepadPressAndRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverKeyboardMouseAndGamepadPressAndRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverKeyboardMouseAndGamepadPressAndRelease
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.InputActionNotificationTests" name="EditorUpdates_DeliverScheduledKeyboardRelease" time="1.019"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverScheduledKeyboardRelease
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key press: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: space (Keyboard)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.InputActionNotificationTests" name="EditorUpdates_DeliverTouchPhaseChanges" time="1.021"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_DeliverTouchPhaseChanges
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.InputActionNotificationTests" name="EditorUpdates_PreserveOtherGamepadControls" time="0.934"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.InputActionNotificationTests.EditorUpdates_PreserveOtherGamepadControls
+</system-out></testcase></testsuite></testsuites>
