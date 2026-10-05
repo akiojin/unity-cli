@@ -12,6 +12,7 @@ keywords = ["unity", "cli", "automation", "editor"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
     "/src/**",
+    "/tests/fixtures/reference-embedding/*.bin",
     "/build.rs",
     "/.claude-plugin/plugins/unity-cli/skills/**",
     "/Cargo.toml",
@@ -26,7 +27,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0"
-base64 = "0.22"
+base64 = "0.23"
 clap = { version = "4.6", features = ["derive"] }
 dirs = "7.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -51,10 +52,10 @@ bincode = "=1.3.3"
 # ONNX Runtime ships no prebuilt binaries for Intel macOS, so that target loads
 # libonnxruntime dynamically at runtime (ORT_DYLIB_PATH / Homebrew onnxruntime).
 [target.'cfg(not(all(target_os = "macos", target_arch = "x86_64")))'.dependencies]
-fastembed = { version = "6", default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries"] }
+fastembed = { version = "7", default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries"] }
 
 [target.'cfg(all(target_os = "macos", target_arch = "x86_64"))'.dependencies]
-fastembed = { version = "6", default-features = false, features = ["hf-hub-rustls-tls", "ort-load-dynamic"] }
+fastembed = { version = "7", default-features = false, features = ["hf-hub-rustls-tls", "ort-load-dynamic"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
