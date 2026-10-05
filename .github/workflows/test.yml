@@ -244,14 +244,16 @@ jobs:
             --fail-under-lines 90 \
             -- --test-threads=1
 
+      # Codecov upload is best-effort: the 90% gate above stays required, an external outage must not block merges (#472).
       - name: Upload Rust coverage to Codecov
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/rust/cobertura.xml
           flags: rust
           name: rust-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
 
   lsp-coverage:
@@ -274,14 +276,16 @@ jobs:
             /p:ThresholdType=line \
             /p:ThresholdStat=total
 
+      # Codecov upload is best-effort: the 90% gate above stays required, an external outage must not block merges (#472).
       - name: Upload LSP coverage to Codecov
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lsp/coverage.cobertura.xml
           flags: lsp
           name: lsp-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
 
   lsp-perf:
