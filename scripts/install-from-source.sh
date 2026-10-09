@@ -2,7 +2,7 @@
 # Build this checkout and install it as the managed unity-cli binary, the same
 # place scripts/install.sh puts a release, so unityd and your agents run your
 # build. For contributors testing changes the way users run them.
-# Usage: ./scripts/install-from-source.sh [--debug] [--skip-build] [--skills <client>]
+# Usage: ./scripts/install-from-source.sh [--debug] [--skip-build] [--skills <client> | --no-skills]
 #
 # Environment:
 #   UNITY_CLI_TOOLS_ROOT  managed tools root (default: ~/.unity/tools)
@@ -16,10 +16,12 @@ die() { echo "error: $*" >&2; exit 1; }
 PROFILE=release
 SKIP_BUILD=0
 SKILLS=""
+NO_SKILLS=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --debug)      PROFILE=debug; shift ;;
         --skip-build) SKIP_BUILD=1; shift ;;
+        --no-skills)  NO_SKILLS=1; shift ;;
         --skills)     SKILLS="${2:-}"; [ -n "$SKILLS" ] || die "--skills needs a client"; shift 2 ;;
         -h|--help)    sed -n '2,11p' "$0"; exit 0 ;;
         *)            die "unknown option: $1" ;;
@@ -75,7 +77,9 @@ ln -sf "$BINARY" "${LINK_DIR}/unity-cli"
 echo "Installed unity-cli ${VERSION} (${PROFILE} build of ${COMMIT}) -> ${LINK_DIR}/unity-cli"
 
 # 5. Skills: refresh installed copies to this build, or install for a client
-if [ -n "$SKILLS" ]; then
+if [ "$NO_SKILLS" = 1 ]; then
+    : # leave installed skills alone (tests, or a binary-only change)
+elif [ -n "$SKILLS" ]; then
     "$BINARY" skills install "$SKILLS" --force
 elif "$BINARY" skills refresh >/dev/null 2>&1; then
     echo "Refreshed installed skills to this build."

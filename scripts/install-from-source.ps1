@@ -1,7 +1,7 @@
 # Build this checkout and install it as the managed unity-cli binary, the same
 # place scripts/install.ps1 puts a release, so unityd and your agents run your
 # build. For contributors testing changes the way users run them.
-# Usage: ./scripts/install-from-source.ps1 [-DebugBuild] [-SkipBuild] [-Skills <client>]
+# Usage: ./scripts/install-from-source.ps1 [-DebugBuild] [-SkipBuild] [-Skills <client> | -NoSkills]
 #
 # Environment (same as install.ps1):
 #   UNITY_CLI_TOOLS_ROOT        managed tools root (default: ~\.unity\tools)
@@ -12,11 +12,16 @@
 param(
     [switch]$DebugBuild,
     [switch]$SkipBuild,
-    [ValidateSet('claude-code', 'cursor', 'windsurf', 'vscode')][string]$Skills
+    [ValidateSet('claude-code', 'cursor', 'windsurf', 'vscode')][string]$Skills,
+    [switch]$NoSkills
 )
 $ErrorActionPreference = 'Stop'
 
 function Fail([string]$Message) { Write-Error "error: $Message"; exit 1 }
+
+# Read before step 2 sets it for the daemon-stop call.
+$optedOut = ($env:UNITY_CLI_NO_AUTO_UPDATE -eq '1') -or
+    ([Environment]::GetEnvironmentVariable('UNITY_CLI_NO_AUTO_UPDATE', 'User') -eq '1')
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $profileDir = if ($DebugBuild) { 'debug' } else { 'release' }
@@ -47,7 +52,8 @@ $binary = Join-Path $destDir 'unity-cli.exe'
 New-Item -ItemType Directory -Force -Path $destDir | Out-Null
 if (Test-Path $binary) {
     $env:UNITY_CLI_NO_AUTO_UPDATE = '1'
-    & $binary unityd stop *> $null
+    # A broken or partial install must not block reinstalling.
+    try { & $binary unityd stop *> $null } catch { }
     # Anything else still running the old exe keeps it locked; Windows allows
     # renaming a running exe, so move it aside instead of failing.
     Get-ChildItem -Path $destDir -Filter 'unity-cli.exe.old-*' -ErrorAction SilentlyContinue |
@@ -86,7 +92,9 @@ if ($env:UNITY_CLI_SKIP_PATH_UPDATE -ne '1') {
 }
 
 # 5. Skills: refresh installed copies to this build, or install for a client
-if ($Skills) {
+if ($NoSkills) {
+    # Leave installed skills alone (tests, or a binary-only change).
+} elseif ($Skills) {
     & $binary skills install $Skills --force
     if ($LASTEXITCODE -ne 0) { Fail "skills install $Skills failed" }
 } else {
@@ -98,8 +106,7 @@ $cargoBin = Join-Path $HOME '.cargo\bin\unity-cli.exe'
 if (Test-Path $cargoBin) {
     Write-Warning "$cargoBin exists and may shadow the managed binary. Consider running: cargo uninstall unity-cli"
 }
-$noAuto = [Environment]::GetEnvironmentVariable('UNITY_CLI_NO_AUTO_UPDATE', 'User')
-if ($noAuto -ne '1' -and $env:UNITY_CLI_NO_AUTO_UPDATE -ne '1') {
+if (-not $optedOut) {
     Write-Warning ("Self-update will replace this build when a newer release ships. To keep it, run: " +
         "[Environment]::SetEnvironmentVariable('UNITY_CLI_NO_AUTO_UPDATE','1','User')")
 }
