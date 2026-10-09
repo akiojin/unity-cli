@@ -306,6 +306,12 @@ fn install_latest_for(
     ensure_latest_for(managed_binary, force_download, false)
 }
 
+/// `UNITY_CLI_NO_AUTO_UPDATE=1`: never replace an installed unity-cli with a
+/// newer release unless the user asks for it.
+pub(crate) fn auto_update_disabled() -> bool {
+    std::env::var("UNITY_CLI_NO_AUTO_UPDATE").ok().as_deref() == Some("1")
+}
+
 fn ensure_latest_for(
     managed_binary: ManagedBinary,
     force_download: bool,
@@ -320,6 +326,18 @@ fn ensure_latest_for(
             "managed {} binary is missing while test remote checks are disabled",
             managed_binary.spec().key
         ));
+    }
+
+    // Daemon startup (`unityd start`, `lspd`) honours the same opt-out as
+    // `maybe_self_update` and keeps the installed CLI. A missing binary is
+    // still installed, since the daemon needs one to run.
+    if allow_stale_existing
+        && !force_download
+        && status.binary_exists
+        && managed_binary == ManagedBinary::UnityCli
+        && auto_update_disabled()
+    {
+        return Ok(status);
     }
 
     match fetch_latest_release(managed_binary) {
@@ -999,6 +1017,49 @@ mod tests {
         assert_eq!(status.binary_path, binary);
         assert!(status.binary_exists);
         assert!(status.latest.is_none());
+    }
+
+    #[test]
+    fn daemon_startup_keeps_installed_cli_when_auto_update_disabled() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let dir = tempdir().expect("tempdir should succeed");
+        let _env = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            dir.path()
+                .to_str()
+                .expect("tempdir path should be valid UTF-8"),
+        );
+        // Exercise the real code path, not the test-only skip.
+        let _skip = EnvVarGuard::set("UNITY_CLI_TEST_SKIP_MANAGED_UPDATE", "0");
+        let _opt_out = EnvVarGuard::set("UNITY_CLI_NO_AUTO_UPDATE", "1");
+
+        let binary =
+            binary_path_for(ManagedBinary::UnityCli).expect("unity-cli binary path should resolve");
+        if let Some(parent) = binary.parent() {
+            fs::create_dir_all(parent).expect("binary parent directory should be created");
+        }
+        fs::write(&binary, b"source-build").expect("binary fixture should be writable");
+        // A VERSION that can never match a release, so an update would be due.
+        write_local_version_for(ManagedBinary::UnityCli, "0.0.0-local")
+            .expect("VERSION fixture should be writable");
+
+        let status =
+            ensure_latest_cli_for_daemon().expect("opt-out should keep the installed binary");
+        assert_eq!(status.binary_path, binary);
+        assert!(status.binary_exists);
+        // No release lookup at all: neither a result nor a lookup error.
+        assert!(status.latest.is_none());
+        assert!(status.latest_error.is_none());
+        assert_eq!(
+            fs::read(&binary).expect("binary should be readable"),
+            b"source-build"
+        );
+        assert_eq!(
+            read_local_version_for(ManagedBinary::UnityCli).as_deref(),
+            Some("0.0.0-local")
+        );
     }
 
     #[test]
