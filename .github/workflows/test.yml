@@ -135,6 +135,11 @@ jobs:
         shell: pwsh
         run: ./tests/scripts/install-ps1-binary-test.ps1 -Binary target/debug/unity-cli.exe
 
+      - name: Install the built binary with install-from-source.ps1
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./tests/scripts/install-from-source-ps1-test.ps1 -Binary target/debug/unity-cli.exe
+
   linux-platform-checks:
     name: Linux Platform Checks
     runs-on: ubuntu-latest
@@ -167,6 +172,9 @@ jobs:
         run: >
           xvfb-run -a -s "-screen 0 1280x720x24"
           python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli
+
+      - name: Install the built binary with install-from-source.sh
+        run: sh tests/scripts/install-from-source-sh-test.sh target/debug/unity-cli
 
       - name: Check the grim OS screenshot fallback under headless sway
         # A wlroots compositor on the headless backend with the software
