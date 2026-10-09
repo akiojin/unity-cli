@@ -57,6 +57,19 @@ Modify existing GameObjects and their components in an already-prepared scene. T
 4. Reserve `delete_gameobject` and `remove_component` for confirmed scopes.
 5. Save the scene after destructive or bulk updates so reloads do not lose work.
 
+## Target Parameter Names
+
+The key that names the target object differs by tool. A wrong key fails locally with `INVALID_ARGUMENT` (`$.<key> is required` or `$.<key> is not allowed`) before reaching Unity.
+
+| Key              | Tools                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `path`           | `modify_gameobject` (its `name` renames), `delete_gameobject` (`paths` for several)               |
+| `gameObjectPath` | `add_component`, `modify_component`, `set_component_field`, `remove_component`, `list_components` |
+| `name`           | `find_gameobject`, `create_gameobject` (parent via `parentPath`)                                  |
+| `gameObjectName` | read-only queries such as `get_component_values`; see `unity-scene-inspect`                       |
+
+When unsure, read the schema: `unity-cli tool schema <tool_name> --output json`.
+
 ```bash
 unity-cli raw modify_gameobject --json '{"path":"/Player","name":"Hero","active":true}'
 unity-cli raw add_component --json '{"gameObjectPath":"/Player","componentType":"Rigidbody"}'
