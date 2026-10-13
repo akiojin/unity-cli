@@ -1,0 +1,98 @@
+name: LSP Write Reliability
+
+on:
+  workflow_call:
+    inputs:
+      repetitions:
+        default: '3'
+        type: string
+  schedule:
+    - cron: '17 2 * * 2'
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: Samples per scenario and installed-LSP condition
+        default: '20'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: LSP Write Reliability (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-lsp-reliability-${{ hashFiles('Cargo.lock') }}
+      - name: Build the real CLI
+        run: cargo build --bin unity-cli
+      - name: Publish the real LSP for this runner
+        shell: bash
+        run: |
+          rid=$(python -c 'import platform; print({"Windows":"win","Darwin":"osx","Linux":"linux"}[platform.system()] + ("-arm64" if platform.machine().lower() in ("arm64", "aarch64") else "-x64"))')
+          dotnet publish lsp/Server.csproj -c Release -r "$rid" --self-contained true -o .cache/lsp-reliability-publish
+      - name: Verify the measurement and regression gate
+        run: python -B -m unittest discover -s tests/scripts -p test_lsp_write_reliability.py
+      - name: Measure writes, cold starts, real downloads, and direct-edit differences
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPETITIONS: ${{ inputs.repetitions || (github.event_name == 'schedule' && '20') || '3' }}
+        run: |
+          cli=target/debug/unity-cli
+          if [ "$RUNNER_OS" = Windows ]; then cli="$cli.exe"; fi
+          python scripts/lsp-write-reliability.py --unity-cli "$cli" \
+            --lsp-publish .cache/lsp-reliability-publish --out .cache/lsp-reliability \
+            --repetitions "$REPETITIONS" --download-repetitions 1 \
+            --baseline tests/fixtures/lsp-write-baseline.json
+      - name: Upload measured failures as well as successes
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lsp-write-reliability-${{ matrix.os }}
+          path: .cache/lsp-reliability/
+          if-no-files-found: error
+          retention-days: 30
+
+  report:
+    name: LSP Write Reliability Report
+    needs: measure
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: lsp-write-reliability-*
+          path: .cache/reliability-reports
+      - name: Aggregate every OS without masking missing or failing measurements
+        run: |
+          python scripts/lsp-write-reliability.py --merge .cache/reliability-reports/*/results.json --out .cache/combined-reliability
+          cat .cache/combined-reliability/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lsp-write-reliability-report
+          path: .cache/combined-reliability/
+          if-no-files-found: error
