@@ -11,26 +11,29 @@ public sealed class SourceFileFormatTests
 {
     private const string Original = "public class Sample\n{\n    public int Run() { return 1; }\n}\n";
 
-    public static TheoryData<string, bool, string> ExistingFileEdits()
+    // Every BOM the reader recognises, plus UTF-8 without one.
+    private static readonly string[] Encodings = { "utf-8", "utf-8-bom", "utf-16le", "utf-16be", "utf-32le", "utf-32be" };
+
+    public static TheoryData<string, string, string> ExistingFileEdits()
     {
-        var data = new TheoryData<string, bool, string>();
+        var data = new TheoryData<string, string, string>();
         foreach (var operation in new[] { "write", "apply", "replace_body", "insert_before", "insert_after", "remove", "rename" })
-        foreach (var bom in new[] { false, true })
-        foreach (var newline in new[] { "\n", "\r\n" })
+        foreach (var encoding in Encodings)
+        foreach (var newline in new[] { "\n", "\r\n", "\r" })
         {
-            data.Add(operation, bom, newline);
+            data.Add(operation, encoding, newline);
         }
         return data;
     }
 
     [Theory]
     [MemberData(nameof(ExistingFileEdits))]
-    public async Task ExistingFileEdits_KeepTheOriginalBomAndNewlines(string operation, bool bom, string newline)
+    public async Task ExistingFileEdits_KeepTheOriginalBomAndNewlines(string operation, string encoding, string newline)
     {
         var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
         Directory.CreateDirectory(Path.Combine(root, "Assets"));
         var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
-        await File.WriteAllBytesAsync(scriptPath, Encode(Original, bom, newline));
+        await File.WriteAllBytesAsync(scriptPath, Encode(Original, encoding, newline));
         try
         {
             var service = new LspEditService(root, new LspFileLockProvider());
@@ -55,7 +58,7 @@ public sealed class SourceFileFormatTests
 
             using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
             Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), response.RootElement.ToString());
-            Assert.Equal(Encode(expected, bom, newline), await File.ReadAllBytesAsync(scriptPath));
+            Assert.Equal(Encode(expected, encoding, newline), await File.ReadAllBytesAsync(scriptPath));
         }
         finally
         {
@@ -70,8 +73,8 @@ public sealed class SourceFileFormatTests
         Directory.CreateDirectory(Path.Combine(root, "Assets"));
         const string declaration = "namespace Demo\n{\n    public partial class Sample {}\n}\n";
         const string use = "namespace Demo\n{\n    public class Consumer { public Sample Value; }\n}\n";
-        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs"), Encode(declaration, true, "\r\n"));
-        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Use.cs"), Encode(use, false, "\n"));
+        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs"), Encode(declaration, "utf-8-bom", "\r\n"));
+        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Use.cs"), Encode(use, "utf-8", "\n"));
         try
         {
             var service = new LspEditService(root, new LspFileLockProvider());
@@ -80,9 +83,9 @@ public sealed class SourceFileFormatTests
 
             using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
             Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), response.RootElement.ToString());
-            Assert.Equal(Encode(declaration.Replace("Sample", "Renamed"), true, "\r\n"),
+            Assert.Equal(Encode(declaration.Replace("Sample", "Renamed"), "utf-8-bom", "\r\n"),
                 await File.ReadAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs")));
-            Assert.Equal(Encode(use.Replace("Sample", "Renamed"), false, "\n"),
+            Assert.Equal(Encode(use.Replace("Sample", "Renamed"), "utf-8", "\n"),
                 await File.ReadAllBytesAsync(Path.Combine(root, "Assets", "Use.cs")));
         }
         finally
@@ -120,7 +123,7 @@ public sealed class SourceFileFormatTests
         var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
         Directory.CreateDirectory(Path.Combine(root, "Assets"));
         var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
-        await File.WriteAllBytesAsync(scriptPath, Encode(Original, true, "\r\n"));
+        await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8-bom", "\r\n"));
         try
         {
             var service = new LspEditService(root, new LspFileLockProvider());
@@ -129,7 +132,7 @@ public sealed class SourceFileFormatTests
 
             using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
             Assert.Equal("no_change", response.RootElement.GetProperty("reason").GetString());
-            Assert.Equal(Encode(Original, true, "\r\n"), await File.ReadAllBytesAsync(scriptPath));
+            Assert.Equal(Encode(Original, "utf-8-bom", "\r\n"), await File.ReadAllBytesAsync(scriptPath));
         }
         finally
         {
@@ -142,6 +145,8 @@ public sealed class SourceFileFormatTests
     [InlineData("single line", "x\r\ny\n", "x\r\ny\n")]
     [InlineData("a\r\nb\r\n", "x\ny\r\nz\rw", "x\r\ny\r\nz\rw")]
     [InlineData("a\nb\n", "x\r\ny\n", "x\ny\n")]
+    [InlineData("a\rb\r", "x\ny\r\nz\rw", "x\ry\rz\rw")]
+    [InlineData("a\rb\nc\r", "x\ny\n", "x\ny\n")]
     public void ApplyNewlines_OnlyRewritesWhenTheOriginalUsesOneConvention(string original, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes(original));
@@ -149,9 +154,18 @@ public sealed class SourceFileFormatTests
         Assert.Equal(expected, format.ApplyNewlines(text));
     }
 
-    private static byte[] Encode(string lfText, bool bom, string newline)
+    private static byte[] Encode(string lfText, string encoding, string newline)
     {
-        var body = Encoding.UTF8.GetBytes(lfText.Replace("\n", newline));
-        return bom ? Encoding.UTF8.GetPreamble().Concat(body).ToArray() : body;
+        Encoding target = encoding switch
+        {
+            "utf-8" => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            "utf-8-bom" => new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
+            "utf-16le" => new UnicodeEncoding(bigEndian: false, byteOrderMark: true),
+            "utf-16be" => new UnicodeEncoding(bigEndian: true, byteOrderMark: true),
+            "utf-32le" => new UTF32Encoding(bigEndian: false, byteOrderMark: true),
+            "utf-32be" => new UTF32Encoding(bigEndian: true, byteOrderMark: true),
+            _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, null),
+        };
+        return target.GetPreamble().Concat(target.GetBytes(lfText.Replace("\n", newline))).ToArray();
     }
 }
