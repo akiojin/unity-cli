@@ -1,27 +1,87 @@
 # C# LSP 書き込みの信頼性測定（#490）
 
-直接編集を禁止できる根拠は、現時点では得られていません。BOM なしの
-ファイルへの BOM 追加を Windows の実 CLI / 実 LSP で検出しています。
-全 OS の測定結果は `LSP Write Reliability` CI の JSON / Markdown artifact に
-保存します。これは禁止を導入する変更ではなく、オーナー判断のための測定です。
+## 結論: 現時点では直接編集を禁止できない（DO NOT ENFORCE）
 
-## 初期測定と修正が必要な不具合
+3 OS × 4 開始条件 × 19 シナリオの全セルを各 3 試行、計 684 試行測定しました。
+期待バイト列と一致したのは各 OS とも 228 試行中 24 試行（10.5%）です。
+目安（全シナリオ・全 OS で成功率 99% 以上、誤編集・エンコーディング/改行の破壊 0 件）を
+どの OS・どの開始条件でも満たしていません。オーナーの最終判断のための測定であり、
+この測定は禁止を導入しません。
 
-2026-10-13 の Windows / checkout LSP / `warm_indexed` 初期測定は
-19 シナリオを各 3 回、計 57 試行です。期待バイト列と一致したのは 6 試行
-（10.53%）。BOM あり CRLF の更新と検証のみが一致しました。
-全試行の LSP p50 は 260.755 ms、p95 は 293.267 ms です。
-これは厳密なバイト一致率であり、処理が実行された率や意味的に正しいコードの率ではありません。
+根拠は次のとおりです。
 
-| 不具合 | 実測 | 禁止前に必要な修正 |
-| --- | --- | --- |
-| [#498: BOM なしのファイルへ BOM を追加](https://github.com/akiojin/unity-cli/issues/498) | BOM なしの変更シナリオすべてで EF BB BF を追加 | 既存の BOM / 改行を保存し、新規ファイルの規約を定める |
-| [#499: `replace_symbol_body` が末尾コメントを消す](https://github.com/akiojin/unity-cli/issues/499) | 日本語コメントと改行が 3/3 消失し、次のメンバーと連結 | 置換前 Body の末尾 trivia を保持する |
-| [#500: `create_class` の ScriptableObject 作成が using を欠く](https://github.com/akiojin/unity-cli/issues/500) | `using UnityEngine` が 3/3 欠落 | 非修飾 ScriptableObject が名前解決できるテンプレートにする |
+1. **BOM の付加（#498）**: BOM なしのファイルを扱う 17 シナリオすべてで、3 OS・4 条件・全試行に
+   UTF-8 BOM（EF BB BF）が付きました（各 OS 204 件）。直接編集では起きない差分が
+   ほぼ全ファイルに入ります。一致したのは BOM あり CRLF の更新と、ファイルを変更しない
+   構文検証の 2 シナリオだけです。
+2. **コメントの消失（#499）**: `replace_symbol_body` が末尾コメントと改行を消し、次のメンバーと
+   連結していました。checkout の LSP では #503 で修正済みで、`warm_indexed` / `unindexed`
+   では 3 OS とも再発していません。ただし利用者が実際に取得する公開版 LSP `0.18.1`
+   （`daemon_stopped` / `first_download`）では 3 OS とも 3/3 で再現します。
+   次のリリースまで、エージェントの実環境ではコードを壊す誤編集が残ります。
+3. **ScriptableObject の `using` 欠落（#500）**: #502 で修正済みです。この測定では
+   全 OS・全条件で再発していません（残る差分は BOM のみ）。
+4. **コールド起動の遅さと失敗（#501 / #504）**: デーモン停止中の最初の呼び出しは
+   macOS / Linux で p50 約 3〜4 秒、Windows で p50 約 13 秒でした。先行の run
+   38372615105 では Windows が約 43 秒でした。macOS のローカル実行では、自動起動の
+   5 秒待ちを超えて編集が行われない試行が 1 件ありました（#501、PR #505 で修正済み）。
 
-生応答とバイト差分は [Windows 初期測定の証跡](lsp-write-reliability-windows.json) に保存しています。
-製品修正は上記の個別不具合 Issue に登録済みです。
-3 OS / 全起動条件の結論は CI artifact の完成したマトリクスを参照してください。
+禁止を再検討できる条件は、#498 の修正、#499 の修正を含む LSP の公開、#504 の改善です。
+checkout の LSP を使う 2 条件では BOM 以外の失敗がないため、#498 を直せば全シナリオが一致する見込みです。
+その後に週次の多試行測定（各 20 試行、コールド各 5 試行）で 99% 以上を確認してください。
+少数試行での 100% は将来の 99% を保証しません。
+
+## 測定データの出典
+
+| 項目 | 値 |
+| --- | --- |
+| CI run | [38380911276](https://github.com/akiojin/unity-cli/actions/runs/38380911276)（`Test` workflow、PR #497） |
+| 測定対象 | `b5a4059f`（develop の #502 / #503 を取り込み済み） |
+| 取得日時 | 2026-10-13 10:05〜10:44 UTC（artifact 取得: 2026-10-13） |
+| RID | `win-x64` / `osx-arm64` / `linux-x64`（GitHub-hosted `*-latest`） |
+| 試行数 | 各セル 3 試行（コールド条件も 3 試行） |
+| LSP | `warm_indexed` / `unindexed` は checkout、`daemon_stopped` / `first_download` は公開版 `0.18.1` |
+| 回帰ゲート | 3 OS とも baseline 外の失敗 0 件 |
+
+CI artifact（`results.json` の生応答と diff）は保存期間 30 日で失われます。
+本文の表がこのレポートの一次資料です。Windows の初期測定の生データは
+[lsp-write-reliability-windows.json](lsp-write-reliability-windows.json) に残しています。
+
+## OS × 開始条件
+
+一致率は期待バイト列と完全に一致した試行の割合です。処理が実行された率や、
+意味的に正しいコードの率ではありません。p50 / p95 は失敗を含む全試行の値です。
+
+| OS | 開始条件 | 一致 / 試行 | 一致率 | LSP p50 / p95 ms | 直接編集 p50 / p95 ms | 失敗の種類（件数） |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Windows | `warm_indexed` | 6/57 | 10.5% | 273 / 297 | 0.50 / 1.23 | bom_added 51 |
+| Windows | `daemon_stopped` | 6/57 | 10.5% | 12,929 / 13,338 | 0.56 / 1.27 | bom_added 51, text_changed 3 |
+| Windows | `unindexed` | 6/57 | 10.5% | 512 / 560 | 0.62 / 1.21 | bom_added 51 |
+| Windows | `first_download` | 6/57 | 10.5% | 13,453 / 14,443 | 0.55 / 1.32 | bom_added 51, text_changed 3 |
+| Windows | **全条件** | 24/228 | 10.5% | 578 / 13,636 | 0.55 / 1.23 | bom_added 204, text_changed 6 |
+| macOS | `warm_indexed` | 6/57 | 10.5% | 328 / 435 | 0.40 / 2.43 | bom_added 51 |
+| macOS | `daemon_stopped` | 6/57 | 10.5% | 3,257 / 4,759 | 0.33 / 1.17 | bom_added 51, text_changed 3 |
+| macOS | `unindexed` | 6/57 | 10.5% | 468 / 558 | 0.27 / 1.78 | bom_added 51 |
+| macOS | `first_download` | 6/57 | 10.5% | 3,878 / 4,610 | 1.02 / 49.19 | bom_added 51, text_changed 3 |
+| macOS | **全条件** | 24/228 | 10.5% | 569 / 4,231 | 0.37 / 19.87 | bom_added 204, text_changed 6 |
+| Linux | `warm_indexed` | 6/57 | 10.5% | 242 / 259 | 0.07 / 0.10 | bom_added 51 |
+| Linux | `daemon_stopped` | 6/57 | 10.5% | 3,631 / 3,778 | 0.06 / 0.10 | bom_added 51, text_changed 3 |
+| Linux | `unindexed` | 6/57 | 10.5% | 354 / 391 | 0.06 / 0.09 | bom_added 51 |
+| Linux | `first_download` | 6/57 | 10.5% | 4,045 / 4,281 | 0.07 / 0.11 | bom_added 51, text_changed 3 |
+| Linux | **全条件** | 24/228 | 10.5% | 416 / 4,145 | 0.06 / 0.10 | bom_added 204, text_changed 6 |
+
+## 禁止前に直すべき不具合
+
+| Issue | 状態 | 実測 | 代表的な差分 |
+| --- | --- | --- | --- |
+| [#498](https://github.com/akiojin/unity-cli/issues/498) BOM の付加 | 未修正 | 3 OS × 4 条件で BOM なしの 17 シナリオ全試行 | 先頭に `EF BB BF` が付く |
+| [#499](https://github.com/akiojin/unity-cli/issues/499) 末尾コメントの消失 | checkout で修正済み（PR #503）、公開版 `0.18.1` は未修正 | コールド 2 条件 × 3 OS で 3/3 | `public int Run(){return 2;} // 日本語の説明を保持` → `public int Run(){return 2;}public int Next(){return 3;} }` |
+| [#500](https://github.com/akiojin/unity-cli/issues/500) ScriptableObject の `using` 欠落 | 修正済み（#502） | 再発 0 件 | （修正前）`using UnityEngine;` が出力されない |
+| [#501](https://github.com/akiojin/unity-cli/issues/501) lspd 自動起動の 5 秒タイムアウト | 修正済み（PR #505、この測定の対象 `b5a4059f` には未反映） | macOS ローカル 19 試行中 1 件 | `lspd failed to start within timeout`、編集なし |
+| [#504](https://github.com/akiojin/unity-cli/issues/504) Windows のコールド起動 | 修正中（PR #506） | Windows p50 約 13 秒（先行 run では約 43 秒） | 編集は成功するが待ち時間が長い |
+
+測定ハーネス自体の不具合（macOS の大文字小文字を区別しないファイルシステムで
+`Server` を自身へコピーして失敗）は、この PR で修正済みです。製品の不具合とは分けて扱います。
 
 ## 再現
 
@@ -96,11 +156,10 @@ PR / push は `Test` workflow から呼び出します。既存の必須
 `LSP Tests (required)` は全 OS の測定完了を待ち、測定失敗時には明示的に失敗します。
 依存 job の skip が成功扱いになる経路も `if: always()` と結果チェックで防ぎます。
 デーモン停止・初回ダウンロードは PR / push で各シナリオ 1 試行、
-週次・手動の既定は各 5 試行を別枠で記録します。Windows の実測では
-コールド起動が約 46 秒 / 試行のため、PR の全条件測定は約 35 分かかります。
-週次・手動の多試行を完了できるよう測定 job の上限は 240 分です。
-初回の `work/issue-490` PR のレポートだけは各コールド条件を 3 試行に増やし、
-各セルの反復測定を記録します。develop と通常の PR では自動的に 1 試行へ戻ります。
+週次・手動の既定は各 5 試行を別枠で記録します。このレポートの数値は、
+コールド条件も一時的に各 3 試行とした PR の測定 run 1 回分です。Windows の
+コールド起動は 1 試行あたり約 13〜46 秒かかるため、週次・手動の多試行を
+完了できるよう測定 job の上限は 240 分です。
 `--cold-repetitions` / `--download-repetitions` で増やせます。
 
 既知の不具合は `tests/fixtures/lsp-write-baseline.json` にシナリオ単位で明記します。
@@ -114,6 +173,89 @@ Issue #499 のコメント喪失修正は checkout 条件で回帰を拒否し�
 無関係のファイルへの BOM 追加も regression として拒否します。
 再測定を絞る場合は `--scenarios create_plain` のように指定できます。絞った実行は
 完全なマトリクスの代わりにならず、レポートの欠けたセル数に反映します。
+
+## 付録: シナリオ × 開始条件 × OS
+
+各セルは「期待バイト列と一致した試行 / 試行数」です。
+
+| シナリオ | ツール | 開始条件 | Windows | macOS | Linux | 失敗の種類（3 OS 合計） |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| `create_class_monobehaviour` | `create_class` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_monobehaviour` | `create_class` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_monobehaviour` | `create_class` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_monobehaviour` | `create_class` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_scriptableobject` | `create_class` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_scriptableobject` | `create_class` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_scriptableobject` | `create_class` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_scriptableobject` | `create_class` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_plain` | `create_class` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_plain` | `create_class` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_plain` | `create_class` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_class_plain` | `create_class` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_plain` | `create_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_plain` | `create_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_plain` | `create_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_plain` | `create_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_monobehaviour` | `create_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_monobehaviour` | `create_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_monobehaviour` | `create_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_monobehaviour` | `create_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_scriptableobject` | `create_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_scriptableobject` | `create_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_scriptableobject` | `create_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `create_scriptableobject` | `create_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_body` | `replace_symbol_body` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_body` | `replace_symbol_body` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_body` | `replace_symbol_body` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_body` | `replace_symbol_body` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `write_file` | `write_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `write_file` | `write_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `write_file` | `write_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `write_file` | `write_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_before` | `insert_before_symbol` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_before` | `insert_before_symbol` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_before` | `insert_before_symbol` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_before` | `insert_before_symbol` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_after` | `insert_after_symbol` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_after` | `insert_after_symbol` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_after` | `insert_after_symbol` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `insert_after` | `insert_after_symbol` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `remove_member` | `remove_symbol` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `remove_member` | `remove_symbol` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `remove_member` | `remove_symbol` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `remove_member` | `remove_symbol` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `namespace_partial_generic_attributes` | `replace_symbol_body` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `namespace_partial_generic_attributes` | `replace_symbol_body` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `namespace_partial_generic_attributes` | `replace_symbol_body` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `namespace_partial_generic_attributes` | `replace_symbol_body` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_preserve_comment` | `replace_symbol_body` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_preserve_comment` | `replace_symbol_body` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9, text_changed 9 |
+| `replace_preserve_comment` | `replace_symbol_body` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `replace_preserve_comment` | `replace_symbol_body` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9, text_changed 9 |
+| `rename_multifile` | `rename_symbol` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `rename_multifile` | `rename_symbol` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `rename_multifile` | `rename_symbol` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `rename_multifile` | `rename_symbol` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `unicode_no_bom_crlf` | `write_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `unicode_no_bom_crlf` | `write_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `unicode_no_bom_crlf` | `write_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `unicode_no_bom_crlf` | `write_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `unicode_bom_crlf` | `write_csharp_file` | `warm_indexed` | 3/3 | 3/3 | 3/3 | なし |
+| `unicode_bom_crlf` | `write_csharp_file` | `daemon_stopped` | 3/3 | 3/3 | 3/3 | なし |
+| `unicode_bom_crlf` | `write_csharp_file` | `unindexed` | 3/3 | 3/3 | 3/3 | なし |
+| `unicode_bom_crlf` | `write_csharp_file` | `first_download` | 3/3 | 3/3 | 3/3 | なし |
+| `large_3500_lines` | `write_csharp_file` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `large_3500_lines` | `write_csharp_file` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `large_3500_lines` | `write_csharp_file` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `large_3500_lines` | `write_csharp_file` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `repair_syntax_error` | `apply_csharp_edits` | `warm_indexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `repair_syntax_error` | `apply_csharp_edits` | `daemon_stopped` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `repair_syntax_error` | `apply_csharp_edits` | `unindexed` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `repair_syntax_error` | `apply_csharp_edits` | `first_download` | 0/3 | 0/3 | 0/3 | bom_added 9 |
+| `validate_without_write` | `validate_text_edits` | `warm_indexed` | 3/3 | 3/3 | 3/3 | なし |
+| `validate_without_write` | `validate_text_edits` | `daemon_stopped` | 3/3 | 3/3 | 3/3 | なし |
+| `validate_without_write` | `validate_text_edits` | `unindexed` | 3/3 | 3/3 | 3/3 | なし |
+| `validate_without_write` | `validate_text_edits` | `first_download` | 3/3 | 3/3 | 3/3 | なし |
 
 Launch mode: autonomous
 

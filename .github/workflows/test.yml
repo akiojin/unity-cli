@@ -13,9 +13,6 @@ permissions:
 jobs:
   lsp-write-reliability:
     uses: ./.github/workflows/lsp-write-reliability.yml
-    # Initial #490 report takes several cold samples; develop and routine PRs use one.
-    with:
-      cold_repetitions: ${{ github.head_ref == 'work/issue-490' && '3' || '1' }}
 
   cli-latency:
     name: CLI Latency (required)
