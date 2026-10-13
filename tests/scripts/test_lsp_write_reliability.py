@@ -1,6 +1,7 @@
 """Protect the reliability measurement from false PASS and hidden regressions."""
 import importlib.util
 from pathlib import Path
+import tempfile
 import unittest
 from unittest import mock
 
@@ -116,6 +117,19 @@ class ReliabilityTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 reliability.cleanup_trial(ROOT, ROOT / ".cache")
             remove.assert_not_called()
+
+    def test_server_alias_on_case_insensitive_filesystem_is_not_copied(self):
+        with tempfile.TemporaryDirectory() as temp:
+            source, target = Path(temp) / "published", Path(temp) / "runtime"
+            source.write_bytes(b"server")
+            # Hard links reproduce Server/server identity on macOS on every OS.
+            target.hardlink_to(source)
+            reliability.prepare_server_executable(source, target)
+            self.assertTrue(source.samefile(target))
+            self.assertEqual(target.read_bytes(), b"server")
+            target.unlink()
+            reliability.prepare_server_executable(source, target)
+            self.assertEqual(target.read_bytes(), b"server")
 
 
 if __name__ == "__main__":
