@@ -220,6 +220,13 @@ def cleanup_trial(directory, root):
             time.sleep(0.1)
 
 
+def install_server_alias(source, target):
+    # macOS / Windows filesystems are usually case-insensitive: Server and server are one file.
+    if target.exists() and target.samefile(source):
+        return
+    shutil.copy2(source, target)
+
+
 class Trial:
     def __init__(self, cli, lsp_publish, root, condition, timeout):
         self.cli, self.root, self.condition, self.timeout = cli, root, condition, timeout
@@ -239,9 +246,7 @@ class Trial:
         self.server = self.tools / "csharp-lsp" / rid() / ("server.exe" if os.name == "nt" else "server")
         if condition != "first_download":
             shutil.copytree(lsp_publish, self.server.parent)
-            source = self.server.parent / ("Server.exe" if os.name == "nt" else "Server")
-            if source != self.server and (os.name != "nt" or source.name.lower() != self.server.name.lower()):
-                shutil.copy2(source, self.server)
+            install_server_alias(self.server.parent / ("Server.exe" if os.name == "nt" else "Server"), self.server)
             self.server.chmod(0o755)
             (self.server.parent / "VERSION").write_text("checkout\n", encoding="utf-8")
             self.env["UNITY_CLI_TEST_SKIP_MANAGED_UPDATE"] = "1"

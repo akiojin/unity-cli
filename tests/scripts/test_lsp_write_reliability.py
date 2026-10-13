@@ -33,6 +33,25 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(reliability.compare_files(expected, expected), ([], []))
         self.assertIn("text_changed", reliability.compare_files(expected, {"Assets/A.cs": b"class Wrong {}"})[0])
 
+    def test_server_alias_tolerates_case_insensitive_filesystems(self):
+        import os, tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Server"
+            source.write_bytes(b"binary")
+            alias = Path(temp) / "server"
+            if not alias.exists():
+                # Case-sensitive filesystems: a hard link stands in for macOS / Windows aliasing.
+                os.link(source, alias)
+            reliability.install_server_alias(source, alias)
+            self.assertEqual(alias.read_bytes(), b"binary")
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Server"
+            source.write_bytes(b"binary")
+            target = Path(temp) / "sub" / "server"
+            target.parent.mkdir()
+            reliability.install_server_alias(source, target)
+            self.assertEqual(target.read_bytes(), b"binary")
+
     def test_false_success_or_fallback_is_not_a_successful_lsp_edit(self):
         self.assertEqual(reliability.response_failures(0, {"success": True, "data": {"success": False, "backend": "lsp"}}), ["tool_rejected"])
         self.assertEqual(reliability.response_failures(0, {"success": True, "data": {"success": True, "backend": "unity"}}), ["wrong_backend"])
