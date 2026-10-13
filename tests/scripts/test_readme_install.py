@@ -16,6 +16,29 @@ PROMPT_STEPS = [
     'Packages/manifest.json',
 ]
 
+UPDATE_STEPS = [
+    'UNITY_CLI_NO_AUTO_UPDATE',
+    'UNITY_CLI_VERSION',
+    'unity-cli cli install',
+    'brew upgrade akiojin/tap/unity-cli',
+    'winget upgrade akiojin.unity-cli',
+]
+
+BRIDGE_STEPS = [
+    'unity-cli --output json bridge status',
+    'mismatch',
+    'unity-cli bridge upgrade',
+    'custom',
+    'unknown',
+]
+
+# Heading words that say "install or update" in each README language.
+UPDATE_HEADINGS = {
+    'README.md': 'update', 'README.ja.md': '更新', 'README.zh.md': '更新',
+    'README.de.md': 'aktualisier', 'README.es.md': 'actualiz',
+    'README.fr.md': 'a jour', 'README.it.md': 'aggiorna',
+}
+
 MANUAL_CONTENT = [
     'scripts/install.sh | sh',
     'scripts/install.ps1 | iex',
@@ -78,6 +101,31 @@ class ReadmeInstallStructureTest(unittest.TestCase):
                 self.assertLess(positions[6], positions[3])
                 self.assertIn('/plugin marketplace add akiojin/unity-cli', llm)
                 self.assertIn('.agents/skills/', llm)
+
+    def test_llm_prompt_updates_cli_and_bridge(self):
+        for name in READMES:
+            with self.subTest(readme=name):
+                title, llm = subsections(getting_started((ROOT / name).read_text()))[1]
+                self.assertIn(UPDATE_HEADINGS[name], title.lower())
+                prompt = re.findall(r'^```text\n(.*?)^```', llm,
+                                    flags=re.MULTILINE | re.DOTALL)[0]
+                self.assertIn(UPDATE_HEADINGS[name], prompt.splitlines()[0].lower())
+                for needle in UPDATE_STEPS + BRIDGE_STEPS:
+                    self.assertIn(needle, prompt, needle)
+                setup = prompt.find('unity-cli --output json setup --launch-editor')
+                ping = prompt.find('unity-cli system ping')
+                # CLI update happens before setup; pinned versions are checked first
+                self.assertLess(prompt.find('UNITY_CLI_NO_AUTO_UPDATE'),
+                                prompt.find('unity-cli cli install'))
+                self.assertLess(prompt.find('winget upgrade'), setup)
+                # bridge alignment runs between setup and the final ping
+                status = prompt.find('unity-cli --output json bridge status')
+                upgrade = prompt.find('unity-cli bridge upgrade')
+                self.assertTrue(setup < status < upgrade < ping)
+                # upgrade asks before touching the manifest
+                self.assertIn('Packages/manifest.json', prompt[status:upgrade])
+                # the final ping confirms versionCheck is match
+                self.assertRegex(prompt[ping:], r'versionCheck\.status[^\n]*match')
 
     def test_manual_section_keeps_every_install_path(self):
         for name in READMES:
