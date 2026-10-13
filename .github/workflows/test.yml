@@ -13,9 +13,6 @@ permissions:
 jobs:
   lsp-write-reliability:
     uses: ./.github/workflows/lsp-write-reliability.yml
-    # Temporary for the #490 report: several cold samples per cell. Revert to the default after.
-    with:
-      cold_repetitions: '3'
 
   cli-latency:
     name: CLI Latency (required)
