@@ -241,7 +241,8 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 | `UNITY_CLI_HOST` | Hote Unity Editor | `localhost` |
 | `UNITY_CLI_PORT` | Port Unity Editor | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | Timeout de commande (ms) | `30000` |
-| `UNITY_CLI_LSP_MODE` | Mode LSP (`off` / `auto` / `required`) | `off` |
+| `UNITY_CLI_LSP_MODE` | Mode LSP (`off` / `auto` / `required`). `auto` privilegie le LSP C# pour la recherche de symboles et revient a l'index local (`backend: "index"`, `fallbackReason`) | `auto` |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | Limite (ms) d'attente du LSP pour une recherche de symboles en `auto` avant le retour a l'index local | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | Repertoire racine des outils telecharges | OS default |
 
 Les variables legacy prefixees MCP ne sont pas supportees. Utilisez uniquement `UNITY_CLI_*`.

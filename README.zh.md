@@ -232,7 +232,8 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 | `UNITY_CLI_HOST` | Unity Editor 主机 | `localhost` |
 | `UNITY_CLI_PORT` | Unity Editor 端口 | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | 命令超时 (ms) | `30000` |
-| `UNITY_CLI_LSP_MODE` | LSP 模式 (`off` / `auto` / `required`) | `off` |
+| `UNITY_CLI_LSP_MODE` | LSP 模式 (`off` / `auto` / `required`)。`auto` 在符号搜索中优先使用 C# LSP，不可用时回退到本地索引（`backend: "index"`, `fallbackReason`） | `auto` |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | `auto` 符号搜索等待 LSP 的上限 (ms)，超时后回退到本地索引 | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | 已下载工具根目录 | OS 默认 |
 
 不支持旧 MCP 前缀环境变量。请仅使用 `UNITY_CLI_*`。

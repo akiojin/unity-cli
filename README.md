@@ -279,7 +279,8 @@ policy, required CI, and skill documentation changes.
 | `UNITY_CLI_HOST` | Unity Editor host | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
-| `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`) | `off` |
+| `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`). `auto` prefers the C# LSP for symbol search and falls back to the local index (`backend: "index"`, `fallbackReason`) | `auto` |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | Upper bound (ms) for an `auto` symbol search to wait for the LSP before falling back to the local index | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | Downloaded tools root directory | OS default |
 | `UNITY_CLI_NO_AUTO_UPDATE` | Disable background auto-update (`1` to disable) | *(unset)* |
 
