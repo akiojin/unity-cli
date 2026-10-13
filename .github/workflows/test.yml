@@ -230,6 +230,21 @@ jobs:
       - name: Test hot reload validation and execution observations
         run: dotnet test tests/hot-reload/HotReload.Tests.csproj
 
+  windows-lsp-test:
+    name: Windows LSP Tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run dotnet test
+        run: dotnet test lsp/Server.Tests.csproj
+
   rust-coverage:
     name: Rust Coverage >= 90% (required)
     runs-on: ubuntu-latest
