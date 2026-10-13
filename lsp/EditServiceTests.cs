@@ -189,11 +189,7 @@ public sealed class EditServiceTests
 
             using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
             Assert.True(response.RootElement.GetProperty("applied").GetBoolean());
-            // The UTF-8 BOM written on save is tracked separately (#498); compare the text bytes after it.
-            var bytes = await File.ReadAllBytesAsync(scriptPath);
-            var preamble = Encoding.UTF8.GetPreamble();
-            var body = bytes.AsSpan().StartsWith(preamble) ? bytes[preamble.Length..] : bytes;
-            Assert.Equal(Encoding.UTF8.GetBytes(expected), body);
+            Assert.Equal(Encoding.UTF8.GetBytes(expected), await File.ReadAllBytesAsync(scriptPath));
         }
         finally
         {
