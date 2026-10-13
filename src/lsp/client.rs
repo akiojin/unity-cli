@@ -66,6 +66,11 @@ pub fn maybe_execute(
         return None;
     }
 
+    // Only symbol search defaults to `auto` (see `route_search`); write tools
+    // keep their direct-session default unless a mode is set explicitly.
+    if !lsp_mode_is_set() {
+        return None;
+    }
     let mode = lsp_mode();
     if mode == LspMode::Off {
         return None;
@@ -1271,6 +1276,10 @@ fn now_epoch_ms() -> u64 {
         .unwrap_or(0)
 }
 
+fn lsp_mode_is_set() -> bool {
+    env::var("UNITY_CLI_LSP_MODE").is_ok_and(|value| !value.trim().is_empty())
+}
+
 fn lsp_mode() -> LspMode {
     let raw = env::var("UNITY_CLI_LSP_MODE")
         .ok()
@@ -2306,5 +2315,64 @@ while True:
             panic!("required mode should not fall back");
         };
         assert!(result.is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_tools_keep_direct_session_default_when_mode_is_unset() {
+        use std::io::{BufRead, Write as _};
+
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let root = tempdir().expect("tempdir should be created");
+        let tools = tempdir().expect("tempdir should be created");
+        setup_fake_lsp_server(tools.path());
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let _skip_updates = EnvVarGuard::set("UNITY_CLI_TEST_SKIP_MANAGED_UPDATE", "1");
+        let _mode = EnvVarGuard::set("UNITY_CLI_LSP_MODE", "");
+
+        // A fake lspd that answers exactly one request proves which path ran.
+        let socket = crate::daemon::runtime::DaemonRuntimePaths::new("lspd")
+            .and_then(|paths| paths.socket_file())
+            .expect("lspd socket path should resolve");
+        fs::create_dir_all(socket.parent().expect("socket should have a parent"))
+            .expect("socket parent should be created");
+        let _ = fs::remove_file(&socket);
+        let listener =
+            std::os::unix::net::UnixListener::bind(&socket).expect("fake lspd should bind");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("fake lspd should accept");
+            let mut line = String::new();
+            BufReader::new(stream.try_clone().expect("stream should clone"))
+                .read_line(&mut line)
+                .expect("request should be readable");
+            stream
+                .write_all(b"{\"ok\":true,\"result\":{\"via\":\"lspd\"}}\n")
+                .expect("response should be written");
+        });
+
+        let params = json!({"relative":"Assets/Scripts/Player.cs","newText":"class P {}"});
+        for unset in ["", "  "] {
+            std::env::set_var("UNITY_CLI_LSP_MODE", unset);
+            assert!(
+                maybe_execute("write_csharp_file", &params, root.path()).is_none(),
+                "unset mode must leave writes on the direct LSP session"
+            );
+        }
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+        assert!(maybe_execute("write_csharp_file", &params, root.path()).is_none());
+
+        std::env::set_var("UNITY_CLI_LSP_MODE", "auto");
+        let via_daemon = maybe_execute("write_csharp_file", &params, root.path())
+            .expect("explicit auto should use lspd")
+            .expect("fake lspd should answer");
+        assert_eq!(via_daemon["via"], "lspd");
+        server.join().expect("fake lspd should finish");
+        let _ = fs::remove_file(&socket);
     }
 }

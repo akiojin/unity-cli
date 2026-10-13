@@ -75,6 +75,7 @@ C# ソースコードの静的解析を行う Language Server Protocol 実装で
   - `auto`: `get_symbols` / `find_symbol` / `find_refs` / `build_index` は LSP を優先する。LSP が未インストール（バックグラウンドで `unity-cli lsp install` を起動）、起動失敗、または `UNITY_CLI_LSP_AUTO_TIMEOUT_MS`（既定 10000ms）以内に応答しない場合はローカルインデックスに戻り、結果に `backend: "index"` / `fallbackReason` / `fallbackDetail` を含める
   - `off`: 常にローカルの正規表現インデックスを使う（`fallbackReason: "lsp_disabled"`）
   - `required`: LSP を必須とし、失敗をそのままエラーにする
+  - 書き込み系ツール（`write_csharp_file` など）は、未設定時は従来どおり direct LSP セッションを使う。lspd 経由にするのは `auto` / `required` を明示したときだけ
 
 ## 通信プロトコル
 
