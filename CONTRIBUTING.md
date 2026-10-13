@@ -28,6 +28,22 @@ docker build -t unity-cli-dev .
 docker run --rm unity-cli-dev
 ```
 
+### Running Your Build
+
+To test a change the way users run unity-cli (through `unityd` and your agent's
+skills), install your checkout as the managed binary, where `scripts/install.sh`
+and `scripts/install.ps1` put a release:
+
+```bash
+./scripts/install-from-source.sh --skills claude-code    # macOS / Linux
+./scripts/install-from-source.ps1 -Skills claude-code    # Windows
+```
+
+It builds a release binary, stops `unityd`, installs into
+`~/.unity/tools/unity-cli/<rid>/` and refreshes installed skills to the build.
+Set `UNITY_CLI_NO_AUTO_UPDATE=1` while you run a source build, or the next
+release's self-update replaces it. Run the release installer again to go back.
+
 ## Validation Commands
 
 ```bash
@@ -177,6 +193,23 @@ pnpm install --frozen-lockfile
 docker build -t unity-cli-dev .
 docker run --rm unity-cli-dev
 ```
+
+### 自分のビルドを使う
+
+ユーザーと同じ経路（`unityd` とエージェントの skill）で変更を確認するには、
+チェックアウトを managed バイナリとしてインストールします。配置先は
+`scripts/install.sh` / `scripts/install.ps1` がリリースを置く場所と同じです。
+
+```bash
+./scripts/install-from-source.sh --skills claude-code    # macOS / Linux
+./scripts/install-from-source.ps1 -Skills claude-code    # Windows
+```
+
+リリースビルドを作成し、`unityd` を停止して `~/.unity/tools/unity-cli/<rid>/`
+にインストールし、インストール済みの skill をビルドに合わせて更新します。
+ソースビルドを使う間は `UNITY_CLI_NO_AUTO_UPDATE=1` を設定してください。
+設定しないと次のリリースの自動更新で置き換わります。戻すときはリリース用
+インストーラーを再実行します。
 
 ## 検証コマンド
 
