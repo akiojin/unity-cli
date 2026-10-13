@@ -4,7 +4,7 @@ description: Implement, fix, and refactor Unity C# code with unity-cli write too
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob, Edit, Write
 metadata:
   author: akiojin
-  version: 0.3.1
+  version: 0.3.2
   category: code
   triggers:
     - csharp
@@ -50,7 +50,7 @@ Implement Unity C# changes with `unity-cli` as the primary write path. Prefer th
 
 ## Preferred Flow
 
-1. Decide the write shape: new file, symbol edit, full-file write, multi-file write, or settings change. Always write `.cs` files through the LSP write tools (`create_csharp_file`, `write_csharp_file`, `apply_csharp_edits`, symbol edits) so the text is validated before it lands; do not hand-write `.cs` files with direct file edits.
+1. Decide the write shape: new file, symbol edit, full-file write, multi-file write, or settings change. Always write `.cs` files through the LSP write tools (`create_csharp_file`, `write_csharp_file`, `apply_csharp_edits`, symbol edits) so the text is validated before it lands; do not hand-write `.cs` files with direct file edits unless the LSP write path fails (see LSP Write Failure Fallback).
 2. Read only the minimum context with `read`, `get_symbols`, `find_symbol`, or `find_refs`.
 3. Preview risky symbol edits with `apply: false`.
 4. Apply with `refresh`, `waitForCompile`, and `updateIndex` when later steps depend on clean diagnostics.
@@ -63,6 +63,19 @@ unity-cli raw rename_symbol --json '{"relative":"Assets/Scripts/Player.cs","name
 unity-cli raw apply_csharp_edits --json '{"files":[{"relative":"Assets/Scripts/IPlayerMover.cs","newText":"public interface IPlayerMover { void Move(); }\n"}],"validate":true,"apply":true,"waitForCompile":true,"updateIndex":true}'
 unity-cli raw get_compilation_state --json '{}'
 ```
+
+## LSP Write Failure Fallback
+
+Use this only when an LSP write tool fails: the LSP server fails to start, the call times out, or the tool returns an unsupported-edit error. Retry once if the failure looks transient; do not stop the task.
+
+1. Make the same change with your own `Edit` (existing file) or `Write` (new file). Keep it identical in scope to the intended LSP write.
+2. Refresh and confirm compilation with `unity-cli`:
+   ```bash
+   unity-cli raw refresh_assets --json '{}'
+   unity-cli raw get_compilation_state --json '{}'
+   ```
+   Fix any reported errors before continuing; if the Editor is unreachable, say so and leave compilation unconfirmed.
+3. In your work report, state that the LSP path was not used, which tool failed, and why (error code or message).
 
 ## Examples
 

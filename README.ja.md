@@ -241,7 +241,8 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 | `UNITY_CLI_HOST` | Unity Editor ホスト | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor ポート | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ms) | `30000` |
-| `UNITY_CLI_LSP_MODE` | LSP モード (`off` / `auto` / `required`) | `off` |
+| `UNITY_CLI_LSP_MODE` | LSP モード (`off` / `auto` / `required`)。`auto` はシンボル検索で C# LSP を優先し、使えないときはローカルインデックスに戻る（`backend: "index"`, `fallbackReason`） | `auto` |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | `auto` のシンボル検索が LSP を待つ上限 (ms)。超えるとローカルインデックスに戻る | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | ダウンロード済みツールのルートディレクトリ | OS 既定 |
 
 旧 MCP 接頭辞の環境変数は非対応です。`UNITY_CLI_*` のみ使用してください。

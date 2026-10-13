@@ -29,7 +29,7 @@
 
 - Use `create_csharp_file` for every new `.cs` file (classes, `MonoBehaviour`, `ScriptableObject`, interfaces, enums, tests). It validates the text through LSP before writing.
 - `create_class` (`name`, `folder`, optional `namespace` / `inherits`) is a shortcut that renders an empty class shell and writes it through the same LSP path as `create_csharp_file`. Prefer `create_csharp_file` when the file needs any members.
-- Do not create or edit `.cs` files with direct file writes; they skip LSP validation.
+- Do not create or edit `.cs` files with direct file writes; they skip LSP validation. The only exception is the `LSP Write Failure Fallback` in `SKILL.md`.
 - Use `validate_text_edits` when constructing larger manual replacements.
 
 ## Compile Error Fixes
