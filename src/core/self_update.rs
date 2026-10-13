@@ -4,8 +4,8 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime};
 
 use crate::core::managed_binaries::{
-    binary_path_for, detect_rid, download_latest_binary, fetch_latest_release, install_dir_for,
-    read_local_version_for, ManagedBinary,
+    auto_update_disabled, binary_path_for, detect_rid, download_latest_binary,
+    fetch_latest_release, install_dir_for, read_local_version_for, ManagedBinary,
 };
 
 const THROTTLE_SECS: u64 = 4 * 60 * 60; // 4 hours
@@ -14,7 +14,7 @@ const THROTTLE_SECS: u64 = 4 * 60 * 60; // 4 hours
 /// binary if a newer version is available.  Returns `None` when the check is
 /// skipped (opt-out env, throttle, or error resolving paths).
 pub fn maybe_self_update() -> Option<JoinHandle<()>> {
-    if std::env::var("UNITY_CLI_NO_AUTO_UPDATE").ok().as_deref() == Some("1") {
+    if auto_update_disabled() {
         tracing::debug!("self-update skipped: UNITY_CLI_NO_AUTO_UPDATE=1");
         return None;
     }
