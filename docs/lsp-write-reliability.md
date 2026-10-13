@@ -15,12 +15,12 @@
 
 | 不具合 | 実測 | 禁止前に必要な修正 |
 | --- | --- | --- |
-| BOM なしのファイルへ BOM を追加 | BOM なしの変更シナリオすべてで EF BB BF を追加 | 既存の BOM / 改行を保存し、新規ファイルの規約を定める |
-| `replace_symbol_body` が末尾コメントを消す | 日本語コメントと改行が 3/3 消失し、次のメンバーと連結 | 置換前 Body の末尾 trivia を保持する |
-| `create_class` の ScriptableObject 作成が using を欠く | `using UnityEngine` が 3/3 欠落 | 非修飾 ScriptableObject が名前解決できるテンプレートにする |
+| [#498: BOM なしのファイルへ BOM を追加](https://github.com/akiojin/unity-cli/issues/498) | BOM なしの変更シナリオすべてで EF BB BF を追加 | 既存の BOM / 改行を保存し、新規ファイルの規約を定める |
+| [#499: `replace_symbol_body` が末尾コメントを消す](https://github.com/akiojin/unity-cli/issues/499) | 日本語コメントと改行が 3/3 消失し、次のメンバーと連結 | 置換前 Body の末尾 trivia を保持する |
+| [#500: `create_class` の ScriptableObject 作成が using を欠く](https://github.com/akiojin/unity-cli/issues/500) | `using UnityEngine` が 3/3 欠落 | 非修飾 ScriptableObject が名前解決できるテンプレートにする |
 
 生応答とバイト差分は [Windows 初期測定の証跡](lsp-write-reliability-windows.json) に保存しています。
-製品修正は個別の不具合 Issue として PM に登録を依頼しています。
+製品修正は上記の個別不具合 Issue に登録済みです。
 3 OS / 全起動条件の結論は CI artifact の完成したマトリクスを参照してください。
 
 ## 再現
