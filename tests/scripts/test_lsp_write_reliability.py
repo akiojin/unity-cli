@@ -1,5 +1,6 @@
 """Protect the reliability measurement from false PASS and hidden regressions."""
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -91,6 +92,18 @@ class ReliabilityTests(unittest.TestCase):
         self.assertTrue(reliability.regressions([row], baseline))
         row["failures"] = []
         self.assertEqual(reliability.regressions([row], baseline), [])
+
+    def test_fixed_checkout_comment_loss_is_rejected_but_known_release_is_measured(self):
+        baseline = json.loads((ROOT / "tests/fixtures/lsp-write-baseline.json").read_text(encoding="utf-8"))
+        known = baseline["replace_preserve_comment"]["text_hashes"]["Assets/Sample.cs"]
+        row = {"scenario": "replace_preserve_comment", "failures": ["bom_added", "text_changed"],
+               "differences": [{"path": "Assets/Sample.cs", "direct_text_sha256": "expected", "lsp_text_sha256": known}]}
+        for condition in ("daemon_stopped", "first_download"):
+            row["condition"] = condition
+            self.assertEqual(reliability.regressions([row], baseline), [])
+        for condition in ("warm_indexed", "unindexed"):
+            row["condition"] = condition
+            self.assertTrue(reliability.regressions([row], baseline))
 
     def test_ci_retains_failures_and_runs_real_lsp_on_all_three_platforms(self):
         workflow = (ROOT / ".github/workflows/lsp-write-reliability.yml").read_text(encoding="utf-8")

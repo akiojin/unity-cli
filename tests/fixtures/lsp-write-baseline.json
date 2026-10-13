@@ -13,6 +13,10 @@
   "namespace_partial_generic_attributes": ["bom_added"],
   "replace_preserve_comment": {
     "failures": ["bom_added", "text_changed"],
+    "conditions": {
+      "warm_indexed": ["bom_added"],
+      "unindexed": ["bom_added"]
+    },
     "text_hashes": {
       "Assets/Sample.cs": "215a30f2eaeefdd4d211dd6ada4e5aab889d1a2617366f1343808a9c1540ab68"
     }
