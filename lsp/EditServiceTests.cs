@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using UnityCli.Lsp.Core;
@@ -161,6 +162,42 @@ public sealed class EditServiceTests
             {
                 Directory.Delete(root, recursive: true);
             }
+        }
+    }
+
+    [Theory]
+    [InlineData(
+        "public class Sample { public int Run(){return 1;} // 日本語の説明を保持\npublic int Next(){return 3;} }\n",
+        "public class Sample { public int Run(){return 2;} // 日本語の説明を保持\npublic int Next(){return 3;} }\n")]
+    [InlineData(
+        "public class Sample {\r\n    // leading\r\n    public int Run()\r\n    {\r\n        return 1;\r\n    } /* tail */\r\n    public int Next() => 3;\r\n}\r\n",
+        "public class Sample {\r\n    // leading\r\n    public int Run()\r\n    {return 2;} /* tail */\r\n    public int Next() => 3;\r\n}\r\n")]
+    [InlineData(
+        "public class Sample { public int Run() => 1; // expr\npublic int Next(){return 3;} }\n",
+        "public class Sample { public int Run() {return 2;} // expr\npublic int Next(){return 3;} }\n")]
+    public async Task ReplaceSymbolBodyAsync_PreservesTrailingTriviaOfReplacedBody(string original, string expected)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-replace-body-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(Path.Combine(root, "Assets"));
+        var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+        await File.WriteAllBytesAsync(scriptPath, Encoding.UTF8.GetBytes(original));
+        try
+        {
+            var service = new LspEditService(root, new LspFileLockProvider());
+
+            var result = await service.ReplaceSymbolBodyAsync("Assets/Sample.cs", "Sample/Run", "{return 2;}", apply: true);
+
+            using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            Assert.True(response.RootElement.GetProperty("applied").GetBoolean());
+            // The UTF-8 BOM written on save is tracked separately (#498); compare the text bytes after it.
+            var bytes = await File.ReadAllBytesAsync(scriptPath);
+            var preamble = Encoding.UTF8.GetPreamble();
+            var body = bytes.AsSpan().StartsWith(preamble) ? bytes[preamble.Length..] : bytes;
+            Assert.Equal(Encoding.UTF8.GetBytes(expected), body);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
         }
     }
 }
