@@ -137,9 +137,10 @@ def regressions(rows, baseline):
                                    if case["before"].get(name) != case["after"].get(name)} for case in scenarios()}
     for row in rows:
         known = baseline.get(row["scenario"], {})
-        # Released LSP builds may lag a checkout fix; only rows proven to run one use that exception.
-        if isinstance(known, dict) and "published" in known and row.get("lsp_version") not in (None, "checkout"):
-            known = known["published"]
+        # An old release exception cannot hide a checkout or future-release regression.
+        published = known.get("published", {}) if isinstance(known, dict) else {}
+        if row.get("lsp_version") in published.get("versions", []):
+            known = published
         allowed = known.get("failures", []) if isinstance(known, dict) else known
         new = set(row["failures"]) - set(allowed)
         if row["scenario"] in expected_paths and any(d["path"] not in expected_paths[row["scenario"]] for d in row.get("differences", [])):

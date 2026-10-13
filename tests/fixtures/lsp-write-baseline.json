@@ -14,6 +14,7 @@
   "replace_preserve_comment": {
     "failures": ["bom_added"],
     "published": {
+      "versions": ["0.18.1"],
       "failures": ["bom_added", "text_changed"],
       "text_hashes": {
         "Assets/Sample.cs": "215a30f2eaeefdd4d211dd6ada4e5aab889d1a2617366f1343808a9c1540ab68"

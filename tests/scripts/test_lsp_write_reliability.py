@@ -95,6 +95,7 @@ class ReliabilityTests(unittest.TestCase):
     def test_published_lsp_exception_never_relaxes_the_checkout_gate(self):
         # A fix merged into the checkout LSP stays enforced even before it is released.
         baseline = {"replace": {"failures": ["bom_added"], "published": {
+            "versions": ["0.18.1"],
             "failures": ["bom_added", "text_changed"], "text_hashes": {"Assets/A.cs": "known"}}}}
         known = [{"path": "Assets/A.cs", "direct_text_sha256": "expected", "lsp_text_sha256": "known"}]
         published = {"scenario": "replace", "lsp_version": "0.18.1", "failures": ["bom_added", "text_changed"], "differences": known}
@@ -104,6 +105,7 @@ class ReliabilityTests(unittest.TestCase):
         missing = dict(published)
         del missing["lsp_version"]
         self.assertTrue(reliability.regressions([missing], baseline))
+        self.assertTrue(reliability.regressions([dict(published, lsp_version="0.18.2")], baseline))
         other = dict(published, differences=[dict(known[0], lsp_text_sha256="different-loss")])
         self.assertTrue(reliability.regressions([other], baseline))
         self.assertEqual(reliability.regressions([dict(checkout, failures=["bom_added"], differences=[])], baseline), [])
