@@ -1,11 +1,6 @@
 {
   "create_class_monobehaviour": ["bom_added"],
-  "create_class_scriptableobject": {
-    "failures": ["bom_added", "text_changed"],
-    "text_hashes": {
-      "Assets/Sample.cs": "34eedc1cdabfdb43cffc3403e71f8936963c55797ffc0308f43d6a86a2efdecc"
-    }
-  },
+  "create_class_scriptableobject": ["bom_added"],
   "create_class_plain": ["bom_added"],
   "create_plain": ["bom_added"],
   "create_monobehaviour": ["bom_added"],

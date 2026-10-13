@@ -6,6 +6,9 @@ on:
       repetitions:
         default: '3'
         type: string
+      cold_repetitions:
+        default: '3'
+        type: string
   schedule:
     - cron: '17 2 * * 2'
   workflow_dispatch:
@@ -13,6 +16,10 @@ on:
       repetitions:
         description: Samples per scenario and installed-LSP condition
         default: '20'
+        type: string
+      cold_repetitions:
+        description: Samples per scenario for daemon_stopped and first_download
+        default: '5'
         type: string
 
 permissions:
@@ -57,12 +64,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPETITIONS: ${{ inputs.repetitions || (github.event_name == 'schedule' && '20') || '3' }}
+          COLD_REPETITIONS: ${{ inputs.cold_repetitions || (github.event_name == 'schedule' && '5') || '3' }}
         run: |
           cli=target/debug/unity-cli
           if [ "$RUNNER_OS" = Windows ]; then cli="$cli.exe"; fi
           python scripts/lsp-write-reliability.py --unity-cli "$cli" \
             --lsp-publish .cache/lsp-reliability-publish --out .cache/lsp-reliability \
-            --repetitions "$REPETITIONS" --download-repetitions 1 \
+            --repetitions "$REPETITIONS" --cold-repetitions "$COLD_REPETITIONS" \
+            --download-repetitions "$COLD_REPETITIONS" \
             --baseline tests/fixtures/lsp-write-baseline.json
       - name: Upload measured failures as well as successes
         if: always()
