@@ -46,30 +46,53 @@ The Bridge requires Unity 2022.3 or newer. The macOS matrix covers
 [verification dates and results](docs/editor-compatibility.md) before choosing a version.
 Unity 6000.7 Editor runs on Mono; CoreCLR Player builds are outside this matrix.
 
-### Install with an LLM agent
+### Install or update with an LLM agent
 
 Copy this prompt into Claude Code, Codex, or another coding agent opened in
-your Unity project:
+your Unity project. Run the same prompt again later to update the CLI and the
+Unity bridge package together:
 
 ```text
-Install unity-cli for this Unity project and connect it to the Unity Editor.
+Install or update unity-cli for this Unity project, keep the Unity bridge
+package on the same version as the CLI, and connect it to the Unity Editor.
 
 1. Detect my OS (macOS, Linux, or Windows).
 2. If `unity-cli` is not already on PATH, run the official Quick Install script:
    - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
    - Windows (PowerShell): irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
-3. Check that `unity-cli --version` works from PATH. On macOS / Linux, if it is
+3. If `unity-cli` is already on PATH, update it to the latest release instead.
+   If UNITY_CLI_NO_AUTO_UPDATE=1 or UNITY_CLI_VERSION is set, I pinned the
+   version on purpose: do not update it; tell me and ask first. Otherwise
+   resolve where the binary really lives (follow symlinks) and update it the
+   way it was installed:
+   - Quick Install (managed copy under ~/.unity/tools): unity-cli cli install
+   - Homebrew: brew upgrade akiojin/tap/unity-cli
+   - winget: winget upgrade akiojin.unity-cli
+   - Anything else (cargo install, manual download): tell me how it was
+     installed and ask before changing it.
+4. Check that `unity-cli --version` works from PATH. On macOS / Linux, if it is
    not found, add ~/.local/bin to PATH for this shell and tell me the line to add
    to my shell profile. On Windows, open a new shell so the updated user PATH applies.
-4. Before changing my project, tell me that setup edits Packages/manifest.json
+5. Before changing my project, tell me that setup edits Packages/manifest.json
    (adds the OpenUPM scoped registry and com.akiojin.unity-cli-bridge pinned to
    the CLI version) and, for legacy-input-only projects, sets activeInputHandler
    to Both in ProjectSettings/ProjectSettings.asset. Wait for my confirmation.
-5. From the Unity project root, run: unity-cli --output json setup --launch-editor
+6. From the Unity project root, run: unity-cli --output json setup --launch-editor
    If the JSON has ok: false, follow editor.hint (the first import can take
    several minutes; rerun setup to keep waiting).
-6. Verify the connection with: unity-cli system ping
-7. If any step fails, run: unity-cli doctor --output json
+7. Check the bridge version with: unity-cli --output json bridge status
+   - If source is registry and versionCheck.status (here or in the setup
+     report) is mismatch: tell me that this changes the
+     com.akiojin.unity-cli-bridge line in Packages/manifest.json to the CLI
+     version and wait for my confirmation. Then run: unity-cli bridge upgrade
+     and let the Unity Editor reimport the package.
+   - If source is custom or embedded (Git URL, local path, or a copy under
+     Packages/), or versionCheck.status is unknown: do not rewrite it. Report
+     the source and both versions to me instead.
+8. Verify the connection with: unity-cli system ping
+   Confirm that versionCheck.status is match (the CLI and the bridge use the
+   same version).
+9. If any step fails, run: unity-cli doctor --output json
    Report the diagnosis code and follow its hint before retrying.
 ```
 

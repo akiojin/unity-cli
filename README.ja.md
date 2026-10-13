@@ -33,32 +33,51 @@ Bridge の最小バージョンは Unity 2022.3 です。macOS 検証対象は
 [対応表の検証日・結果](docs/editor-compatibility.md)を確認してください。
 6000.7 の Editor は Mono で動作し、CoreCLR Player ビルドはこの検証の対象外です。
 
-### LLM エージェントでインストール
+### LLM エージェントでインストール・更新
 
 Unity プロジェクトで開いた Claude Code や Codex などのコーディングエージェントに、
-次のプロンプトをそのまま貼り付けてください:
+次のプロンプトをそのまま貼り付けてください。後から同じプロンプトを再実行すると、CLI と
+Unity 側の bridge パッケージをまとめて更新できます:
 
 ```text
-この Unity プロジェクトに unity-cli をインストールし、Unity Editor と接続してください。
+この Unity プロジェクトに unity-cli をインストールまたは更新し、Unity 側の bridge パッケージを
+CLI と同じバージョンに揃えて、Unity Editor と接続してください。
 
 1. OS（macOS / Linux / Windows）を判定してください。
 2. `unity-cli` が PATH 上にない場合は、公式のクイックインストールスクリプトを実行してください:
    - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
    - Windows（PowerShell）: irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
-3. PATH から `unity-cli --version` が実行できることを確認してください。macOS / Linux で
+3. `unity-cli` がすでに PATH 上にある場合は、代わりに最新リリースへ更新してください。
+   UNITY_CLI_NO_AUTO_UPDATE=1 または UNITY_CLI_VERSION が設定されている場合は、私が意図的に
+   バージョンを固定しています。更新せず、私に伝えて確認を取ってください。それ以外の場合は、
+   バイナリの実体の場所を（シンボリックリンクをたどって）確認し、導入方法に合わせて更新してください:
+   - クイックインストール（~/.unity/tools 配下の managed コピー）: unity-cli cli install
+   - Homebrew: brew upgrade akiojin/tap/unity-cli
+   - winget: winget upgrade akiojin.unity-cli
+   - それ以外（cargo install や手動ダウンロード）: 導入方法を私に伝え、変更前に確認を取ってください。
+4. PATH から `unity-cli --version` が実行できることを確認してください。macOS / Linux で
    見つからない場合は、このシェルの PATH に ~/.local/bin を追加し、シェルプロファイルに
    追記する行を教えてください。Windows では、更新されたユーザー PATH を反映するため
    新しいシェルを開いてください。
-4. プロジェクトを変更する前に、setup が Packages/manifest.json を編集すること
+5. プロジェクトを変更する前に、setup が Packages/manifest.json を編集すること
    （OpenUPM の scoped registry と、CLI と同じバージョンに固定した
    com.akiojin.unity-cli-bridge を追加すること）と、旧 Input Manager のみのプロジェクトでは
    ProjectSettings/ProjectSettings.asset の activeInputHandler を Both に設定することを
    説明し、私の確認を待ってください。
-5. Unity プロジェクトのルートで次を実行してください: unity-cli --output json setup --launch-editor
+6. Unity プロジェクトのルートで次を実行してください: unity-cli --output json setup --launch-editor
    JSON が ok: false の場合は editor.hint に従ってください（初回インポートは数分かかる
    ことがあります。待ち続けるには setup を再実行します）。
-6. 次のコマンドで接続を確認してください: unity-cli system ping
-7. いずれかの手順が失敗した場合は、次を実行してください: unity-cli doctor --output json
+7. 次のコマンドで bridge のバージョンを確認してください: unity-cli --output json bridge status
+   - source が registry で、versionCheck.status（この結果または setup の結果）が mismatch の場合:
+     Packages/manifest.json の com.akiojin.unity-cli-bridge の行を CLI のバージョンに変更することを
+     私に伝え、確認を待ってください。その後 unity-cli bridge upgrade を実行し、
+     Unity Editor にパッケージを再インポートさせてください。
+   - source が custom または embedded（Git URL、ローカルパス、Packages/ 配下のコピー）の場合や、
+     versionCheck.status が unknown の場合: 書き換えないでください。代わりに source と
+     両方のバージョンを私に報告してください。
+8. 次のコマンドで接続を確認してください: unity-cli system ping
+   versionCheck.status が match（CLI と bridge が同じバージョン）であることを確認してください。
+9. いずれかの手順が失敗した場合は、次を実行してください: unity-cli doctor --output json
    diagnosis コードを報告し、そのヒントに従ってから再試行してください。
 ```
 

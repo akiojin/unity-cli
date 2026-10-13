@@ -32,29 +32,46 @@ Bridge 要求 Unity 2022.3 或更高版本。macOS 验证矩阵覆盖
 选择版本前请查看[验证日期与结果](docs/editor-compatibility.md)。
 Unity 6000.7 的 Editor 运行在 Mono 上，CoreCLR Player 构建不在此矩阵范围内。
 
-### 使用 LLM 代理安装
+### 使用 LLM 代理安装或更新
 
-在 Unity 项目中打开 Claude Code、Codex 或其他编码代理，然后直接粘贴以下提示词:
+在 Unity 项目中打开 Claude Code、Codex 或其他编码代理，然后直接粘贴以下提示词。之后再次运行
+同一提示词，即可同时更新 CLI 和 Unity 端的 bridge 包:
 
 ```text
-请为这个 Unity 项目安装 unity-cli，并将其连接到 Unity Editor。
+请为这个 Unity 项目安装或更新 unity-cli，让 Unity 端的 bridge 包与 CLI 保持相同版本，
+并将其连接到 Unity Editor。
 
 1. 判断我的操作系统（macOS、Linux 或 Windows）。
 2. 如果 PATH 中还没有 `unity-cli`，运行官方快速安装脚本:
    - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
    - Windows（PowerShell）: irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
-3. 确认可以从 PATH 运行 `unity-cli --version`。在 macOS / Linux 上如果找不到，
+3. 如果 `unity-cli` 已在 PATH 中，请改为将其更新到最新版本。
+   如果设置了 UNITY_CLI_NO_AUTO_UPDATE=1 或 UNITY_CLI_VERSION，说明我有意固定了版本:
+   不要更新，先告诉我并征得我的确认。否则，请找出二进制文件的实际位置（跟随符号链接），
+   并按照安装方式进行更新:
+   - Quick Install（~/.unity/tools 下的 managed 副本）: unity-cli cli install
+   - Homebrew: brew upgrade akiojin/tap/unity-cli
+   - winget: winget upgrade akiojin.unity-cli
+   - 其他方式（cargo install、手动下载）: 告诉我安装方式，并在修改前征得我的确认。
+4. 确认可以从 PATH 运行 `unity-cli --version`。在 macOS / Linux 上如果找不到，
    请把 ~/.local/bin 加入当前 shell 的 PATH，并告诉我需要写入 shell 配置文件的那一行。
    在 Windows 上，请打开新的 shell 以应用更新后的用户 PATH。
-4. 修改项目之前，请告诉我 setup 会编辑 Packages/manifest.json（添加 OpenUPM
+5. 修改项目之前，请告诉我 setup 会编辑 Packages/manifest.json（添加 OpenUPM
    scoped registry 以及固定为 CLI 同版本的 com.akiojin.unity-cli-bridge），并且对于
    只使用旧 Input Manager 的项目，会把 ProjectSettings/ProjectSettings.asset 中的
    activeInputHandler 设为 Both。等待我的确认。
-5. 在 Unity 项目根目录运行: unity-cli --output json setup --launch-editor
+6. 在 Unity 项目根目录运行: unity-cli --output json setup --launch-editor
    如果 JSON 返回 ok: false，请按照 editor.hint 处理（首次导入可能需要几分钟；
    重新运行 setup 可继续等待）。
-6. 使用以下命令确认连接: unity-cli system ping
-7. 如果任何步骤失败，请运行: unity-cli doctor --output json
+7. 使用以下命令检查 bridge 版本: unity-cli --output json bridge status
+   - 如果 source 为 registry，且 versionCheck.status（此结果或 setup 报告中）为 mismatch:
+     告诉我这会把 Packages/manifest.json 中 com.akiojin.unity-cli-bridge 这一行改为 CLI 版本，
+     并等待我的确认。然后运行 unity-cli bridge upgrade，并让 Unity Editor 重新导入该包。
+   - 如果 source 为 custom 或 embedded（Git URL、本地路径或 Packages/ 下的副本），
+     或 versionCheck.status 为 unknown: 不要改写它，而是向我报告 source 和两个版本。
+8. 使用以下命令验证连接: unity-cli system ping
+   确认 versionCheck.status 为 match（CLI 与 bridge 版本相同）。
+9. 如果任何步骤失败，请运行: unity-cli doctor --output json
    报告 diagnosis 代码，并按照其提示处理后再重试。
 ```
 
