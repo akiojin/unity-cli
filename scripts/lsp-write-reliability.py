@@ -220,11 +220,11 @@ def cleanup_trial(directory, root):
             time.sleep(0.1)
 
 
-def prepare_server_executable(source, target):
-    # macOS commonly aliases Server and server on a case-insensitive volume.
-    if not target.exists() or not source.samefile(target):
-        shutil.copy2(source, target)
-    target.chmod(0o755)
+def install_server_alias(source, target):
+    # macOS / Windows filesystems are usually case-insensitive: Server and server are one file.
+    if target.exists() and target.samefile(source):
+        return
+    shutil.copy2(source, target)
 
 
 class Trial:
@@ -246,8 +246,8 @@ class Trial:
         self.server = self.tools / "csharp-lsp" / rid() / ("server.exe" if os.name == "nt" else "server")
         if condition != "first_download":
             shutil.copytree(lsp_publish, self.server.parent)
-            source = self.server.parent / ("Server.exe" if os.name == "nt" else "Server")
-            prepare_server_executable(source, self.server)
+            install_server_alias(self.server.parent / ("Server.exe" if os.name == "nt" else "Server"), self.server)
+            self.server.chmod(0o755)
             (self.server.parent / "VERSION").write_text("checkout\n", encoding="utf-8")
             self.env["UNITY_CLI_TEST_SKIP_MANAGED_UPDATE"] = "1"
         self.process = None

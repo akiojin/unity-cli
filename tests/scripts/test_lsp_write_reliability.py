@@ -1,7 +1,6 @@
 """Protect the reliability measurement from false PASS and hidden regressions."""
 import importlib.util
 from pathlib import Path
-import tempfile
 import unittest
 from unittest import mock
 
@@ -33,6 +32,25 @@ class ReliabilityTests(unittest.TestCase):
         self.assertIn("--- direct/", differences[0]["diff"])
         self.assertEqual(reliability.compare_files(expected, expected), ([], []))
         self.assertIn("text_changed", reliability.compare_files(expected, {"Assets/A.cs": b"class Wrong {}"})[0])
+
+    def test_server_alias_tolerates_case_insensitive_filesystems(self):
+        import os, tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Server"
+            source.write_bytes(b"binary")
+            alias = Path(temp) / "server"
+            if not alias.exists():
+                # Case-sensitive filesystems: a hard link stands in for macOS / Windows aliasing.
+                os.link(source, alias)
+            reliability.install_server_alias(source, alias)
+            self.assertEqual(alias.read_bytes(), b"binary")
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp) / "Server"
+            source.write_bytes(b"binary")
+            target = Path(temp) / "sub" / "server"
+            target.parent.mkdir()
+            reliability.install_server_alias(source, target)
+            self.assertEqual(target.read_bytes(), b"binary")
 
     def test_false_success_or_fallback_is_not_a_successful_lsp_edit(self):
         self.assertEqual(reliability.response_failures(0, {"success": True, "data": {"success": False, "backend": "lsp"}}), ["tool_rejected"])
@@ -117,19 +135,6 @@ class ReliabilityTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 reliability.cleanup_trial(ROOT, ROOT / ".cache")
             remove.assert_not_called()
-
-    def test_server_alias_on_case_insensitive_filesystem_is_not_copied(self):
-        with tempfile.TemporaryDirectory() as temp:
-            source, target = Path(temp) / "published", Path(temp) / "runtime"
-            source.write_bytes(b"server")
-            # Hard links reproduce Server/server identity on macOS on every OS.
-            target.hardlink_to(source)
-            reliability.prepare_server_executable(source, target)
-            self.assertTrue(source.samefile(target))
-            self.assertEqual(target.read_bytes(), b"server")
-            target.unlink()
-            reliability.prepare_server_executable(source, target)
-            self.assertEqual(target.read_bytes(), b"server")
 
 
 if __name__ == "__main__":
