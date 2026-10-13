@@ -93,7 +93,7 @@ OS / 条件 / シナリオが欠ける結果は `INSUFFICIENT`、失敗がある
 `DO NOT ENFORCE` と報告します。少数試行での 100% は将来の 99% の保証にはなりません。
 CI は PR / develop push の各 3 試行、週次と手動実行の既定は各 20 試行です。
 PR / push は `Test` workflow から呼び出します。既存の必須
-`CLI Latency (required)` は全 OS の測定完了を待ち、測定失敗時には明示的に失敗します。
+`LSP Tests (required)` は全 OS の測定完了を待ち、測定失敗時には明示的に失敗します。
 依存 job の skip が成功扱いになる経路も `if: always()` と結果チェックで防ぎます。
 デーモン停止・初回ダウンロードは各シナリオ 1 試行を別枠で記録します。
 `--cold-repetitions` / `--download-repetitions` で増やせます。

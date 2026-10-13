@@ -16,15 +16,8 @@ jobs:
 
   cli-latency:
     name: CLI Latency (required)
-    needs: lsp-write-reliability
-    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require passing LSP write measurements on every OS
-        env:
-          RELIABILITY_RESULT: ${{ needs.lsp-write-reliability.result }}
-        run: test "$RELIABILITY_RESULT" = success
-
       - uses: actions/checkout@v7
 
       - name: Install Rust toolchain
@@ -215,8 +208,15 @@ jobs:
 
   lsp-test:
     name: LSP Tests (required)
+    needs: lsp-write-reliability
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Require passing LSP write measurements on every OS
+        env:
+          RELIABILITY_RESULT: ${{ needs.lsp-write-reliability.result }}
+        run: test "$RELIABILITY_RESULT" = success
+
       - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10

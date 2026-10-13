@@ -82,8 +82,11 @@ class ReliabilityTests(unittest.TestCase):
         self.assertNotIn("continue-on-error", workflow)
         self.assertNotIn("--record-only", workflow)
         required = (ROOT / ".github/workflows/test.yml").read_text(encoding="utf-8")
-        self.assertIn("needs: lsp-write-reliability", required)
-        self.assertIn('run: test "$RELIABILITY_RESULT" = success', required)
+        lsp_job = required.split("  lsp-test:\n", 1)[1].split("  rust-coverage:\n", 1)[0]
+        self.assertIn("name: LSP Tests (required)", lsp_job)
+        self.assertIn("needs: lsp-write-reliability", lsp_job)
+        self.assertIn("if: always()", lsp_job)
+        self.assertIn('run: test "$RELIABILITY_RESULT" = success', lsp_job)
 
     def test_one_corrupt_edit_prevents_enforcement_even_at_99_percent(self):
         reports = []
