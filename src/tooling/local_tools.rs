@@ -70,12 +70,11 @@ pub fn maybe_execute_local_tool(tool_name: &str, params: &Value) -> Option<Resul
         "read" => Some(local_read(params)),
         "search" => Some(local_search(params)),
         "list_packages" => Some(local_list_packages()),
-        "get_symbols" => Some(local_get_symbols(params)),
-        "build_index" => Some(local_build_index(params)),
+        "get_symbols" | "build_index" | "find_symbol" | "find_refs" => {
+            Some(local_symbol_search(tool_name, params))
+        }
         "update_index" => Some(local_update_index(params)),
         "get_index_status" => Some(local_get_index_status()),
-        "find_symbol" => Some(local_find_symbol(params)),
-        "find_refs" => Some(local_find_refs(params)),
         "rename_symbol" => Some(local_lsp_write("rename_symbol", params)),
         "replace_symbol_body" => Some(local_lsp_write("replace_symbol_body", params)),
         "insert_before_symbol" => Some(local_lsp_write("insert_before_symbol", params)),
@@ -246,12 +245,25 @@ fn local_list_packages() -> Result<Value> {
     }))
 }
 
+fn local_symbol_search(tool_name: &str, params: &Value) -> Result<Value> {
+    let index_search: fn(&Value) -> Result<Value> = match tool_name {
+        "get_symbols" => local_get_symbols,
+        "build_index" => local_build_index,
+        "find_symbol" => local_find_symbol,
+        _ => local_find_refs,
+    };
+    let root = project_root()?;
+    let fallback = match crate::lsp::route_search(tool_name, params, &root) {
+        crate::lsp::SearchRoute::Lsp(result) => return result,
+        crate::lsp::SearchRoute::Index(fallback) => fallback,
+    };
+    let mut value = index_search(params)?;
+    fallback.annotate(&mut value);
+    Ok(value)
+}
+
 fn local_get_symbols(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("get_symbols", params, &root) {
-        return result;
-    }
-
     let path = params
         .get("path")
         .and_then(Value::as_str)
@@ -276,10 +288,6 @@ fn local_get_symbols(params: &Value) -> Result<Value> {
 
 fn local_build_index(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("build_index", params, &root) {
-        return result;
-    }
-
     let exclude_package_cache = params
         .get("excludePackageCache")
         .and_then(Value::as_bool)
@@ -466,10 +474,6 @@ fn local_update_index(params: &Value) -> Result<Value> {
 
 fn local_find_symbol(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("find_symbol", params, &root) {
-        return result;
-    }
-
     let name = params
         .get("name")
         .and_then(Value::as_str)
@@ -571,10 +575,6 @@ fn local_find_refs(params: &Value) -> Result<Value> {
         .clamp(0, 20) as usize;
 
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("find_refs", params, &root) {
-        return result;
-    }
-
     let index = match load_index_if_exists(&root) {
         Ok(Some(index)) if index_is_ready(&index) => index,
         Ok(_) => {
@@ -1526,6 +1526,28 @@ mod tests {
         LOCK.get_or_init(|| Mutex::new(()))
     }
 
+    struct ScopedEnv {
+        key: &'static str,
+        previous: Option<std::ffi::OsString>,
+    }
+
+    impl ScopedEnv {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var_os(key);
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for ScopedEnv {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => std::env::set_var(self.key, value),
+                None => std::env::remove_var(self.key),
+            }
+        }
+    }
+
     fn write_file(path: &Path, content: &str) {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).expect("parent directory should be created");
@@ -1640,6 +1662,7 @@ mod tests {
     #[test]
     fn get_symbols_extracts_class_and_method() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1651,6 +1674,8 @@ mod tests {
             maybe_execute_local_tool("get_symbols", &json!({"path":"Assets/Scripts/Player.cs"}))
                 .expect("tool should be handled")
                 .expect("get_symbols should succeed");
+        assert_eq!(value["backend"], "index");
+        assert_eq!(value["fallbackReason"], "lsp_disabled");
 
         let symbols = value["symbols"]
             .as_array()
@@ -1669,8 +1694,46 @@ mod tests {
     }
 
     #[test]
+    fn get_symbols_defaults_to_lsp_and_reports_index_fallback() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        let tools = tempfile::tempdir().expect("tools dir should be created");
+        write_file(
+            &tmp.path().join("Assets/Scripts/Player.cs"),
+            "public class Player { public void Jump() {} }\n",
+        );
+        let _root = ScopedEnv::set(
+            "UNITY_PROJECT_ROOT",
+            tmp.path().to_str().expect("project root should be UTF-8"),
+        );
+        let _tools = ScopedEnv::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools.path().to_str().expect("tools root should be UTF-8"),
+        );
+        let previous_mode = std::env::var_os("UNITY_CLI_LSP_MODE");
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+
+        let value =
+            maybe_execute_local_tool("get_symbols", &json!({"path":"Assets/Scripts/Player.cs"}))
+                .expect("tool should be handled")
+                .expect("get_symbols should fall back to the index");
+
+        if let Some(mode) = previous_mode {
+            std::env::set_var("UNITY_CLI_LSP_MODE", mode);
+        }
+        assert_eq!(value["backend"], "index");
+        assert_eq!(value["fallbackReason"], "lsp_not_installed");
+        assert!(value["symbols"]
+            .as_array()
+            .expect("symbols should be an array")
+            .iter()
+            .any(|symbol| symbol["name"] == "Player"));
+    }
+
+    #[test]
     fn find_symbol_returns_index_not_ready_before_build() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1691,6 +1754,7 @@ mod tests {
     #[test]
     fn build_index_and_find_symbol_roundtrip() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1740,6 +1804,7 @@ mod tests {
     #[test]
     fn update_index_refreshes_symbol_names() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         let target = tmp.path().join("Assets/Scripts/Player.cs");
         write_file(&target, "public class BeforeName {}\n");
@@ -1777,6 +1842,7 @@ mod tests {
     #[test]
     fn find_refs_supports_cursor_paging() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),

@@ -179,7 +179,6 @@ pub fn install_dir() -> Result<PathBuf> {
     install_dir_for(ManagedBinary::CSharpLsp)
 }
 
-#[cfg(test)]
 pub fn binary_path() -> Result<PathBuf> {
     binary_path_for(ManagedBinary::CSharpLsp)
 }
