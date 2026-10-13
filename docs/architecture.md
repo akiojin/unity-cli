@@ -129,6 +129,7 @@ CLI 側                        Unity Editor 側
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ミリ秒) | ― |
 | `UNITY_CLI_LSP_MODE` | LSP 起動モード | `auto` |
 | `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | `auto` のシンボル検索が LSP を待つ上限 (ミリ秒) | `10000` |
+| `UNITY_CLI_LSPD_START_TIMEOUT_MS` | lspd 自動起動で `ping` 応答を待つ上限 (ミリ秒)。起動プロセスが途中で終了した場合は待たずに失敗し、エラーに待ち時間と `lspd.log` の場所を含める | `60000` |
 | `UNITY_CLI_LSP_COMMAND` | LSP 実行コマンド | ― |
 | `UNITY_CLI_LSP_BIN` | LSP 実行ファイルパス | ― |
 | `UNITY_PROJECT_ROOT` | Unity プロジェクトルート | ― |
