@@ -10,7 +10,7 @@ public sealed class RequestRouterTests
     [InlineData("unitycli/referencesByName", "name")]
     public async Task SymbolQueries_RespectAssetsScopeBeforeScanningPackages(string method, string key)
     {
-        var root = Path.Combine(Path.GetTempPath(), "lsp-scope-" + Path.GetRandomFileName());
+        var root = Path.Combine(Path.GetTempPath(), "lsp scope 日本語 #%-" + Path.GetRandomFileName());
         Directory.CreateDirectory(Path.Combine(root, "Assets"));
         Directory.CreateDirectory(Path.Combine(root, "Packages"));
         File.WriteAllText(Path.Combine(root, "Assets", "Asset.cs"), "class ScopeProbe {}");
@@ -31,6 +31,19 @@ public sealed class RequestRouterTests
             var json = JsonSerializer.Serialize(response.Payload);
             Assert.Contains("Asset.cs", json);
             Assert.DoesNotContain("Package.cs", json);
+            if (method == "workspace/symbol")
+            {
+                using var payload = JsonDocument.Parse(json);
+                var symbol = Assert.Single(payload.RootElement.GetProperty("result").EnumerateArray());
+                var uri = symbol.GetProperty("location").GetProperty("uri").GetString();
+                Assert.Equal(new System.Uri(Path.Combine(root, "Assets", "Asset.cs")).AbsoluteUri, uri);
+                using var documentRequest = JsonDocument.Parse(JsonSerializer.Serialize(new {
+                    id = 3, method = "textDocument/documentSymbol",
+                    @params = new { textDocument = new { uri } }
+                }));
+                var documentResponse = await router.HandleAsync(documentRequest.RootElement);
+                Assert.Contains("ScopeProbe", JsonSerializer.Serialize(documentResponse.Payload));
+            }
         }
         finally { Directory.Delete(root, recursive: true); }
     }

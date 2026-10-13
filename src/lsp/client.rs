@@ -374,7 +374,7 @@ fn handle_get_symbols(
         return Err(anyhow!("File not found: {rel}"));
     }
 
-    let uri = file_uri(&abs);
+    let uri = file_uri(&abs)?;
     let response = session.request(
         "textDocument/documentSymbol",
         json!({
@@ -1231,8 +1231,10 @@ fn normalize_rel_path(raw: &str) -> Option<String> {
     Some(parts.join("/"))
 }
 
-fn file_uri(path: &Path) -> String {
-    format!("file://{}", path.to_string_lossy().replace('\\', "/"))
+fn file_uri(path: &Path) -> Result<String> {
+    url::Url::from_file_path(path)
+        .map(|uri| uri.to_string())
+        .map_err(|()| anyhow!("LSP file paths must be absolute"))
 }
 
 fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
@@ -1240,8 +1242,7 @@ fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
         return None;
     }
 
-    let raw = uri.trim_start_matches("file://").replace('\\', "/");
-    let path = PathBuf::from(raw);
+    let path = url::Url::parse(uri).ok()?.to_file_path().ok()?;
     let rel = path
         .strip_prefix(project_root)
         .ok()
@@ -1369,7 +1370,7 @@ impl LspSession {
             "method": "initialize",
             "params": {
                 "processId": std::process::id(),
-                "rootUri": file_uri(project_root),
+                "rootUri": file_uri(project_root)?,
                 "capabilities": {}
             }
         }))?;
@@ -1806,7 +1807,7 @@ while True:
         let rel = "Assets/Scripts/Player.cs";
         let abs = root.path().join(rel);
 
-        let uri = file_uri(&abs);
+        let uri = file_uri(&abs).expect("file URI should convert");
         assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
         assert_eq!(
             ref_path(root.path(), &json!({ "path": uri })).as_deref(),
@@ -1822,6 +1823,43 @@ while True:
     fn uri_to_rel_path_rejects_non_file_uris() {
         let root = tempdir().expect("tempdir should succeed");
         assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs").is_none());
+    }
+
+    #[test]
+    fn canonical_file_uris_preserve_encoded_paths_and_assets_scope() {
+        let root = tempfile::Builder::new()
+            .prefix("lsp URI 日本語 #%-")
+            .tempdir()
+            .expect("tempdir should succeed");
+        let rel = "Assets/Scripts/日本語 # %20.cs";
+        let abs = root.path().join(rel);
+        let uri = url::Url::from_file_path(&abs)
+            .expect("absolute file path should convert")
+            .to_string();
+
+        assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
+        assert_eq!(file_uri(&abs).expect("file URI should convert"), uri);
+        assert!(path_matches_scope(
+            &uri_to_rel_path(root.path(), &uri).expect("file URI should resolve"),
+            "assets"
+        ));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn canonical_windows_drive_and_unc_uris_resolve_assets_paths() {
+        for (root, uri) in [
+            (r"C:\repo", "file:///C:/repo/Assets/Player.cs"),
+            (
+                r"\\server\share\repo",
+                "file://server/share/repo/Assets/Player.cs",
+            ),
+        ] {
+            assert_eq!(
+                uri_to_rel_path(std::path::Path::new(root), uri).as_deref(),
+                Some("Assets/Player.cs")
+            );
+        }
     }
 
     #[test]
@@ -2001,7 +2039,10 @@ while True:
                 .to_str()
                 .expect("tools root path should be valid UTF-8"),
         );
-        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _uri = EnvVarGuard::set(
+            "FAKE_LSP_PLAYER_URI",
+            &file_uri(&player_path).expect("file URI should convert"),
+        );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
             project_dir
@@ -2081,7 +2122,10 @@ while True:
                 .to_str()
                 .expect("tools root path should be valid UTF-8"),
         );
-        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _uri = EnvVarGuard::set(
+            "FAKE_LSP_PLAYER_URI",
+            &file_uri(&player_path).expect("file URI should convert"),
+        );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
             project_dir
