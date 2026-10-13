@@ -30,6 +30,8 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     {
         if (NewLine is null) return text;
         var lf = text.Replace("\r\n", "\n");
+        // A CR-only file folds stray CRs too; LF and CRLF files leave a lone CR as content.
+        if (NewLine == "\r") return lf.Replace("\n", "\r");
         return NewLine == "\n" ? lf : lf.Replace("\n", NewLine);
     }
 
@@ -38,21 +40,24 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         if (b.Length >= 3 && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF) return new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
         if (b.Length >= 4 && b[0] == 0xFF && b[1] == 0xFE && b[2] == 0 && b[3] == 0) return new UTF32Encoding(bigEndian: false, byteOrderMark: true);
         if (b.Length >= 2 && b[0] == 0xFF && b[1] == 0xFE) return new UnicodeEncoding(bigEndian: false, byteOrderMark: true);
+        if (b.Length >= 4 && b[0] == 0 && b[1] == 0 && b[2] == 0xFE && b[3] == 0xFF) return new UTF32Encoding(bigEndian: true, byteOrderMark: true);
         if (b.Length >= 2 && b[0] == 0xFE && b[1] == 0xFF) return new UnicodeEncoding(bigEndian: true, byteOrderMark: true);
         return Utf8NoBom;
     }
 
     private static string? DetectNewLine(string text)
     {
-        int crlf = 0, lf = 0;
+        int crlf = 0, lf = 0, cr = 0;
         for (var i = 0; i < text.Length; i++)
         {
-            if (text[i] != '\n') continue;
-            if (i > 0 && text[i - 1] == '\r') crlf++;
-            else lf++;
+            if (text[i] == '\n') lf++;
+            else if (text[i] != '\r') continue;
+            else if (i + 1 < text.Length && text[i + 1] == '\n') { crlf++; i++; }
+            else cr++;
         }
-        if (crlf > 0 && lf == 0) return "\r\n";
-        if (lf > 0 && crlf == 0) return "\n";
+        if (crlf > 0 && lf == 0 && cr == 0) return "\r\n";
+        if (lf > 0 && crlf == 0 && cr == 0) return "\n";
+        if (cr > 0 && crlf == 0 && lf == 0) return "\r";
         return null;
     }
 }
