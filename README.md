@@ -46,9 +46,35 @@ The Bridge requires Unity 2022.3 or newer. The macOS matrix covers
 [verification dates and results](docs/editor-compatibility.md) before choosing a version.
 Unity 6000.7 Editor runs on Mono; CoreCLR Player builds are outside this matrix.
 
-### Recommended: Claude Code Plugin
+### Install with an LLM agent
 
-Install the `unity-cli` plugin from Claude Code Marketplace:
+Copy this prompt into Claude Code, Codex, or another coding agent opened in
+your Unity project:
+
+```text
+Install unity-cli for this Unity project and connect it to the Unity Editor.
+
+1. Detect my OS (macOS, Linux, or Windows).
+2. If `unity-cli` is not already on PATH, run the official Quick Install script:
+   - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+   - Windows (PowerShell): irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
+3. Check that `unity-cli --version` works from PATH. On macOS / Linux, if it is
+   not found, add ~/.local/bin to PATH for this shell and tell me the line to add
+   to my shell profile. On Windows, open a new shell so the updated user PATH applies.
+4. Before changing my project, tell me that setup edits Packages/manifest.json
+   (adds the OpenUPM scoped registry and com.akiojin.unity-cli-bridge pinned to
+   the CLI version) and, for legacy-input-only projects, sets activeInputHandler
+   to Both in ProjectSettings/ProjectSettings.asset. Wait for my confirmation.
+5. From the Unity project root, run: unity-cli --output json setup --launch-editor
+   If the JSON has ok: false, follow editor.hint (the first import can take
+   several minutes; rerun setup to keep waiting).
+6. Verify the connection with: unity-cli system ping
+7. If any step fails, run: unity-cli doctor --output json
+   Report the diagnosis code and follow its hint before retrying.
+```
+
+**Claude Code plugin**: install the `unity-cli` plugin from Claude Code
+Marketplace to give the agent the Unity workflow skills:
 
 ```bash
 /plugin marketplace add akiojin/unity-cli
@@ -56,16 +82,17 @@ Install the `unity-cli` plugin from Claude Code Marketplace:
 
 The plugin ships skills; the binary and the Unity bridge are bootstrapped on
 demand. When a task needs Unity and `unity-cli` is missing, the
-`unity-cli-usage` skill has the agent run the Quick Install script below and then
+`unity-cli-usage` skill has the agent run the Quick Install script and then
 `unity-cli setup` in your Unity project (it tells you before editing
 `Packages/manifest.json`).
 
-### Codex Skills
+**Codex Skills**: when using this repository with Codex, skills are available
+via `.agents/skills/` (symlinks to the plugin source, also exposed through
+`.claude/skills/`). No additional setup is required - just clone the repository.
 
-When using this repository with Codex, skills are available via `.agents/skills/` (symlinks to the plugin source, also exposed through `.claude/skills/`).
-No additional setup is required - just clone the repository.
+### Install manually
 
-### Quick Install (recommended)
+#### Quick Install (recommended)
 
 macOS (Apple silicon / Intel) and Linux:
 
@@ -97,7 +124,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 Set `UNITY_CLI_NO_AUTO_UPDATE=1` to disable auto-update.
 
-### Package Managers
+#### Package Managers
 
 ```bash
 brew install akiojin/tap/unity-cli     # macOS / Linux (Homebrew)
@@ -109,7 +136,7 @@ On Intel macOS, reference embeddings (`unity-cli reference embed-build` / `embed
 dynamically; the Homebrew formula installs `onnxruntime`, otherwise run
 `brew install onnxruntime` or set `ORT_DYLIB_PATH`.
 
-### Manual Install
+#### Releases or cargo install
 
 Download the latest binary from [GitHub
 Releases](https://github.com/akiojin/unity-cli/releases), or install from a
@@ -120,6 +147,8 @@ git clone https://github.com/akiojin/unity-cli.git
 cd unity-cli
 cargo install --path .
 ```
+
+#### Project setup
 
 One-command project setup (binary check → bridge install → Editor connection):
 
@@ -152,14 +181,14 @@ openupm add com.akiojin.unity-cli-bridge
 https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge
 ```
 
-Connection check:
+#### Connection check
 
 ```bash
 unity-cli system ping
 unity-cli doctor --output json   # when ping fails: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE / ...
 ```
 
-Managed binary maintenance:
+#### Managed binary maintenance
 
 ```bash
 unity-cli cli doctor
