@@ -112,6 +112,8 @@ Issue #499 のコメント喪失修正は checkout 条件で回帰を拒否し�
 コールド条件では、実測した公開版 `0.18.1` の既知のテキスト SHA256 だけを
 許容します。VERSION 不明・checkout・後続の公開版にはこの例外を適用しません。
 無関係のファイルへの BOM 追加も regression として拒否します。
+Issue #498 の BOM 修正後は checkout 条件の `bom_added` も regression として拒否します。
+公開版 `0.18.1` の `bom_added` は、各シナリオの `published` 例外でのみ許容します。
 再測定を絞る場合は `--scenarios create_plain` のように指定できます。絞った実行は
 完全なマトリクスの代わりにならず、レポートの欠けたセル数に反映します。
 

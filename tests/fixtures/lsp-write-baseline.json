@@ -1,18 +1,90 @@
 {
-  "create_class_monobehaviour": ["bom_added"],
-  "create_class_scriptableobject": ["bom_added"],
-  "create_class_plain": ["bom_added"],
-  "create_plain": ["bom_added"],
-  "create_monobehaviour": ["bom_added"],
-  "create_scriptableobject": ["bom_added"],
-  "replace_body": ["bom_added"],
-  "write_file": ["bom_added"],
-  "insert_before": ["bom_added"],
-  "insert_after": ["bom_added"],
-  "remove_member": ["bom_added"],
-  "namespace_partial_generic_attributes": ["bom_added"],
+  "create_class_monobehaviour": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_class_scriptableobject": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_class_plain": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_plain": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_monobehaviour": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_scriptableobject": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "replace_body": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "write_file": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "insert_before": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "insert_after": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "remove_member": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "namespace_partial_generic_attributes": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
   "replace_preserve_comment": {
-    "failures": ["bom_added"],
+    "failures": [],
     "published": {
       "versions": ["0.18.1"],
       "failures": ["bom_added", "text_changed"],
@@ -21,8 +93,32 @@
       }
     }
   },
-  "rename_multifile": ["bom_added"],
-  "unicode_no_bom_crlf": ["bom_added"],
-  "large_3500_lines": ["bom_added"],
-  "repair_syntax_error": ["bom_added"]
+  "rename_multifile": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "unicode_no_bom_crlf": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "large_3500_lines": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "repair_syntax_error": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  }
 }
