@@ -32,30 +32,50 @@ Il Bridge richiede Unity 2022.3 o successivo. La matrice macOS copre
 [date e i risultati di verifica](docs/editor-compatibility.md) prima di scegliere una versione.
 L'Editor Unity 6000.7 gira su Mono; le build Player CoreCLR sono escluse da questa matrice.
 
-### Installare con un agente LLM
+### Installare o aggiornare con un agente LLM
 
 Copiare questo prompt in Claude Code, Codex o un altro agente di programmazione aperto
-nel proprio progetto Unity:
+nel proprio progetto Unity. Eseguire di nuovo lo stesso prompt in seguito per aggiornare
+insieme la CLI e il pacchetto bridge di Unity:
 
 ```text
-Installa unity-cli per questo progetto Unity e collegalo allo Unity Editor.
+Installa o aggiorna unity-cli per questo progetto Unity, mantieni il pacchetto bridge di
+Unity alla stessa versione della CLI e collegalo allo Unity Editor.
 
 1. Rileva il mio sistema operativo (macOS, Linux o Windows).
 2. Se `unity-cli` non e ancora nel PATH, esegui lo script ufficiale di Quick Install:
    - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
    - Windows (PowerShell): irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
-3. Verifica che `unity-cli --version` funzioni dal PATH. Su macOS / Linux, se non viene
+3. Se `unity-cli` e gia nel PATH, aggiornalo invece all'ultima release.
+   Se UNITY_CLI_NO_AUTO_UPDATE=1 o UNITY_CLI_VERSION sono impostati, ho fissato la versione
+   di proposito: non aggiornarlo; dimmelo e chiedimi prima. Altrimenti individua dove si trova
+   davvero il binario (seguendo i link simbolici) e aggiornalo nel modo in cui e stato installato:
+   - Quick Install (copia gestita sotto ~/.unity/tools): unity-cli cli install
+   - Homebrew: brew upgrade akiojin/tap/unity-cli
+   - winget: winget upgrade akiojin.unity-cli
+   - Qualsiasi altro caso (cargo install, download manuale): dimmi come e stato installato e
+     chiedimi prima di modificarlo.
+4. Verifica che `unity-cli --version` funzioni dal PATH. Su macOS / Linux, se non viene
    trovato, aggiungi ~/.local/bin al PATH di questa shell e indicami la riga da aggiungere al
    mio profilo della shell. Su Windows, apri una nuova shell per applicare il PATH utente aggiornato.
-4. Prima di modificare il mio progetto, dimmi che setup modifica Packages/manifest.json
+5. Prima di modificare il mio progetto, dimmi che setup modifica Packages/manifest.json
    (aggiunge lo scoped registry OpenUPM e com.akiojin.unity-cli-bridge fissato alla versione
    della CLI) e, per i progetti che usano solo il vecchio Input Manager, imposta
    activeInputHandler su Both in ProjectSettings/ProjectSettings.asset. Attendi la mia conferma.
-5. Dalla radice del progetto Unity, esegui: unity-cli --output json setup --launch-editor
+6. Dalla radice del progetto Unity, esegui: unity-cli --output json setup --launch-editor
    Se il JSON contiene ok: false, segui editor.hint (la prima importazione puo richiedere
    alcuni minuti; riesegui setup per continuare ad attendere).
-6. Verifica la connessione con: unity-cli system ping
-7. Se un passaggio fallisce, esegui: unity-cli doctor --output json
+7. Controlla la versione del bridge con: unity-cli --output json bridge status
+   - Se source e registry e versionCheck.status (qui o nel report di setup) e mismatch:
+     dimmi che questo cambia la riga com.akiojin.unity-cli-bridge in Packages/manifest.json
+     alla versione della CLI e attendi la mia conferma. Poi esegui unity-cli bridge upgrade e
+     lascia che lo Unity Editor reimporti il pacchetto.
+   - Se source e custom o embedded (URL Git, percorso locale o una copia sotto Packages/), o
+     versionCheck.status e unknown: non riscriverlo. Riportami invece il source ed entrambe
+     le versioni.
+8. Verifica la connessione con: unity-cli system ping
+   Conferma che versionCheck.status e match (la CLI e il bridge usano la stessa versione).
+9. Se un passaggio fallisce, esegui: unity-cli doctor --output json
    Riporta il codice diagnosis e segui il suo suggerimento prima di riprovare.
 ```
 

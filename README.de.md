@@ -32,31 +32,52 @@ Die Bridge benotigt Unity 2022.3 oder neuer. Die macOS Matrix umfasst
 [Testdaten und Ergebnisse](docs/editor-compatibility.md), bevor Sie eine Version wahlen.
 Der Unity 6000.7 Editor lauft auf Mono; CoreCLR Player Builds sind nicht Teil dieser Matrix.
 
-### Installation mit einem LLM Agenten
+### Installation oder Aktualisierung mit einem LLM Agenten
 
 Kopieren Sie diesen Prompt in Claude Code, Codex oder einen anderen Coding Agenten,
-der in Ihrem Unity Projekt geoffnet ist:
+der in Ihrem Unity Projekt geoffnet ist. Fuhren Sie denselben Prompt spater erneut aus,
+um CLI und Unity Bridge Paket gemeinsam zu aktualisieren:
 
 ```text
-Installiere unity-cli fur dieses Unity Projekt und verbinde es mit dem Unity Editor.
+Installiere oder aktualisiere unity-cli fur dieses Unity Projekt, halte das Unity Bridge
+Paket auf derselben Version wie die CLI und verbinde es mit dem Unity Editor.
 
 1. Erkenne mein Betriebssystem (macOS, Linux oder Windows).
 2. Wenn `unity-cli` noch nicht im PATH ist, fuhre das offizielle Quick Install Skript aus:
    - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
    - Windows (PowerShell): irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
-3. Prufe, dass `unity-cli --version` uber den PATH funktioniert. Wenn es unter macOS / Linux
+3. Wenn `unity-cli` bereits im PATH ist, aktualisiere es stattdessen auf das neueste Release.
+   Wenn UNITY_CLI_NO_AUTO_UPDATE=1 oder UNITY_CLI_VERSION gesetzt ist, habe ich die Version
+   absichtlich fixiert: aktualisiere nicht, sag es mir und frage zuerst. Andernfalls ermittle,
+   wo die Binardatei tatsachlich liegt (Symlinks folgen), und aktualisiere sie auf dem Weg,
+   auf dem sie installiert wurde:
+   - Quick Install (verwaltete Kopie unter ~/.unity/tools): unity-cli cli install
+   - Homebrew: brew upgrade akiojin/tap/unity-cli
+   - winget: winget upgrade akiojin.unity-cli
+   - Alles andere (cargo install, manueller Download): sag mir, wie es installiert wurde,
+     und frage, bevor du etwas anderst.
+4. Prufe, dass `unity-cli --version` uber den PATH funktioniert. Wenn es unter macOS / Linux
    nicht gefunden wird, fuge ~/.local/bin fur diese Shell zum PATH hinzu und nenne mir die
    Zeile fur mein Shell Profil. Unter Windows offne eine neue Shell, damit der aktualisierte
    Benutzer PATH gilt.
-4. Bevor du mein Projekt anderst, sage mir, dass setup Packages/manifest.json bearbeitet
+5. Bevor du mein Projekt anderst, sage mir, dass setup Packages/manifest.json bearbeitet
    (fugt die OpenUPM Scoped Registry und com.akiojin.unity-cli-bridge in der CLI Version hinzu)
    und bei Projekten nur mit dem alten Input Manager activeInputHandler in
    ProjectSettings/ProjectSettings.asset auf Both setzt. Warte auf meine Bestatigung.
-5. Fuhre im Unity Projektstamm aus: unity-cli --output json setup --launch-editor
+6. Fuhre im Unity Projektstamm aus: unity-cli --output json setup --launch-editor
    Wenn das JSON ok: false enthalt, folge editor.hint (der erste Import kann einige
    Minuten dauern; fuhre setup erneut aus, um weiter zu warten).
-6. Prufe die Verbindung mit: unity-cli system ping
-7. Wenn ein Schritt fehlschlagt, fuhre aus: unity-cli doctor --output json
+7. Prufe die Bridge Version mit: unity-cli --output json bridge status
+   - Wenn source registry ist und versionCheck.status (hier oder im setup Bericht) mismatch ist:
+     sag mir, dass dies die Zeile com.akiojin.unity-cli-bridge in Packages/manifest.json auf
+     die CLI Version andert, und warte auf meine Bestatigung. Fuhre dann unity-cli bridge upgrade
+     aus und lass den Unity Editor das Paket neu importieren.
+   - Wenn source custom oder embedded ist (Git URL, lokaler Pfad oder eine Kopie unter
+     Packages/) oder versionCheck.status unknown ist: nicht umschreiben. Melde mir stattdessen
+     source und beide Versionen.
+8. Prufe die Verbindung mit: unity-cli system ping
+   Bestatige, dass versionCheck.status match ist (CLI und Bridge haben dieselbe Version).
+9. Wenn ein Schritt fehlschlagt, fuhre aus: unity-cli doctor --output json
    Melde den diagnosis Code und folge dessen Hinweis, bevor du es erneut versuchst.
 ```
 
