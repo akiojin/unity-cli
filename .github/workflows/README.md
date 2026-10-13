@@ -37,3 +37,14 @@
     `akiojin` or `dependabot[bot]` into `develop`
     and for the `develop` -> `main` release PR
   - merges happen only after the branch-protection required checks pass
+  - external (fork) PRs into `develop` merge only after a threat review:
+    1. a reviewer reads the full diff and confirms nothing in it is a threat
+    2. a user with write or higher permission (or `akiojin`) adds the
+       `reviewed-safe` label to the non-draft PR
+    3. the workflow enables auto-merge with
+       `gh pr merge --auto --merge --match-head-commit <head SHA at label time>`,
+       so commits pushed after the review are never merged
+  - a new push to a labeled fork PR (`synchronize`) removes `reviewed-safe` and
+    disables auto-merge; the PR needs a new review and a new label
+  - runs under `pull_request_target` but never checks out or runs fork code;
+    every step only calls the `gh` API

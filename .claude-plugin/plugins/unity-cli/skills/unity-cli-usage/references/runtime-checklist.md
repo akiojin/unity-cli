@@ -52,7 +52,7 @@ completion and inspect that call's exit code.
 
 - A failed `system ping` does not prove the Editor is closed. Run `unity-cli doctor --output json` (add `--project-path <dir>` outside the project) before any fallback such as hand-editing YAML.
 - Act on the `diagnosis` code:
-  - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) by editing the file directly, then let Unity recompile or restart the Editor.
+  - `SAFE_MODE` / `COMPILE_ERRORS`: the bridge is not loaded. Fix each `editorLog.compileErrors[]` entry (`file`, `line`, `code`) with the LSP write tools (`apply_csharp_edits`, `replace_symbol_body`, `write_csharp_file`); they run locally and do not need the bridge. Then let Unity recompile or restart the Editor.
   - `BRIDGE_NOT_INSTALLED`: run `unity-cli setup` (or `unity-cli bridge install`) to add `com.akiojin.unity-cli-bridge` to `Packages/manifest.json`.
   - `PORT_IN_USE`: `port.listenerPid` / `port.listenerProcess` hold the port. Stop it or change the bridge port and pass the same `--port`.
   - `EDITOR_NOT_RUNNING`: start the Editor for the project and wait for import to finish.

@@ -114,6 +114,21 @@ class SkillRoutingTests(unittest.TestCase):
         self.assertEqual(prediction["predicted_tool"], "add_input_binding")
         self.assertEqual(prediction["predicted_skills"][0], "unity-input-system")
 
+    def test_csharp_creation_and_compile_fixes_route_to_lsp_write_tools(self):
+        benchmark = ROOT / "tests/fixtures/skill-routing/benchmark.jsonl"
+        rows = [row for row in map(json.loads, benchmark.read_text().splitlines())
+                if row["id"] == "SR-072" or row["id"].startswith("CS488-")]
+        self.assertEqual(len(rows), 6)
+        for row in rows:
+            with self.subTest(case=row["id"]):
+                self.assertIn(row["expected_tool"], {"create_csharp_file", "apply_csharp_edits"})
+                prediction = routing.route_by_keywords(row["prompt"])
+                self.assertIsNotNone(prediction)
+                self.assertEqual(prediction["predicted_tool"], row["expected_tool"])
+                self.assertEqual(prediction["predicted_skills"], row["expected_skills"])
+                self.assertEqual(prediction["predicted_payload_keys"],
+                                 row["expected_payload_keys"])
+
 
 if __name__ == "__main__":
     unittest.main()

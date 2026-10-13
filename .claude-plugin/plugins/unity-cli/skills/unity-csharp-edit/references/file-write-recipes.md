@@ -32,11 +32,10 @@ Recommended options:
 
 ## Choose `create_csharp_file` When
 
-- You need a new file that is not just a standard class shell.
-- The file should contain an interface, enum, test fixture, editor utility, or multiple types.
+- You need any new `.cs` file: a class, `MonoBehaviour`, `ScriptableObject`, interface, enum, test fixture, editor utility, or multiple types.
 - You want the same validated write contract as `write_csharp_file`.
 
-Use `create_class` only when the class template itself is the useful shortcut.
+`create_class` is a shortcut for an empty class shell (`name`, `folder`, optional `namespace` / `inherits`). It writes through the same LSP path as `create_csharp_file`, so both are safe; prefer `create_csharp_file` when the file needs members.
 
 ## Choose `apply_csharp_edits` When
 
@@ -56,6 +55,7 @@ Keep the `files` array minimal and coherent. If files are unrelated, split the t
 ## Example Paths
 
 ```bash
+unity-cli raw create_csharp_file --json '{"relative":"Assets/Scripts/EnemyAI.cs","text":"using UnityEngine;\n\npublic class EnemyAI : MonoBehaviour\n{\n}\n","validate":true,"apply":true,"waitForCompile":true,"updateIndex":true}'
 unity-cli raw replace_symbol_body --json '{"relative":"Assets/Scripts/PlayerController.cs","namePath":"PlayerController/Move","body":"{ transform.position += direction * speed * Time.deltaTime; }","apply":false}'
 unity-cli raw write_csharp_file --json '{"relative":"Assets/Scripts/PlayerController.cs","newText":"using UnityEngine;\n\npublic sealed class PlayerController : MonoBehaviour {}\n","validate":true,"apply":true,"waitForCompile":true,"updateIndex":true}'
 unity-cli raw apply_csharp_edits --json '{"files":[{"relative":"Assets/Scripts/IPlayerMover.cs","newText":"public interface IPlayerMover { void Move(); }\n"},{"relative":"Assets/Scripts/PlayerMover.cs","newText":"public sealed class PlayerMover : IPlayerMover { public void Move() {} }\n"},{"relative":"Assets/Tests/EditMode/PlayerMoverTests.cs","newText":"using NUnit.Framework;\n\npublic class PlayerMoverTests {}\n"}],"validate":true,"apply":true,"waitForCompile":true,"updateIndex":true}'
