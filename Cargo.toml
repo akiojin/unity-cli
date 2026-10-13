@@ -41,6 +41,7 @@ regex = "1.12"
 walkdir = "2.5"
 sha2 = "0.11"
 ureq = { version = "3.3", features = ["json"] }
+url = "2.5"
 serde_yml = "0.0.13"
 similar = "3"
 tempfile = "3.27"
