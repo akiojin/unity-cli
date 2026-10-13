@@ -6,7 +6,7 @@
 期待バイト列と一致したのは各 OS とも 228 試行中 24 試行（10.5%）です。
 目安（全シナリオ・全 OS で成功率 99% 以上、誤編集・エンコーディング/改行の破壊 0 件）を
 どの OS・どの開始条件でも満たしていません。オーナーの最終判断のための測定であり、
-この PR は禁止を導入しません。
+この測定は禁止を導入しません。
 
 根拠は次のとおりです。
 
@@ -24,9 +24,9 @@
 4. **コールド起動の遅さと失敗（#501 / #504）**: デーモン停止中の最初の呼び出しは
    macOS / Linux で p50 約 3〜4 秒、Windows で p50 約 13 秒でした。先行の run
    38372615105 では Windows が約 43 秒でした。macOS のローカル実行では、自動起動の
-   5 秒待ちを超えて編集が行われない試行が 1 件ありました（#501）。
+   5 秒待ちを超えて編集が行われない試行が 1 件ありました（#501、PR #505 で修正済み）。
 
-禁止を再検討できる条件は、#498 の修正と、#499 の修正を含む LSP の公開です。
+禁止を再検討できる条件は、#498 の修正、#499 の修正を含む LSP の公開、#504 の改善です。
 checkout の LSP を使う 2 条件では BOM 以外の失敗がないため、#498 を直せば全シナリオが一致する見込みです。
 その後に週次の多試行測定（各 20 試行、コールド各 5 試行）で 99% 以上を確認してください。
 少数試行での 100% は将来の 99% を保証しません。
@@ -75,10 +75,10 @@ CI artifact（`results.json` の生応答と diff）は保存期間 30 日で失
 | Issue | 状態 | 実測 | 代表的な差分 |
 | --- | --- | --- | --- |
 | [#498](https://github.com/akiojin/unity-cli/issues/498) BOM の付加 | 未修正 | 3 OS × 4 条件で BOM なしの 17 シナリオ全試行 | 先頭に `EF BB BF` が付く |
-| [#499](https://github.com/akiojin/unity-cli/issues/499) 末尾コメントの消失 | checkout で修正済み、公開版 `0.18.1` は未修正 | コールド 2 条件 × 3 OS で 3/3 | `public int Run(){return 2;} // 日本語の説明を保持` → `public int Run(){return 2;}public int Next(){return 3;} }` |
+| [#499](https://github.com/akiojin/unity-cli/issues/499) 末尾コメントの消失 | checkout で修正済み（PR #503）、公開版 `0.18.1` は未修正 | コールド 2 条件 × 3 OS で 3/3 | `public int Run(){return 2;} // 日本語の説明を保持` → `public int Run(){return 2;}public int Next(){return 3;} }` |
 | [#500](https://github.com/akiojin/unity-cli/issues/500) ScriptableObject の `using` 欠落 | 修正済み（#502） | 再発 0 件 | （修正前）`using UnityEngine;` が出力されない |
-| [#501](https://github.com/akiojin/unity-cli/issues/501) lspd 自動起動の 5 秒タイムアウト | 未修正 | macOS ローカル 19 試行中 1 件 | `lspd failed to start within timeout`、編集なし |
-| [#504](https://github.com/akiojin/unity-cli/issues/504) Windows のコールド起動 | 未修正 | Windows p50 約 13 秒（先行 run では約 43 秒） | 編集は成功するが待ち時間が長い |
+| [#501](https://github.com/akiojin/unity-cli/issues/501) lspd 自動起動の 5 秒タイムアウト | 修正済み（PR #505、この測定の対象 `b5a4059f` には未反映） | macOS ローカル 19 試行中 1 件 | `lspd failed to start within timeout`、編集なし |
+| [#504](https://github.com/akiojin/unity-cli/issues/504) Windows のコールド起動 | 修正中（PR #506） | Windows p50 約 13 秒（先行 run では約 43 秒） | 編集は成功するが待ち時間が長い |
 
 測定ハーネス自体の不具合（macOS の大文字小文字を区別しないファイルシステムで
 `Server` を自身へコピーして失敗）は、この PR で修正済みです。製品の不具合とは分けて扱います。
@@ -157,9 +157,9 @@ PR / push は `Test` workflow から呼び出します。既存の必須
 依存 job の skip が成功扱いになる経路も `if: always()` と結果チェックで防ぎます。
 デーモン停止・初回ダウンロードは PR / push で各シナリオ 1 試行、
 週次・手動の既定は各 5 試行を別枠で記録します。このレポートの数値は、
-コールド条件も各 3 試行とした PR の測定 run 1 回分です。Windows の実測では
-コールド起動が約 46 秒 / 試行のため、PR の全条件測定は約 35 分かかります。
-週次・手動の多試行を完了できるよう測定 job の上限は 240 分です。
+コールド条件も一時的に各 3 試行とした PR の測定 run 1 回分です。Windows の
+コールド起動は 1 試行あたり約 13〜46 秒かかるため、週次・手動の多試行を
+完了できるよう測定 job の上限は 240 分です。
 `--cold-repetitions` / `--download-repetitions` で増やせます。
 
 既知の不具合は `tests/fixtures/lsp-write-baseline.json` にシナリオ単位で明記します。
