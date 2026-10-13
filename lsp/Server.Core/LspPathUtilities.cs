@@ -7,8 +7,41 @@ public static class LspPathUtilities
     public static string NormalizeRelative(string relative) =>
         (relative ?? string.Empty).Replace('\\', '/');
 
-    public static string Path2Uri(string path) =>
-        "file://" + path.Replace('\\', '/');
+    public static string Path2Uri(string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        // Escape raw path segments before parsing so literal % sequences survive.
+        if (normalized.Length >= 3 && char.IsAsciiLetter(normalized[0])
+            && normalized[1] == ':' && normalized[2] == '/')
+        {
+            return FileUri("file:///" + normalized[..2] + EscapePath(normalized[2..])).AbsoluteUri;
+        }
+
+        if (!normalized.StartsWith("/", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Expected an absolute file path.", nameof(path));
+        }
+
+        var prefix = normalized.StartsWith("//", StringComparison.Ordinal) ? "file:" : "file://";
+        return FileUri(prefix + EscapePath(normalized)).AbsoluteUri;
+    }
+
+    private static string EscapePath(string path) =>
+        string.Join('/', path.Split('/').Select(Uri.EscapeDataString));
+
+    public static string Uri2Path(string uri) =>
+        FileUri(uri).LocalPath;
+
+    private static Uri FileUri(string value)
+    {
+        var uri = new Uri(value, UriKind.Absolute);
+        if (!uri.IsFile)
+        {
+            throw new ArgumentException("Expected an absolute file path or file URI.", nameof(value));
+        }
+
+        return uri;
+    }
 
     public static string ToRel(string fullPath, string root)
     {
