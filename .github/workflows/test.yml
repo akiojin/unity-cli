@@ -11,6 +11,12 @@ permissions:
   contents: read
 
 jobs:
+  lsp-write-reliability:
+    uses: ./.github/workflows/lsp-write-reliability.yml
+    # Initial #490 report takes several cold samples; develop and routine PRs use one.
+    with:
+      cold_repetitions: ${{ github.head_ref == 'work/issue-490' && '3' || '1' }}
+
   cli-latency:
     name: CLI Latency (required)
     runs-on: ubuntu-latest
@@ -205,8 +211,15 @@ jobs:
 
   lsp-test:
     name: LSP Tests (required)
+    needs: lsp-write-reliability
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Require passing LSP write measurements on every OS
+        env:
+          RELIABILITY_RESULT: ${{ needs.lsp-write-reliability.result }}
+        run: test "$RELIABILITY_RESULT" = success
+
       - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
