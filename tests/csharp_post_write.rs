@@ -241,3 +241,38 @@ fn post_write_tools_use_explicit_endpoint_and_include_compile_results() {
         assert_eq!(requests[2]["params"]["includeMessages"], true);
     }
 }
+
+#[test]
+fn create_class_writes_through_lsp_and_keeps_output_shape() {
+    let fixture = Fixture::new();
+    let response = fixture.call(
+        "create_class",
+        &json!({
+            "name": "EnemyAI",
+            "namespace": "Game.AI",
+            "inherits": "MonoBehaviour",
+            "folder": "Assets/Scripts/AI"
+        }),
+        1,
+    );
+    assert_eq!(response["success"], true, "{response}");
+    assert_eq!(response["backend"], "lsp", "{response}");
+    assert_eq!(response["applied"], true);
+    assert_eq!(response["path"], "Assets/Scripts/AI/EnemyAI.cs");
+    assert_eq!(
+        response["changedFiles"],
+        json!(["Assets/Scripts/AI/EnemyAI.cs"])
+    );
+    let content = response["content"].as_str().unwrap();
+    assert!(content.contains("using UnityEngine;"));
+    assert!(content.contains("namespace Game.AI"));
+    assert!(content.contains("public class EnemyAI : MonoBehaviour"));
+    let written = fs::read_to_string(
+        fixture
+            .root
+            .path()
+            .join("project/Assets/Scripts/AI/EnemyAI.cs"),
+    )
+    .unwrap();
+    assert_eq!(written, content);
+}

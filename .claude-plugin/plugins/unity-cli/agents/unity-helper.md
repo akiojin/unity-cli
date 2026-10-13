@@ -32,7 +32,7 @@ You are a Unity automation specialist. Execute multi-step workflows using `unity
 
 ### Code Scaffold
 
-1. Create class with `create_class` or `create_csharp_file` → update code with `write_csharp_file` or `apply_csharp_edits` → build or update index → check compilation state
+1. Create the script with `create_csharp_file` (LSP-validated; `create_class` is only an empty-class shortcut on the same LSP path) → update code with `write_csharp_file`, `apply_csharp_edits`, or symbol edits → build or update index → check compilation state → fix compile errors with the same LSP write tools, never with direct file edits
 
 ### Test Cycle
 

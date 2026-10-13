@@ -25,7 +25,15 @@
 3. Run `get_compilation_state` for non-trivial edits or when diagnostics are still unclear.
 4. Report and fix real diagnostics before attempting unrelated follow-up changes.
 
-## Class Creation
+## New Files
 
-- Use `create_class` for new files instead of hand-writing boilerplate when possible.
+- Use `create_csharp_file` for every new `.cs` file (classes, `MonoBehaviour`, `ScriptableObject`, interfaces, enums, tests). It validates the text through LSP before writing.
+- `create_class` (`name`, `folder`, optional `namespace` / `inherits`) is a shortcut that renders an empty class shell and writes it through the same LSP path as `create_csharp_file`. Prefer `create_csharp_file` when the file needs any members.
+- Do not create or edit `.cs` files with direct file writes; they skip LSP validation.
 - Use `validate_text_edits` when constructing larger manual replacements.
+
+## Compile Error Fixes
+
+- Read the error `file` / `line` from `get_compilation_state` or `editorLog.compileErrors[]`.
+- Fix it with the smallest LSP write: `replace_symbol_body` for one member, `write_csharp_file` for one file, `apply_csharp_edits` when several files must change together.
+- These tools run locally, so they work in `SAFE_MODE` when the bridge is not loaded.

@@ -462,8 +462,14 @@ def route_by_keywords(user_prompt: str) -> dict[str, object] | None:
         return make_prediction(["unity-csharp-edit"], "validate_text_edits", ["relative", "newText"])
     if has_any("play検証はまだ不要") and has_any(".cs") and has_any("実装したい"):
         return make_prediction(["unity-csharp-edit"], "write_csharp_file", ["relative", "newText"])
-    if has_any("クラス") and has_any("assets/") and has_any("作りたい", "新規作成"):
-        return make_prediction(["unity-csharp-edit"], "create_class", ["name", "folder"])
+    if has_any("コンパイルエラー", "compile error") and has_any("直", "修正", "fix"):
+        return make_prediction(["unity-csharp-edit"], "apply_csharp_edits", ["files"])
+    if (
+        has_any("クラス", "monobehaviour", "scriptableobject", "c# script")
+        and has_any("assets/")
+        and has_any("作りたい", "新規作成", "create", "write")
+    ):
+        return make_prediction(["unity-csharp-edit"], "create_csharp_file", ["relative", "text"])
     if has_any("ゲームパッド") and has_any("ボタン"):
         return make_prediction(["unity-playmode-testing"], "input_gamepad", ["action", "button", "buttonAction"])
     if has_any("play") and has_any("space") and has_any("スクリーンショット"):
