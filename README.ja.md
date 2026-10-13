@@ -33,9 +33,37 @@ Bridge の最小バージョンは Unity 2022.3 です。macOS 検証対象は
 [対応表の検証日・結果](docs/editor-compatibility.md)を確認してください。
 6000.7 の Editor は Mono で動作し、CoreCLR Player ビルドはこの検証の対象外です。
 
-### 推奨: Claude Code プラグイン
+### LLM エージェントでインストール
 
-Claude Code Marketplace から `unity-cli` プラグインをインストールします:
+Unity プロジェクトで開いた Claude Code や Codex などのコーディングエージェントに、
+次のプロンプトをそのまま貼り付けてください:
+
+```text
+この Unity プロジェクトに unity-cli をインストールし、Unity Editor と接続してください。
+
+1. OS（macOS / Linux / Windows）を判定してください。
+2. `unity-cli` が PATH 上にない場合は、公式のクイックインストールスクリプトを実行してください:
+   - macOS / Linux: curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh
+   - Windows（PowerShell）: irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex
+3. PATH から `unity-cli --version` が実行できることを確認してください。macOS / Linux で
+   見つからない場合は、このシェルの PATH に ~/.local/bin を追加し、シェルプロファイルに
+   追記する行を教えてください。Windows では、更新されたユーザー PATH を反映するため
+   新しいシェルを開いてください。
+4. プロジェクトを変更する前に、setup が Packages/manifest.json を編集すること
+   （OpenUPM の scoped registry と、CLI と同じバージョンに固定した
+   com.akiojin.unity-cli-bridge を追加すること）と、旧 Input Manager のみのプロジェクトでは
+   ProjectSettings/ProjectSettings.asset の activeInputHandler を Both に設定することを
+   説明し、私の確認を待ってください。
+5. Unity プロジェクトのルートで次を実行してください: unity-cli --output json setup --launch-editor
+   JSON が ok: false の場合は editor.hint に従ってください（初回インポートは数分かかる
+   ことがあります。待ち続けるには setup を再実行します）。
+6. 次のコマンドで接続を確認してください: unity-cli system ping
+7. いずれかの手順が失敗した場合は、次を実行してください: unity-cli doctor --output json
+   diagnosis コードを報告し、そのヒントに従ってから再試行してください。
+```
+
+**Claude Code プラグイン**: Claude Code Marketplace から `unity-cli` プラグインを
+インストールすると、エージェントが Unity 操作用のスキルを使えるようになります:
 
 ```bash
 /plugin marketplace add akiojin/unity-cli
@@ -43,15 +71,16 @@ Claude Code Marketplace から `unity-cli` プラグインをインストール�
 
 プラグインが提供するのはスキルで、バイナリと Unity ブリッジは必要時に導入されます。
 Unity 操作が必要なのに `unity-cli` が未導入の場合、`unity-cli-usage` スキルに従って
-エージェントがインストールスクリプト（`scripts/install.sh`）を実行し、Unity プロジェクトで
+エージェントがクイックインストールスクリプトを実行し、Unity プロジェクトで
 `unity-cli setup` を実行します（`Packages/manifest.json` を変更する前にユーザーへ明示します）。
 
-### Codex スキル
-
-Codex でこのリポジトリを利用する場合、`.codex/skills/` にスキルのシンボリックリンクが配置済みです。
+**Codex スキル**: Codex でこのリポジトリを利用する場合、`.agents/skills/` に
+スキルのシンボリックリンクが配置済みです（`.claude/skills/` からも参照できます）。
 リポジトリをクローンするだけで追加セットアップは不要です。
 
-### クイックインストール（推奨）
+### 手動でインストール
+
+#### クイックインストール（推奨）
 
 macOS（Apple silicon / Intel）と Linux:
 
@@ -70,10 +99,19 @@ irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1
 ハッシュが一致しない場合は導入を中止し、既存のバイナリには触れません。
 `install.sh` は `~/.local/bin/unity-cli` にシンボリックリンクを作り、`install.ps1` は
 managed ディレクトリをユーザーの `PATH` に追加します。`UNITY_CLI_VERSION=v0.16.0` で
-リリースを固定できます。導入後の自動更新も同じチェックサムで検証されます。
+リリースを固定できます。導入後は CLI がバックグラウンドで自動更新を確認し、
+更新も同じチェックサムで検証されます。
+
+`~/.local/bin` が PATH に含まれていない場合は、シェルプロファイル
+（例: `~/.zshrc` や `~/.bashrc`）に次を追加してください:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
 自動更新を止めるには `UNITY_CLI_NO_AUTO_UPDATE=1` を設定してください。
 
-### パッケージマネージャ
+#### パッケージマネージャ
 
 ```bash
 brew install akiojin/tap/unity-cli     # macOS / Linux（Homebrew）
@@ -85,7 +123,7 @@ Intel Mac の reference 埋め込み（`unity-cli reference embed-build` / `embe
 Homebrew formula は `onnxruntime` を依存として導入します。それ以外の導入方法では
 `brew install onnxruntime` を実行するか、`ORT_DYLIB_PATH` を設定してください。
 
-### 手動インストール
+#### Releases / cargo install
 
 最新バイナリは [GitHub
 Releases](https://github.com/akiojin/unity-cli/releases) から取得できます。
@@ -96,6 +134,8 @@ git clone https://github.com/akiojin/unity-cli.git
 cd unity-cli
 cargo install --path .
 ```
+
+#### プロジェクトのセットアップ
 
 プロジェクトのセットアップを 1 コマンドで行う（binary 検証 → bridge 導入 → Editor 接続確認）:
 
@@ -127,14 +167,14 @@ openupm add com.akiojin.unity-cli-bridge
 https://github.com/akiojin/unity-cli.git?path=UnityCliBridge/Packages/unity-cli-bridge
 ```
 
-接続確認:
+#### 接続確認
 
 ```bash
 unity-cli system ping
 unity-cli doctor --output json   # ping 失敗時: SAFE_MODE / BRIDGE_NOT_INSTALLED / PORT_IN_USE など
 ```
 
-managed バイナリの確認と更新:
+#### managed バイナリの確認と更新
 
 ```bash
 unity-cli cli doctor
