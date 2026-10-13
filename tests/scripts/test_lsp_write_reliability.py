@@ -1,5 +1,6 @@
 """Protect the reliability measurement from false PASS and hidden regressions."""
 import importlib.util
+import tempfile
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -153,6 +154,39 @@ class ReliabilityTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 reliability.cleanup_trial(ROOT, ROOT / ".cache")
             remove.assert_not_called()
+
+    def test_trial_cleanup_retries_when_lspd_writes_during_removal(self):
+        busy = OSError(reliability.errno.ENOTEMPTY, "Directory not empty", "tools")
+        with mock.patch.object(reliability.shutil, "rmtree", side_effect=[busy, busy, None]) as remove:
+            with mock.patch.object(reliability.time, "sleep"):
+                reliability.cleanup_trial(ROOT / ".cache/trial", ROOT / ".cache")
+            self.assertEqual(remove.call_count, 3)
+        broken = OSError(reliability.errno.EIO, "I/O error")
+        with mock.patch.object(reliability.shutil, "rmtree", side_effect=broken) as remove:
+            with self.assertRaises(OSError):
+                reliability.cleanup_trial(ROOT / ".cache/trial", ROOT / ".cache")
+            self.assertEqual(remove.call_count, 1)
+
+    def test_close_waits_for_the_auto_started_lspd_to_remove_its_pid_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            trial = reliability.Trial.__new__(reliability.Trial)
+            trial.tools, trial.process, trial.log, trial.env = Path(directory), None, None, {}
+            trial.cli, trial.project = Path("unity-cli"), Path(directory)
+            pid_file = trial.tools / "run" / "lspd" / "lspd.pid"
+            pid_file.parent.mkdir(parents=True)
+            pid_file.write_text("4242")
+            polls = []
+
+            def sleep(_):
+                polls.append(1)
+                if len(polls) == 3:
+                    pid_file.unlink()  # The daemon finishes its shutdown writes.
+
+            with mock.patch.object(reliability.subprocess, "run") as run, mock.patch.object(reliability.time, "sleep", side_effect=sleep):
+                trial.close()
+            self.assertIn("stop", run.call_args.args[0])
+            self.assertEqual(len(polls), 3)
+            self.assertFalse(pid_file.exists())
 
 
 if __name__ == "__main__":

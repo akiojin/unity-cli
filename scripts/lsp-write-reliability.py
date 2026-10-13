@@ -8,6 +8,7 @@ import argparse
 from collections import Counter
 from datetime import datetime, timezone
 import difflib
+import errno
 import hashlib
 import json
 import math
@@ -217,9 +218,10 @@ def cleanup_trial(directory, root):
         try:
             shutil.rmtree(directory)
             return
-        except PermissionError:
-            # Windows can keep clrjit.dll locked briefly after lspd exits.
-            if time.monotonic() >= deadline:
+        except OSError as error:
+            # Windows can keep clrjit.dll locked briefly after lspd exits, and a
+            # stopping lspd can still add files while rmtree walks the tree.
+            if not (isinstance(error, PermissionError) or error.errno == errno.ENOTEMPTY) or time.monotonic() >= deadline:
                 raise
             time.sleep(0.1)
 
@@ -306,6 +308,10 @@ class Trial:
                 subprocess.run(self.command(["lspd", "stop"]), env=self.env, capture_output=True, timeout=15)
             except subprocess.TimeoutExpired:
                 pass
+            # `lspd stop` only requests shutdown; the daemon removes its PID file on exit.
+            deadline = time.monotonic() + 10
+            while pid_file.exists() and time.monotonic() < deadline:
+                time.sleep(0.1)
         if self.process is not None:
             try:
                 self.process.wait(timeout=10)
