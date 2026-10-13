@@ -538,6 +538,12 @@ public sealed class LspEditService
             var (_, last) = FindNodeByNamePath(root, normalizedPath);
             if (last is not MethodDeclarationSyntax method) return EditResult(false, false, reason: "symbol_not_found");
             var block = ParseBlock(bodyText);
+            // keep the trivia around the replaced body (e.g. a trailing comment and the newline after `}`)
+            var (leading, trailing) = method.Body is { } oldBody
+                ? (oldBody.GetLeadingTrivia(), oldBody.GetTrailingTrivia())
+                : (method.ExpressionBody?.GetLeadingTrivia() ?? default,
+                    method.SemicolonToken.TrailingTrivia);
+            block = block.WithLeadingTrivia(leading).WithTrailingTrivia(trailing);
             // handle expression-bodied to block conversion
             var m2 = method.WithExpressionBody(null).WithSemicolonToken(default).WithBody(block);
             var newRoot = root.ReplaceNode(method, m2);
