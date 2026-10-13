@@ -898,7 +898,10 @@ async fn poll_compile_state(config: &RuntimeConfig) -> Result<Value> {
 }
 
 fn requires_unityengine_using(inherits: Option<&str>) -> bool {
-    matches!(inherits.map(str::trim), Some("MonoBehaviour"))
+    matches!(
+        inherits.map(str::trim),
+        Some("MonoBehaviour" | "ScriptableObject")
+    )
 }
 
 fn local_create_class(params: &Value) -> Result<Value> {
@@ -2126,10 +2129,24 @@ namespace Demo.Game
     }
 
     #[test]
-    fn requires_unityengine_using_only_for_monobehaviour() {
+    fn requires_unityengine_using_for_unqualified_unityengine_bases() {
         assert!(requires_unityengine_using(Some("MonoBehaviour")));
-        assert!(!requires_unityengine_using(Some("ScriptableObject")));
+        assert!(requires_unityengine_using(Some("ScriptableObject")));
+        assert!(requires_unityengine_using(Some(" ScriptableObject ")));
+        assert!(!requires_unityengine_using(Some(
+            "UnityEngine.ScriptableObject"
+        )));
+        assert!(!requires_unityengine_using(Some("BaseService")));
         assert!(!requires_unityengine_using(None));
+    }
+
+    #[test]
+    fn create_class_template_scriptableobject_resolves_unityengine() {
+        let content = render_class_template("Sample", None, Some("ScriptableObject"));
+        assert_eq!(
+            content,
+            "using UnityEngine;\n\npublic class Sample : ScriptableObject\n{\n}\n"
+        );
     }
 
     #[test]
