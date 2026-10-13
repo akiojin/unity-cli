@@ -124,7 +124,7 @@ public sealed class LspRequestRouter
 
         if (method == "unitycli/ping")
         {
-            return Response(id, new { ok = true });
+            return Response(id, new { ok = true, fileUriEncoding = true });
         }
 
         if (method == "unitycli/referencesByName")

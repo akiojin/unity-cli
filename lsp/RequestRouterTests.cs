@@ -61,6 +61,7 @@ public sealed class RequestRouterTests
         Assert.False(result.ShouldExit);
         Assert.Contains("\"id\":7", json);
         Assert.Contains("\"ok\":true", json);
+        Assert.Contains("\"fileUriEncoding\":true", json);
     }
 
     [Fact]

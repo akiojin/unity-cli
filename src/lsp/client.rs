@@ -374,7 +374,7 @@ fn handle_get_symbols(
         return Err(anyhow!("File not found: {rel}"));
     }
 
-    let uri = file_uri(&abs)?;
+    let uri = file_uri(&abs, session.file_uri_encoding)?;
     let response = session.request(
         "textDocument/documentSymbol",
         json!({
@@ -455,7 +455,7 @@ fn handle_find_symbol(
             Some(value) => value,
             None => continue,
         };
-        let rel_path = match uri_to_rel_path(project_root, uri) {
+        let rel_path = match uri_to_rel_path(project_root, uri, session.file_uri_encoding) {
             Some(value) => value,
             None => continue,
         };
@@ -542,8 +542,8 @@ fn handle_find_refs(
     let mut refs = response.as_array().cloned().unwrap_or_default();
 
     refs.sort_by(|a, b| {
-        let a_path = ref_path(project_root, a).unwrap_or_default();
-        let b_path = ref_path(project_root, b).unwrap_or_default();
+        let a_path = ref_path(project_root, a, session.file_uri_encoding).unwrap_or_default();
+        let b_path = ref_path(project_root, b, session.file_uri_encoding).unwrap_or_default();
         let a_line = a.get("line").and_then(Value::as_u64).unwrap_or(0);
         let b_line = b.get("line").and_then(Value::as_u64).unwrap_or(0);
         let a_col = a.get("column").and_then(Value::as_u64).unwrap_or(0);
@@ -561,7 +561,7 @@ fn handle_find_refs(
     let mut last_path: Option<String> = None;
 
     for item in refs {
-        let Some(path) = ref_path(project_root, &item) else {
+        let Some(path) = ref_path(project_root, &item, session.file_uri_encoding) else {
             continue;
         };
 
@@ -1231,18 +1231,29 @@ fn normalize_rel_path(raw: &str) -> Option<String> {
     Some(parts.join("/"))
 }
 
-fn file_uri(path: &Path) -> Result<String> {
+fn file_uri(path: &Path, encoded: bool) -> Result<String> {
+    if !encoded {
+        return Ok(format!(
+            "file://{}",
+            path.to_string_lossy().replace('\\', "/")
+        ));
+    }
+
     url::Url::from_file_path(path)
         .map(|uri| uri.to_string())
         .map_err(|()| anyhow!("LSP file paths must be absolute"))
 }
 
-fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
+fn uri_to_rel_path(project_root: &Path, uri: &str, encoded: bool) -> Option<String> {
     if !uri.starts_with("file://") {
         return None;
     }
 
-    let path = url::Url::parse(uri).ok()?.to_file_path().ok()?;
+    let path = if encoded {
+        url::Url::parse(uri).ok()?.to_file_path().ok()?
+    } else {
+        PathBuf::from(uri.trim_start_matches("file://").replace('\\', "/"))
+    };
     let rel = path
         .strip_prefix(project_root)
         .ok()
@@ -1252,10 +1263,10 @@ fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
     normalize_rel_path(&rel)
 }
 
-fn ref_path(project_root: &Path, item: &Value) -> Option<String> {
+fn ref_path(project_root: &Path, item: &Value, encoded: bool) -> Option<String> {
     let path = item.get("path").and_then(Value::as_str)?;
     if path.starts_with("file://") {
-        return uri_to_rel_path(project_root, path);
+        return uri_to_rel_path(project_root, path, encoded);
     }
     normalize_rel_path(path)
 }
@@ -1313,6 +1324,7 @@ struct LspSession {
     rx: Receiver<Value>,
     next_id: u64,
     timeout: Duration,
+    file_uri_encoding: bool,
 }
 
 impl LspSession {
@@ -1356,8 +1368,13 @@ impl LspSession {
             rx,
             next_id: 1,
             timeout: lsp_timeout(),
+            file_uri_encoding: false,
         };
 
+        // Older published servers treat file URIs as unescaped path strings.
+        let ping = session.request("unitycli/ping", json!({}))?;
+        session.file_uri_encoding =
+            ping.get("fileUriEncoding").and_then(Value::as_bool) == Some(true);
         session.initialize(project_root)?;
         Ok(session)
     }
@@ -1370,7 +1387,7 @@ impl LspSession {
             "method": "initialize",
             "params": {
                 "processId": std::process::id(),
-                "rootUri": file_uri(project_root)?,
+                "rootUri": file_uri(project_root, self.file_uri_encoding)?,
                 "capabilities": {}
             }
         }))?;
@@ -1669,7 +1686,9 @@ while True:
     method = message.get("method")
     message_id = message.get("id")
 
-    if method == "initialize":
+    if method == "unitycli/ping":
+        send_message({"jsonrpc": "2.0", "id": message_id, "result": {"ok": True, "fileUriEncoding": True}})
+    elif method == "initialize":
         send_message({"jsonrpc": "2.0", "id": message_id, "result": {"capabilities": {"documentSymbolProvider": True}}})
     elif method == "initialized":
         continue
@@ -1807,14 +1826,17 @@ while True:
         let rel = "Assets/Scripts/Player.cs";
         let abs = root.path().join(rel);
 
-        let uri = file_uri(&abs).expect("file URI should convert");
-        assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
+        let uri = file_uri(&abs, true).expect("file URI should convert");
         assert_eq!(
-            ref_path(root.path(), &json!({ "path": uri })).as_deref(),
+            uri_to_rel_path(root.path(), &uri, true).as_deref(),
             Some(rel)
         );
         assert_eq!(
-            ref_path(root.path(), &json!({ "path": rel })).as_deref(),
+            ref_path(root.path(), &json!({ "path": uri }), true).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": rel }), true).as_deref(),
             Some(rel)
         );
     }
@@ -1822,7 +1844,7 @@ while True:
     #[test]
     fn uri_to_rel_path_rejects_non_file_uris() {
         let root = tempdir().expect("tempdir should succeed");
-        assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs").is_none());
+        assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs", true).is_none());
     }
 
     #[test]
@@ -1837,10 +1859,13 @@ while True:
             .expect("absolute file path should convert")
             .to_string();
 
-        assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
-        assert_eq!(file_uri(&abs).expect("file URI should convert"), uri);
+        assert_eq!(
+            uri_to_rel_path(root.path(), &uri, true).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(file_uri(&abs, true).expect("file URI should convert"), uri);
         assert!(path_matches_scope(
-            &uri_to_rel_path(root.path(), &uri).expect("file URI should resolve"),
+            &uri_to_rel_path(root.path(), &uri, true).expect("file URI should resolve"),
             "assets"
         ));
     }
@@ -1856,10 +1881,31 @@ while True:
             ),
         ] {
             assert_eq!(
-                uri_to_rel_path(std::path::Path::new(root), uri).as_deref(),
+                uri_to_rel_path(std::path::Path::new(root), uri, true).as_deref(),
                 Some("Assets/Player.cs")
             );
         }
+    }
+
+    #[test]
+    fn legacy_file_uris_preserve_raw_paths_for_older_servers() {
+        let root = tempfile::Builder::new()
+            .prefix("legacy URI 日本語 #%-")
+            .tempdir()
+            .expect("tempdir should succeed");
+        let rel = "Assets/日本語 # %20.cs";
+        let path = root.path().join(rel);
+        let uri = file_uri(&path, false).expect("legacy file URI should convert");
+
+        assert!(uri.ends_with(rel));
+        assert_eq!(
+            uri_to_rel_path(root.path(), &uri, false).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": uri }), false).as_deref(),
+            Some(rel)
+        );
     }
 
     #[test]
@@ -2041,7 +2087,7 @@ while True:
         );
         let _uri = EnvVarGuard::set(
             "FAKE_LSP_PLAYER_URI",
-            &file_uri(&player_path).expect("file URI should convert"),
+            &file_uri(&player_path, true).expect("file URI should convert"),
         );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
@@ -2124,7 +2170,7 @@ while True:
         );
         let _uri = EnvVarGuard::set(
             "FAKE_LSP_PLAYER_URI",
-            &file_uri(&player_path).expect("file URI should convert"),
+            &file_uri(&player_path, true).expect("file URI should convert"),
         );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
