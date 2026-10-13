@@ -1,0 +1,597 @@
+{
+  "schema_version": 1,
+  "os": "Windows",
+  "rid": "win-x64",
+  "started_at": "2026-10-13T11:44:34.733438+00:00",
+  "cli_sha256": "37d014406f92518c1b5a019d4ff6e7d4646bcc1f6c1c7ddbd5ddb2150a901ca8",
+  "runner_sha256": "21d102a80b2be31514117df4e7f10d252a6320c5e6fe4254da4295b08c26898d",
+  "requested_conditions": [
+    "daemon_stopped",
+    "warm_indexed",
+    "unindexed",
+    "first_download"
+  ],
+  "repetitions": 2,
+  "cold_repetitions": 5,
+  "download_repetitions": 3,
+  "rows": [
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "daemon_stopped",
+      "sample": 0,
+      "direct_ms": 0.4454000008990988,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2023.329300001933,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 6411.945699997887,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "daemon_stopped",
+      "sample": 1,
+      "direct_ms": 0.5148999989614822,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2032.4424999998882,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 5262.767399999575,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "daemon_stopped",
+      "sample": 2,
+      "direct_ms": 0.49109999963548034,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2022.2695999982534,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 5517.880100000184,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "daemon_stopped",
+      "sample": 3,
+      "direct_ms": 0.9161999987554736,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2054.629099999147,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 9375.031100000342,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "daemon_stopped",
+      "sample": 4,
+      "direct_ms": 0.5122000002302229,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2045.9140999992087,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 5283.347100001265,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "warm_indexed",
+      "sample": 0,
+      "direct_ms": 0.46749999819439836,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2958.607499997015,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 216.36579999903915,
+      "lsp_version": "checkout",
+      "lsp_sha256": "cb04b88cff09ced980c422499010b6986a0af00f8e3473c17b6350c74b1428b9"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "warm_indexed",
+      "sample": 1,
+      "direct_ms": 0.450999999884516,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2975.8909000011045,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 220.18570000000182,
+      "lsp_version": "checkout",
+      "lsp_sha256": "cb04b88cff09ced980c422499010b6986a0af00f8e3473c17b6350c74b1428b9"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "unindexed",
+      "sample": 0,
+      "direct_ms": 0.45089999912306666,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2272.84729999883,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 712.9674999996496,
+      "lsp_version": "checkout",
+      "lsp_sha256": "cb04b88cff09ced980c422499010b6986a0af00f8e3473c17b6350c74b1428b9"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "unindexed",
+      "sample": 1,
+      "direct_ms": 0.4530000005615875,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2268.4746000013547,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 719.8742000000493,
+      "lsp_version": "checkout",
+      "lsp_sha256": "cb04b88cff09ced980c422499010b6986a0af00f8e3473c17b6350c74b1428b9"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "first_download",
+      "sample": 0,
+      "direct_ms": 0.4700999998021871,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2020.7783000005293,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 6356.362900001841,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "first_download",
+      "sample": 1,
+      "direct_ms": 0.5388999998103827,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2017.9347999983293,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 7675.544499998068,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    },
+    {
+      "scenario": "write_file",
+      "tool": "write_csharp_file",
+      "condition": "first_download",
+      "sample": 2,
+      "direct_ms": 0.4291000004741363,
+      "failures": [
+        "bom_added"
+      ],
+      "differences": [
+        {
+          "path": "Assets/Sample.cs",
+          "direct_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_sha256": "0a376c7da796e5991b0510d7f09bfb751199bb5d4702c07a61ac84cb74ecf34e",
+          "direct_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "lsp_text_sha256": "908fcb643b9e33e9f39a7a2c816f90d968c11209a0d79441e6a7ce197e2d3cfa",
+          "direct_bytes": 51,
+          "lsp_bytes": 54,
+          "diff": "--- direct/Assets/Sample.cs\n+++ lsp/Assets/Sample.cs\n@@ -1 +1 @@\n-public class Sample { public int Run(){return 2;}}\n+﻿public class Sample { public int Run(){return 2;}}\n"
+        }
+      ],
+      "setup_ms": 2031.0315000024275,
+      "returncode": 0,
+      "response": {
+        "command": "raw write_csharp_file",
+        "data": {
+          "applied": true,
+          "backend": "lsp",
+          "changedFiles": [
+            "Assets/Sample.cs"
+          ],
+          "changedSymbols": [],
+          "diagnostics": [],
+          "diffPreview": [],
+          "reason": null,
+          "success": true
+        },
+        "errors": [],
+        "success": true,
+        "warnings": []
+      },
+      "stdout": "{\"command\":\"raw write_csharp_file\",\"data\":{\"applied\":true,\"backend\":\"lsp\",\"changedFiles\":[\"Assets/Sample.cs\"],\"changedSymbols\":[],\"diagnostics\":[],\"diffPreview\":[],\"reason\":null,\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": "",
+      "elapsed_ms": 6632.016700001259,
+      "lsp_version": "0.18.1",
+      "lsp_sha256": "255da253cca997a38c2ee4d9daefe1ce843e1ff901c411dbef350b6280291927"
+    }
+  ],
+  "summary": {
+    "attempts": 12,
+    "successes": 0,
+    "success_rate": 0.0,
+    "failure_types": {
+      "bom_added": 12
+    },
+    "p50_ms": 5283.347,
+    "p95_ms": 9375.031,
+    "direct_p50_ms": 0.467,
+    "direct_p95_ms": 0.916
+  },
+  "regressions": [],
+  "finished_at": "2026-10-13T11:46:02.271422+00:00"
+}

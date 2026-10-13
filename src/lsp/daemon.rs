@@ -542,16 +542,27 @@ fn connect_client() -> Result<ClientStream> {
 
     #[cfg(not(unix))]
     {
-        let stream = std::net::TcpStream::connect(("127.0.0.1", daemon_port()))
-            .context("Failed to connect to lspd TCP endpoint")?;
-        stream
-            .set_read_timeout(Some(Duration::from_secs(10)))
-            .context("Failed to set lspd read timeout")?;
-        stream
-            .set_write_timeout(Some(Duration::from_secs(10)))
-            .context("Failed to set lspd write timeout")?;
-        Ok(stream)
+        connect_tcp_client(daemon_port())
     }
+}
+
+#[cfg(not(unix))]
+fn connect_tcp_client(port: u16) -> Result<ClientStream> {
+    // A closed loopback port takes seconds to fail on Windows. Startup probes
+    // must return promptly so auto-start can spawn/poll lspd without TCP retries.
+    // Match unityd's connection deadline; RPC timeouts remain independent.
+    let stream = std::net::TcpStream::connect_timeout(
+        &std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+        Duration::from_millis(100),
+    )
+    .context("Failed to connect to lspd TCP endpoint")?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .context("Failed to set lspd read timeout")?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(10)))
+        .context("Failed to set lspd write timeout")?;
+    Ok(stream)
 }
 
 fn is_would_block(error: &std::io::Error) -> bool {
@@ -636,6 +647,53 @@ mod tests {
     #[cfg(unix)]
     use std::io::{BufRead, BufReader};
     use tempfile::tempdir;
+
+    #[cfg(not(unix))]
+    #[test]
+    fn tcp_connect_without_a_daemon_returns_promptly() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        drop(listener);
+
+        let started = Instant::now();
+        let error = connect_tcp_client(port).expect_err("no daemon is listening");
+        assert!(error
+            .to_string()
+            .contains("Failed to connect to lspd TCP endpoint"));
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "a missing local daemon must not wait for Windows TCP retries: {:?}",
+            started.elapsed()
+        );
+    }
+
+    #[cfg(not(unix))]
+    #[test]
+    fn tcp_connect_to_a_running_daemon_preserves_io_timeouts_and_responses() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let mut client = connect_tcp_client(listener.local_addr().unwrap().port()).unwrap();
+        assert_eq!(
+            client.read_timeout().unwrap(),
+            Some(Duration::from_secs(10))
+        );
+        assert_eq!(
+            client.write_timeout().unwrap(),
+            Some(Duration::from_secs(10))
+        );
+
+        let (mut server, _) = listener.accept().unwrap();
+        server
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        client.write_all(b"{\"type\":\"ping\"}\n").unwrap();
+        let mut request = String::new();
+        BufReader::new(&mut server).read_line(&mut request).unwrap();
+        assert_eq!(request, "{\"type\":\"ping\"}\n");
+        server.write_all(b"{\"ok\":true}\n").unwrap();
+        let mut response = String::new();
+        BufReader::new(client).read_line(&mut response).unwrap();
+        assert_eq!(response, "{\"ok\":true}\n");
+    }
 
     fn env_lock() -> &'static std::sync::Mutex<()> {
         crate::test_env::env_lock()
