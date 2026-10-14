@@ -273,10 +273,11 @@ public sealed class SourceFileFormatTests
         }
     }
 
-    public static TheoryData<string, string, string> InactiveBranchStrings()
+    public static TheoryData<string, string, string, string> InactiveBranchStrings()
     {
-        var data = new TheoryData<string, string, string>();
+        var data = new TheoryData<string, string, string, string>();
         foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        foreach (var inputNewline in new[] { "\n", "\r\n", "\r" })
         foreach (var literal in new[]
         {
             "@\"x\ry\"",
@@ -300,20 +301,26 @@ public sealed class SourceFileFormatTests
             "#if UNITY_EDITOR\n#if true\n/*\n#else\n{0}\n#endif\n#endif\n",
         })
         {
-            data.Add(newline, literal, branch);
+            data.Add(newline, inputNewline, literal, branch);
         }
         return data;
     }
 
     [Theory]
     [MemberData(nameof(InactiveBranchStrings))]
-    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string literal, string branch)
+    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string inputNewline, string literal, string branch)
     {
         // Construct expected bytes separately: source line breaks follow the original convention,
-        // while the lone CRs in the literal remain part of its value.
+        // while lone CRs inside the literal (including CR input line breaks) are retained.
         var declaration = "var text = " + literal + ";";
-        var input = branch.Replace("{0}", declaration);
-        var expected = branch.Replace("\n", newline).Replace("{0}", declaration.Replace("\n", newline));
+        var input = branch.Replace("\n", inputNewline).Replace("{0}", declaration.Replace("\n", inputNewline));
+        var literalNewline = inputNewline == "\r" ? "\r" : newline;
+        var expectedDeclaration = declaration.Replace("\n", literalNewline);
+        // The interpolated raw fixture's first/last line breaks delimit the content;
+        // only its explicit CRs between x, the interpolation, and y belong to the value.
+        if (inputNewline == "\r" && literal.StartsWith("$\"\"\"\n", StringComparison.Ordinal))
+            expectedDeclaration = declaration.Replace("\n", newline);
+        var expected = branch.Replace("\n", newline).Replace("{0}", expectedDeclaration);
         foreach (var operation in new[] { "write", "apply", "create_overwrite" })
         {
             var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
@@ -354,11 +361,13 @@ public sealed class SourceFileFormatTests
     }
 
     [Fact]
-    public void ApplyNewlines_DoesNotExtendANestedUnfinishedStringIntoItsSibling()
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedNestedBranches()
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
         const string input = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\r#endif\r";
-        const string expected = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\nvar a = @\"x\ry\";\n#endif\n#endif\n";
+        // Activating the inner #if closes its string at the sibling's opening quote.
+        // The PM union policy protects that closed token despite the malformed statement.
+        const string expected = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\n#endif\n";
 
         Assert.Equal(expected, format.ApplyNewlines(input));
     }
@@ -375,11 +384,11 @@ public sealed class SourceFileFormatTests
     }
 
     [Fact]
-    public void ApplyNewlines_DoesNotExtendAnInactiveUnfinishedStringIntoOtherBranches()
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedSiblingBranches()
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
         const string input = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\rvar b = 1;\r";
-        const string expected = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\nvar a = @\"x\ry\";\n#endif\nvar b = 1;\n";
+        const string expected = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\nvar b = 1;\n";
 
         Assert.Equal(expected, format.ApplyNewlines(input));
     }

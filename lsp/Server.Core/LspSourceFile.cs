@@ -113,14 +113,8 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         private static bool HasError(SyntaxToken token)
         {
             var literal = token.IsKind(SyntaxKind.InterpolatedStringTextToken) ? token.Parent?.Parent : null;
-            if (token.GetDiagnostics().Any(d => d.Id is "CS1039" or "CS8997") ||
-                literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing) return true;
-            // An unfinished verbatim string can steal a sibling's opening quote. Roslyn
-            // closes the token there, leaving the sibling's content attached as an identifier
-            // after a missing semicolon. That recovered boundary is not a valid literal extent.
-            var next = token.GetNextToken(includeSkipped: true);
-            return token.Parent?.Parent is ExpressionStatementSyntax { SemicolonToken.IsMissing: true } &&
-                next.IsKind(SyntaxKind.IdentifierToken) && next.SpanStart == token.Span.End;
+            return token.GetDiagnostics().Any(d => d.Id is "CS1039" or "CS8997") ||
+                literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing;
         }
 
         // Parses the text from a skipped branch's directive onward, with that directive rewritten in place
