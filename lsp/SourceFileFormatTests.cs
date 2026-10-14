@@ -405,6 +405,32 @@ public sealed class SourceFileFormatTests
         Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
     }
 
+    [Theory]
+    [InlineData("var s = $@\"outer\n{ @\"inner\rtext\" }\n")]
+    [InlineData("var s = $@\"outer\n{ $@\"inner\r{1}\" }\n")]
+    [InlineData("var s = $$\"\"\"\nouter\n{{ @\"inner\rtext\" }}\n")]
+    public void ApplyNewlines_KeepsClosedInnerLiteralCrsInUnterminatedInterpolation(string input)
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesOnlyUnterminatedOuterInterpolationCrs()
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal("var s = $@\"outer\n{ @\"inner\rtext\" }\n",
+            format.ApplyNewlines("var s = $@\"outer\r{ @\"inner\rtext\" }\r"));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsRecoveredFieldLiteralAfterUnterminatedInterpolation()
+    {
+        const string input = "var s = $@\"outer\n{ @\"inner\rtext\" }\nclass C { string f = @\"a\r#else\rb\"; }\n";
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
     // #520: an unterminated literal in one branch must not hide a sibling branch, and a directive-looking
     // line inside a nested branch's string must not close the wrong group. Each input keeps its CRs
     // because some branch-selection configuration reads them inside a closed string.

@@ -189,18 +189,20 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
             return next;
         }
 
-        private void CollectString(SyntaxToken token)
+        private void CollectString(SyntaxToken token, int offset = 0)
         {
             if (token.IsKind(SyntaxKind.InterpolatedStringToken))
             {
-                if (IsUnterminated(token)) return;
                 // The lexer reads an interpolated string as one token; its holes are code, not content.
-                foreach (var part in SyntaxFactory.ParseExpression(token.Text, options: Options).DescendantTokens())
+                // Judge each parsed literal separately: a closed literal in a hole still counts when
+                // the outer interpolation is unterminated. HasError rejects only the outer text.
+                // Error recovery may put a closed inner literal in skipped-token trivia.
+                foreach (var part in SyntaxFactory.ParseExpression(token.Text, options: Options).DescendantTokens(descendIntoTrivia: true))
                 {
-                    if (IsMultiLineStringContent(part.Kind()) && !HasError(part)) Add(token.SpanStart + part.SpanStart, token.SpanStart + part.Span.End);
+                    CollectString(part, offset + token.SpanStart);
                 }
             }
-            else if (IsMultiLineStringContent(token.Kind()) && !HasError(token)) Add(token.SpanStart, token.Span.End);
+            else if (IsMultiLineStringContent(token.Kind()) && !HasError(token)) Add(offset + token.SpanStart, offset + token.Span.End);
         }
 
         private void Add(int start, int end)
