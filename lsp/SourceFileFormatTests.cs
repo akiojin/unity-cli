@@ -218,7 +218,10 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n")]
     [InlineData("\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n")]
     [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
-    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
+    // No configuration reaches this #else: when the #if is skipped, the raw string's "#if B" line opens a
+    // nested group that swallows the #else, so only the raw string's CRs are string content.
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r\n#else\r\n{1}\";\r\n#endif\r\n")]
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
     [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
     // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
@@ -400,6 +403,31 @@ public sealed class SourceFileFormatTests
         const string input = "#if UNITY_EDITOR\r// @\"x\ry\"\r/* @\"x\ry\" */\r#error @\"x\ry\"\r#endif\r";
 
         Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
+    }
+
+    // #520: an unterminated literal in one branch must not hide a sibling branch, and a directive-looking
+    // line inside a nested branch's string must not close the wrong group. Each input keeps its CRs
+    // because some branch-selection configuration reads them inside a closed string.
+    [Theory]
+    [InlineData("#if true\n#if C\nvar w = @\"p\r#endif\rq\";\n#endif\n#endif\nvar s = @\"x\ry\";\n")]
+    [InlineData("#if B\n#if A\nvar v = @\"p\r#else\rq\";\n#endif\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n#if false\nvar w = @\"p\r#endif\rq\";\n#endif\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if B\n#if A\n#if true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n#endif\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#else\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#elif false\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\nvar u = \"\"\"\n#endif\nclass C { string f = @\"a\r#else\rb\"; }\n")]
+    [InlineData("#if A\nclass C { string f = @\"a\r#else\rb\"; }\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    [InlineData("#if B\nclass C { string f = @\"a\r#else\rb\"; }\nvar u = \"\"\"\n#endif\n")]
+    // Minimal generator mismatches: an unterminated "/*" or "@\"" in a taken branch hides the next branch.
+    [InlineData("#if true\n/*\n#else\nvar v = @\"p\r#else\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#elif C\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#endif\nvar w = @\"p\r#endif\rq\";\n")]
+    [InlineData("#if B\n#elif true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    public void ApplyNewlines_KeepsClosedStringCrsInBranchesHiddenByUnterminatedLiterals(string input)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+
+        Assert.Equal(input, format.ApplyNewlines(input));
     }
 
     private static byte[] Encode(string lfText, string encoding, string newline)

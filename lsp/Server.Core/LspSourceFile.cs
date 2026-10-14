@@ -62,116 +62,197 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return false;
     }
 
-    private const string ActiveSymbol = "_";
-    private const string ActiveDirective = "#if " + ActiveSymbol;
-    private static readonly CSharpParseOptions ActiveBranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(ActiveSymbol);
+    private static HashSet<int> FindLoneCrsInStringLiterals(string text) => new LiteralCrScan(text).Run();
 
-    private static HashSet<int> FindLoneCrsInStringLiterals(string text)
-    {
-        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>());
-        scan.Collect(0, CSharpSyntaxTree.ParseText(text).GetRoot(), new TextSpan(0, text.Length));
-        return scan.Positions;
-    }
+    private enum DirectiveKind { Other, If, Elif, Else, EndIf }
 
-    // Inspects every preprocessor branch, independent of the current project's symbols. Each branch a
-    // parse skipped is parsed again on its own with that branch active, so the parser decides where the
-    // branch really ends (a directive-looking line inside its strings is string content) and no other
-    // branch's lexical state (an unterminated comment or string) reaches it. A lone CR is kept when any
-    // of these parses reads it inside a well-formed string; an unterminated string token is not valid C#
-    // in that configuration and keeps nothing. Positions are
-    // offsets into Text; Activated holds the branch directives already parsed, so each is parsed once.
-    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated)
+    // Walks every lexer state that some preprocessor configuration reaches, independent of the current
+    // project's symbols: each #if/#elif condition may be true or false. Code is lexed only from the line
+    // after a directive, where the lexer state is fresh, so an unterminated comment or string in one
+    // branch never decides how another branch is lexed. A skipped branch is scanned line by line as
+    // Roslyn does, so a directive-looking line inside its strings ends the branch, while the same line
+    // lexed as active code is string content. A lone CR is kept when any reached state reads it inside
+    // a well-formed string; an unterminated string token is not valid C# in that configuration and keeps
+    // nothing. States are a position plus the open #if groups, so the cost follows the directive count
+    // rather than the number of configurations.
+    private sealed class LiteralCrScan
     {
-        public void Collect(int offset, SyntaxNode root, TextSpan scope)
+        private static readonly CSharpParseOptions Options = CSharpParseOptions.Default;
+        private readonly string _text;
+        private readonly HashSet<int> _positions = new();
+        private readonly Dictionary<int, (DirectiveKind Kind, int End)?> _nextDirective = new();
+        private readonly HashSet<(int Position, string Groups)> _active = new();
+        private readonly HashSet<(int Position, string Groups, bool Taken)> _skipped = new();
+        private readonly Stack<(int Position, string Groups, bool? Taken)> _pending = new();
+
+        public LiteralCrScan(string text) => _text = text;
+
+        public HashSet<int> Run()
         {
-            foreach (var token in root.DescendantTokens(descendIntoTrivia: true))
+            Active(0, "");
+            while (_pending.TryPop(out var state))
             {
-                if (!IsMultiLineStringContent(token.Kind()) || HasError(token)) continue;
-                var span = token.Span.Intersection(scope);
-                if (span is null) continue;
-                for (var i = offset + span.Value.Start; i < offset + span.Value.End; i++)
+                if (state.Taken is { } taken) ScanSkipped(state.Position, state.Groups, taken);
+                else ScanActive(state.Position, state.Groups);
+            }
+            return _positions;
+        }
+
+        // Groups holds one char per open #if, outermost first: Else once the group has passed its #else.
+        private const char Open = 'i';
+        private const char Else = 'e';
+
+        private void Active(int position, string groups)
+        {
+            if (_active.Add((position, groups))) _pending.Push((position, groups, null));
+        }
+
+        // A skipped branch of the innermost open #if; Taken records whether an earlier branch was taken.
+        private void Skipped(int position, string groups, bool taken)
+        {
+            if (_skipped.Add((position, groups, taken))) _pending.Push((position, groups, taken));
+        }
+
+        // Roslyn reports a stray #elif/#else/#endif, or an #elif/#else after the group's #else, as a bad
+        // directive and keeps lexing in the same state.
+        private void ScanActive(int position, string groups)
+        {
+            if (NextDirective(position) is not var (kind, end)) return;
+            var inGroup = groups.Length > 0;
+            var afterElse = inGroup && groups[^1] == Else;
+            switch (kind)
+            {
+                case DirectiveKind.If:
+                    Active(end, groups + Open);
+                    Skipped(end, groups + Open, taken: false);
+                    break;
+                case DirectiveKind.Elif when inGroup && !afterElse:
+                    Skipped(end, groups, taken: true);
+                    break;
+                case DirectiveKind.Else when inGroup && !afterElse:
+                    Skipped(end, groups[..^1] + Else, taken: true);
+                    break;
+                case DirectiveKind.EndIf when inGroup:
+                    Active(end, groups[..^1]);
+                    break;
+                default:
+                    Active(end, groups);
+                    break;
+            }
+        }
+
+        private void ScanSkipped(int position, string groups, bool taken)
+        {
+            var nested = 0;
+            var afterElse = groups[^1] == Else;
+            for (var line = position; line < _text.Length; line = LineEnd(line))
+            {
+                var kind = Classify(line);
+                if (kind == DirectiveKind.If) nested++;
+                else if (kind == DirectiveKind.EndIf && nested > 0) nested--;
+                else if (nested > 0 || afterElse && kind is DirectiveKind.Elif or DirectiveKind.Else) continue;
+                else if (kind == DirectiveKind.EndIf)
                 {
-                    if (Text[i] == '\r' && (i + 1 >= Text.Length || Text[i + 1] != '\n')) Positions.Add(i);
+                    Active(LineEnd(line), groups[..^1]);
+                    return;
+                }
+                else if (kind == DirectiveKind.Elif && !taken) Active(LineEnd(line), groups);
+                else if (kind == DirectiveKind.Else && taken) afterElse = true;
+                else if (kind == DirectiveKind.Else)
+                {
+                    Active(LineEnd(line), groups[..^1] + Else);
+                    return;
                 }
             }
+        }
 
-            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
+        // Lexes active code from a line start up to the next directive and records the CRs of the
+        // well-formed strings on the way. Lexing is independent of the depth, so it runs once per start.
+        private (DirectiveKind Kind, int End)? NextDirective(int position)
+        {
+            if (_nextDirective.TryGetValue(position, out var cached)) return cached;
+            (DirectiveKind, int)? next = null;
+            foreach (var token in SyntaxFactory.ParseTokens(_text, position, position, Options))
             {
-                if (!scope.Contains(directive.Span)) continue;
-                var group = directive.GetRelatedDirectives();
-                for (var b = 0; b < group.Count; b++)
+                var directive = token.LeadingTrivia.FirstOrDefault(trivia => trivia.IsDirective);
+                if (directive.IsDirective)
                 {
-                    var end = b + 1 < group.Count ? group[b + 1].FullSpan.Start : scope.End;
-                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end);
+                    var start = directive.SpanStart;
+                    while (start > 0 && !SyntaxFacts.IsNewLine(_text[start - 1])) start--;
+                    next = (Classify(start), LineEnd(start));
+                    break;
                 }
+                if (token.IsKind(SyntaxKind.EndOfFileToken)) break;
+                CollectString(token);
+            }
+            _nextDirective[position] = next;
+            return next;
+        }
+
+        private void CollectString(SyntaxToken token)
+        {
+            if (token.IsKind(SyntaxKind.InterpolatedStringToken))
+            {
+                if (IsUnterminated(token)) return;
+                // The lexer reads an interpolated string as one token; its holes are code, not content.
+                foreach (var part in SyntaxFactory.ParseExpression(token.Text, options: Options).DescendantTokens())
+                {
+                    if (IsMultiLineStringContent(part.Kind()) && !HasError(part)) Add(token.SpanStart + part.SpanStart, token.SpanStart + part.Span.End);
+                }
+            }
+            else if (IsMultiLineStringContent(token.Kind()) && !HasError(token)) Add(token.SpanStart, token.Span.End);
+        }
+
+        private void Add(int start, int end)
+        {
+            for (var i = start; i < end; i++)
+            {
+                if (_text[i] == '\r' && (i + 1 >= _text.Length || _text[i + 1] != '\n')) _positions.Add(i);
             }
         }
 
         // An unterminated literal (CS1039, CS8997) runs past where the string really ends, so its extent is
         // wrong; other errors, such as raw-string indentation, leave the extent intact. An interpolated
-        // string's text token is well-formed even when the enclosing literal is not closed.
+        // string's text token is well-formed only when the enclosing literal is closed. Only the token's
+        // own diagnostics count: trailing trivia can hold a later, unrelated literal's.
+        private static bool IsUnterminated(SyntaxToken token) => token.WithoutTrivia().GetDiagnostics().Any(d => d.Id is "CS1039" or "CS8997");
+
         private static bool HasError(SyntaxToken token)
         {
             var literal = token.IsKind(SyntaxKind.InterpolatedStringTextToken) ? token.Parent?.Parent : null;
-            return token.GetDiagnostics().Any(d => d.Id is "CS1039" or "CS8997") ||
-                literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing;
+            return IsUnterminated(token) || literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing;
         }
 
-        // Parses the text from a skipped branch's directive onward, with that directive rewritten in place
-        // to an always-true "#if" (every #if/#elif/#else directive is at least as long). The window doubles
-        // until the branch's next directive is fully inside it, so the cost follows the branch size. That
-        // next #elif/#else is followed too: a directive inside a string can hide it from the outer parse.
-        // A branch that never closes once active is not valid C# that way; it keeps the outer extent.
-        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd)
+        // The conditional directive starting a line: '#' and its name after optional whitespace.
+        private DirectiveKind Classify(int line)
         {
-            // A malformed directive (a bare "#if") is too short to rewrite; it is not valid C# anyway.
-            var start = offset + directive.Span.Start;
-            if (directive.Span.Length < ActiveDirective.Length || !Activated.Add(start)) return;
-            // The window always holds the whole directive, however long its condition or comment is.
-            for (var length = directive.Span.Length + 256; ; length *= 2)
+            var i = SkipWhitespace(line);
+            if (i >= _text.Length || _text[i] != '#') return DirectiveKind.Other;
+            var nameStart = SkipWhitespace(i + 1);
+            var nameEnd = nameStart;
+            while (nameEnd < _text.Length && SyntaxFacts.IsIdentifierPartCharacter(_text[nameEnd])) nameEnd++;
+            return _text[nameStart..nameEnd] switch
             {
-                var end = (int)Math.Min(Text.Length, (long)start + length);
-                var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
-                var root = CSharpSyntaxTree.ParseText(window, ActiveBranchOptions).GetRoot();
-                var opening = root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>().First();
-                var group = BranchDirectives(root, opening);
-                var complete = end == Text.Length;
-                if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
-                {
-                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start));
-                    var next = group.Count > 2 ? group[2].FullSpan.Start : window.Length;
-                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next);
-                    return;
-                }
-                if (complete)
-                {
-                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, Math.Max(opening.FullSpan.End, outerEnd - start)));
-                    return;
-                }
-            }
+                "if" => DirectiveKind.If,
+                "elif" => DirectiveKind.Elif,
+                "else" => DirectiveKind.Else,
+                "endif" => DirectiveKind.EndIf,
+                _ => DirectiveKind.Other,
+            };
         }
 
-        // A fragment can be parsed as a field outside its containing class. Roslyn can then
-        // attach its directives to separate skipped-token trivia and omit related directives.
-        // Their lexical kinds still identify the opening's siblings and closing directive.
-        private static List<DirectiveTriviaSyntax> BranchDirectives(SyntaxNode root, IfDirectiveTriviaSyntax opening)
+        private int SkipWhitespace(int i)
         {
-            var related = opening.GetRelatedDirectives();
-            if (related.Count > 1) return related;
-            var group = new List<DirectiveTriviaSyntax> { opening };
-            var depth = 0;
-            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<DirectiveTriviaSyntax>())
-            {
-                if (directive.SpanStart <= opening.SpanStart) continue;
-                if (directive is IfDirectiveTriviaSyntax) depth++;
-                else if (directive is EndIfDirectiveTriviaSyntax)
-                {
-                    if (depth == 0) { group.Add(directive); break; }
-                    depth--;
-                }
-                else if (depth == 0 && directive is ElifDirectiveTriviaSyntax or ElseDirectiveTriviaSyntax) group.Add(directive);
-            }
-            return group;
+            while (i < _text.Length && SyntaxFacts.IsWhitespace(_text[i])) i++;
+            return i;
+        }
+
+        // The start of the next line; CRLF is one line break.
+        private int LineEnd(int i)
+        {
+            while (i < _text.Length && !SyntaxFacts.IsNewLine(_text[i])) i++;
+            if (i < _text.Length && _text[i] == '\r' && i + 1 < _text.Length && _text[i + 1] == '\n') i++;
+            return Math.Min(i + 1, _text.Length);
         }
     }
 
