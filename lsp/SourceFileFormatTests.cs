@@ -211,11 +211,139 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\r", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\n")]
     [InlineData("\n", "// comment\rvar a = 1; /* x\ry */\r", "// comment\nvar a = 1; /* x\ny */\n")]
     [InlineData("\n", "var a = \"x\ry\";\r", "var a = \"x\ny\";\n")]
+    [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
+    [InlineData("\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    // A directive-looking line inside a string of an inactive branch is string content once that branch is active.
+    [InlineData("\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
+    // A fake #endif inside a skipped branch's string: what follows is code in the configuration where the branch is skipped.
+    [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // A CR stays when any configuration that parses without errors reads it as string content.
+    [InlineData("\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // An unterminated literal is not valid C#: its extent is unknown, so it keeps no CR.
+    [InlineData("\n", "var a = @\"x\ry;\r", "var a = @\"x\ny;\n")]
+    [InlineData("\n", "var a = $@\"x\r{1}y;\r", "var a = $@\"x\n{1}y;\n")]
+    [InlineData("\n", "var a = \"\"\"\n  x\ry;\r", "var a = \"\"\"\n  x\ny;\n")]
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
+    [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\r", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\n")]
+    [InlineData("\r\n", "#if UNITY_EDITOR\nvar b = \"\"\"\n#endif\nvar a = 1;\rvar c = @\"x\ry\";\n", "#if UNITY_EDITOR\r\nvar b = \"\"\"\r\n#endif\r\nvar a = 1;\r\nvar c = @\"x\ry\";\r\n")]
     public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
 
         Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesMalformedDirectivesAndManyBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        Assert.Equal("#if\nvar a = 1;\n#endif\n", format.ApplyNewlines("#if\rvar a = 1;\r#endif\r"));
+
+        var block = "#if A\nvar a = @\"x\r#else\ry\";\n#else\nvar b = 1;\r#endif\n";
+        var input = string.Concat(Enumerable.Repeat(block, 400));
+        Assert.Equal(string.Concat(Enumerable.Repeat(block.Replace(";\r#endif", ";\n#endif"), 400)), format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_ActivatesBranchesWithDirectivesLongerThanTheFirstWindow()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Range(0, 60).Select(i => "SYMBOL_" + i));
+        foreach (var directive in new[] { "#elif " + condition, "#else // " + new string('x', 300) })
+        {
+            var input = "#if false\nvar a = 1;\r" + directive + "\nvar b = @\"x\ry\";\r#endif\n";
+            Assert.True(directive.Length > 256);
+            Assert.Equal("#if false\nvar a = 1;\n" + directive + "\nvar b = @\"x\ry\";\n#endif\n", format.ApplyNewlines(input));
+        }
+    }
+
+    public static TheoryData<string, string, string> InactiveBranchStrings()
+    {
+        var data = new TheoryData<string, string, string>();
+        foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        foreach (var literal in new[]
+        {
+            "@\"x\ry\"",
+            "\"\"\"\n    x\ry\n    \"\"\"",
+            "\"\"\"\n    x\ry\n    \"\"\"u8",
+            "$@\"x\r{1}\ry\"",
+            "$\"\"\"\n    x\r{1}\ry\n    \"\"\"",
+            "@\"x\r#if OTHER\r#endif\ry\"",
+        })
+        foreach (var branch in new[]
+        {
+            "#if UNITY_EDITOR\n{0}\n#endif\n",
+            "\t# if UNITY_EDITOR\n{0}\n\t# endif\n",
+            "#if false\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#elif UNITY_STANDALONE\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#else\n{0}\n#endif\n",
+            "#if UNITY_EDITOR\n#if UNITY_STANDALONE\n{0}\n#endif\n#endif\n",
+            "#define UNITY_EDITOR\n#if !UNITY_EDITOR\n{0}\n#endif\n",
+        })
+        {
+            data.Add(newline, literal, branch);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(InactiveBranchStrings))]
+    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string literal, string branch)
+    {
+        // Construct expected bytes separately: source line breaks follow the original convention,
+        // while the lone CRs in the literal remain part of its value.
+        var declaration = "var text = " + literal + ";";
+        var input = branch.Replace("{0}", declaration);
+        var expected = branch.Replace("\n", newline).Replace("{0}", declaration.Replace("\n", newline));
+        foreach (var operation in new[] { "write", "apply", "create_overwrite" })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(Path.Combine(root, "Assets"));
+            var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+            await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8-bom", newline));
+            try
+            {
+                var service = new LspEditService(root, new LspFileLockProvider());
+                using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = input } }));
+                var result = operation switch
+                {
+                    "write" => await service.WriteCSharpFileAsync("Assets/Sample.cs", input, true, true, false),
+                    "apply" => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false),
+                    _ => await service.CreateCSharpFileAsync("Assets/Sample.cs", input, true, true, true, false),
+                };
+
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), operation + ": " + response.RootElement);
+                var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+                Assert.Equal(encoding.GetPreamble().Concat(encoding.GetBytes(expected)).ToArray(), await File.ReadAllBytesAsync(scriptPath));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesCrsInInactiveCommentsAndDirectiveMessages()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\r// @\"x\ry\"\r/* @\"x\ry\" */\r#error @\"x\ry\"\r#endif\r";
+
+        Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
     }
 
     private static byte[] Encode(string lfText, string encoding, string newline)
