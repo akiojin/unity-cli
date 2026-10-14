@@ -220,13 +220,12 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
     [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
     [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
-    // A fake #endif inside a skipped branch's string: what follows is code in the configuration where the branch is skipped.
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
-    // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\r", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\n")]
@@ -269,10 +268,10 @@ public sealed class SourceFileFormatTests
         foreach (var literal in new[]
         {
             "@\"x\ry\"",
-            "\"\"\"\n    x\ry\n    \"\"\"",
-            "\"\"\"\n    x\ry\n    \"\"\"u8",
+            "\"\"\"\n    x\r    y\n    \"\"\"",
+            "\"\"\"\n    x\r    y\n    \"\"\"u8",
             "$@\"x\r{1}\ry\"",
-            "$\"\"\"\n    x\r{1}\ry\n    \"\"\"",
+            "$\"\"\"\n    x\r    {1}\r    y\n    \"\"\"",
             "@\"x\r#if OTHER\r#endif\ry\"",
         })
         foreach (var branch in new[]
@@ -284,6 +283,9 @@ public sealed class SourceFileFormatTests
             "#if true\nint enabled = 1;\n#else\n{0}\n#endif\n",
             "#if UNITY_EDITOR\n#if UNITY_STANDALONE\n{0}\n#endif\n#endif\n",
             "#define UNITY_EDITOR\n#if !UNITY_EDITOR\n{0}\n#endif\n",
+            "#if false\n/*\n#else\n{0}\n#endif\n",
+            "#if false\n/*\n#elif UNITY_EDITOR\n{0}\n#else\nint enabled = 1;\n#endif\n",
+            "#if UNITY_EDITOR\n#if true\n/*\n#else\n{0}\n#endif\n#endif\n",
         })
         {
             data.Add(newline, literal, branch);
@@ -327,6 +329,47 @@ public sealed class SourceFileFormatTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsDirectiveLookingLinesInClassFieldStrings()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\r#else\npublic string B = $@\"u\r#else\r{1}\rv\";\r#endif\r}\r";
+        const string expected = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\n#else\npublic string B = $@\"u\r#else\r{1}\rv\";\n#endif\n}\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_DoesNotExtendANestedUnfinishedStringIntoItsSibling()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\r#endif\r";
+        const string expected = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\nvar a = @\"x\ry\";\n#endif\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesLongConditionalExpressions()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Repeat("UNITY_EDITOR", 80));
+        var input = "#if " + condition + "\nvar a = @\"x\ry\";\r#endif\r";
+        var expected = "#if " + condition + "\nvar a = @\"x\ry\";\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_DoesNotExtendAnInactiveUnfinishedStringIntoOtherBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\rvar b = 1;\r";
+        const string expected = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\nvar a = @\"x\ry\";\n#endif\nvar b = 1;\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
     }
 
     [Fact]
