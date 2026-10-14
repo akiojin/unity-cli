@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -51,260 +52,101 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return result.ToString();
     }
 
+    // Plain CRLF input has no lone CR to classify, so it skips parsing.
     private static bool HasLoneCr(string text)
     {
         for (var i = text.IndexOf('\r'); i >= 0; i = text.IndexOf('\r', i + 1))
+        {
             if (i + 1 >= text.Length || text[i + 1] != '\n') return true;
+        }
         return false;
     }
+
+    private const string ActiveSymbol = "_";
+    private const string ActiveDirective = "#if " + ActiveSymbol;
+    private static readonly CSharpParseOptions ActiveBranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(ActiveSymbol);
 
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
-        var positions = new HashSet<int>();
-        var root = CSharpSyntaxTree.ParseText(text).GetRoot();
-        var branches = ConditionalBranches(root).ToArray();
-        var scan = new LiteralCrScan(text, positions, new(), new(), new(), branches);
-        scan.Collect(0, root, new TextSpan(0, text.Length));
-        foreach (var run in scan.Runs)
-            if (!run.Dropped) positions.UnionWith(run.Positions);
-        foreach (var branch in branches)
-        {
-            if (branch.AlreadyActive || scan.CleanActivations.Contains(branch.DirectiveStart)) continue;
-            // Select one branch and its ancestors, leaving sibling branches disabled. Their
-            // arbitrary text (including unfinished comments) must not affect this branch's lexer.
-            var (view, offsets) = SelectBranch(text, branch.Choices);
-            var viewRoot = CSharpSyntaxTree.ParseText(view).GetRoot();
-            // Disabled text can contain directive-looking lines inside a string. Only accept
-            // a selection when its entire path is still real directives in the selected view.
-            var scope = SelectedScope(viewRoot, offsets, branch);
-            if (scope is not null)
-                CollectStringCrs(viewRoot, view, offsets, positions, scope, branches, HasSyntaxErrors(viewRoot, scope.Value, offsets));
-        }
-        return positions;
+        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>());
+        scan.Collect(0, CSharpSyntaxTree.ParseText(text).GetRoot(), new TextSpan(0, text.Length));
+        return scan.Positions;
     }
 
-    private static void CollectStringCrs(SyntaxNode root, string text, int[]? offsets, HashSet<int> positions,
-        TextSpan? bounds = null, IReadOnlyList<ConditionalBranch>? branches = null, bool conservative = false, int sourceOffset = 0,
-        List<StringRun>? runs = null)
-    {
-        foreach (var token in root.DescendantTokens(descendIntoTrivia: true))
-        {
-            if (token.Span.IsEmpty || !IsMultiLineStringContent(token.Kind())) continue;
-            var tokenPositions = runs is null ? null : new List<int>();
-            int? limit = null;
-            if (conservative && branches is not null)
-            {
-                var anchor = token.Parent?.AncestorsAndSelf().OfType<InterpolatedStringExpressionSyntax>().FirstOrDefault()?.SpanStart ?? token.SpanStart;
-                var originalStart = offsets?[anchor] ?? sourceOffset + anchor;
-                limit = branches.Where(b => b.BodyStart <= originalStart && originalStart < b.BodyEnd)
-                    .OrderBy(b => b.BodyEnd - b.BodyStart).FirstOrDefault()?.BodyEnd;
-            }
-            for (var i = token.SpanStart; i < token.Span.End; i++)
-            {
-                if (text[i] != '\r' || (i + 1 < text.Length && text[i + 1] == '\n')) continue;
-                var original = offsets?[i] ?? sourceOffset + i;
-                if (limit is not null && original >= limit.Value) continue;
-                if (bounds is not null && !bounds.Value.Contains(original)) continue;
-                if (tokenPositions is not null) tokenPositions.Add(original);
-                else positions.Add(original);
-            }
-            if (tokenPositions is { Count: > 0 }) runs!.Add(new(sourceOffset + token.SpanStart, tokenPositions));
-        }
-    }
-
-    private readonly record struct ConditionalChoice(int DirectiveStart, TextSpan Condition, bool Enabled);
-    private sealed record ConditionalBranch(int DirectiveStart, List<ConditionalChoice> Choices, int BodyStart)
-    {
-        public int BodyEnd { get; set; }
-        public bool AlreadyActive { get; init; }
-    }
-
-    private sealed class ConditionalGroup(List<ConditionalChoice> parents)
-    {
-        public List<ConditionalChoice> Parents { get; } = parents;
-        public List<ConditionalChoice> Conditions { get; } = new();
-        public List<ConditionalChoice> Current { get; set; } = parents;
-        public ConditionalBranch? Branch { get; private set; }
-
-        public List<ConditionalChoice> Select(bool lastCondition)
-        {
-            var choices = new List<ConditionalChoice>(Parents);
-            for (var i = 0; i < Conditions.Count; i++)
-            {
-                choices.Add(Conditions[i] with { Enabled = lastCondition && i == Conditions.Count - 1 });
-            }
-            return Current = choices;
-        }
-
-        public ConditionalBranch StartBranch(DirectiveTriviaSyntax directive, bool lastCondition, int fileEnd)
-        {
-            if (Branch is not null) Branch.BodyEnd = directive.FullSpan.Start;
-            return Branch = new(directive.SpanStart, Select(lastCondition), directive.FullSpan.End)
-            {
-                BodyEnd = fileEnd,
-                AlreadyActive = directive.IsActive && directive is BranchingDirectiveTriviaSyntax { BranchTaken: true },
-            };
-        }
-    }
-
-    private static IEnumerable<ConditionalBranch> ConditionalBranches(SyntaxNode root)
-    {
-        var groups = new Stack<ConditionalGroup>();
-        var branches = new List<ConditionalBranch>();
-        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true))
-        {
-            switch (trivia.GetStructure())
-            {
-                case IfDirectiveTriviaSyntax directive:
-                    var group = new ConditionalGroup(groups.TryPeek(out var parent) ? parent.Current : new());
-                    groups.Push(group);
-                    group.Conditions.Add(new(directive.SpanStart, directive.Condition.Span, true));
-                    branches.Add(group.StartBranch(directive, true, root.FullSpan.End));
-                    break;
-                case ElifDirectiveTriviaSyntax directive when groups.TryPeek(out var elifGroup):
-                    elifGroup.Conditions.Add(new(directive.SpanStart, directive.Condition.Span, true));
-                    branches.Add(elifGroup.StartBranch(directive, true, root.FullSpan.End));
-                    break;
-                case ElseDirectiveTriviaSyntax directive when groups.TryPeek(out var elseGroup):
-                    branches.Add(elseGroup.StartBranch(directive, false, root.FullSpan.End));
-                    break;
-                case EndIfDirectiveTriviaSyntax directive when groups.Count > 0:
-                    var ended = groups.Pop();
-                    if (ended.Branch is not null) ended.Branch.BodyEnd = directive.FullSpan.Start;
-                    break;
-            }
-        }
-        return branches;
-    }
-
-    private static (string Text, int[] Offsets) SelectBranch(string text, List<ConditionalChoice> choices)
-    {
-        var view = new StringBuilder(text.Length);
-        var offsets = new List<int>(text.Length);
-        var original = 0;
-        foreach (var choice in choices.OrderBy(choice => choice.Condition.Start))
-        {
-            while (original < choice.Condition.Start) { offsets.Add(original); view.Append(text[original++]); }
-            var replacement = choice.Enabled ? "true" : "false";
-            for (var i = 0; i < replacement.Length; i++)
-            {
-                offsets.Add(i == replacement.Length - 1 ? Math.Max(choice.Condition.Start, choice.Condition.End - 1) : choice.Condition.Start);
-                view.Append(replacement[i]);
-            }
-            original = choice.Condition.End;
-        }
-        while (original < text.Length) { offsets.Add(original); view.Append(text[original++]); }
-        return (view.ToString(), offsets.ToArray());
-    }
-
-    private static TextSpan? SelectedScope(SyntaxNode root, int[] offsets, ConditionalBranch branch)
-    {
-        var choices = branch.Choices.ToDictionary(choice => choice.DirectiveStart);
-        var found = new HashSet<int>();
-        DirectiveTriviaSyntax? target = null;
-        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true))
-        {
-            if (trivia.GetStructure() is not DirectiveTriviaSyntax directive) continue;
-            var original = offsets[directive.SpanStart];
-            var taken = directive switch
-            {
-                IfDirectiveTriviaSyntax condition => condition.BranchTaken,
-                ElifDirectiveTriviaSyntax condition => condition.BranchTaken,
-                ElseDirectiveTriviaSyntax condition => condition.BranchTaken,
-                _ => false,
-            };
-            if (original == branch.DirectiveStart && directive.IsActive && taken) target = directive;
-            if (!choices.TryGetValue(original, out var choice)) continue;
-            if (!directive.IsActive || taken != choice.Enabled) return null;
-            found.Add(original);
-        }
-        if (target is null || found.Count != choices.Count) return null;
-        var end = branch.BodyEnd;
-        var related = target.GetRelatedDirectives();
-        var index = 0;
-        while (index < related.Count && related[index].SpanStart != target.SpanStart) index++;
-        if (index + 1 < related.Count)
-        {
-            var actualEnd = offsets[related[index + 1].FullSpan.Start];
-            // A valid selected view knows which directive-looking lines were really literal text.
-            // An invalid view may have swallowed a sibling with an unfinished string/comment;
-            // retain the original extent so that branch cannot protect unrelated code newlines.
-            if (actualEnd <= end || !HasSyntaxErrors(root, TextSpan.FromBounds(branch.BodyStart, actualEnd), offsets))
-                end = actualEnd;
-        }
-        return TextSpan.FromBounds(branch.BodyStart, Math.Max(branch.BodyStart, end));
-    }
-
-    private static bool HasSyntaxErrors(SyntaxNode root, TextSpan scope, int[]? offsets = null, int sourceOffset = 0)
-    {
-        foreach (var diagnostic in root.GetDiagnostics())
-        {
-            // #error does not alter lexing; CS0116 comes from parsing a class-field fragment at file scope.
-            if (diagnostic.Severity != DiagnosticSeverity.Error || diagnostic.Id is "CS1029" or "CS0116") continue;
-            var span = diagnostic.Location.SourceSpan;
-            var start = offsets is null ? sourceOffset + span.Start : span.Start < offsets.Length ? offsets[span.Start] : offsets[^1] + 1;
-            var end = offsets is null ? sourceOffset + span.End : span.Length > 0 ? offsets[span.End - 1] + 1 : start;
-            if (start < scope.End && end >= scope.Start) return true;
-        }
-        return false;
-    }
-
-    private const string ActiveDirective = "#if _";
-    private static readonly CSharpParseOptions ActiveBranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols("_");
-
-    private sealed class StringRun(int tokenStart, List<int> positions)
-    {
-        public int TokenStart { get; } = tokenStart;
-        public List<int> Positions { get; } = positions;
-        public bool Dropped { get; set; }
-    }
-
-    // Reparse skipped branches in isolation to discover real extents through directive-looking literal
-    // lines. The context-preserving selections above recover descendants hidden by a malformed sibling.
-    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, List<StringRun> Runs, HashSet<int> Activated,
-        HashSet<int> CleanActivations, IReadOnlyList<ConditionalBranch> Branches)
+    // Inspects every preprocessor branch, independent of the current project's symbols. Each branch a
+    // parse skipped is parsed again on its own with that branch active, so the parser decides where the
+    // branch really ends (a directive-looking line inside its strings is string content) and no other
+    // branch's lexical state (an unterminated comment or string) reaches it. A lone CR is kept when any
+    // of these parses reads it inside a well-formed string; an unterminated string token is not valid C#
+    // in that configuration and keeps nothing. Positions are
+    // offsets into Text; Activated holds the branch directives already parsed, so each is parsed once.
+    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated)
     {
         public void Collect(int offset, SyntaxNode root, TextSpan scope)
         {
-            var originalScope = new TextSpan(offset + scope.Start, scope.Length);
-            var runs = new List<StringRun>();
-            CollectStringCrs(root, root.ToFullString(), null, Positions, originalScope, Branches,
-                HasSyntaxErrors(root, originalScope, sourceOffset: offset), offset, runs);
-            Runs.AddRange(runs);
+            foreach (var token in root.DescendantTokens(descendIntoTrivia: true))
+            {
+                if (!IsMultiLineStringContent(token.Kind()) || HasError(token)) continue;
+                var span = token.Span.Intersection(scope);
+                if (span is null) continue;
+                for (var i = offset + span.Value.Start; i < offset + span.Value.End; i++)
+                {
+                    if (Text[i] == '\r' && (i + 1 >= Text.Length || Text[i + 1] != '\n')) Positions.Add(i);
+                }
+            }
+
             foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
             {
-                if (!directive.IsActive || !scope.Contains(directive.Span)) continue;
+                if (!scope.Contains(directive.Span)) continue;
                 var group = directive.GetRelatedDirectives();
                 for (var b = 0; b < group.Count; b++)
                 {
                     var end = b + 1 < group.Count ? group[b + 1].FullSpan.Start : scope.End;
-                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end, runs);
+                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end);
                 }
             }
         }
 
-        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd, List<StringRun> outerRuns)
+        // An unterminated literal (CS1039, CS8997) runs past where the string really ends, so its extent is
+        // wrong; other errors, such as raw-string indentation, leave the extent intact. An interpolated
+        // string's text token is well-formed even when the enclosing literal is not closed.
+        private static bool HasError(SyntaxToken token)
         {
+            var literal = token.IsKind(SyntaxKind.InterpolatedStringTextToken) ? token.Parent?.Parent : null;
+            if (token.GetDiagnostics().Any(d => d.Id is "CS1039" or "CS8997") ||
+                literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing) return true;
+            // An unfinished verbatim string can steal a sibling's opening quote. Roslyn
+            // closes the token there, leaving the sibling's content attached as an identifier
+            // after a missing semicolon. That recovered boundary is not a valid literal extent.
+            var next = token.GetNextToken(includeSkipped: true);
+            return token.Parent?.Parent is ExpressionStatementSyntax { SemicolonToken.IsMissing: true } &&
+                next.IsKind(SyntaxKind.IdentifierToken) && next.SpanStart == token.Span.End;
+        }
+
+        // Parses the text from a skipped branch's directive onward, with that directive rewritten in place
+        // to an always-true "#if" (every #if/#elif/#else directive is at least as long). The window doubles
+        // until the branch's next directive is fully inside it, so the cost follows the branch size. That
+        // next #elif/#else is followed too: a directive inside a string can hide it from the outer parse.
+        // A branch that never closes once active is not valid C# that way; it keeps the outer extent.
+        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd)
+        {
+            // A malformed directive (a bare "#if") is too short to rewrite; it is not valid C# anyway.
             var start = offset + directive.Span.Start;
             if (directive.Span.Length < ActiveDirective.Length || !Activated.Add(start)) return;
-            for (var length = directive.Span.Length + 256L; ; length *= 2)
+            // The window always holds the whole directive, however long its condition or comment is.
+            for (var length = directive.Span.Length + 256; ; length *= 2)
             {
-                var end = (int)Math.Min(Text.Length, start + length);
+                var end = (int)Math.Min(Text.Length, (long)start + length);
                 var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
                 var root = CSharpSyntaxTree.ParseText(window, ActiveBranchOptions).GetRoot();
                 var opening = root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>().First();
-                var group = opening.GetRelatedDirectives();
+                var group = BranchDirectives(root, opening);
                 var complete = end == Text.Length;
                 if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
                 {
-                    var branchEnd = start + group[1].FullSpan.Start;
-                    foreach (var run in outerRuns)
-                        if (run.TokenStart >= outerEnd && run.TokenStart < branchEnd) run.Dropped = true;
-                    var scope = TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start);
-                    if (!HasSyntaxErrors(root, new TextSpan(start + scope.Start, scope.Length), sourceOffset: start)) CleanActivations.Add(start);
-                    Collect(start, root, scope);
+                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start));
                     var next = group.Count > 2 ? group[2].FullSpan.Start : window.Length;
-                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next, new());
+                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next);
                     return;
                 }
                 if (complete)
@@ -313,6 +155,29 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                     return;
                 }
             }
+        }
+
+        // A fragment can be parsed as a field outside its containing class. Roslyn can then
+        // attach its directives to separate skipped-token trivia and omit related directives.
+        // Their lexical kinds still identify the opening's siblings and closing directive.
+        private static List<DirectiveTriviaSyntax> BranchDirectives(SyntaxNode root, IfDirectiveTriviaSyntax opening)
+        {
+            var related = opening.GetRelatedDirectives();
+            if (related.Count > 1) return related;
+            var group = new List<DirectiveTriviaSyntax> { opening };
+            var depth = 0;
+            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<DirectiveTriviaSyntax>())
+            {
+                if (directive.SpanStart <= opening.SpanStart) continue;
+                if (directive is IfDirectiveTriviaSyntax) depth++;
+                else if (directive is EndIfDirectiveTriviaSyntax)
+                {
+                    if (depth == 0) { group.Add(directive); break; }
+                    depth--;
+                }
+                else if (depth == 0 && directive is ElifDirectiveTriviaSyntax or ElseDirectiveTriviaSyntax) group.Add(directive);
+            }
+            return group;
         }
     }
 

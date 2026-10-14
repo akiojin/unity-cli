@@ -226,6 +226,18 @@ public sealed class SourceFileFormatTests
     [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // A CR stays when any configuration that parses without errors reads it as string content.
+    [InlineData("\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // An unterminated literal is not valid C#: its extent is unknown, so it keeps no CR.
+    [InlineData("\n", "var a = @\"x\ry;\r", "var a = @\"x\ny;\n")]
+    [InlineData("\n", "var a = $@\"x\r{1}y;\r", "var a = $@\"x\n{1}y;\n")]
+    [InlineData("\n", "var a = \"\"\"\n  x\ry;\r", "var a = \"\"\"\n  x\ny;\n")]
+    // A missing semicolon alone or an unrelated syntax error does not change a literal's extent.
+    [InlineData("\n", "@\"x\ry\"", "@\"x\ry\"")]
+    [InlineData("\n", "var broken = ;\nvar a = @\"x\ry\";\r", "var broken = ;\nvar a = @\"x\ry\";\n")]
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\r", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\n")]
