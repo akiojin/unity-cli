@@ -143,13 +143,77 @@ public sealed class SourceFileFormatTests
     [Theory]
     [InlineData("a\r\nb\nc\n", "x\ny\n", "x\ny\n")]
     [InlineData("single line", "x\r\ny\n", "x\r\ny\n")]
-    [InlineData("a\r\nb\r\n", "x\ny\r\nz\rw", "x\r\ny\r\nz\rw")]
+    [InlineData("a\r\nb\r\n", "x\ny\r\nz\rw", "x\r\ny\r\nz\r\nw")]
+    [InlineData("a\nb\n", "x\ry\r\nz\rw", "x\ny\nz\nw")]
     [InlineData("a\nb\n", "x\r\ny\n", "x\ny\n")]
     [InlineData("a\rb\r", "x\ny\r\nz\rw", "x\ry\rz\rw")]
     [InlineData("a\rb\nc\r", "x\ny\n", "x\ny\n")]
     public void ApplyNewlines_OnlyRewritesWhenTheOriginalUsesOneConvention(string original, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes(original));
+
+        Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    public static TheoryData<string, string> NewlineMatrix()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var original in new[] { "\n", "\r\n", "\r" })
+        foreach (var input in new[] { "\n", "\r\n", "\r" })
+        {
+            data.Add(original, input);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(NewlineMatrix))]
+    public async Task EditInputNewlines_AreSavedInTheOriginalConvention(string originalNewline, string inputNewline)
+    {
+        const string written = "public class Sample\n{\n    public int Run() { return 2; }\n}\n";
+        foreach (var operation in new[] { "write", "apply", "create_overwrite" })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(Path.Combine(root, "Assets"));
+            var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+            await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8", originalNewline));
+            try
+            {
+                var service = new LspEditService(root, new LspFileLockProvider());
+                var input = written.Replace("\n", inputNewline);
+                using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = input } }));
+                var result = operation switch
+                {
+                    "write" => await service.WriteCSharpFileAsync("Assets/Sample.cs", input, true, true, false),
+                    "apply" => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false),
+                    _ => await service.CreateCSharpFileAsync("Assets/Sample.cs", input, true, true, true, false),
+                };
+
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), operation + ": " + response.RootElement);
+                Assert.Equal(Encode(written, "utf-8", originalNewline), await File.ReadAllBytesAsync(scriptPath));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    // A lone CR inside a string literal is part of the string's value, so it is never rewritten;
+    // lone CRs anywhere else (code, comments) are line terminators and follow the file's convention.
+    [Theory]
+    [InlineData("\n", "var a = @\"x\ry\";\rvar b = 1;\n", "var a = @\"x\ry\";\nvar b = 1;\n")]
+    [InlineData("\r\n", "var a = @\"x\ry\";\rvar b = 1;\n", "var a = @\"x\ry\";\r\nvar b = 1;\r\n")]
+    [InlineData("\n", "var a = $@\"x\r{b}\ry\";\r", "var a = $@\"x\r{b}\ry\";\n")]
+    [InlineData("\r\n", "var a = \"\"\"\n  x\ry\n  \"\"\";\r", "var a = \"\"\"\r\n  x\ry\r\n  \"\"\";\r\n")]
+    [InlineData("\n", "var a = $\"\"\"\n  x\r{b}\n  \"\"\";\r", "var a = $\"\"\"\n  x\r{b}\n  \"\"\";\n")]
+    [InlineData("\n", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\r", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\n")]
+    [InlineData("\n", "// comment\rvar a = 1; /* x\ry */\r", "// comment\nvar a = 1; /* x\ny */\n")]
+    [InlineData("\n", "var a = \"x\ry\";\r", "var a = \"x\ny\";\n")]
+    public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
 
         Assert.Equal(expected, format.ApplyNewlines(text));
     }
