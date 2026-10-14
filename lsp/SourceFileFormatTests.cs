@@ -218,7 +218,10 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n")]
     [InlineData("\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n")]
     [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
-    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
+    // No configuration reaches this #else: when the #if is skipped, the raw string's "#if B" line opens a
+    // nested group that swallows the #else, so only the raw string's CRs are string content.
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r\n#else\r\n{1}\";\r\n#endif\r\n")]
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
     [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
     // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
@@ -400,6 +403,119 @@ public sealed class SourceFileFormatTests
         const string input = "#if UNITY_EDITOR\r// @\"x\ry\"\r/* @\"x\ry\" */\r#error @\"x\ry\"\r#endif\r";
 
         Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
+    }
+
+    [Theory]
+    [InlineData("var s = $@\"outer\n{ @\"inner\rtext\" }\n")]
+    [InlineData("var s = $@\"outer\n{ $@\"inner\r{1}\" }\n")]
+    [InlineData("var s = $$\"\"\"\nouter\n{{ @\"inner\rtext\" }}\n")]
+    public void ApplyNewlines_KeepsClosedInnerLiteralCrsInUnterminatedInterpolation(string input)
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesOnlyUnterminatedOuterInterpolationCrs()
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal("var s = $@\"outer\n{ @\"inner\rtext\" }\n",
+            format.ApplyNewlines("var s = $@\"outer\r{ @\"inner\rtext\" }\r"));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsRecoveredFieldLiteralAfterUnterminatedInterpolation()
+    {
+        const string input = "var s = $@\"outer\n{ @\"inner\rtext\" }\nclass C { string f = @\"a\r#else\rb\"; }\n";
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    // #520: an unterminated literal in one branch must not hide a sibling branch, and a directive-looking
+    // line inside a nested branch's string must not close the wrong group. Each input keeps its CRs
+    // because some branch-selection configuration reads them inside a closed string.
+    [Theory]
+    [InlineData("#if true\n#if C\nvar w = @\"p\r#endif\rq\";\n#endif\n#endif\nvar s = @\"x\ry\";\n")]
+    [InlineData("#if B\n#if A\nvar v = @\"p\r#else\rq\";\n#endif\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n#if false\nvar w = @\"p\r#endif\rq\";\n#endif\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if B\n#if A\n#if true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n#endif\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#else\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#elif false\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\nvar u = \"\"\"\n#endif\nclass C { string f = @\"a\r#else\rb\"; }\n")]
+    [InlineData("#if A\nclass C { string f = @\"a\r#else\rb\"; }\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    [InlineData("#if B\nclass C { string f = @\"a\r#else\rb\"; }\nvar u = \"\"\"\n#endif\n")]
+    // Minimal generator mismatches: an unterminated "/*" or "@\"" in a taken branch hides the next branch.
+    [InlineData("#if true\n/*\n#else\nvar v = @\"p\r#else\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#elif C\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#endif\nvar w = @\"p\r#endif\rq\";\n")]
+    [InlineData("#if B\n#elif true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    public void ApplyNewlines_KeepsClosedStringCrsInBranchesHiddenByUnterminatedLiterals(string input)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    // #520: each nested group is solved once, so a string whose "#else" line splits a group in two does
+    // not double the work per nesting level.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ApplyNewlines_StaysFastAcrossDeeplyNestedBranches(bool nestInElif)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string literal = "var v = @\"p\r#else\rq\";\n";
+        var input = "int x = 1;\r\n";
+        for (var depth = 1; depth <= 30; depth++)
+        {
+            input = nestInElif
+                ? "#if A" + depth + "\nint y;\n#elif B" + depth + "\n" + literal + input + "#endif\n"
+                : "#if A" + depth + "\n" + literal + input + "#elif B" + depth + "\n" + literal + "#endif\n";
+        }
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r\n", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1), "took " + watch.Elapsed);
+    }
+
+    // #520: the cost follows the directive count: no state rescans a skipped group, a run of directives,
+    // or an unterminated comment that the lexer reads to the end of the file.
+    [Theory]
+    [InlineData("nested")]
+    [InlineData("elif")]
+    [InlineData("comment")]
+    [InlineData("stray")]
+    public void ApplyNewlines_StaysFastWithThousandsOfDirectives(string shape)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var input = shape switch
+        {
+            "nested" => string.Concat(Enumerable.Repeat("#if A\nint a;\r", 2000)) + string.Concat(Enumerable.Repeat("#endif\n", 2000)),
+            "elif" => "#if A\nint a;\r" + string.Concat(Enumerable.Range(0, 4000).Select(i => "#elif S" + i + "\nint a;\r")) + "#endif\n",
+            "comment" => string.Concat(Enumerable.Repeat("#if A\n/*\n#endif\nint a;\r", 1000)),
+            _ => string.Concat(Enumerable.Repeat("#endif\n#else\nint a;\r", 2000)),
+        };
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(3), "took " + watch.Elapsed);
+    }
+
+    // #520: past its state budget the scan cannot tell string CRs from line breaks, so it keeps every lone CR.
+    [Fact]
+    public void ApplyNewlines_KeepsEveryLoneCrWhenTheScanExceedsItsBudget()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if A\nvar a = @\"x\ry\";\r#else\nint b;\r\n#endif\n";
+
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\r#else\nint b;\n#endif\n", format.ApplyNewlines(input, maxScanStates: 1));
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\n#else\nint b;\n#endif\n", format.ApplyNewlines(input));
     }
 
     private static byte[] Encode(string lfText, string encoding, string newline)
