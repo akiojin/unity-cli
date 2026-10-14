@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace UnityCli.Lsp.Core;
 
@@ -25,15 +28,46 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return (text, new LspSourceFileFormat(encoding, DetectNewLine(text)));
     }
 
-    /// <summary>Rewrites line breaks to the file's convention; mixed or unknown conventions are left as given.</summary>
+    /// <summary>
+    /// Rewrites line breaks (CRLF, LF, and a lone CR, which C# also treats as a line terminator) to the
+    /// file's convention; mixed or unknown conventions are left as given. A lone CR inside a string
+    /// literal is part of the string's value and is kept.
+    /// </summary>
     public string ApplyNewlines(string text)
     {
         if (NewLine is null) return text;
-        var lf = text.Replace("\r\n", "\n");
-        // A CR-only file folds stray CRs too; LF and CRLF files leave a lone CR as content.
-        if (NewLine == "\r") return lf.Replace("\n", "\r");
-        return NewLine == "\n" ? lf : lf.Replace("\n", NewLine);
+        var literalCrs = text.Contains('\r') ? FindLoneCrsInStringLiterals(text) : null;
+        var result = new StringBuilder(text.Length);
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c == '\n') result.Append(NewLine);
+            else if (c != '\r') result.Append(c);
+            else if (i + 1 < text.Length && text[i + 1] == '\n') { result.Append(NewLine); i++; }
+            else result.Append(literalCrs?.Contains(i) == true ? "\r" : NewLine);
+        }
+        return result.ToString();
     }
+
+    private static HashSet<int> FindLoneCrsInStringLiterals(string text)
+    {
+        var positions = new HashSet<int>();
+        foreach (var token in CSharpSyntaxTree.ParseText(text).GetRoot().DescendantTokens())
+        {
+            if (!IsMultiLineStringContent(token.Kind())) continue;
+            for (var i = token.SpanStart; i < token.Span.End; i++)
+            {
+                if (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n')) positions.Add(i);
+            }
+        }
+        return positions;
+    }
+
+    // Only verbatim, raw, and interpolated text can span lines; a CR ends any other literal.
+    private static bool IsMultiLineStringContent(SyntaxKind kind) => kind is
+        SyntaxKind.StringLiteralToken or SyntaxKind.Utf8StringLiteralToken or
+        SyntaxKind.MultiLineRawStringLiteralToken or SyntaxKind.Utf8MultiLineRawStringLiteralToken or
+        SyntaxKind.InterpolatedStringTextToken;
 
     private static Encoding DetectEncoding(byte[] b)
     {
