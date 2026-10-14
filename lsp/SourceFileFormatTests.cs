@@ -220,6 +220,12 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
     [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
     [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
+    // A fake #endif inside a skipped branch's string: what follows is code in the configuration where the branch is skipped.
+    [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
@@ -241,6 +247,19 @@ public sealed class SourceFileFormatTests
         var block = "#if A\nvar a = @\"x\r#else\ry\";\n#else\nvar b = 1;\r#endif\n";
         var input = string.Concat(Enumerable.Repeat(block, 400));
         Assert.Equal(string.Concat(Enumerable.Repeat(block.Replace(";\r#endif", ";\n#endif"), 400)), format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_ActivatesBranchesWithDirectivesLongerThanTheFirstWindow()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Range(0, 60).Select(i => "SYMBOL_" + i));
+        foreach (var directive in new[] { "#elif " + condition, "#else // " + new string('x', 300) })
+        {
+            var input = "#if false\nvar a = 1;\r" + directive + "\nvar b = @\"x\ry\";\r#endif\n";
+            Assert.True(directive.Length > 256);
+            Assert.Equal("#if false\nvar a = 1;\n" + directive + "\nvar b = @\"x\ry\";\n#endif\n", format.ApplyNewlines(input));
+        }
     }
 
     public static TheoryData<string, string, string> InactiveBranchStrings()

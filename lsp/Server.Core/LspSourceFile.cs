@@ -68,30 +68,47 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
 
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
-        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>());
+        var scan = new LiteralCrScan(text, new List<StringRun>(), new HashSet<int>());
         scan.Collect(0, CSharpSyntaxTree.ParseText(text).GetRoot(), new TextSpan(0, text.Length));
-        return scan.Positions;
+        var positions = new HashSet<int>();
+        foreach (var run in scan.Runs)
+        {
+            if (run.Dropped) continue;
+            for (var i = run.Start; i < run.End; i++)
+            {
+                if (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n')) positions.Add(i);
+            }
+        }
+        return positions;
+    }
+
+    // Offsets into the original text of string content that one parse found; TokenStart is where the
+    // token begins, so a parse that misread the region holding that start can drop the whole token.
+    private sealed class StringRun(int tokenStart, int start, int end)
+    {
+        public int TokenStart { get; } = tokenStart;
+        public int Start { get; } = start;
+        public int End { get; } = end;
+        public bool Dropped { get; set; }
     }
 
     // Inspects every preprocessor branch, independent of the current project's symbols. Each branch a
     // parse skipped is parsed again on its own with that branch active, so the parser decides where the
     // branch really ends (a directive-looking line inside its strings is string content) and no other
-    // branch's lexical state (an unterminated comment or string) reaches it. Positions are offsets into
-    // Text; Activated holds the branch directives already parsed that way, so each is parsed once.
-    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated)
+    // branch's lexical state (an unterminated comment or string) reaches it. Activated holds the branch
+    // directives already parsed that way, so each is parsed once.
+    private readonly record struct LiteralCrScan(string Text, List<StringRun> Runs, HashSet<int> Activated)
     {
         public void Collect(int offset, SyntaxNode root, TextSpan scope)
         {
+            var runs = new List<StringRun>();
             foreach (var token in root.DescendantTokens())
             {
                 if (!IsMultiLineStringContent(token.Kind())) continue;
                 var span = token.Span.Intersection(scope);
-                if (span is null) continue;
-                for (var i = offset + span.Value.Start; i < offset + span.Value.End; i++)
-                {
-                    if (Text[i] == '\r' && (i + 1 >= Text.Length || Text[i + 1] != '\n')) Positions.Add(i);
-                }
+                if (span is not null) runs.Add(new StringRun(offset + token.SpanStart, offset + span.Value.Start, offset + span.Value.End));
             }
+            Runs.AddRange(runs);
 
             foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
             {
@@ -100,7 +117,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                 for (var b = 0; b < group.Count; b++)
                 {
                     var end = b + 1 < group.Count ? group[b + 1].FullSpan.Start : scope.End;
-                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end);
+                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end, runs);
                 }
             }
         }
@@ -109,13 +126,16 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         // to an always-true "#if" (every #if/#elif/#else directive is at least as long). The window doubles
         // until the branch's next directive is fully inside it, so the cost follows the branch size. That
         // next #elif/#else is followed too: a directive inside a string can hide it from the outer parse.
+        // When the branch ends past where the outer parse ended it, the outer parse read that stretch as
+        // code after a directive that is really string content; its strings starting there are dropped.
         // A branch that never closes once active is not valid C# that way; it keeps the outer extent.
-        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd)
+        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd, List<StringRun> outerRuns)
         {
             // A malformed directive (a bare "#if") is too short to rewrite; it is not valid C# anyway.
             var start = offset + directive.Span.Start;
             if (directive.Span.Length < ActiveDirective.Length || !Activated.Add(start)) return;
-            for (var length = 256; ; length *= 2)
+            // The window always holds the whole directive, however long its condition or comment is.
+            for (var length = directive.Span.Length + 256; ; length *= 2)
             {
                 var end = (int)Math.Min(Text.Length, (long)start + length);
                 var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
@@ -125,9 +145,14 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                 var complete = end == Text.Length;
                 if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
                 {
+                    var branchEnd = start + group[1].FullSpan.Start;
+                    foreach (var run in outerRuns)
+                    {
+                        if (run.TokenStart >= outerEnd && run.TokenStart < branchEnd) run.Dropped = true;
+                    }
                     Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start));
                     var next = group.Count > 2 ? group[2].FullSpan.Start : window.Length;
-                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next);
+                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next, new List<StringRun>());
                     return;
                 }
                 if (complete)
