@@ -84,7 +84,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     {
         public void Collect(int offset, SyntaxNode root, TextSpan scope)
         {
-            foreach (var token in root.DescendantTokens())
+            foreach (var token in root.DescendantTokens(descendIntoTrivia: true))
             {
                 if (!IsMultiLineStringContent(token.Kind()) || HasError(token)) continue;
                 var span = token.Span.Intersection(scope);
@@ -97,7 +97,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
 
             foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
             {
-                if (!directive.IsActive || !scope.Contains(directive.Span)) continue;
+                if (!scope.Contains(directive.Span)) continue;
                 var group = directive.GetRelatedDirectives();
                 for (var b = 0; b < group.Count; b++)
                 {
@@ -134,7 +134,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                 var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
                 var root = CSharpSyntaxTree.ParseText(window, ActiveBranchOptions).GetRoot();
                 var opening = root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>().First();
-                var group = opening.GetRelatedDirectives();
+                var group = BranchDirectives(root, opening);
                 var complete = end == Text.Length;
                 if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
                 {
@@ -149,6 +149,29 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                     return;
                 }
             }
+        }
+
+        // A fragment can be parsed as a field outside its containing class. Roslyn can then
+        // attach its directives to separate skipped-token trivia and omit related directives.
+        // Their lexical kinds still identify the opening's siblings and closing directive.
+        private static List<DirectiveTriviaSyntax> BranchDirectives(SyntaxNode root, IfDirectiveTriviaSyntax opening)
+        {
+            var related = opening.GetRelatedDirectives();
+            if (related.Count > 1) return related;
+            var group = new List<DirectiveTriviaSyntax> { opening };
+            var depth = 0;
+            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<DirectiveTriviaSyntax>())
+            {
+                if (directive.SpanStart <= opening.SpanStart) continue;
+                if (directive is IfDirectiveTriviaSyntax) depth++;
+                else if (directive is EndIfDirectiveTriviaSyntax)
+                {
+                    if (depth == 0) { group.Add(directive); break; }
+                    depth--;
+                }
+                else if (depth == 0 && directive is ElifDirectiveTriviaSyntax or ElseDirectiveTriviaSyntax) group.Add(directive);
+            }
+            return group;
         }
     }
 

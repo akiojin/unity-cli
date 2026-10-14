@@ -220,7 +220,7 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
     [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
     [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
-    // A fake #endif inside a skipped branch's string: what follows is code in the configuration where the branch is skipped.
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
     [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
@@ -234,6 +234,9 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "var a = @\"x\ry;\r", "var a = @\"x\ny;\n")]
     [InlineData("\n", "var a = $@\"x\r{1}y;\r", "var a = $@\"x\n{1}y;\n")]
     [InlineData("\n", "var a = \"\"\"\n  x\ry;\r", "var a = \"\"\"\n  x\ny;\n")]
+    // A missing semicolon alone or an unrelated syntax error does not change a literal's extent.
+    [InlineData("\n", "@\"x\ry\"", "@\"x\ry\"")]
+    [InlineData("\n", "var broken = ;\nvar a = @\"x\ry\";\r", "var broken = ;\nvar a = @\"x\ry\";\n")]
     // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
@@ -270,17 +273,18 @@ public sealed class SourceFileFormatTests
         }
     }
 
-    public static TheoryData<string, string, string> InactiveBranchStrings()
+    public static TheoryData<string, string, string, string> InactiveBranchStrings()
     {
-        var data = new TheoryData<string, string, string>();
+        var data = new TheoryData<string, string, string, string>();
         foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        foreach (var inputNewline in new[] { "\n", "\r\n", "\r" })
         foreach (var literal in new[]
         {
             "@\"x\ry\"",
-            "\"\"\"\n    x\ry\n    \"\"\"",
-            "\"\"\"\n    x\ry\n    \"\"\"u8",
+            "\"\"\"\n    x\r    y\n    \"\"\"",
+            "\"\"\"\n    x\r    y\n    \"\"\"u8",
             "$@\"x\r{1}\ry\"",
-            "$\"\"\"\n    x\r{1}\ry\n    \"\"\"",
+            "$\"\"\"\n    x\r    {1}\r    y\n    \"\"\"",
             "@\"x\r#if OTHER\r#endif\ry\"",
         })
         foreach (var branch in new[]
@@ -292,22 +296,31 @@ public sealed class SourceFileFormatTests
             "#if true\nint enabled = 1;\n#else\n{0}\n#endif\n",
             "#if UNITY_EDITOR\n#if UNITY_STANDALONE\n{0}\n#endif\n#endif\n",
             "#define UNITY_EDITOR\n#if !UNITY_EDITOR\n{0}\n#endif\n",
+            "#if false\n/*\n#else\n{0}\n#endif\n",
+            "#if false\n/*\n#elif UNITY_EDITOR\n{0}\n#else\nint enabled = 1;\n#endif\n",
+            "#if UNITY_EDITOR\n#if true\n/*\n#else\n{0}\n#endif\n#endif\n",
         })
         {
-            data.Add(newline, literal, branch);
+            data.Add(newline, inputNewline, literal, branch);
         }
         return data;
     }
 
     [Theory]
     [MemberData(nameof(InactiveBranchStrings))]
-    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string literal, string branch)
+    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string inputNewline, string literal, string branch)
     {
         // Construct expected bytes separately: source line breaks follow the original convention,
-        // while the lone CRs in the literal remain part of its value.
+        // while lone CRs inside the literal (including CR input line breaks) are retained.
         var declaration = "var text = " + literal + ";";
-        var input = branch.Replace("{0}", declaration);
-        var expected = branch.Replace("\n", newline).Replace("{0}", declaration.Replace("\n", newline));
+        var input = branch.Replace("\n", inputNewline).Replace("{0}", declaration.Replace("\n", inputNewline));
+        var literalNewline = inputNewline == "\r" ? "\r" : newline;
+        var expectedDeclaration = declaration.Replace("\n", literalNewline);
+        // The interpolated raw fixture's first/last line breaks delimit the content;
+        // only its explicit CRs between x, the interpolation, and y belong to the value.
+        if (inputNewline == "\r" && literal.StartsWith("$\"\"\"\n", StringComparison.Ordinal))
+            expectedDeclaration = declaration.Replace("\n", newline);
+        var expected = branch.Replace("\n", newline).Replace("{0}", expectedDeclaration);
         foreach (var operation in new[] { "write", "apply", "create_overwrite" })
         {
             var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
@@ -335,6 +348,49 @@ public sealed class SourceFileFormatTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsDirectiveLookingLinesInClassFieldStrings()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\r#else\npublic string B = $@\"u\r#else\r{1}\rv\";\r#endif\r}\r";
+        const string expected = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\n#else\npublic string B = $@\"u\r#else\r{1}\rv\";\n#endif\n}\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedNestedBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\r#endif\r";
+        // Activating the inner #if closes its string at the sibling's opening quote.
+        // The PM union policy protects that closed token despite the malformed statement.
+        const string expected = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesLongConditionalExpressions()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Repeat("UNITY_EDITOR", 80));
+        var input = "#if " + condition + "\nvar a = @\"x\ry\";\r#endif\r";
+        var expected = "#if " + condition + "\nvar a = @\"x\ry\";\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedSiblingBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\rvar b = 1;\r";
+        const string expected = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\nvar b = 1;\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
     }
 
     [Fact]
