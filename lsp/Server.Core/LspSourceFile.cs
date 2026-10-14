@@ -52,7 +52,10 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
         var positions = new HashSet<int>();
-        foreach (var token in CSharpSyntaxTree.ParseText(text).GetRoot().DescendantTokens())
+        // Inspect every preprocessor branch, independent of the current project's symbols.
+        // Keep positions identical to the original text, including directive-looking string lines.
+        var syntaxText = CommentOutDirectivePrefixes(text);
+        foreach (var token in CSharpSyntaxTree.ParseText(syntaxText).GetRoot().DescendantTokens(descendIntoTrivia: true))
         {
             if (!IsMultiLineStringContent(token.Kind())) continue;
             for (var i = token.SpanStart; i < token.Span.End; i++)
@@ -61,6 +64,27 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
             }
         }
         return positions;
+    }
+
+    private static string CommentOutDirectivePrefixes(string text)
+    {
+        var chars = text.ToCharArray();
+        var lineStart = true;
+        for (var i = 0; i < chars.Length; i++)
+        {
+            var c = chars[i];
+            if (c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029') { lineStart = true; continue; }
+            if (lineStart && char.IsWhiteSpace(c)) continue;
+            if (lineStart && c == '#' && i + 1 < chars.Length &&
+                (char.IsLetter(chars[i + 1]) || chars[i + 1] is ' ' or '\t'))
+            {
+                // Replace only the prefix: a quote after '#' inside a literal must stay intact.
+                chars[i] = '/';
+                chars[i + 1] = '/';
+            }
+            lineStart = false;
+        }
+        return new string(chars);
     }
 
     // Only verbatim, raw, and interpolated text can span lines; a CR ends any other literal.

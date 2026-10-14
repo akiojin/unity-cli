@@ -211,11 +211,88 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\r", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\n")]
     [InlineData("\n", "// comment\rvar a = 1; /* x\ry */\r", "// comment\nvar a = 1; /* x\ny */\n")]
     [InlineData("\n", "var a = \"x\ry\";\r", "var a = \"x\ny\";\n")]
+    [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
     public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
 
         Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    public static TheoryData<string, string, string> InactiveBranchStrings()
+    {
+        var data = new TheoryData<string, string, string>();
+        foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        foreach (var literal in new[]
+        {
+            "@\"x\ry\"",
+            "\"\"\"\n    x\ry\n    \"\"\"",
+            "\"\"\"\n    x\ry\n    \"\"\"u8",
+            "$@\"x\r{1}\ry\"",
+            "$\"\"\"\n    x\r{1}\ry\n    \"\"\"",
+            "@\"x\r#if OTHER\r#endif\ry\"",
+        })
+        foreach (var branch in new[]
+        {
+            "#if UNITY_EDITOR\n{0}\n#endif\n",
+            "\t# if UNITY_EDITOR\n{0}\n\t# endif\n",
+            "#if false\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#elif UNITY_STANDALONE\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#else\n{0}\n#endif\n",
+            "#if UNITY_EDITOR\n#if UNITY_STANDALONE\n{0}\n#endif\n#endif\n",
+            "#define UNITY_EDITOR\n#if !UNITY_EDITOR\n{0}\n#endif\n",
+        })
+        {
+            data.Add(newline, literal, branch);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(InactiveBranchStrings))]
+    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string literal, string branch)
+    {
+        // Construct expected bytes separately: source line breaks follow the original convention,
+        // while the lone CRs in the literal remain part of its value.
+        var declaration = "var text = " + literal + ";";
+        var input = branch.Replace("{0}", declaration);
+        var expected = branch.Replace("\n", newline).Replace("{0}", declaration.Replace("\n", newline));
+        foreach (var operation in new[] { "write", "apply", "create_overwrite" })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(Path.Combine(root, "Assets"));
+            var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+            await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8-bom", newline));
+            try
+            {
+                var service = new LspEditService(root, new LspFileLockProvider());
+                using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = input } }));
+                var result = operation switch
+                {
+                    "write" => await service.WriteCSharpFileAsync("Assets/Sample.cs", input, true, true, false),
+                    "apply" => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false),
+                    _ => await service.CreateCSharpFileAsync("Assets/Sample.cs", input, true, true, true, false),
+                };
+
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), operation + ": " + response.RootElement);
+                var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+                Assert.Equal(encoding.GetPreamble().Concat(encoding.GetBytes(expected)).ToArray(), await File.ReadAllBytesAsync(scriptPath));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesCrsInInactiveCommentsAndDirectiveMessages()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\r// @\"x\ry\"\r/* @\"x\ry\" */\r#error @\"x\ry\"\r#endif\r";
+
+        Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
     }
 
     private static byte[] Encode(string lfText, string encoding, string newline)
