@@ -73,10 +73,10 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         for (var i = 0; i < chars.Length; i++)
         {
             var c = chars[i];
-            if (c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029') { lineStart = true; continue; }
+            if (IsLineBreak(c)) { lineStart = true; continue; }
             if (lineStart && char.IsWhiteSpace(c)) continue;
             if (lineStart && c == '#' && i + 1 < chars.Length &&
-                (char.IsLetter(chars[i + 1]) || chars[i + 1] is ' ' or '\t'))
+                (char.IsLetter(chars[i + 1]) || (char.IsWhiteSpace(chars[i + 1]) && !IsLineBreak(chars[i + 1]))))
             {
                 // Replace only the prefix: a quote after '#' inside a literal must stay intact.
                 chars[i] = '/';
@@ -86,6 +86,8 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         }
         return new string(chars);
     }
+
+    private static bool IsLineBreak(char c) => c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029';
 
     // Only verbatim, raw, and interpolated text can span lines; a CR ends any other literal.
     private static bool IsMultiLineStringContent(SyntaxKind kind) => kind is

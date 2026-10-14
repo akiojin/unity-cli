@@ -212,6 +212,8 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "// comment\rvar a = 1; /* x\ry */\r", "// comment\nvar a = 1; /* x\ny */\n")]
     [InlineData("\n", "var a = \"x\ry\";\r", "var a = \"x\ny\";\n")]
     [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
+    [InlineData("\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
     public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
