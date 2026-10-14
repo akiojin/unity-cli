@@ -456,6 +456,68 @@ public sealed class SourceFileFormatTests
         Assert.Equal(input, format.ApplyNewlines(input));
     }
 
+    // #520: each nested group is solved once, so a string whose "#else" line splits a group in two does
+    // not double the work per nesting level.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ApplyNewlines_StaysFastAcrossDeeplyNestedBranches(bool nestInElif)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string literal = "var v = @\"p\r#else\rq\";\n";
+        var input = "int x = 1;\r\n";
+        for (var depth = 1; depth <= 30; depth++)
+        {
+            input = nestInElif
+                ? "#if A" + depth + "\nint y;\n#elif B" + depth + "\n" + literal + input + "#endif\n"
+                : "#if A" + depth + "\n" + literal + input + "#elif B" + depth + "\n" + literal + "#endif\n";
+        }
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r\n", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1), "took " + watch.Elapsed);
+    }
+
+    // #520: the cost follows the directive count: no state rescans a skipped group, a run of directives,
+    // or an unterminated comment that the lexer reads to the end of the file.
+    [Theory]
+    [InlineData("nested")]
+    [InlineData("elif")]
+    [InlineData("comment")]
+    [InlineData("stray")]
+    public void ApplyNewlines_StaysFastWithThousandsOfDirectives(string shape)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var input = shape switch
+        {
+            "nested" => string.Concat(Enumerable.Repeat("#if A\nint a;\r", 2000)) + string.Concat(Enumerable.Repeat("#endif\n", 2000)),
+            "elif" => "#if A\nint a;\r" + string.Concat(Enumerable.Range(0, 4000).Select(i => "#elif S" + i + "\nint a;\r")) + "#endif\n",
+            "comment" => string.Concat(Enumerable.Repeat("#if A\n/*\n#endif\nint a;\r", 1000)),
+            _ => string.Concat(Enumerable.Repeat("#endif\n#else\nint a;\r", 2000)),
+        };
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(3), "took " + watch.Elapsed);
+    }
+
+    // #520: past its state budget the scan cannot tell string CRs from line breaks, so it keeps every lone CR.
+    [Fact]
+    public void ApplyNewlines_KeepsEveryLoneCrWhenTheScanExceedsItsBudget()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if A\nvar a = @\"x\ry\";\r#else\nint b;\r\n#endif\n";
+
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\r#else\nint b;\n#endif\n", format.ApplyNewlines(input, maxScanStates: 1));
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\n#else\nint b;\n#endif\n", format.ApplyNewlines(input));
+    }
+
     private static byte[] Encode(string lfText, string encoding, string newline)
     {
         Encoding target = encoding switch

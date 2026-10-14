@@ -36,10 +36,15 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     /// file's convention; mixed or unknown conventions are left as given. A lone CR inside a string
     /// literal is part of the string's value and is kept.
     /// </summary>
-    public string ApplyNewlines(string text)
+    public string ApplyNewlines(string text) => ApplyNewlines(text, MaxScanStates);
+
+    internal string ApplyNewlines(string text, int maxScanStates)
     {
         if (NewLine is null) return text;
-        var literalCrs = HasLoneCr(text) ? FindLoneCrsInStringLiterals(text) : null;
+        var hasLoneCr = HasLoneCr(text);
+        var literalCrs = hasLoneCr ? FindLoneCrsInStringLiterals(text, maxScanStates) : null;
+        // A scan over its state budget keeps every lone CR: rewriting one inside a string changes its value.
+        var keepAll = hasLoneCr && literalCrs is null;
         var result = new StringBuilder(text.Length);
         for (var i = 0; i < text.Length; i++)
         {
@@ -47,7 +52,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
             if (c == '\n') result.Append(NewLine);
             else if (c != '\r') result.Append(c);
             else if (i + 1 < text.Length && text[i + 1] == '\n') { result.Append(NewLine); i++; }
-            else result.Append(literalCrs?.Contains(i) == true ? "\r" : NewLine);
+            else result.Append(keepAll || literalCrs?.Contains(i) == true ? "\r" : NewLine);
         }
         return result.ToString();
     }
@@ -62,7 +67,10 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return false;
     }
 
-    private static HashSet<int> FindLoneCrsInStringLiterals(string text) => new LiteralCrScan(text).Run();
+    private const int MaxScanStates = 200_000;
+
+    // Returns null when the scan exceeds maxStates.
+    private static HashSet<int>? FindLoneCrsInStringLiterals(string text, int maxStates) => new LiteralCrScan(text, maxStates).Run();
 
     private enum DirectiveKind { Other, If, Elif, Else, EndIf }
 
@@ -73,121 +81,158 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     // Roslyn does, so a directive-looking line inside its strings ends the branch, while the same line
     // lexed as active code is string content. A lone CR is kept when any reached state reads it inside
     // a well-formed string; an unterminated string token is not valid C# in that configuration and keeps
-    // nothing. States are a position plus the open #if groups, so the cost follows the directive count
-    // rather than the number of configurations.
+    // nothing.
+    //
+    // A state is the innermost open #if group, a position at its level, and whether the group has passed
+    // its #else; nothing below the innermost group decides what happens at that level. Each group is
+    // solved once: the positions after its #endif are its exits, and every caller resumes at each exit
+    // with its own state. The cost therefore follows the directive count rather than the number of
+    // configurations or the nesting depth.
     private sealed class LiteralCrScan
     {
-        private static readonly CSharpParseOptions Options = CSharpParseOptions.Default;
+        private const int Root = -1;
+        private static readonly CSharpParseOptions Options = CSharpParseOptions.Default.WithPreprocessorSymbols(Lines.TakenSymbol);
         private readonly string _text;
+        private readonly string _lexText;
+        private readonly int _lastCommentEnd;
+        private readonly int _maxStates;
         private readonly HashSet<int> _positions = new();
         private readonly Dictionary<int, (DirectiveKind Kind, int End)?> _nextDirective = new();
-        private readonly HashSet<(int Position, string Groups)> _active = new();
-        private readonly HashSet<(int Position, string Groups, bool Taken)> _skipped = new();
-        private readonly Stack<(int Position, string Groups, bool? Taken)> _pending = new();
+        private readonly Lines _lines;
+        private readonly HashSet<(int Group, int Position, bool AfterElse)> _active = new();
+        private readonly Stack<(int Group, int Position, bool AfterElse)> _pending = new();
+        private readonly Dictionary<int, List<int>> _exits = new();
+        private readonly Dictionary<int, List<(int Group, bool AfterElse)>> _callers = new();
 
-        public LiteralCrScan(string text) => _text = text;
-
-        public HashSet<int> Run()
+        public LiteralCrScan(string text, int maxStates)
         {
-            Active(0, "");
+            _text = text;
+            _maxStates = maxStates;
+            _lines = new Lines(text);
+            _lexText = _lines.WithTakenConditions();
+            _lastCommentEnd = text.LastIndexOf("*/", StringComparison.Ordinal);
+        }
+
+        public HashSet<int>? Run()
+        {
+            Active(Root, 0, afterElse: false);
             while (_pending.TryPop(out var state))
             {
-                if (state.Taken is { } taken) ScanSkipped(state.Position, state.Groups, taken);
-                else ScanActive(state.Position, state.Groups);
+                if (_active.Count + _exits.Count > _maxStates) return null;
+                ScanActive(state.Group, state.Position, state.AfterElse);
             }
             return _positions;
         }
 
-        // Groups holds one char per open #if, outermost first: Else once the group has passed its #else.
-        private const char Open = 'i';
-        private const char Else = 'e';
-
-        private void Active(int position, string groups)
+        // Group is the position after the innermost open #if, or Root at the file level.
+        private void Active(int group, int position, bool afterElse)
         {
-            if (_active.Add((position, groups))) _pending.Push((position, groups, null));
-        }
-
-        // A skipped branch of the innermost open #if; Taken records whether an earlier branch was taken.
-        private void Skipped(int position, string groups, bool taken)
-        {
-            if (_skipped.Add((position, groups, taken))) _pending.Push((position, groups, taken));
+            if (_active.Add((group, position, afterElse))) _pending.Push((group, position, afterElse));
         }
 
         // Roslyn reports a stray #elif/#else/#endif, or an #elif/#else after the group's #else, as a bad
         // directive and keeps lexing in the same state.
-        private void ScanActive(int position, string groups)
+        private void ScanActive(int group, int position, bool afterElse)
         {
             if (NextDirective(position) is not var (kind, end)) return;
-            var inGroup = groups.Length > 0;
-            var afterElse = inGroup && groups[^1] == Else;
+            var inGroup = group != Root;
             switch (kind)
             {
                 case DirectiveKind.If:
-                    Active(end, groups + Open);
-                    Skipped(end, groups + Open, taken: false);
+                    Enter(end, group, afterElse);
                     break;
-                case DirectiveKind.Elif when inGroup && !afterElse:
-                    Skipped(end, groups, taken: true);
-                    break;
-                case DirectiveKind.Else when inGroup && !afterElse:
-                    Skipped(end, groups[..^1] + Else, taken: true);
+                case DirectiveKind.Elif or DirectiveKind.Else when inGroup && !afterElse:
+                    // The rest of the group is skipped; only its #endif matters.
+                    if (_lines.MatchingEndIf(end) is { } endIf) Exit(group, _lines.LineEnd(endIf));
                     break;
                 case DirectiveKind.EndIf when inGroup:
-                    Active(end, groups[..^1]);
+                    Exit(group, end);
                     break;
                 default:
-                    Active(end, groups);
+                    Active(group, end, afterElse);
                     break;
             }
         }
 
-        private void ScanSkipped(int position, string groups, bool taken)
+        // Opens the group whose #if ends at start; the caller resumes after each of its exits.
+        private void Enter(int start, int caller, bool callerAfterElse)
         {
-            var nested = 0;
-            var afterElse = groups[^1] == Else;
-            for (var line = position; line < _text.Length; line = LineEnd(line))
+            var isNew = !_exits.TryGetValue(start, out var exits);
+            if (isNew) _exits[start] = exits = new List<int>();
+            if (!_callers.TryGetValue(start, out var callers)) _callers[start] = callers = new List<(int, bool)>();
+            if (callers.Contains((caller, callerAfterElse))) return;
+            callers.Add((caller, callerAfterElse));
+            foreach (var exit in exits!) Active(caller, exit, callerAfterElse);
+            if (!isNew) return;
+
+            // Taken: the #if branch. Skipped: each later #elif may be the first branch taken, and an #else is
+            // taken once every earlier condition is false.
+            Active(start, start, afterElse: false);
+            foreach (var (kind, line) in _lines.Branches(start))
             {
-                var kind = Classify(line);
-                if (kind == DirectiveKind.If) nested++;
-                else if (kind == DirectiveKind.EndIf && nested > 0) nested--;
-                else if (nested > 0 || afterElse && kind is DirectiveKind.Elif or DirectiveKind.Else) continue;
-                else if (kind == DirectiveKind.EndIf)
-                {
-                    Active(LineEnd(line), groups[..^1]);
-                    return;
-                }
-                else if (kind == DirectiveKind.Elif && !taken) Active(LineEnd(line), groups);
-                else if (kind == DirectiveKind.Else && taken) afterElse = true;
+                var next = _lines.LineEnd(line);
+                if (kind == DirectiveKind.Elif) Active(start, next, afterElse: false);
                 else if (kind == DirectiveKind.Else)
                 {
-                    Active(LineEnd(line), groups[..^1] + Else);
+                    Active(start, next, afterElse: true);
                     return;
                 }
+                else Exit(start, next);
             }
+        }
+
+        private void Exit(int group, int position)
+        {
+            var exits = _exits[group];
+            if (exits.Contains(position)) return;
+            exits.Add(position);
+            foreach (var (caller, afterElse) in _callers[group]) Active(caller, position, afterElse);
         }
 
         // Lexes active code from a line start up to the next directive and records the CRs of the
-        // well-formed strings on the way. Lexing is independent of the depth, so it runs once per start.
+        // well-formed strings on the way. Lexing is independent of the group, so it runs once per start.
+        // The lexer reads a token's whole leading trivia before returning it, so it lexes a window that
+        // doubles until the next directive's line is inside it; tokens before that line end before it,
+        // so the window does not change them.
         private (DirectiveKind Kind, int End)? NextDirective(int position)
         {
             if (_nextDirective.TryGetValue(position, out var cached)) return cached;
-            (DirectiveKind, int)? next = null;
-            foreach (var token in SyntaxFactory.ParseTokens(_text, position, position, Options))
+            for (var length = 512; ; length *= 2)
             {
-                var directive = token.LeadingTrivia.FirstOrDefault(trivia => trivia.IsDirective);
-                if (directive.IsDirective)
+                var end = (int)Math.Min(_text.Length, (long)position + length);
+                var complete = end == _text.Length;
+                var strings = new List<SyntaxToken>();
+                (DirectiveKind, int)? next = null;
+                var found = false;
+                foreach (var token in SyntaxFactory.ParseTokens(_lexText.Substring(position, end - position), 0, position, Options))
                 {
-                    var start = directive.SpanStart;
-                    while (start > 0 && !SyntaxFacts.IsNewLine(_text[start - 1])) start--;
-                    next = (Classify(start), LineEnd(start));
-                    break;
+                    var directive = token.LeadingTrivia.FirstOrDefault(trivia => trivia.IsDirective);
+                    if (directive.IsDirective)
+                    {
+                        var start = directive.SpanStart;
+                        while (start > 0 && !SyntaxFacts.IsNewLine(_text[start - 1])) start--;
+                        var lineEnd = _lines.LineEnd(start);
+                        found = complete || lineEnd < end;
+                        next = (_lines.Classify(start), lineEnd);
+                        break;
+                    }
+                    if (token.IsKind(SyntaxKind.EndOfFileToken))
+                    {
+                        found = complete || IsUnterminatedComment(token.LeadingTrivia.LastOrDefault());
+                        break;
+                    }
+                    strings.Add(token);
                 }
-                if (token.IsKind(SyntaxKind.EndOfFileToken)) break;
-                CollectString(token);
+                if (!found) continue;
+                foreach (var token in strings) CollectString(token);
+                _nextDirective[position] = next;
+                return next;
             }
-            _nextDirective[position] = next;
-            return next;
         }
+
+        // A block comment with no "*/" after its opening runs to the end of the file, hiding everything after it.
+        private bool IsUnterminatedComment(SyntaxTrivia trivia) =>
+            trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) && _lastCommentEnd < trivia.SpanStart + 2;
 
         private void CollectString(SyntaxToken token, int offset = 0)
         {
@@ -225,8 +270,106 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
             return IsUnterminated(token) || literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing;
         }
 
+    }
+
+    // The lines as Roslyn's scan of skipped text sees them, indexed so that a skipped group's #elif, #else,
+    // and #endif lines are found without rescanning the group. A skipped group ends at the first #endif
+    // that brings the #if/#endif count back below its level.
+    private sealed class Lines
+    {
+        private readonly string _text;
+        private readonly List<int> _starts = new();
+        private readonly Dictionary<int, int> _index = new();
+        private readonly List<DirectiveKind> _kinds = new();
+        // The #if minus #endif count before each line.
+        private readonly List<int> _levels = new();
+        private readonly Dictionary<int, List<int>> _endIfsByLevel = new();
+        private readonly Dictionary<int, List<int>> _branchesByLevel = new();
+
+        public Lines(string text)
+        {
+            _text = text;
+            var level = 0;
+            for (var position = 0; position < text.Length; position = LineEnd(position))
+            {
+                var line = _starts.Count;
+                var kind = Classify(position);
+                _index[position] = line;
+                _starts.Add(position);
+                _kinds.Add(kind);
+                _levels.Add(level);
+                if (kind == DirectiveKind.EndIf) Lookup(_endIfsByLevel, level).Add(line);
+                else if (kind is DirectiveKind.Elif or DirectiveKind.Else) Lookup(_branchesByLevel, level).Add(line);
+                if (kind == DirectiveKind.If) level++;
+                else if (kind == DirectiveKind.EndIf) level--;
+            }
+        }
+
+        public const string TakenSymbol = "_";
+
+        // The lexer reads a whole skipped group before the token after a false #if, which would make
+        // lexing up to the next directive cost the rest of a deeply nested file. The copy it lexes has each
+        // #if condition made only of plain characters replaced, in place, by a defined symbol. Such
+        // characters lex the same as the symbol and spaces inside a string, comment, or skipped text,
+        // so token boundaries and offsets are unchanged.
+        public string WithTakenConditions()
+        {
+            var copy = _text.ToCharArray();
+            for (var line = 0; line < _starts.Count; line++)
+            {
+                if (_kinds[line] != DirectiveKind.If) continue;
+                var start = SkipWhitespace(_text.IndexOf('#', _starts[line]) + 1) + "if".Length;
+                var end = start;
+                while (end < _text.Length && !SyntaxFacts.IsNewLine(_text[end])) end++;
+                // At least two characters: a space keeps the symbol apart from "if".
+                if (end - start < 2 || _text[start..end].Trim().Length == 0 || !_text[start..end].All(IsPlainConditionCharacter)) continue;
+                for (var i = start; i < end; i++) copy[i] = ' ';
+                copy[end - 1] = TakenSymbol[0];
+            }
+            return new string(copy);
+        }
+
+        private static bool IsPlainConditionCharacter(char c) =>
+            char.IsAsciiLetterOrDigit(c) || c is '_' or '!' or '&' or '|' or '(' or ')' or '=' or ' ' or '\t';
+
+        // The start of the #endif line that closes the skipped group starting at position, if any.
+        public int? MatchingEndIf(int position) =>
+            _index.TryGetValue(position, out var line) && EndIfLine(line) is { } endIf ? _starts[endIf] : null;
+
+        // The #elif and #else lines at the level of the skipped group starting at position, then its #endif.
+        public IEnumerable<(DirectiveKind Kind, int Start)> Branches(int position)
+        {
+            if (!_index.TryGetValue(position, out var line)) yield break;
+            var endIf = EndIfLine(line);
+            if (_branchesByLevel.TryGetValue(_levels[line], out var branches))
+            {
+                for (var i = FirstAtOrAfter(branches, line); i < branches.Count && (endIf is null || branches[i] < endIf); i++)
+                    yield return (_kinds[branches[i]], _starts[branches[i]]);
+            }
+            if (endIf is { } end) yield return (DirectiveKind.EndIf, _starts[end]);
+        }
+
+        private int? EndIfLine(int line)
+        {
+            if (!_endIfsByLevel.TryGetValue(_levels[line], out var endIfs)) return null;
+            var i = FirstAtOrAfter(endIfs, line);
+            return i < endIfs.Count ? endIfs[i] : null;
+        }
+
+        private static int FirstAtOrAfter(List<int> sorted, int value)
+        {
+            var i = sorted.BinarySearch(value);
+            return i >= 0 ? i : ~i;
+        }
+
+        private static List<int> Lookup(Dictionary<int, List<int>> map, int key)
+        {
+            if (!map.TryGetValue(key, out var list)) map[key] = list = new List<int>();
+            return list;
+        }
+
         // The conditional directive starting a line: '#' and its name after optional whitespace.
-        private DirectiveKind Classify(int line)
+        public DirectiveKind Classify(int line)
         {
             var i = SkipWhitespace(line);
             if (i >= _text.Length || _text[i] != '#') return DirectiveKind.Other;
@@ -250,7 +393,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         }
 
         // The start of the next line; CRLF is one line break.
-        private int LineEnd(int i)
+        public int LineEnd(int i)
         {
             while (i < _text.Length && !SyntaxFacts.IsNewLine(_text[i])) i++;
             if (i < _text.Length && _text[i] == '\r' && i + 1 < _text.Length && _text[i + 1] == '\n') i++;
