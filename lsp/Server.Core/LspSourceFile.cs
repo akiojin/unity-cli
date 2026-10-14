@@ -39,7 +39,7 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     public string ApplyNewlines(string text)
     {
         if (NewLine is null) return text;
-        var literalCrs = text.Contains('\r') ? FindLoneCrsInStringLiterals(text) : null;
+        var literalCrs = HasLoneCr(text) ? FindLoneCrsInStringLiterals(text) : null;
         var result = new StringBuilder(text.Length);
         for (var i = 0; i < text.Length; i++)
         {
@@ -50,6 +50,16 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
             else result.Append(literalCrs?.Contains(i) == true ? "\r" : NewLine);
         }
         return result.ToString();
+    }
+
+    // Plain CRLF input has no lone CR to classify, so it skips parsing.
+    private static bool HasLoneCr(string text)
+    {
+        for (var i = text.IndexOf('\r'); i >= 0; i = text.IndexOf('\r', i + 1))
+        {
+            if (i + 1 >= text.Length || text[i + 1] != '\n') return true;
+        }
+        return false;
     }
 
     private const string ActiveSymbol = "_";
