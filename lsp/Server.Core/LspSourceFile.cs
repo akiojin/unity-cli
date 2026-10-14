@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace UnityCli.Lsp.Core;
 
@@ -52,39 +55,55 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
         var positions = new HashSet<int>();
-        // Inspect every preprocessor branch, independent of the current project's symbols.
-        // Keep positions identical to the original text, including directive-looking string lines.
-        var syntaxText = CommentOutDirectivePrefixes(text);
-        foreach (var token in CSharpSyntaxTree.ParseText(syntaxText).GetRoot().DescendantTokens(descendIntoTrivia: true))
+        CollectLoneCrsInStringLiterals(text, text, new TextSpan(0, text.Length), positions);
+        return positions;
+    }
+
+    // Inspect every preprocessor branch, independent of the current project's symbols. Each inactive
+    // branch is re-parsed alone in a same-length copy, so another branch's lexical state (an
+    // unterminated comment or string) cannot change how it is read, and nested directives are
+    // resolved as they would be with that branch active.
+    private static void CollectLoneCrsInStringLiterals(string text, string syntaxText, TextSpan scope, HashSet<int> positions)
+    {
+        var root = CSharpSyntaxTree.ParseText(syntaxText).GetRoot();
+        foreach (var token in root.DescendantTokens())
         {
             if (!IsMultiLineStringContent(token.Kind())) continue;
-            for (var i = token.SpanStart; i < token.Span.End; i++)
+            var span = token.Span.Intersection(scope);
+            if (span is null) continue;
+            for (var i = span.Value.Start; i < span.Value.End; i++)
             {
                 if (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n')) positions.Add(i);
             }
         }
-        return positions;
+
+        foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
+        {
+            if (!directive.IsActive || !scope.Contains(directive.Span)) continue;
+            var group = directive.GetRelatedDirectives();
+            for (var b = 0; b + 1 < group.Count; b++)
+            {
+                if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: true }) continue;
+                var branch = TextSpan.FromBounds(group[b].FullSpan.End, group[b + 1].FullSpan.Start);
+                var chars = syntaxText.ToCharArray();
+                for (var g = 0; g + 1 < group.Count; g++)
+                {
+                    Blank(chars, group[g].Span);
+                    if (g != b) Blank(chars, TextSpan.FromBounds(group[g].FullSpan.End, group[g + 1].FullSpan.Start));
+                }
+                Blank(chars, group[^1].Span);
+                CollectLoneCrsInStringLiterals(text, new string(chars), branch, positions);
+            }
+        }
     }
 
-    private static string CommentOutDirectivePrefixes(string text)
+    // Replace with spaces but keep line breaks, so every position still maps to the original text.
+    private static void Blank(char[] chars, TextSpan span)
     {
-        var chars = text.ToCharArray();
-        var lineStart = true;
-        for (var i = 0; i < chars.Length; i++)
+        for (var i = span.Start; i < span.End; i++)
         {
-            var c = chars[i];
-            if (IsLineBreak(c)) { lineStart = true; continue; }
-            if (lineStart && char.IsWhiteSpace(c)) continue;
-            if (lineStart && c == '#' && i + 1 < chars.Length &&
-                (char.IsLetter(chars[i + 1]) || (char.IsWhiteSpace(chars[i + 1]) && !IsLineBreak(chars[i + 1]))))
-            {
-                // Replace only the prefix: a quote after '#' inside a literal must stay intact.
-                chars[i] = '/';
-                chars[i + 1] = '/';
-            }
-            lineStart = false;
+            if (!IsLineBreak(chars[i])) chars[i] = ' ';
         }
-        return new string(chars);
     }
 
     private static bool IsLineBreak(char c) => c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029';

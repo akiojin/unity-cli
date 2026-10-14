@@ -214,6 +214,11 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
     [InlineData("\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
+    [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\r", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\n")]
+    [InlineData("\r\n", "#if UNITY_EDITOR\nvar b = \"\"\"\n#endif\nvar a = 1;\rvar c = @\"x\ry\";\n", "#if UNITY_EDITOR\r\nvar b = \"\"\"\r\n#endif\r\nvar a = 1;\r\nvar c = @\"x\ry\";\r\n")]
     public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
     {
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
