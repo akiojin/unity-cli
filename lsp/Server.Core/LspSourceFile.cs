@@ -52,61 +52,82 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return result.ToString();
     }
 
+    private const string ActiveSymbol = "_";
+    private const string ActiveDirective = "#if " + ActiveSymbol;
+    private static readonly CSharpParseOptions ActiveBranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(ActiveSymbol);
+
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
-        var positions = new HashSet<int>();
-        CollectLoneCrsInStringLiterals(text, text, new TextSpan(0, text.Length), positions);
-        return positions;
+        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>());
+        scan.Collect(0, CSharpSyntaxTree.ParseText(text).GetRoot(), new TextSpan(0, text.Length));
+        return scan.Positions;
     }
 
-    // Inspect every preprocessor branch, independent of the current project's symbols. Each inactive
-    // branch is re-parsed alone in a same-length copy, so another branch's lexical state (an
-    // unterminated comment or string) cannot change how it is read, and nested directives are
-    // resolved as they would be with that branch active.
-    private static void CollectLoneCrsInStringLiterals(string text, string syntaxText, TextSpan scope, HashSet<int> positions)
+    // Inspects every preprocessor branch, independent of the current project's symbols. Each branch a
+    // parse skipped is parsed again on its own with that branch active, so the parser decides where the
+    // branch really ends (a directive-looking line inside its strings is string content) and no other
+    // branch's lexical state (an unterminated comment or string) reaches it. Positions are offsets into
+    // Text; Activated holds the branch directives already parsed that way, so each is parsed once.
+    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated)
     {
-        var root = CSharpSyntaxTree.ParseText(syntaxText).GetRoot();
-        foreach (var token in root.DescendantTokens())
+        public void Collect(int offset, SyntaxNode root, TextSpan scope)
         {
-            if (!IsMultiLineStringContent(token.Kind())) continue;
-            var span = token.Span.Intersection(scope);
-            if (span is null) continue;
-            for (var i = span.Value.Start; i < span.Value.End; i++)
+            foreach (var token in root.DescendantTokens())
             {
-                if (text[i] == '\r' && (i + 1 >= text.Length || text[i + 1] != '\n')) positions.Add(i);
-            }
-        }
-
-        foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
-        {
-            if (!directive.IsActive || !scope.Contains(directive.Span)) continue;
-            var group = directive.GetRelatedDirectives();
-            for (var b = 0; b + 1 < group.Count; b++)
-            {
-                if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: true }) continue;
-                var branch = TextSpan.FromBounds(group[b].FullSpan.End, group[b + 1].FullSpan.Start);
-                var chars = syntaxText.ToCharArray();
-                for (var g = 0; g + 1 < group.Count; g++)
+                if (!IsMultiLineStringContent(token.Kind())) continue;
+                var span = token.Span.Intersection(scope);
+                if (span is null) continue;
+                for (var i = offset + span.Value.Start; i < offset + span.Value.End; i++)
                 {
-                    Blank(chars, group[g].Span);
-                    if (g != b) Blank(chars, TextSpan.FromBounds(group[g].FullSpan.End, group[g + 1].FullSpan.Start));
+                    if (Text[i] == '\r' && (i + 1 >= Text.Length || Text[i + 1] != '\n')) Positions.Add(i);
                 }
-                Blank(chars, group[^1].Span);
-                CollectLoneCrsInStringLiterals(text, new string(chars), branch, positions);
+            }
+
+            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
+            {
+                if (!directive.IsActive || !scope.Contains(directive.Span)) continue;
+                var group = directive.GetRelatedDirectives();
+                for (var b = 0; b < group.Count; b++)
+                {
+                    var end = b + 1 < group.Count ? group[b + 1].FullSpan.Start : scope.End;
+                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end);
+                }
+            }
+        }
+
+        // Parses the text from a skipped branch's directive onward, with that directive rewritten in place
+        // to an always-true "#if" (every #if/#elif/#else directive is at least as long). The window doubles
+        // until the branch's next directive is fully inside it, so the cost follows the branch size. That
+        // next #elif/#else is followed too: a directive inside a string can hide it from the outer parse.
+        // A branch that never closes once active is not valid C# that way; it keeps the outer extent.
+        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd)
+        {
+            // A malformed directive (a bare "#if") is too short to rewrite; it is not valid C# anyway.
+            var start = offset + directive.Span.Start;
+            if (directive.Span.Length < ActiveDirective.Length || !Activated.Add(start)) return;
+            for (var length = 256; ; length *= 2)
+            {
+                var end = (int)Math.Min(Text.Length, (long)start + length);
+                var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
+                var root = CSharpSyntaxTree.ParseText(window, ActiveBranchOptions).GetRoot();
+                var opening = root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>().First();
+                var group = opening.GetRelatedDirectives();
+                var complete = end == Text.Length;
+                if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
+                {
+                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start));
+                    var next = group.Count > 2 ? group[2].FullSpan.Start : window.Length;
+                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next);
+                    return;
+                }
+                if (complete)
+                {
+                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, Math.Max(opening.FullSpan.End, outerEnd - start)));
+                    return;
+                }
             }
         }
     }
-
-    // Replace with spaces but keep line breaks, so every position still maps to the original text.
-    private static void Blank(char[] chars, TextSpan span)
-    {
-        for (var i = span.Start; i < span.End; i++)
-        {
-            if (!IsLineBreak(chars[i])) chars[i] = ' ';
-        }
-    }
-
-    private static bool IsLineBreak(char c) => c is '\r' or '\n' or '\u0085' or '\u2028' or '\u2029';
 
     // Only verbatim, raw, and interpolated text can span lines; a CR ends any other literal.
     private static bool IsMultiLineStringContent(SyntaxKind kind) => kind is

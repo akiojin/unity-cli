@@ -214,6 +214,12 @@ public sealed class SourceFileFormatTests
     [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
     [InlineData("\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    // A directive-looking line inside a string of an inactive branch is string content once that branch is active.
+    [InlineData("\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
     // An unterminated comment or string in one branch must not change how another branch is lexed.
     [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
     [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
@@ -224,6 +230,17 @@ public sealed class SourceFileFormatTests
         var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
 
         Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesMalformedDirectivesAndManyBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        Assert.Equal("#if\nvar a = 1;\n#endif\n", format.ApplyNewlines("#if\rvar a = 1;\r#endif\r"));
+
+        var block = "#if A\nvar a = @\"x\r#else\ry\";\n#else\nvar b = 1;\r#endif\n";
+        var input = string.Concat(Enumerable.Repeat(block, 400));
+        Assert.Equal(string.Concat(Enumerable.Repeat(block.Replace(";\r#endif", ";\n#endif"), 400)), format.ApplyNewlines(input));
     }
 
     public static TheoryData<string, string, string> InactiveBranchStrings()
