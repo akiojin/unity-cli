@@ -1,0 +1,124 @@
+{
+  "create_class_monobehaviour": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_class_scriptableobject": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_class_plain": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_plain": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_monobehaviour": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "create_scriptableobject": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "replace_body": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "write_file": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "insert_before": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "insert_after": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "remove_member": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "namespace_partial_generic_attributes": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "replace_preserve_comment": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added", "text_changed"],
+      "text_hashes": {
+        "Assets/Sample.cs": "215a30f2eaeefdd4d211dd6ada4e5aab889d1a2617366f1343808a9c1540ab68"
+      }
+    }
+  },
+  "rename_multifile": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "unicode_no_bom_crlf": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "large_3500_lines": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  },
+  "repair_syntax_error": {
+    "failures": [],
+    "published": {
+      "versions": ["0.18.1"],
+      "failures": ["bom_added"]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+PASS: refresh_assets succeeds
+PASS: create_gameobject succeeds
+PASS: created root has integer id
+PASS: edit_animation_curve succeeds
+PASS: get_animation_curves succeeds
+PASS: linear keys and slope encode midpoint value 1
+PASS: manage_asset_import_settings succeeds
+PASS: get_animation_curves succeeds
+PASS: saved keys and interpolation survive reimport
+PASS: edit_animation_curve succeeds
+PASS: get_animation_curves succeeds
+PASS: edit_animation_curve succeeds
+PASS: get_animation_curves succeeds
+PASS: existing key updated and new key inserted
+PASS: edit_animation_curve succeeds
+PASS: get_animation_curves succeeds
+PASS: requested key removed
+PASS: other binding preserved after key updates and removal
+PASS: edit_animation_curve succeeds
+PASS: get_animation_curves succeeds
+PASS: curve removed while other binding preserved
+PASS: invalid binding returns clear error
+PASS: unsupported clip returns clear error
+PASS: get_animation_curves succeeds
+PASS: rejected edits preserve the original clip
+Animation curves E2E: 25 passed, 0 failed; log: /tmp/unity-cli-animation-curves-20261004-064617-3937.log

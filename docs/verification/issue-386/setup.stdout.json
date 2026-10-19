@@ -1,0 +1,57 @@
+{
+  "command": "setup",
+  "data": {
+    "binary": {
+      "ok": true,
+      "onPath": null,
+      "path": "<worktree>\\target\\debug\\unity-cli.exe",
+      "version": "0.18.1"
+    },
+    "bridge": {
+      "action": "install",
+      "declared": "0.18.1",
+      "dryRun": false,
+      "inputBackends": null,
+      "installed": true,
+      "manifestChanged": true,
+      "manifestPath": "<worktree>\\.cache\\issue-386\\fresh-setup-project\\Packages\\manifest.json",
+      "notes": [],
+      "package": "com.akiojin.unity-cli-bridge",
+      "projectPath": "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+      "registry": true,
+      "resolvedVersion": null,
+      "source": "registry",
+      "versionCheck": {
+        "bridgeVersion": "0.18.1",
+        "cliVersion": "0.18.1",
+        "message": "CLI and bridge are both 0.18.1",
+        "status": "match"
+      }
+    },
+    "editor": {
+      "bridgeVersion": "0.18.1",
+      "endpoint": "127.0.0.1:6488",
+      "projectMatches": true,
+      "projectPath": "<worktree>\\.cache\\issue-386\\fresh-setup-project",
+      "reachable": true,
+      "versionCheck": {
+        "bridgeVersion": "0.18.1",
+        "cliVersion": "0.18.1",
+        "message": "CLI and bridge are both 0.18.1",
+        "status": "match"
+      }
+    },
+    "launch": {
+      "editorPath": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.4f1\\Editor\\Unity.exe",
+      "launched": true,
+      "pid": 14140,
+      "port": 6488,
+      "unityVersion": "6000.4.4f1"
+    },
+    "ok": true,
+    "warnings": []
+  },
+  "errors": [],
+  "success": true,
+  "warnings": []
+}

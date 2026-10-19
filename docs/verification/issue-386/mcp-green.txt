@@ -1,0 +1,30 @@
+   Compiling unity-cli v0.18.1 (<worktree>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.27s
+     Running tests\auth_warning.rs (target\debug\deps\auth_warning-fcf05279c683382e.exe)
+
+running 1 test
+test legacy_opt_out_warns_on_stderr_only_for_exact_one ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.70s
+
+     Running tests\mcp.rs (target\debug\deps\mcp-86a7609ca7ad34e1.exe)
+
+running 3 tests
+test configure_all_clients_preserves_other_servers_and_dry_run ... ok
+test malformed_requests_do_not_end_session_or_execute_tools_before_initialization ... ok
+test stdio_catalog_and_failure_contract_without_editor ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.24s
+
+     Running tests\tool_list_filters.rs (target\debug\deps\tool_list_filters-71cf420645a1f348.exe)
+
+running 7 tests
+test category_returns_only_that_docs_section ... ok
+test compact_is_name_and_description_only_and_at_most_half_of_full_catalog ... ok
+test limit_and_offset_page_the_filtered_list ... ok
+test offline_default_list_has_schemas_and_names_only_is_compatible ... ok
+test query_returns_only_matching_tools ... ok
+test unknown_category_is_rejected ... ok
+test unopened_project_still_exposes_the_offline_builtin_catalog ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.53s

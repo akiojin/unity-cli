@@ -23,8 +23,10 @@ Silicon (ARM64) macOS**. Real method replacement is verified on macOS with
 6000.3.25f1 and 2022.3.62f3, both as native ARM64 Editors and as x64 Editors
 under Rosetta 2. Any other host is rejected before compilation or native
 patching with `HOT_RELOAD_PLATFORM_UNSUPPORTED`; on such a host use an x64
-build of the Editor. Windows and Linux hardware verification is tracked in
-Issue #386.
+build of the Editor. Windows x64 Unity 6000.4.4f1 also passed 25 real replacement,
+state preservation, failure and recovery checks with FSR 1.8.0:
+[Issue #386 evidence](verification/issue-386/resume/hot-reload-results.txt).
+Linux hardware verification remains pending in Issue #386.
 
 Disable Fast Script Reload's automatic and on-demand reload before beginning.
 The Bridge rejects concurrent ownership instead of changing those preferences.

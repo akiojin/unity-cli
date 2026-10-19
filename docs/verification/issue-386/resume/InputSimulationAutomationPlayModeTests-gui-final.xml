@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="11" failures="0" errors="0" skipped="0" time="4.935"><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="CreateInputSequence_AppliesDelayAndFinalState" time="0.536"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.CreateInputSequence_AppliesDelayAndFinalState
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.CreateInputSequence_AppliesDelayAndFinalState
+[unity-cli-bridge][InputSystemHandler] Simulating key press: A (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: A (Keyboard)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="GamepadAndTouchInput_AreObserved" time="0.160"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.GamepadAndTouchInput_AreObserved
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.GamepadAndTouchInput_AreObserved
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardAndMouseInput_AreObserved" time="0.113"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardAndMouseInput_AreObserved
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardAndMouseInput_AreObserved
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating text input: &quot;Hi&quot; (Keyboard)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_120Fps_UsesElapsedTime" time="1.035"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_120Fps_UsesElapsedTime
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_120Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (Keyboard)
+targetFrameRate=120, elapsed=1.013509s, frames=84
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_30Fps_UsesElapsedTime" time="1.041"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_30Fps_UsesElapsedTime
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_30Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (Keyboard)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\staff-project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (Keyboard)
+targetFrameRate=30, elapsed=1.004072s, frames=27
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_60Fps_UsesElapsedTime" time="1.029"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_60Fps_UsesElapsedTime
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_60Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (Keyboard)
+targetFrameRate=60, elapsed=1.007810s, frames=51
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime" time="1.016"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (Keyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (Keyboard)
+targetFrameRate=-1, elapsed=1.002497s, frames=535
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;MouseReleases&quot;,1)" time="0.003"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;MouseReleases&quot;,1)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;MouseReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;TouchPresses=2\nTouchReleases=1\n&quot;,&quot;TouchReleases&quot;,1)" time="0.000"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;TouchPresses=2\nTouchReleases=1\n&quot;,&quot;TouchReleases&quot;,1)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;TouchPresses=2\nTouchReleases=1\n&quot;,&quot;TouchReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1&quot;,&quot;MouseReleases&quot;,1)" time="0.000"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1&quot;,&quot;MouseReleases&quot;,1)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1&quot;,&quot;MouseReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;TouchReleases&quot;,0)" time="0.000"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;TouchReleases&quot;,0)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;TouchReleases&quot;,0)
+</system-out></testcase></testsuite></testsuites>

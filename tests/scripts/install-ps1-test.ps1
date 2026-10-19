@@ -23,10 +23,30 @@ $tampered = [System.Text.Encoding]::ASCII.GetBytes('tampered binary')
 Set-Content -Path (Join-Path $releaseDir 'SHA256SUMS') -Encoding ascii `
     -Value "$(Get-Sha256Hex $genuine)  unity-cli-win-x64"
 
-$port = Get-Random -Minimum 20000 -Maximum 40000
+# Let the OS pick a free port instead of guessing one.
+$probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+$probe.Start()
+$port = $probe.LocalEndpoint.Port
+$probe.Stop()
 $server = Start-Process -PassThru -NoNewWindow python `
     -ArgumentList @('-m', 'http.server', "$port", '--bind', '127.0.0.1', '--directory', (Join-Path $work 'release'))
-Start-Sleep -Seconds 2
+
+# Wait until the server answers instead of sleeping a fixed time: on a busy
+# Windows runner python can take longer than 2 s to bind, and the installer
+# then reports the refused connection as a download failure (#514).
+function Wait-ReleaseServer {
+    $deadline = [DateTime]::UtcNow.AddSeconds(60)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        if ($server.HasExited) { throw "FAIL: local release server exited with code $($server.ExitCode)" }
+        try {
+            Invoke-WebRequest -Uri "http://127.0.0.1:$port/$tag/SHA256SUMS" -UseBasicParsing | Out-Null
+            return
+        } catch {
+            Start-Sleep -Milliseconds 200
+        }
+    }
+    throw 'FAIL: local release server did not start within 60 s'
+}
 
 function Invoke-Installer([string]$ToolsRoot) {
     $env:UNITY_CLI_VERSION = $tag
@@ -42,6 +62,8 @@ function Invoke-Installer([string]$ToolsRoot) {
 }
 
 try {
+    Wait-ReleaseServer
+
     # Tampered binary: install must abort and leave nothing behind.
     [System.IO.File]::WriteAllBytes((Join-Path $releaseDir 'unity-cli-win-x64'), $tampered)
     $tamperedRoot = Join-Path $work 'tools-tampered'

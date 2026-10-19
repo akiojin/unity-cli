@@ -1,0 +1,49 @@
+{
+  "started_at": "2026-10-03T14:30:44.505484+00:00",
+  "source_commit": "338f426119b61123567b74028e7e8fe3bd99caa5",
+  "binary_sha256": "abb04eca3cee68b3260c4701f6a10b2b053c87c1eaef95423117143cf4288eeb",
+  "cases": {
+    "modal-os-fallback": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\setup-project",
+        "--timeout-ms",
+        "1000",
+        "raw",
+        "capture_screenshot",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.917,
+      "success": true
+    },
+    "modal-fallback-disabled": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\setup-project",
+        "--timeout-ms",
+        "1000",
+        "raw",
+        "capture_screenshot",
+        "--json",
+        "{\"osFallback\":false}"
+      ],
+      "exit_code": 6,
+      "elapsed_seconds": 3.212,
+      "success": false
+    }
+  },
+  "png": {
+    "width": 1512,
+    "height": 949,
+    "sha256": "08a9cea00d74d0d463b6d345a3755a96066b9ef6bee6857d563e1e91b12cab41"
+  },
+  "finished_at": "2026-10-03T14:30:51.515950+00:00"
+}

@@ -5,7 +5,8 @@
 # auto-update maintains (%USERPROFILE%\.unity\tools\unity-cli\<rid>), and that
 # directory is added to the user PATH. The download is verified against the
 # release SHA256SUMS (or the release manifest for older releases); any
-# mismatch aborts the install before the existing binary is touched.
+# mismatch aborts the install before the existing binary is touched. Transient
+# network errors (no response, 408, 429, 5xx) are retried with backoff.
 #
 # Environment:
 #   UNITY_CLI_VERSION           install a specific tag instead of the latest
@@ -30,18 +31,50 @@ function Get-Rid {
     }
 }
 
-function Get-Text([string]$Url) {
-    $content = (Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{ 'User-Agent' = 'unity-cli-installer' }).Content
-    # Decode before returning: PowerShell enumerates byte[] function results
-    # into Object[], which would bypass the caller's byte[] type check.
-    if ($content -is [byte[]]) { return [System.Text.Encoding]::UTF8.GetString($content) }
-    return $content
+function Get-HttpStatus($ErrorRecord) {
+    $response = $ErrorRecord.Exception.Response
+    if ($response -and $response.StatusCode) { return [int]$response.StatusCode }
+    return $null
 }
 
+# No HTTP response (DNS, refused, reset, timeout), 408, 429 and 5xx are worth
+# another attempt; any other status is a definitive answer.
+function Test-TransientError($ErrorRecord) {
+    $status = Get-HttpStatus $ErrorRecord
+    return ($null -eq $status -or $status -eq 408 -or $status -eq 429 -or $status -ge 500)
+}
+
+function Invoke-WithRetry([scriptblock]$Action) {
+    $attempts = 4
+    for ($attempt = 1; ; $attempt++) {
+        try {
+            return & $Action
+        } catch {
+            if ($attempt -ge $attempts -or -not (Test-TransientError $_)) { throw }
+            $delay = [math]::Pow(2, $attempt - 1)
+            Write-Host "Download failed ($($_.Exception.Message)); retrying in ${delay}s..."
+            Start-Sleep -Seconds $delay
+        }
+    }
+}
+
+function Get-Text([string]$Url) {
+    Invoke-WithRetry {
+        $content = (Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{ 'User-Agent' = 'unity-cli-installer' }).Content
+        # Decode before returning: PowerShell enumerates byte[] function results
+        # into Object[], which would bypass the caller's byte[] type check.
+        if ($content -is [byte[]]) { return [System.Text.Encoding]::UTF8.GetString($content) }
+        return $content
+    }
+}
+
+# Returns $null only when the server definitively answers that the file is not
+# there, so the caller can fall back; a network failure aborts with its cause.
 function Get-OptionalText([string]$Url) {
     try {
         Get-Text $Url
     } catch {
+        if (Test-TransientError $_) { Fail "failed to download ${Url}: $($_.Exception.Message)" }
         $null
     }
 }
@@ -55,8 +88,10 @@ if ($env:UNITY_CLI_VERSION) {
     if (-not $tag.StartsWith('v')) { $tag = "v$tag" }
 } else {
     Write-Host 'Fetching latest release...'
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
-        -Headers @{ 'User-Agent' = 'unity-cli-installer' }
+    $release = Invoke-WithRetry {
+        Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
+            -Headers @{ 'User-Agent' = 'unity-cli-installer' }
+    }
     $tag = $release.tag_name
 }
 if (-not $tag) { Fail 'failed to determine release tag' }
@@ -99,8 +134,10 @@ $tmp = Join-Path $destDir 'unity-cli.download'
 
 Write-Host "Downloading $assetName..."
 try {
-    Invoke-WebRequest -Uri $assetUrl -OutFile $tmp -UseBasicParsing `
-        -Headers @{ 'User-Agent' = 'unity-cli-installer' }
+    Invoke-WithRetry {
+        Invoke-WebRequest -Uri $assetUrl -OutFile $tmp -UseBasicParsing `
+            -Headers @{ 'User-Agent' = 'unity-cli-installer' }
+    }
 } catch {
     Remove-Item -Force -ErrorAction SilentlyContinue $tmp
     Fail "download failed: $($_.Exception.Message)"

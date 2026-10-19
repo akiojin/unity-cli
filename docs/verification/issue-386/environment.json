@@ -1,0 +1,23 @@
+{
+  "observed_at": "2026-10-03T15:01:21.948334+00:00",
+  "os": "Windows-11-10.0.26300-SP0",
+  "machine": "AMD64",
+  "source_commit": "338f426119b61123567b74028e7e8fe3bd99caa5",
+  "source_file_sha256": {
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/SceneHandler.cs": "3d44351bdbeda87ffb1a432f3ac013e6c86f2709935bbc7462e01e057a3cc2f9",
+    "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/Handlers/SceneHandlerTests.cs": "381ffee4c4341d6ab7442523ff4e4cec82ae3d9fe8d8239de1edfbbb7bda4717",
+    "src/app/editor.rs": "12ea2e975445003f9f47e5a8b9e62bbf9c5c7be5ca5e1393ef6bfab022c67199",
+    "src/app/setup.rs": "eab8bdf7cd59500812ac40c9acc104cf5a6c2c35140733e23571583a0829aa1f",
+    "src/app/test_runner.rs": "f8023e20459795926704614160cbb05b782f1fdc8b32e6c196d7695b38ae5691",
+    "src/daemon/unityd.rs": "3cbc5499fc3edb1b8ad3422a864e2e64c94a8f2be4f73f98513a4e5df55d629d",
+    "src/lsp/client.rs": "7c676ee0a967f79f6914140c1e147d29b58100ac5ec4fa41829b32563bbfd838",
+    "src/lsp/daemon.rs": "581ac8fd1f9df763069df66c0ed17d6507919ee63c52afff9741aa452f49fc7b",
+    "src/skills/tests.rs": "77bdd7487e0abc90357bf64d9f3ebc84d6e0f3fba42963a97b368381c15b0fa5",
+    "tests/setup_dry_run.rs": "b833e5151da71df57eba9770fa88d446a6142c605c5c56a94ae76f0e64344ea8"
+  },
+  "binary_sha256": "abb04eca3cee68b3260c4701f6a10b2b053c87c1eaef95423117143cf4288eeb",
+  "release_binary_sha256": "efcd697b940f78b6457829453888d9c608f19d2fcd331d0005b1ff47a7839357",
+  "unity_version": "6000.4.4f1",
+  "cli_version": "0.18.1",
+  "bridge_version": "0.18.1"
+}

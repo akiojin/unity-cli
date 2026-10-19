@@ -27,6 +27,91 @@ fn drain(mut pipe: impl Read + Send + 'static) -> std::thread::JoinHandle<Vec<u8
     })
 }
 
+#[cfg(windows)]
+#[test]
+fn setup_launch_returns_output_while_editor_is_still_running() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("Project with spaces");
+    std::fs::create_dir_all(project.join("Packages")).unwrap();
+    std::fs::create_dir_all(project.join("ProjectSettings")).unwrap();
+    std::fs::write(
+        project.join("Packages/manifest.json"),
+        "{\"dependencies\":{}}",
+    )
+    .unwrap();
+    std::fs::write(
+        project.join("ProjectSettings/ProjectVersion.txt"),
+        "m_EditorVersion: 6000.4.4f1\n",
+    )
+    .unwrap();
+    let source = dir.path().join("fake_editor.rs");
+    let editor = dir.path().join("fake_editor.exe");
+    let started = dir.path().join("started");
+    let stop = dir.path().join("stop");
+    std::fs::write(
+        &source,
+        r#"fn main() {
+            std::fs::write(std::env::var_os("FAKE_EDITOR_STARTED").unwrap(), "started").unwrap();
+            let stop = std::path::PathBuf::from(std::env::var_os("FAKE_EDITOR_STOP").unwrap());
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+            while !stop.exists() && std::time::Instant::now() < deadline {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+        }"#,
+    )
+    .unwrap();
+    let compiled = Command::new("rustc")
+        .arg(&source)
+        .arg("-o")
+        .arg(&editor)
+        .output()
+        .unwrap();
+    assert!(compiled.status.success(), "{compiled:?}");
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_unity-cli"));
+    command
+        .args(["--output", "json", "--host", "127.0.0.1", "--port"])
+        .arg(port.to_string())
+        .args(["--timeout-ms", "100", "--project-path"])
+        .arg(&project)
+        .args(["setup", "--launch-editor", "--wait-secs", "0"])
+        .env("UNITY_EDITOR_PATH", &editor)
+        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+        .env("UNITY_CLI_TOOLS_ROOT", dir.path().join("tools"))
+        .env("UNITY_CLI_REGISTRY_PATH", dir.path().join("instances.json"))
+        .env("UNITY_CLI_EDITORS_DIR", dir.path().join("editors"))
+        .env("FAKE_EDITOR_STARTED", &started)
+        .env("FAKE_EDITOR_STOP", &stop);
+    let (send, receive) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || send.send(command.output().unwrap()).unwrap());
+    let output = receive.recv_timeout(Duration::from_secs(5));
+    let deadline = Instant::now() + Duration::from_secs(3);
+    while !started.exists() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let editor_started = started.exists();
+    // Stop only the fixture launched by this test, even on the failing path.
+    std::fs::write(&stop, "stop").unwrap();
+    let completed = output.is_ok();
+    let output = output.unwrap_or_else(|_| receive.recv_timeout(Duration::from_secs(5)).unwrap());
+    reader.join().unwrap();
+    assert!(
+        editor_started,
+        "setup did not launch the fixture: {output:?}"
+    );
+    assert!(
+        completed,
+        "setup output waited for the Editor to exit: {output:?}"
+    );
+    assert_eq!(output.status.code(), Some(4), "{output:?}");
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["data"]["launch"]["launched"], true, "{report}");
+}
+
 #[test]
 fn setup_dry_run_prints_plan_without_connections_writes_or_launches() {
     for (launch, wait) in [(false, None), (true, None), (false, Some("900"))] {

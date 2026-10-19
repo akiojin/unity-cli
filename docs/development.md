@@ -51,15 +51,16 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 
 `unity-cli` works with defaults, but these variables are recommended for CI and multi-instance setups.
 
-| Env                             |          Default | Notes                                          |
-| ------------------------------- | ---------------: | ---------------------------------------------- |
-| `UNITY_PROJECT_ROOT`            |      auto-detect | Directory containing `Assets/` and `Packages/` |
-| `UNITY_CLI_HOST`                |      `127.0.0.1` | Unity TCP listener host                        |
-| `UNITY_CLI_PORT`                |           `6400` | Unity TCP listener port                        |
-| `UNITY_CLI_TIMEOUT_MS`          |          `30000` | Command timeout (ms)                           |
-| `UNITY_CLI_LSP_MODE`            |            `off` | `off`, `auto`, `required`                      |
-| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` |            `600` | Daemon idle timeout (seconds)                  |
-| `UNITY_CLI_TOOLS_ROOT`          | platform default | Root directory for downloaded tools            |
+| Env                             |          Default | Notes                                           |
+| ------------------------------- | ---------------: | ----------------------------------------------- |
+| `UNITY_PROJECT_ROOT`            |      auto-detect | Directory containing `Assets/` and `Packages/`  |
+| `UNITY_CLI_HOST`                |      `127.0.0.1` | Unity TCP listener host                         |
+| `UNITY_CLI_PORT`                |           `6400` | Unity TCP listener port                         |
+| `UNITY_CLI_TIMEOUT_MS`          |          `30000` | Command timeout (ms)                            |
+| `UNITY_CLI_LSP_MODE`            |           `auto` | `off`, `auto`, `required`                       |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` |          `10000` | `auto` symbol search wait before index fallback |
+| `UNITY_CLI_UNITYD_IDLE_TIMEOUT` |            `600` | Daemon idle timeout (seconds)                   |
+| `UNITY_CLI_TOOLS_ROOT`          | platform default | Root directory for downloaded tools             |
 
 Minimal setup:
 
@@ -556,11 +557,12 @@ Windows verification is tracked separately in Issue #308.
 
 ### LSP Issues
 
-| Symptom                      | Fix                                        |
-| ---------------------------- | ------------------------------------------ |
-| LSP command not found        | Run `unity-cli lsp install` and retry      |
-| LSP timeout                  | Increase `UNITY_CLI_TIMEOUT_MS` and retry  |
-| LSP required but unavailable | Use `UNITY_CLI_LSP_MODE=auto` during setup |
+| Symptom                                  | Fix                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------- |
+| LSP command not found                    | Run `unity-cli lsp install` and retry                                                       |
+| LSP timeout                              | Increase `UNITY_CLI_TIMEOUT_MS` and retry                                                   |
+| LSP required but unavailable             | Use `UNITY_CLI_LSP_MODE=auto` during setup                                                  |
+| Symbol search returns `backend: "index"` | Read `fallbackReason`; run `unity-cli lsp install` or raise `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` |
 
 ### WSL2/Docker -> Windows Unity
 
@@ -585,7 +587,7 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI Overview
 
-CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and `.github/workflows/skill-routing-eval.yml`.
+CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, `.github/workflows/published-install.yml`, and `.github/workflows/skill-routing-eval.yml`.
 
 | Job                            | Trigger                 | Description                                                                           |
 | ------------------------------ | ----------------------- | ------------------------------------------------------------------------------------- |
@@ -595,6 +597,7 @@ CI is defined in `.github/workflows/lint.yml`, `.github/workflows/test.yml`, and
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh` (full cases + history artifact)                           |
 | CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py` (p50/p95 budgets + injected-delay evidence)            |
 | Skill Routing Eval             | daily schedule / manual | `scripts/skill-eval/llm-routing-eval.sh` (`.github/workflows/skill-routing-eval.yml`) |
+| Windows Published Install      | release / cron / manual | latest release via `install.ps1` (`.github/workflows/published-install.yml`)          |
 
 Skill Contract Check, Rust Tests, LSP Tests, LSP Performance, and CLI Latency are required checks for PR merges.
 
@@ -938,7 +941,8 @@ docker run --rm unity-cli-dev dotnet test lsp/Server.Tests.csproj
 | `UNITY_CLI_HOST`                | `127.0.0.1` | Unity TCP リスナーのホスト                  |
 | `UNITY_CLI_PORT`                |      `6400` | Unity TCP リスナーのポート                  |
 | `UNITY_CLI_TIMEOUT_MS`          |     `30000` | コマンドタイムアウト (ms)                   |
-| `UNITY_CLI_LSP_MODE`            |       `off` | `off`, `auto`, `required`                   |
+| `UNITY_CLI_LSP_MODE`            |      `auto` | `off`, `auto`, `required`                   |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` |     `10000` | `auto` のシンボル検索が LSP を待つ上限 (ms) |
 | `UNITY_CLI_UNITYD_IDLE_TIMEOUT` |       `600` | デーモンアイドルタイムアウト（秒）          |
 | `UNITY_CLI_TOOLS_ROOT`          |  OS依存既定 | ツール配置ルート                            |
 
@@ -1211,11 +1215,12 @@ batch / sequence の応答もジェスチャー終了待ちではなく受付結
 
 ### LSP関連
 
-| 症状                          | 対処                                              |
-| ----------------------------- | ------------------------------------------------- |
-| LSP実行ファイルが見つからない | `unity-cli lsp install` を実行して再試行          |
-| LSPタイムアウト               | `UNITY_CLI_TIMEOUT_MS` を延長                     |
-| 必須LSPモードで失敗           | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用 |
+| 症状                                     | 対処                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| LSP実行ファイルが見つからない            | `unity-cli lsp install` を実行して再試行                                                               |
+| LSPタイムアウト                          | `UNITY_CLI_TIMEOUT_MS` を延長                                                                          |
+| 必須LSPモードで失敗                      | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用                                                      |
+| シンボル検索が `backend: "index"` を返す | `fallbackReason` を確認し、`unity-cli lsp install` を実行するか `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` を延長 |
 
 ### WSL2/Docker -> Windows Unity
 
@@ -1240,7 +1245,7 @@ echo "$UNITY_CLI_HOST:$UNITY_CLI_PORT"
 
 ## CI の概要
 
-CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
+CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/workflows/published-install.yml` / `.github/workflows/skill-routing-eval.yml` で定義されています。
 
 | ジョブ                         | トリガー                | 内容                                                                                   |
 | ------------------------------ | ----------------------- | -------------------------------------------------------------------------------------- |
@@ -1250,6 +1255,7 @@ CI は `.github/workflows/lint.yml` / `.github/workflows/test.yml` / `.github/wo
 | LSP Performance (required)     | push / PR               | `scripts/lsp-perf-check.sh`（全ケース実行 + 履歴artifact）                             |
 | CLI Latency (required)         | push / PR               | `scripts/bench-cli-latency.py`（p50/p95 予算 + 遅延注入の証跡）                        |
 | Skill Routing Eval             | 毎日スケジュール / 手動 | `scripts/skill-eval/llm-routing-eval.sh`（`.github/workflows/skill-routing-eval.yml`） |
+| Windows Published Install      | Release 後/週次/手動    | 最新の公開版を `install.ps1` で導入（`.github/workflows/published-install.yml`）       |
 
 Skill Contract Check / Rust Tests / LSP Tests / LSP Performance / CLI Latency は PR マージの必須チェックです。
 

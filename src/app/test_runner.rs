@@ -37,7 +37,8 @@ pub async fn run(cli: &Cli, args: &TestArgs) -> Result<()> {
         if let Some(port) = cli.port {
             command.env("UNITY_CLI_PORT_OVERRIDE", port.to_string());
         }
-        let child = command.spawn().context(FailureKind::Unreachable)?;
+        let child =
+            crate::daemon::spawn::spawn_detached(&mut command).context(FailureKind::Unreachable)?;
         eprintln!("Started headless Editor (pid {})", child.id());
         Some(child)
     };

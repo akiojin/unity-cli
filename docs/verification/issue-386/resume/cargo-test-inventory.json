@@ -1,0 +1,3057 @@
+{
+  "total": 610,
+  "passed": 610,
+  "failed": 0,
+  "tests": [
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::editor::tests::editor_launch_uses_paths_supported_by_unity",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::ambiguous_editor_fails_before_contacting_any_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::animation_curve_edits_accept_operations_and_tangent_modes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::animation_curve_edits_reject_missing_identifiers_and_invalid_nested_fields",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::animation_curve_queries_validate_complete_binding_filters",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::audio_mixer_arguments_are_action_specific",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::augment_command_stats_inserts_cli_snapshot",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::baking_invalid_target_missing_scene_and_missing_job_are_rejected",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::baking_surface_requires_path_before_contacting_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::baking_valid_targets_and_polling_are_accepted",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::bridge_commands_resolve_explicit_project_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_clean_defaults",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_clean_with_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_diff_path_mode_with_limit",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_diff_symbol_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_embed_build_includes_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_embed_build_omits_optional_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_embed_search_omits_optional_top_k",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_embed_search_with_top_k",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_fetch_carries_all_flags",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_fetch_defaults_without_overrides",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_find_symbol_minimal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_find_symbol_with_filters",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_grep_defaults_context_to_zero",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_grep_with_file_glob_and_context",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_resolve_symbol_at_minimal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_resolve_symbol_at_with_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_search_minimal_pattern",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_search_with_all_options",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_status_includes_explicit_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_status_omits_optional_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_view_omits_optional_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::build_reference_call_view_with_range",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::capture_screenshot_timeout_respects_os_fallback_flag",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::env_var_guard_restores_previous_value",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::eval_cli_accepts_code_and_rejects_invalid_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::eval_dry_run_does_not_execute_arbitrary_code",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::eval_schemas_require_code_and_status_id",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::eval_transport_error_keeps_generated_request_id",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::execute_tool_skips_mutating_tool_in_dry_run_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::hot_reload_requires_revision_and_explicit_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::init_tracing_accepts_verbose_levels",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::instances_list_defaults_host_to_ipv4_loopback",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::load_params_defaults_to_empty_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::load_params_reads_inline_json",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::load_params_reads_json_from_file",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::load_params_rejects_when_json_and_params_file_are_both_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_external_tool_command_accepts_json_flag",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_external_tool_command_rejects_unknown_flag",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_external_tool_command_requires_tool_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_external_tool_command_requires_values_for_flags",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_external_tool_command_supports_equals_forms",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_json_object_accepts_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_json_object_rejects_non_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_ports_deduplicates_values",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_ports_rejects_invalid_values",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_ports_returns_empty_for_none",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::parse_ports_with_diagnostics_reports_duplicate_values",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::ping_version_check_reports_mismatch_and_unknown",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::prefab_override_validation_requires_explicit_scope_and_apply_target",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::print_value_text_handles_string_and_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::project_path_flag_is_global_and_feeds_runtime_overrides",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_batch_marks_skipped_items_in_dry_run_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_exercises_remote_command_error_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_handles_instances_and_daemon_commands_without_server",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_handles_local_tool_and_batch_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_rejects_unknown_external_tool",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_requires_batch_input_source",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_set_active_text_output_when_reachable",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::run_with_cli_supports_tool_schema_command",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::runtime_overrides_are_derived_from_cli_at_app_boundary",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::setup_and_bridge_cli_arguments_parse",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::timeline_manage_is_skipped_in_dry_run",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::timeline_validation_requires_target_and_valid_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_add_component_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_addressables_manage_add_entry",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_analyze_asset_dependencies_get_dependencies",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_build_index_output_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_create_animation_clip_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_create_animator_controller_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_create_gameobject_with_vector_fields",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_create_sprite_atlas_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_delete_gameobject_with_path_and_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_execute_menu_item_get_available_menus",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_execute_menu_item_without_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_get_input_actions_state_with_asset_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_input_keyboard_batch_actions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_load_scene_by_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_lsp_write_payload_with_path_alias",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_manage_layers_get_by_index",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_package_manager_list_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_profiler_start_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_valid_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_accepts_write_csharp_file_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_addressables_analyze_dependencies_without_asset_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_addressables_manage_move_entry_without_target_group",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_analyze_asset_dependencies_get_dependencies_without_asset_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_analyze_asset_dependencies_invalid_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_analyze_screenshot_without_source",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_create_animation_clip_without_sprite_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_create_package_setting_without_value",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_delete_gameobject_without_target",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_execute_menu_item_without_action_or_menu_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_execute_menu_item_without_menu_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_invalid_animator_condition_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_invalid_sprite_atlas_filter_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_load_scene_with_both_identifiers",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_asset_database_move_without_to_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_layers_add_without_layer_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_layers_invalid_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_selection_set_without_object_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_tools_activate_without_tool_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_manage_windows_focus_without_window_type",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_missing_required_property",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_package_manager_search_without_keyword",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_registry_config_add_scope_without_scope",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_remove_input_binding_without_selector",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_set_component_field_missing_required",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_unknown_field_for_clear_logs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_unknown_property_when_schema_is_strict",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::runner::tests::validate_tool_params_rejects_unknown_run_tests_property",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::hub_paths_for_windows_and_linux_do_not_depend_on_test_host",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::launch_editor_skips_when_project_is_locked_and_errors_without_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::project_unity_version_and_hub_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::setup_dry_run_leaves_editor_unchecked_and_skips_writes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::setup_flags_editor_serving_another_project",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::setup_installs_bridge_and_confirms_matching_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::setup_reports_version_mismatch_as_json",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::setup::tests::setup_without_dry_run_reports_unreachable_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::github_annotations_extract_unity_location_and_escape_injection",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::junit_preserves_failed_skipped_and_escaped_details",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::junit_time_is_millisecond_precision_for_xunit_schema",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::nunit_nests_test_cases_in_a_suite_and_preserves_details",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::parent_suite_rollups_do_not_duplicate_leaf_failures",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "app::test_report::tests::suite_failure_is_reported_even_without_failed_leaves",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "cli::test_command_tests::test_command_accepts_report_output_without_changing_global_output",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::dry_run_reports_change_without_writing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::embedded_package_is_reported_and_not_duplicated",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::input_backends_untouched_when_setting_absent_or_already_enabled",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_adds_openupm_registry_and_cli_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_adds_scope_to_existing_openupm_registry",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_enables_input_system_backends_while_editor_is_closed",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_is_noop_when_already_configured_by_hand",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_keeps_other_version_and_upgrade_pins_cli_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_leaves_input_backends_when_editor_is_open_or_dry_run",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::install_twice_leaves_manifest_byte_identical",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::rejects_malformed_manifest",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::resolve_project_root_walks_up_and_validates_explicit_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::status_prefers_lock_resolution_and_reports_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::upgrade_leaves_custom_sources_alone",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::bridge::tests::version_check_classifies_versions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::command_stats::tests::snapshot_groups_calls_by_tool_and_route",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::default_host_returns_ipv4_loopback_without_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::default_port_returns_6400_without_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::default_timeout_returns_30000_without_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::empty_value_is_ignored",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::execution_context_uses_defaults",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::fails_when_legacy_alias_is_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::fails_when_removed_unityd_env_is_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::returns_none_when_no_keys_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::u16_env_parses_correctly",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::u16_env_rejects_zero",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::u64_env_parses_correctly",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::config::tests::u64_env_rejects_zero",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::classification_priority",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::editor_import_workers_are_not_reusable_editors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::parses_safe_mode_and_latest_compile_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::reads_bridge_version_from_local_file_dependency",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::reads_project_bridge_port",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::recognizes_editor_command_lines_only",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::reports_editor_not_running",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::reports_port_in_use_with_owner_pid",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::doctor::tests::safe_mode_exit_clears_flag",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::ambiguous_error_json_lists_candidates",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::dead_pid_marks_lockfile_stale",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::discover_reads_lockfiles_and_skips_garbage",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::expired_heartbeat_marks_lockfile_stale",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::pid_zero_is_never_alive",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::select_for_path_ignores_stale_editors_and_sibling_prefixes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::editor_discovery::tests::select_for_path_prefers_deepest_live_project",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::active_instance_keeps_priority_over_lockfile_discovery",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::cli_override_wins_over_active_instance",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::cwd_inside_project_selects_that_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::cwd_outside_projects_with_two_editors_is_ambiguous",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::env_port_wins_when_no_cli_override",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::explicit_port_wins_over_project_path_and_lockfiles",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::no_lockfiles_keeps_legacy_default",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::project_command_targets_its_own_editor_among_several",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::project_command_without_its_editor_uses_default_endpoint",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::project_path_selects_matching_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::project_path_without_running_editor_is_not_found",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::project_root_env_falls_back_to_default_without_any_lockfile",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::single_running_editor_is_used_from_anywhere",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::stale_editors_do_not_cause_ambiguity",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::endpoint::tests::unity_project_root_env_acts_as_project_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::failure::tests::failed_batch_preserves_first_failure_message_and_all_results",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::authenticated_health_checks_support_listing_and_selection",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::list_instances_adds_default_port_when_no_entries_exist",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::list_instances_enumerates_lockfiles_without_ports",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::list_instances_keeps_explicit_ports_next_to_lockfiles",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::list_instances_reports_down_for_tcp_listener_that_is_not_unity_bridge",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::list_instances_reports_up_for_reachable_port",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::load_registry_reconstructs_missing_ids",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::parse_id_validates_shape",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::registry_path_uses_env_and_creates_parent_directory",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::registry_round_trip_serialization_shape_is_supported",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::set_active_fails_for_unreachable_instance",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::instances::tests::set_active_succeeds_for_reachable_instance_and_tracks_previous",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::cache_root_falls_back_to_home_unity_cache",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::cache_root_prefers_unity_cli_cache_root_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::detect_rid_returns_known_target_triple",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::download_latest_binary_applies_matching_checksum",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::download_latest_binary_rejects_checksum_mismatch_and_keeps_existing_install",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::ensure_latest_for_can_skip_remote_checks_in_tests",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::ensure_local_uses_existing_binary_without_download",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_json_fails_with_status_and_body",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_json_parses_http_body",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_json_retries_transient_server_error",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_optional_text_returns_body_for_success",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_optional_text_returns_none_for_not_found",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_response_includes_authorization_header",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::get_response_reports_http_status_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::parse_sha256sums_reads_text_and_binary_mode_entries",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::read_local_version_returns_none_for_missing_or_blank_file",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::replace_file_atomic_overwrites_destination",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::sha256_file_matches_known_hash",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::tools_root_falls_back_to_home_unity_tools_when_env_unset",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::tools_root_prefers_unity_cli_tools_root_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::unity_cli_status_uses_managed_install_layout",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::verify_manifest_against_checksums_requires_matching_entry",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::managed_binaries::tests::write_and_read_local_version_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::runtime_paths::tests::daemon_dir_is_under_run_root",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::is_recent_returns_false_for_missing_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::is_recent_returns_true_for_freshly_touched_file",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::last_check_path_uses_unity_cli_tools_root_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::maybe_self_update_skipped_when_opt_out_env_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::maybe_self_update_skips_when_recent_check_exists",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::touch_creates_parent_and_writes_marker",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "core::self_update::tests::warn_cargo_conflict_runs_without_panic",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::runtime::tests::runtime_module_builds_without_warnings_when_unix_code_is_disabled",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::spawn::tests::spawn_detached_starts_the_command",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::spawn::tests::spawn_module_builds_for_windows_without_warnings",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::spawn::tests::spawned_child_does_not_hold_the_callers_stdout_pipe",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_call_error_classification",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_request_batch_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_request_ping_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_request_status_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_request_stop_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_request_tool_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_response_error_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_response_round_trip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::daemon_response_round_trip_preserves_timing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::idle_timeout_default",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::pid_file_path_is_under_tools_dir",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::pooled_connection_closed_by_editor_restart_is_reconnected_before_sending",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::pooled_connection_uses_each_requests_timeout",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::request_lost_after_sending_is_reported_and_not_resent",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::startup_lock_times_out_and_is_reusable_after_release",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "daemon::unityd::tests::tools_dir_creates_directory",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::collect_document_symbols_flattens_nested_symbols",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::get_apply_defaults_to_false",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::id_matches_accepts_number_and_string_id",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::kind_from_lsp_maps_known_values",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::normalize_lsp_write_result_adds_contract_fields",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::normalize_rel_path_accepts_assets_packages_and_library",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::normalize_rel_path_extracts_supported_prefix_from_absolute_like_input",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::normalize_rel_path_rejects_parent_traversal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::path_matches_scope_filters_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::remove_symbol_request_includes_fail_on_references_when_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::remove_symbol_request_omits_fail_on_references_when_unset",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::require_helpers_validate_expected_fields",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::retryable_session_error_detects_transport_failures",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::retryable_session_error_ignores_argument_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::to_project_relative_or_raw_returns_relative_for_absolute_under_root",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::uri_and_ref_path_helpers_resolve_project_relative_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::client::tests::uri_to_rel_path_rejects_non_file_uris",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::daemon_idle_timeout_uses_env_override",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::handle_request_handles_ping_status_and_stop",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::is_would_block_checks_error_kind",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::write_all_with_retry_handles_would_block_and_partial_writes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::write_all_with_retry_rejects_zero_byte_progress",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "lsp::daemon::tests::write_pid_file_and_cleanup_manage_files_under_tools_root",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::configure::tests::custom_root_may_have_missing_ancestors_without_creating_them",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::configure::tests::invalid_config_is_never_overwritten_and_preview_creates_nothing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::configure::tests::malformed_shapes_and_http_name_collisions_are_rejected",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::configure::tests::merges_inline_toml_without_losing_other_servers_or_options",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::configure::tests::windows_and_local_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "mcp::tests::projects_owned_custom_descriptor_without_an_mcp_specific_schema",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::gc_empty_root_returns_empty",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::gc_keep_zero_removes_all_versions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::gc_keeps_n_newest_and_returns_removed",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::gc_skips_non_directory_entries",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::list_versions_empty_when_root_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::list_versions_returns_existing_dirs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::list_versions_skips_files_in_root",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::meta_roundtrip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::read_meta_returns_error_for_invalid_json",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::read_meta_returns_error_when_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::version_dir_rejects_empty",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::version_dir_rejects_paths_outside_single_cache_entry",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::cache::tests::version_dir_under_cache_root",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_line_diff_empty_for_identical_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_line_diff_for_deletes_only_returns_removal_hunk",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_line_diff_for_inserts_only_returns_addition_hunk",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_line_diff_for_separate_changes_produces_multiple_hunks",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_line_diff_replacement_isolates_changed_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_path_diff_can_be_truncated",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_path_diff_categorises_runtime_export",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_symbol_diff_detects_changed_animator",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_symbol_diff_returns_diff_when_only_one_side_has_symbol",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::compute_symbol_diff_returns_none_for_missing_in_both",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::ensure_cache_dir_errors_on_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::diff::tests::split_fqn_separates_namespace_and_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::build_embedding_index_handles_empty_symbol_index",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::build_embedding_index_with_mock_embedder",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::cosine_similarity_handles_zero_vectors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::embedding_roundtrip_via_bincode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::resolve_onnxruntime_dylib_explains_how_to_install_when_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::resolve_onnxruntime_dylib_falls_back_to_first_existing_candidate",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::resolve_onnxruntime_dylib_prefers_existing_env_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::resolve_onnxruntime_dylib_rejects_missing_env_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::search_ranks_by_cosine_similarity",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::search_returns_empty_for_empty_index",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::search_returns_empty_for_empty_query",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::symbol_to_text_includes_namespace_and_kind",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::embed::tests::symbol_to_text_without_namespace_omits_dot",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::api_discovery_paginates_branches_and_includes_tags",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::api_discovery_surfaces_http_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::archive_url_uses_unity_cs_reference_org",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::build_clone_args_emits_shallow_single_branch",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::ensure_git_available_succeeds_in_test_env",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::extract_zip_to_rejects_entries_with_parent_segments",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::extract_zip_to_strips_top_level_prefix_and_writes_files",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::fetch_selected_checks_out_long_windows_paths_without_global_configuration",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::fetch_selected_pins_commit_after_branch_advances",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::fetch_selected_rejects_invalid_commit_before_creating_destination",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::github_token_returns_none_when_env_unset",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::github_token_skips_empty_and_picks_first_non_empty",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::license_ok_when_env_set",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::license_ok_when_flag_true",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::license_rejects_zero_value",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::license_required_when_flag_false_and_env_unset",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::list_public_refs_discovers_branches_and_tags",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::list_public_refs_preserves_transport_error",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::public_refs_use_basic_authentication_for_git_http",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::fetcher::tests::run_clone_rejects_when_license_not_accepted",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::build_or_update_index_handles_existing_fixture",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::build_or_update_index_persists_signature",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::build_or_update_index_skips_already_indexed_files_until_change",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_captures_namespace",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_does_not_double_capture_class_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_finds_class",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_finds_methods",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_finds_property",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::extract_symbols_from_text_finds_struct_and_interface",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::file_signature_changes_when_content_changes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::find_symbol_filters_by_kind_and_namespace",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::index::tests::validate_kind_accepts_known_and_rejects_unknown",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::search::tests::grep_filters_by_filename_glob",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::search::tests::grep_finds_class_animator_with_line_numbers",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::search::tests::grep_returns_context_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::search::tests::view_rejects_parent_traversal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::search::tests::view_returns_requested_line_range",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::cached_fetch_and_status_report_stored_provenance",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::cached_unknown_version_can_be_used_without_branch_resolution",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::dir_size_empty_returns_zero",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::dir_size_sums_file_lengths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_clean_dry_run_false_actually_removes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_clean_dry_run_on_empty_cache_returns_empty_removed",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_diff_errors_when_cache_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_diff_path_mode_returns_added_removed_changed",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_diff_requires_from_and_to",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_diff_requires_symbol_or_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_diff_symbol_mode_returns_diffs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_embed_build_errors_when_cache_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_embed_search_errors_when_index_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_embed_search_requires_query",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_fetch_force_preserves_existing_on_transport_failure",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_fetch_skips_when_destination_exists_without_force",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_empty_hits_for_unknown_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_filters_namespace",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_rejects_unknown_kind",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_requires_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_returns_error_when_cache_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_find_symbol_returns_hits_from_fixture",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_grep_invalid_regex_returns_error",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_grep_requires_pattern",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_grep_supports_file_glob_filter",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_grep_via_dispatcher_returns_hits",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_resolve_symbol_at_empty_token_for_blank_position",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_resolve_symbol_at_finds_token_via_fixture",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_resolve_symbol_at_requires_path_line_column",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_resolve_symbol_at_requires_project_prefix",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_search_requires_pattern",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_search_via_dispatcher_truncates_max_results",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_search_without_max_results_returns_all_hits",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_status_includes_size_bytes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_status_returns_versions_list",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_view_rejects_parent_traversal_via_dispatcher",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_view_requires_path_param",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::execute_view_via_dispatcher_returns_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::extract_token_at_cursor_handles_edge_cases",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::extract_token_at_cursor_handles_escaped_quote_in_string",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::extract_token_at_cursor_returns_ident_after_closed_string",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::extract_token_at_cursor_skips_line_comment",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::extract_token_at_cursor_skips_string_literal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::fetch_resolves_project_and_explicit_refs_and_records_actual_commit",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::legacy_metadata_keeps_unknown_match_instead_of_claiming_exact",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::maybe_execute_returns_none_for_unknown_tool",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::now_unix_seconds_string_is_decimal",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::resolve_version_falls_back_to_project_detection",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::tests::resolve_version_uses_explicit_param",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::ambiguous_auto_candidates_and_unknown_versions_return_candidates",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::detect_returns_error_when_editor_version_line_absent",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::detect_returns_error_when_editor_version_value_empty",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::detect_returns_error_when_project_version_missing",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::exact_tag_precedes_minor_but_version_named_head_is_not_exact",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::explicit_ref_has_priority_and_ambiguous_short_names_require_full_ref",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::minor_version_key_rejects_invalid_inputs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::parse_editor_version_returns_value_directly",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::parses_remote_refs_with_peeled_tag_commits_in_any_order",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::public_resolver_handles_previously_supported_minors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::reads_known_project_version",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::reads_unknown_minor_without_static_mapping",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "reference::version::tests::selects_new_and_existing_minor_branches_without_claiming_exact_match",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::load_skills_handles_missing_root_and_skips_non_skill_entries",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::load_skills_supports_single_skill_root_and_dir_name_fallback",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::parse_frontmatter_and_collect_references_cover_optional_branches",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::parse_frontmatter_extracts_metadata",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::split_frontmatter_and_parse_frontmatter_cover_edge_cases",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::loader::tests::split_frontmatter_handles_basic_skill",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::good_skill_passes_all_rules",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::model_helpers_cover_skill_accessors_and_tool_sets",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r01_missing_description_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r01_missing_multiple_required_fields_fire",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r02_name_mismatch_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r03_disallowed_tool_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r03_legacy_bare_bash_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r04_unknown_category_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r05_empty_and_duplicate_triggers_fire",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r05_uppercase_trigger_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r06_unknown_sibling_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r07_too_long_description_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r08_missing_front_trigger_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r09_first_person_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r10_missing_use_when_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r11_missing_sibling_mention_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r12_unidirectional_sibling_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r13_too_long_body_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r14_missing_heading_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r15_references_without_link_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r16_time_sensitive_phrase_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r17_missing_runtime_checklist_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r18_long_reference_without_toc_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r19_reference_link_to_reference_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r20_and_r21_validate_windows_git_symlink_placeholders",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::r22_collision_without_cross_listing_fires",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "skills::tests::report_and_runner_cover_text_json_discovery_and_error_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "test_env::isolated_runtime_restores_inherited_environment_after_unwind",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::discovery::tests::bridge_reserved_names_match_the_cli_catalog_including_local_tools",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::discovery::tests::builtin_descriptors_keep_schemas_and_mark_their_source",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::discovery::tests::custom_descriptor_roundtrips_owned_names_and_schema",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::discovery::tests::list_tools_is_a_read_only_remote_builtin",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::build_index_and_find_symbol_roundtrip",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::collect_cs_files_and_index_helpers_cover_readiness_branches",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::create_class_generates_simple_class",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::create_class_rejects_existing_file",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::create_class_rejects_invalid_name",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::create_class_with_namespace_and_inherits",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::default_runtime_config_falls_back_to_ipv4_loopback",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::extract_symbols_from_text_covers_major_symbol_kinds",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::find_refs_supports_cursor_paging",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::find_symbol_returns_index_not_ready_before_build",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::get_symbols_extracts_class_and_method",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::helper_comment_and_snippet_processing_works",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::helper_path_normalization_and_resolution_cover_edge_cases",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::helper_symbol_and_scope_predicates_work",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::list_packages_lists_package_dirs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::lsp_write_tools_require_lsp_mode",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::post_write_refresh_failure_preserves_applied_files_without_runtime_panic",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::read_returns_file_slice",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::requires_unityengine_using_only_for_monobehaviour",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::search_finds_matching_lines",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::local_tools::tests::update_index_refreshes_symbol_names",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::capture_fails_when_no_candidate_exists",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::detects_daemon_stringified_timeouts",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::disabled_fallback_returns_the_timeout_error",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::failed_os_capture_keeps_both_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::fallback_flag_defaults_on_and_is_stripped",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::non_timeout_errors_are_not_recovered",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::output_path_follows_bridge_capture_directory",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::timeout_is_recovered_with_os_fallback_marker",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::os_capture::tests::verbatim_prefix_is_dropped_before_the_path_reaches_os_tools",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::action_enum_schemas_use_composite_variants",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::addressables_analyze_schema_uses_action_specific_variants",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::addressables_manage_schema_has_manage_actions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::all_tools_e2e_covers_catalog_or_documents_exclusion",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::analyze_asset_dependencies_schema_has_expected_actions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::animation_curve_tools_advertise_strict_unity_contracts",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::baking_tools_have_explicit_target_and_polling_contracts",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::build_index_schema_allows_output_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::build_player_schema_requires_explicit_safe_build_inputs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::capture_video_start_schema_restricts_mode_and_format",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::clear_logs_schema_is_strict_empty_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::create_animation_clip_schema_requires_clip_and_sprite_paths",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::create_animator_controller_schema_is_strict_and_nested",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::create_prefab_schema_allows_template_mode_without_source_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::create_sprite_atlas_schema_is_strict_and_nested",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::csharp_file_write_schemas_are_local_and_strict",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::delete_gameobject_schema_uses_any_of_targets",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::execute_menu_item_schema_supports_default_and_action_variants",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::get_build_status_is_read_only_and_requires_build_id",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::get_gameobject_details_schema_uses_any_of_identifiers",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::get_index_status_schema_is_strict_empty_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::hot_reload_tools_expose_explicit_preview_and_recovery_contract",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::input_keyboard_schema_uses_any_of_for_action_or_actions",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::known_tool_lookup_works",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::load_scene_schema_uses_one_of_identifier_variants",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::local_executor_tools_are_marked",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::manage_asset_database_schema_uses_action_specific_variants",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::manage_layers_schema_requires_action_enum",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::modify_gameobject_schema_requires_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::package_manager_schema_has_required_action",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::ping_schema_is_strict_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::prefab_override_tools_have_strict_discoverable_schemas",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::quit_editor_exposes_optional_scene_protection_parameter",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::remote_tools_have_unity_bridge_dispatch_cases",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::rename_symbol_schema_is_strict_and_requires_name_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::run_tests_schema_allows_test_mode_enum",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::set_component_field_schema_requires_component_and_field",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::timeline_schema_exposes_actions_and_stale_clip_guard",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::timeline_tools_are_discoverable_with_correct_mutation_flags",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::tool_catalog_avoids_default_params_schema_for_known_tools",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::tool_catalog_keeps_manifest_parity_count",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::tool_specs_cover_catalog",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::tools_doc_matches_registered_catalog",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::vfx_apply_is_mutating_and_requires_op",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::vfx_describe_graph_is_read_only_and_requires_asset_path",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::vfx_runtime_is_mutating_and_requires_op_and_game_object",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_catalog::tests::vfx_settings_is_mutating_and_requires_op",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_index::tests::category_accepts_heading_or_slug",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_index::tests::every_tool_has_exactly_one_index_entry_with_a_short_summary",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_index::tests::query_matches_name_or_summary_case_insensitively",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_index::tests::tool_index_matches_docs_headings",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "tooling::tool_index::tests::unknown_category_lists_valid_slugs",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::auth::tests::credentials_are_endpoint_scoped_and_absent_from_discovery_output",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::auth::tests::explicit_mounted_lockfile_and_invalid_file_errors_do_not_expose_token",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::auth::tests::only_exact_one_enables_legacy_opt_out",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::call_tool_returns_error_on_failure_response",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::call_tool_returns_result_on_success",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::call_tool_with_timing_reports_non_negative_durations",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::every_request_carries_token_from_private_lockfile",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::normalize_failure_preserves_complete_error_envelope",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::normalize_response_handles_success_and_error_shapes",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::parse_embedded_json_keeps_plain_strings",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::parse_json_accepts_trimmed_json",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::parse_json_rejects_empty_and_non_utf8_payload",
+      "result": "ok"
+    },
+    {
+      "suite": "unittests src\\main.rs",
+      "name": "unity::transport::tests::ping_backfills_bridge_version_from_editor_state_envelope",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\auth_warning.rs",
+      "name": "legacy_opt_out_warns_on_stderr_only_for_exact_one",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\bridge_package_dependencies.rs",
+      "name": "bridge_declares_ugui_when_sources_use_it",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\build_failure_output.rs",
+      "name": "failed_build_status_keeps_json_report_and_nonzero_exit",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "batch_validates_all_custom_arguments_before_any_side_effect",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "custom_method_is_not_retried_after_lost_response",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "custom_numeric_ranges_and_nullable_defaults_are_validated_before_execution",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "discovery_merges_schemas_and_sources_and_filters_custom_tools",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "discovery_rejects_conflicting_or_malformed_editor_catalogs",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "dry_run_and_unknown_tools_never_invoke_a_custom_method",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "invalid_custom_arguments_never_reach_the_method",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "names_only_and_compact_preserve_small_list_shapes",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "old_bridges_keep_the_builtin_catalog_but_auth_errors_are_visible",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\custom_tools.rs",
+      "name": "schema_and_all_call_spellings_support_custom_names",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\editor_lifecycle.rs",
+      "name": "close_requires_bridge_scene_protection_before_sending_quit",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\editor_lifecycle.rs",
+      "name": "editor_lifecycle_commands_are_available",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\editor_lifecycle.rs",
+      "name": "missing_editor_explains_official_install_and_returns_precondition",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\editor_lifecycle.rs",
+      "name": "status_reports_compilation_from_the_selected_project",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "batch_with_failed_operation_does_not_exit_zero",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "bridge_errors_preserve_codes_and_authentication_exit",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "bridge_warnings_reach_the_public_envelope",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "clap_usage_error_has_json_envelope",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "direct_authentication_and_bridge_failures_match_daemon",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "invalid_batch_is_usage_error",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "invalid_json_is_usage_error",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "invalid_port_list_is_usage_error",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "invalid_tool_routes_are_usage_errors",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "local_success_uses_single_envelope",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "nested_bridge_failure_is_not_reported_as_success",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "response_timeout_is_retryable_operation_failure",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "skills_show_and_lint_use_envelopes",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "test_completion_distinguishes_failed_and_passed",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\json_envelope.rs",
+      "name": "unreachable_editor_is_exit_seven",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\mcp.rs",
+      "name": "configure_all_clients_preserves_other_servers_and_dry_run",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\mcp.rs",
+      "name": "malformed_requests_do_not_end_session_or_execute_tools_before_initialization",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\mcp.rs",
+      "name": "stdio_catalog_and_failure_contract_without_editor",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\mcp_dynamic.rs",
+      "name": "custom_catalog_calls_and_live_removal_share_cli_discovery_and_validation",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\setup_dry_run.rs",
+      "name": "setup_dry_run_prints_plan_without_connections_writes_or_launches",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\setup_dry_run.rs",
+      "name": "setup_launch_returns_output_while_editor_is_still_running",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "all_clients_install_embedded_references_and_show_works_outside_repository",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "dry_run_prints_only_paths_without_creating_files",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "global_dry_run_flag_also_prevents_installation",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "install_protects_unowned_directory_and_force_keeps_unrelated_files",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "invalid_ledger_paths_are_rejected_even_with_force",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "refresh_does_not_install_clients_without_a_ledger",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\skills_install.rs",
+      "name": "refresh_syncs_an_older_owned_version_and_protects_local_edits",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "category_returns_only_that_docs_section",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "compact_is_name_and_description_only_and_at_most_half_of_full_catalog",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "limit_and_offset_page_the_filtered_list",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "offline_default_list_has_schemas_and_names_only_is_compatible",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "query_returns_only_matching_tools",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "unknown_category_is_rejected",
+      "result": "ok"
+    },
+    {
+      "suite": "tests\\tool_list_filters.rs",
+      "name": "unopened_project_still_exposes_the_offline_builtin_catalog",
+      "result": "ok"
+    }
+  ]
+}

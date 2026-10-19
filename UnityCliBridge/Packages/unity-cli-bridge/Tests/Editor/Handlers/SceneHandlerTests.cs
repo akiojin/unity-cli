@@ -94,6 +94,35 @@ namespace UnityCliBridge.Tests
         }
 
         [Test]
+        public void CreateScene_ShouldCreateNestedFolders()
+        {
+            var folder = testSceneFolder + "/Nested/Generated";
+            var result = ToJObject(SceneHandler.CreateScene(new JObject
+            {
+                ["sceneName"] = "TestScene_Nested",
+                ["path"] = folder,
+                ["loadScene"] = false
+            }));
+
+            Assert.IsNull(result.Value<string>("error"), result.ToString());
+            Assert.IsTrue(AssetDatabase.IsValidFolder(folder));
+            Assert.IsTrue(File.Exists(folder + "/TestScene_Nested.unity"));
+        }
+
+        [Test]
+        public void SaveScene_ShouldCreateNestedFolders()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var path = testSceneFolder + "/Saved/Generated/TestScene_Saved.unity";
+            var result = ToJObject(SceneHandler.SaveScene(new JObject { ["scenePath"] = path }));
+
+            Assert.IsNull(result.Value<string>("error"), result.ToString());
+            Assert.IsTrue(AssetDatabase.IsValidFolder(testSceneFolder + "/Saved/Generated"));
+            Assert.IsTrue(File.Exists(path));
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+
+        [Test]
         public void CreateScene_ShouldNotLoadScene_WhenLoadSceneIsFalse()
         {
             var currentScenePath = SceneManager.GetActiveScene().path;

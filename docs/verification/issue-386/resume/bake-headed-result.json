@@ -1,0 +1,47 @@
+{
+  "argv": [
+    "py",
+    "-3",
+    "-X",
+    "utf8",
+    "-B",
+    "scripts/e2e-bake.py",
+    "--unity-cli",
+    "<workspace>\\target\\debug\\unity-cli.exe",
+    "--port",
+    "6487",
+    "--project-root",
+    "<workspace>\\.cache\\issue-386\\staff-project"
+  ],
+  "started_at": "2026-10-03T22:12:57.649158+00:00",
+  "editor_pid": 53380,
+  "owned_dialog_actions": [
+    {
+      "scene": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity",
+      "action": "Ignore external reload, keep live bake scene",
+      "at": "2026-10-03T22:13:17.017866+00:00"
+    },
+    {
+      "scene": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity",
+      "action": "Ignore external reload, keep live bake scene",
+      "at": "2026-10-03T22:13:23.035841+00:00"
+    },
+    {
+      "scene": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity",
+      "action": "Ignore external reload, keep live bake scene",
+      "at": "2026-10-03T22:13:30.057345+00:00"
+    },
+    {
+      "scene": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity",
+      "action": "Ignore external reload, keep live bake scene",
+      "at": "2026-10-03T22:13:34.069832+00:00"
+    },
+    {
+      "scene": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity",
+      "action": "Ignore external reload, keep live bake scene",
+      "at": "2026-10-03T22:13:42.095729+00:00"
+    }
+  ],
+  "exit_code": 0,
+  "finished_at": "2026-10-03T22:13:51.120050+00:00"
+}

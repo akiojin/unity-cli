@@ -185,12 +185,6 @@ fn all_clients_install_embedded_references_and_show_works_outside_repository() {
             .join(local)
             .join("unity-scene-create/references/runtime-checklist.md")
             .is_file());
-        // Windows resolves the home directory through the shell API, not
-        // %USERPROFILE%, so a global install cannot be redirected into the
-        // temp root and would write into the real user profile.
-        if cfg!(windows) {
-            continue;
-        }
         ok(run(root.path(), &["skills", "install", client]));
         assert!(root
             .path()

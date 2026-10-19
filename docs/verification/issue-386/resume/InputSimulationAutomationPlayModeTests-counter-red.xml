@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="11" failures="3" errors="0" skipped="0" time="7.425"><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="CreateInputSequence_AppliesDelayAndFinalState" time="0.800"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.CreateInputSequence_AppliesDelayAndFinalState
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: A (UnityCliVirtualKeyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: A (UnityCliVirtualKeyboard)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="GamepadAndTouchInput_AreObserved" time="1.177"><failure message="Timed out waiting for condition. Status:
+Ready=True
+CaptureCount=602
+TextInput=(empty)
+KeyboardPressed=(none)
+KeyboardPresses=0
+KeyboardReleases=0
+MousePosition=222.0,111.0
+MouseLeftPressed=False
+MousePresses=0
+MouseReleases=0
+MouseScroll=0.0,0.0
+GamepadButtonA=False
+GamepadButtonPresses=1
+GamepadButtonReleases=1
+GamepadLeftStick=0.25,0.50
+GamepadLeftTrigger=0.00
+GamepadDpad=0.00,0.00
+TouchPresses=0
+TouchReleases=0
+TouchMaxSimultaneous=0
+TouchLast=none
+">Timed out waiting for condition. Status:
+Ready=True
+CaptureCount=602
+TextInput=(empty)
+KeyboardPressed=(none)
+KeyboardPresses=0
+KeyboardReleases=0
+MousePosition=222.0,111.0
+MouseLeftPressed=False
+MousePresses=0
+MouseReleases=0
+MouseScroll=0.0,0.0
+GamepadButtonA=False
+GamepadButtonPresses=1
+GamepadButtonReleases=1
+GamepadLeftStick=0.25,0.50
+GamepadLeftTrigger=0.00
+GamepadDpad=0.00,0.00
+TouchPresses=0
+TouchReleases=0
+TouchMaxSimultaneous=0
+TouchLast=none
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.GamepadAndTouchInput_AreObserved
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\resume\hot-reload-windows\Project\.unity\tests\test-run-state.json (status=running)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardAndMouseInput_AreObserved" time="1.316"><failure message="Timed out waiting for condition. Status:
+Ready=True
+CaptureCount=606
+TextInput=Hi
+KeyboardPressed=(none)
+KeyboardPresses=0
+KeyboardReleases=0
+MousePosition=120.0,140.0
+MouseLeftPressed=False
+MousePresses=1
+MouseReleases=1
+MouseScroll=0.0,0.0
+GamepadButtonA=False
+GamepadButtonPresses=0
+GamepadButtonReleases=0
+GamepadLeftStick=0.25,0.50
+GamepadLeftTrigger=0.00
+GamepadDpad=0.00,0.00
+TouchPresses=0
+TouchReleases=0
+TouchMaxSimultaneous=0
+TouchLast=none
+">Timed out waiting for condition. Status:
+Ready=True
+CaptureCount=606
+TextInput=Hi
+KeyboardPressed=(none)
+KeyboardPresses=0
+KeyboardReleases=0
+MousePosition=120.0,140.0
+MouseLeftPressed=False
+MousePresses=1
+MouseReleases=1
+MouseScroll=0.0,0.0
+GamepadButtonA=False
+GamepadButtonPresses=0
+GamepadButtonReleases=0
+GamepadLeftStick=0.25,0.50
+GamepadLeftTrigger=0.00
+GamepadDpad=0.00,0.00
+TouchPresses=0
+TouchReleases=0
+TouchMaxSimultaneous=0
+TouchLast=none
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardAndMouseInput_AreObserved
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating text input: &quot;Hi&quot; (UnityCliVirtualKeyboard)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_120Fps_UsesElapsedTime" time="1.025"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_120Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\resume\hot-reload-windows\Project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (UnityCliVirtualKeyboard)
+targetFrameRate=120, elapsed=1.011509s, frames=98
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_30Fps_UsesElapsedTime" time="1.065"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_30Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (UnityCliVirtualKeyboard)
+targetFrameRate=30, elapsed=1.028968s, frames=29
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_60Fps_UsesElapsedTime" time="1.029"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_60Fps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (UnityCliVirtualKeyboard)
+targetFrameRate=60, elapsed=1.009028s, frames=55
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime" time="1.006"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.KeyboardHoldSeconds_UnlimitedFps_UsesElapsedTime
+[unity-cli-bridge][InputSystemHandler] Created virtual keyboard device
+[unity-cli-bridge][InputSystemHandler] Simulating key press: Space (UnityCliVirtualKeyboard)
+[unity-cli-bridge][TestExecutionHandler] Persisted run state to &lt;workspace&gt;\.cache\issue-386\resume\hot-reload-windows\Project\.unity\tests\test-run-state.json (status=running)
+[unity-cli-bridge][InputSystemHandler] Simulating key release: Space (UnityCliVirtualKeyboard)
+targetFrameRate=-1, elapsed=1.002823s, frames=2181
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;MouseReleases&quot;,1)" time="0.007"><failure message="  Expected: 1
+  But was:  0
+">  Expected: 1
+  But was:  0
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;MouseReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;TouchPresses=2\nTouchReleases=1\n&quot;,&quot;TouchReleases&quot;,1)" time="0.001"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;TouchPresses=2\nTouchReleases=1\n&quot;,&quot;TouchReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1&quot;,&quot;MouseReleases&quot;,1)" time="0.000"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1&quot;,&quot;MouseReleases&quot;,1)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests" name="StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;TouchReleases&quot;,0)" time="0.000"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.InputSimulationAutomationPlayModeTests.StatusCounterParser_HandlesLineEndings(&quot;MouseReleases=1\r\n&quot;,&quot;TouchReleases&quot;,0)
+</system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,8 @@
+{
+  "error": "unexpected server response: verify: deferred — host busy for 1500s (budget 1500s): verification lease held by verification 99a8660247f5bc49--verification--4d3836567f81bbf5 (pid 52908 alive, job running, nice unknown, spawn-host inherit, 2699s left, 7 batches ≈ 597s); holder progressing: held 68m20s, its 7 working processes gained 515ms of CPU over the last 5.0s (10.3% of one core), and its process set turned over; next_turn_reserved: yes; queue_position: 1; rerun `verify.run` in about 597s (timing hint only; a progressing holder renews its TTL) — a deferral is not a failure and there is no attempt cap: your turn stays reserved, so keep rerunning `verify.run` while the holder makes progress",
+  "exit_code": 1,
+  "ok": false,
+  "operation": "verify.run",
+  "output": ""
+}
+gwtd verify.run: unexpected server response: verify: deferred — host busy for 1500s (budget 1500s): verification lease held by verification 99a8660247f5bc49--verification--4d3836567f81bbf5 (pid 52908 alive, job running, nice unknown, spawn-host inherit, 2699s left, 7 batches ≈ 597s); holder progressing: held 68m20s, its 7 working processes gained 515ms of CPU over the last 5.0s (10.3% of one core), and its process set turned over; next_turn_reserved: yes; queue_position: 1; rerun `verify.run` in about 597s (timing hint only; a progressing holder renews its TTL) — a deferral is not a failure and there is no attempt cap: your turn stays reserved, so keep rerunning `verify.run` while the holder makes progress

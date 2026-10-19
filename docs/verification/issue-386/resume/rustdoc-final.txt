@@ -1,0 +1,3 @@
+ Documenting unity-cli v0.18.1 (<workspace>)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.06s
+   Generated <workspace>\target\doc\unity_cli\index.html

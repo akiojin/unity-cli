@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="15" failures="0" errors="0" skipped="0" time="6.385"><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="AdditiveSceneIsRejectedWithoutSwitchingActiveScene" time="0.408"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.AdditiveSceneIsRejectedWithoutSwitchingActiveScene
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.AdditiveSceneIsRejectedWithoutSwitchingActiveScene
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="ConcurrentBakeIsRejectedBeforeEditorTick" time="0.463"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.ConcurrentBakeIsRejectedBeforeEditorTick
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.ConcurrentBakeIsRejectedBeforeEditorTick
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="DifferentSceneIsRejected" time="0.380"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.DifferentSceneIsRejected
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.DifferentSceneIsRejected
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="DirtySceneIsRejected" time="0.367"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.DirtySceneIsRejected
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.DirtySceneIsRejected
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="EmptySceneIsRejected(&quot;lighting&quot;)" time="0.429"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;lighting&quot;)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;lighting&quot;)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="EmptySceneIsRejected(&quot;navmesh-legacy&quot;)" time="0.379"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;navmesh-legacy&quot;)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;navmesh-legacy&quot;)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="EmptySceneIsRejected(&quot;occlusion&quot;)" time="0.379"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;occlusion&quot;)
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.EmptySceneIsRejected(&quot;occlusion&quot;)
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="LegacyRejectsSurfaceOwnedNavigationData" time="0.538"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.LegacyRejectsSurfaceOwnedNavigationData
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.LegacyRejectsSurfaceOwnedNavigationData
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="MissingTargetIsRejected" time="0.375"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.MissingTargetIsRejected
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.MissingTargetIsRejected
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="PreviewSceneDoesNotBlockSavedScene" time="0.462"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.PreviewSceneDoesNotBlockSavedScene
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.PreviewSceneDoesNotBlockSavedScene
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="QueuedJobIsRunningAndHasNoArtifacts" time="0.471"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.QueuedJobIsRunningAndHasNoArtifacts
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.QueuedJobIsRunningAndHasNoArtifacts
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="SceneChangeFailsAcceptedJobWithoutSuccessArtifacts" time="0.525"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SceneChangeFailsAcceptedJobWithoutSuccessArtifacts
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SceneChangeFailsAcceptedJobWithoutSuccessArtifacts
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="SceneEditedAfterAcceptanceFailsBeforeBaking" time="0.450"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SceneEditedAfterAcceptanceFailsBeforeBaking
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SceneEditedAfterAcceptanceFailsBeforeBaking
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="SurfaceRequiresExplicitPath" time="0.375"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SurfaceRequiresExplicitPath
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.SurfaceRequiresExplicitPath
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="UnknownJobDoesNotReportSuccess" time="0.385"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.UnknownJobDoesNotReportSuccess
+[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.UnknownJobDoesNotReportSuccess
+</system-out></testcase></testsuite></testsuites>

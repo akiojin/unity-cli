@@ -35,7 +35,7 @@ public sealed class LspEditService
             var handle = await AcquireFileLockAsync(full);
             try
             {
-            var text = await File.ReadAllTextAsync(full);
+            var (text, format) = await LspSourceFile.ReadAsync(full);
             var tree = CSharpSyntaxTree.ParseText(text);
             var root = await tree.GetRootAsync();
             var normalizedNamePath = NormalizeNamePath(namePath);
@@ -147,7 +147,7 @@ public sealed class LspEditService
                 if (newText == text) return EditResult(false, false, reason: "no_change");
                 if (apply)
                 {
-                    await File.WriteAllTextAsync(full, newText, Encoding.UTF8);
+                    await LspSourceFile.WriteAsync(full, newText, format);
                     return EditResult(
                         true,
                         true,
@@ -169,6 +169,7 @@ public sealed class LspEditService
             var rewrittenFullText = newRoot.ToFullString();
             var updatedFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [full] = rewrittenFullText };
             var originalByFile = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [full] = text };
+            var formatByFile = new Dictionary<string, LspSourceFileFormat>(StringComparer.OrdinalIgnoreCase) { [full] = format };
             void TrackRenameChanges(string file, string originalSrc, SyntaxNode currentRoot)
             {
                 var tokens = currentRoot.DescendantTokens().Where(tk => tk.IsKind(SyntaxKind.IdentifierToken) && tk.ValueText == oldName).ToArray();
@@ -221,7 +222,8 @@ public sealed class LspEditService
                     var fileHandle = await AcquireFileLockAsync(file);
                     try
                     {
-                        var src = await File.ReadAllTextAsync(file);
+                        var (src, fileFormat) = await LspSourceFile.ReadAsync(file);
+                        formatByFile[file] = fileFormat;
                         var t = CSharpSyntaxTree.ParseText(src);
                         var r = await t.GetRootAsync();
                         TrackRenameChanges(file, src, r);
@@ -255,7 +257,7 @@ public sealed class LspEditService
                         locks.Add(await AcquireFileLockAsync(file));
                     }
                     foreach (var kv in updatedFiles)
-                        await File.WriteAllTextAsync(kv.Key, kv.Value, Encoding.UTF8);
+                        await LspSourceFile.WriteAsync(kv.Key, kv.Value, formatByFile[kv.Key]);
                 }
                 finally
                 {
@@ -371,8 +373,8 @@ public sealed class LspEditService
         var handle = await AcquireFileLockAsync(full);
         try
         {
-            var original = await File.ReadAllTextAsync(full);
-            var updated = MaybeFormatText(newText ?? string.Empty, format);
+            var (original, fileFormat) = await LspSourceFile.ReadAsync(full);
+            var updated = fileFormat.ApplyNewlines(MaybeFormatText(newText ?? string.Empty, format));
             var diagnostics = validate ? CollectSyntaxDiagnostics(updated).Cast<object>().ToArray() : Array.Empty<object>();
             if (validate && HasErrorDiagnostics(diagnostics.Cast<Dictionary<string, object?>>()))
             {
@@ -393,7 +395,7 @@ public sealed class LspEditService
                     reason: "preview_only");
             }
 
-            await File.WriteAllTextAsync(full, updated, Encoding.UTF8);
+            await LspSourceFile.WriteAsync(full, updated, fileFormat);
             return EditResult(
                 true,
                 true,
@@ -412,8 +414,8 @@ public sealed class LspEditService
         var exists = File.Exists(full);
         if (exists && !overwrite) return EditResult(false, false, reason: "file_exists");
 
-        var original = exists ? await File.ReadAllTextAsync(full) : string.Empty;
-        var normalizedText = MaybeFormatText(text ?? string.Empty, format);
+        var (original, fileFormat) = exists ? await LspSourceFile.ReadAsync(full) : (string.Empty, LspSourceFileFormat.NewFile);
+        var normalizedText = fileFormat.ApplyNewlines(MaybeFormatText(text ?? string.Empty, format));
         var diagnostics = validate ? CollectSyntaxDiagnostics(normalizedText).Cast<object>().ToArray() : Array.Empty<object>();
         if (validate && HasErrorDiagnostics(diagnostics.Cast<Dictionary<string, object?>>()))
         {
@@ -435,7 +437,7 @@ public sealed class LspEditService
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        await File.WriteAllTextAsync(full, normalizedText, Encoding.UTF8);
+        await LspSourceFile.WriteAsync(full, normalizedText, fileFormat);
         return EditResult(
             true,
             true,
@@ -447,6 +449,7 @@ public sealed class LspEditService
     {
         var desired = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var originals = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var formats = new Dictionary<string, LspSourceFileFormat>(StringComparer.OrdinalIgnoreCase);
         var diagnostics = new List<object>();
 
         foreach (var item in files.EnumerateArray())
@@ -463,8 +466,8 @@ public sealed class LspEditService
                 return EditResult(false, false, reason: "duplicate_path");
             }
 
-            originals[full] = await File.ReadAllTextAsync(full);
-            var formatted = MaybeFormatText(newText, format);
+            (originals[full], formats[full]) = await LspSourceFile.ReadAsync(full);
+            var formatted = formats[full].ApplyNewlines(MaybeFormatText(newText, format));
             desired[full] = formatted;
             if (validate)
             {
@@ -513,7 +516,7 @@ public sealed class LspEditService
             }
             foreach (var file in changed)
             {
-                await File.WriteAllTextAsync(file, desired[file], Encoding.UTF8);
+                await LspSourceFile.WriteAsync(file, desired[file], formats[file]);
             }
         }
         finally
@@ -532,12 +535,18 @@ public sealed class LspEditService
         var handle = await AcquireFileLockAsync(full);
         try
         {
-            var text = await File.ReadAllTextAsync(full);
+            var (text, format) = await LspSourceFile.ReadAsync(full);
             var tree = CSharpSyntaxTree.ParseText(text);
             var root = await tree.GetRootAsync();
             var (_, last) = FindNodeByNamePath(root, normalizedPath);
             if (last is not MethodDeclarationSyntax method) return EditResult(false, false, reason: "symbol_not_found");
             var block = ParseBlock(bodyText);
+            // keep the trivia around the replaced body (e.g. a trailing comment and the newline after `}`)
+            var (leading, trailing) = method.Body is { } oldBody
+                ? (oldBody.GetLeadingTrivia(), oldBody.GetTrailingTrivia())
+                : (method.ExpressionBody?.GetLeadingTrivia() ?? default,
+                    method.SemicolonToken.TrailingTrivia);
+            block = block.WithLeadingTrivia(leading).WithTrailingTrivia(trailing);
             // handle expression-bodied to block conversion
             var m2 = method.WithExpressionBody(null).WithSemicolonToken(default).WithBody(block);
             var newRoot = root.ReplaceNode(method, m2);
@@ -545,7 +554,7 @@ public sealed class LspEditService
             if (newText == text) return EditResult(false, false, reason: "no_change");
             if (apply)
             {
-                await File.WriteAllTextAsync(full, newText, Encoding.UTF8);
+                await LspSourceFile.WriteAsync(full, newText, format);
                 return EditResult(
                     true,
                     true,
@@ -574,7 +583,7 @@ public sealed class LspEditService
         var handle = await AcquireFileLockAsync(full);
         try
         {
-            var original = await File.ReadAllTextAsync(full);
+            var (original, format) = await LspSourceFile.ReadAsync(full);
             var tree = CSharpSyntaxTree.ParseText(original);
             var root = await tree.GetRootAsync();
             var (_, last) = FindNodeByNamePath(root, normalizedPath);
@@ -589,7 +598,7 @@ public sealed class LspEditService
                 if (newText0 == original) return EditResult(false, false, reason: "no_change");
                 if (apply)
                 {
-                    await File.WriteAllTextAsync(full, newText0, Encoding.UTF8);
+                    await LspSourceFile.WriteAsync(full, newText0, format);
                     return EditResult(
                         true,
                         true,
@@ -627,7 +636,7 @@ public sealed class LspEditService
                 if (newText1 == original) return EditResult(false, false, reason: "no_change");
                 if (apply)
                 {
-                    await File.WriteAllTextAsync(full, newText1, Encoding.UTF8);
+                    await LspSourceFile.WriteAsync(full, newText1, format);
                     return EditResult(
                         true,
                         true,
@@ -646,7 +655,7 @@ public sealed class LspEditService
             if (newText == original) return EditResult(false, false, reason: "no_change");
             if (apply)
             {
-                await File.WriteAllTextAsync(full, newText, Encoding.UTF8);
+                await LspSourceFile.WriteAsync(full, newText, format);
                 return EditResult(
                     true,
                     true,
@@ -857,7 +866,7 @@ public sealed class LspEditService
             try
             {
             // Locate target declaration first
-            var original = await File.ReadAllTextAsync(full);
+            var (original, format) = await LspSourceFile.ReadAsync(full);
             var tree0 = CSharpSyntaxTree.ParseText(original);
             var root0 = await tree0.GetRootAsync();
             var (_, targetNode) = FindNodeByNamePath(root0, normalizedPath);
@@ -942,7 +951,7 @@ public sealed class LspEditService
                         changedFiles: new[] { NormalizeRelative(relative) },
                         changedSymbols: new[] { normalizedPath });
                 }
-                await File.WriteAllTextAsync(full, newText, Encoding.UTF8);
+                await LspSourceFile.WriteAsync(full, newText, format);
                 return EditResult(
                     true,
                     true,

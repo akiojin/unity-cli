@@ -1,0 +1,22 @@
+   Compiling unity-cli v0.18.1 (<workspace>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.86s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-6f9d4071c936636c.exe)
+
+running 1 test
+test reference::fetcher::tests::fetch_selected_checks_out_long_windows_paths_without_global_configuration ... FAILED
+
+failures:
+
+---- reference::fetcher::tests::fetch_selected_checks_out_long_windows_paths_without_global_configuration stdout ----
+
+thread 'reference::fetcher::tests::fetch_selected_checks_out_long_windows_paths_without_global_configuration' (24288) panicked at src\reference\fetcher.rs:564:80:
+called `Result::unwrap()` on an `Err` value: git checkout failed (exit code: 128): fatal: cannot create directory at 'ModuleModuleModuleModuleModuleModuleModule/GraphToolkitGraphToolkitGraphToolkitGraphToolkit/CommandStateObserverCommandStateObserverCommandStateObserver': Filename too long
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    reference::fetcher::tests::fetch_selected_checks_out_long_windows_paths_without_global_configuration
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 557 filtered out; finished in 1.92s
+
+error: test failed, to rerun pass `--bin unity-cli`

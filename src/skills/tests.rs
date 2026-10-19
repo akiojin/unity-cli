@@ -11,7 +11,8 @@ use tempfile::TempDir;
 use super::loader::load_skills;
 use super::model::{allowed_tool_set, RuleId, Severity, Violation};
 use super::report::{render, ReportFormat};
-use super::rules::{rule_r18, rule_r19, rule_r20, rule_r21, run_all, RuleContext};
+use super::rules::{rule_r18, rule_r19, run_all, RuleContext};
+use super::rules::{rule_r20, rule_r21};
 use super::runner::{discover_root, lint, LintOptions, LintOutcome};
 
 const VALID_DESC: &str = "Manage Unity prefab assets with unity-cli. Use when the user asks to create a prefab from a scene object or open a prefab in edit mode. Do not use for general scene object editing; use `unity-gameobject-edit` instead.";
@@ -570,6 +571,51 @@ fn r20_and_r21_symlink_rules_cover_missing_and_valid_targets() {
 
     assert!(rule_r20(skill, &ctx).is_empty());
     assert!(rule_r21(skill, &ctx).is_empty());
+}
+
+#[cfg(windows)]
+#[test]
+fn r20_and_r21_validate_windows_git_symlink_placeholders() {
+    let tmp = TempDir::new().unwrap();
+    write_skill(
+        tmp.path(),
+        "unity-symlinked",
+        &valid_frontmatter("unity-symlinked"),
+        &valid_body(),
+    );
+    write_skill(
+        tmp.path(),
+        "unity-gameobject-edit",
+        &sibling_frontmatter("unity-gameobject-edit", "unity-symlinked"),
+        &valid_body(),
+    );
+    let skills = load_skills(tmp.path()).unwrap();
+    let skill = skills.iter().find(|s| s.name == "unity-symlinked").unwrap();
+    let ctx = RuleContext {
+        skills: &skills,
+        repo_root: tmp.path(),
+    };
+    type Check = fn(&super::model::Skill, &RuleContext<'_>) -> Vec<Violation>;
+    for (parent, rule) in [
+        (".claude/skills", rule_r20 as Check),
+        (".agents/skills", rule_r21 as Check),
+    ] {
+        let parent = tmp.path().join(parent);
+        fs::create_dir_all(&parent).unwrap();
+        let link = parent.join("unity-symlinked");
+        assert!(!rule(skill, &ctx).is_empty(), "missing placeholder");
+        fs::write(&link, "../../unity-symlinked").unwrap();
+        assert!(rule(skill, &ctx).is_empty(), "valid Git placeholder");
+        for invalid in [
+            "../../unity-gameobject-edit",
+            "../../missing-skill",
+            "../../unity-symlinked\nadditional content",
+            "",
+        ] {
+            fs::write(&link, invalid).unwrap();
+            assert!(!rule(skill, &ctx).is_empty(), "accepted {invalid:?}");
+        }
+    }
 }
 
 #[test]

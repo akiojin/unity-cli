@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "tasklist",
+    "/FI",
+    "PID eq 44232",
+    "/FO",
+    "CSV",
+    "/NH"
+  ],
+  "exit_code": 0,
+  "stdout": "\"Unity.exe\",\"44232\",\"RDP-Tcp#0\",\"2\",\"1,648,308 K\"\n",
+  "stderr": "",
+  "observed_at": "2026-10-03T15:01:17.661572+00:00"
+}

@@ -44,6 +44,19 @@ Inspect scene hierarchy, find objects, and read component data without mutating 
 3. Inspect targets with `get_gameobject_details`, `get_component_values`, or animator queries.
 4. Use `analyze_scene_contents` with `includeInactive` for broad audits.
 
+## Target Parameter Names
+
+Read-only queries name their target differently from the edit tools. A wrong key fails locally with `INVALID_ARGUMENT` before reaching Unity.
+
+| Key                        | Tools                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `gameObjectName`           | `get_component_values`, `get_object_references`, `get_animator_state`, `get_animator_runtime_info` |
+| `gameObjectName` or `path` | `get_gameobject_details`                                                                           |
+| `name`                     | `find_gameobject`                                                                                  |
+| `rootPath`                 | `get_hierarchy`                                                                                    |
+
+`gameObjectName` takes a name or a hierarchy path such as `/Root/Child`. Edit tools use `path` or `gameObjectPath` instead; see `unity-gameobject-edit`. When unsure: `unity-cli tool schema <tool_name> --output json`.
+
 ```bash
 unity-cli raw get_hierarchy --json '{"nameOnly":true}'
 unity-cli raw find_gameobject --json '{"name":"Player"}'

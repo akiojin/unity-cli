@@ -10,7 +10,7 @@ fn legacy_opt_out_warns_on_stderr_only_for_exact_one() {
     ] {
         let mut command = Command::new(env!("CARGO_BIN_EXE_unity-cli"));
         command
-            .args(["tool", "list", "--output", "json"])
+            .args(["--port", "1", "tool", "list", "--output", "json"])
             .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
             .env_remove("UNITY_CLI_ALLOW_UNAUTHENTICATED");
         if let Some(value) = value {

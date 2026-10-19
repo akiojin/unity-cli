@@ -1,0 +1,2 @@
+Started headless Editor (pid 34888)
+11 tests, 0 failed; report: <workspace>\.cache\issue-386\resume\InputSimulationAutomationPlayModeTests-counter-green.xml

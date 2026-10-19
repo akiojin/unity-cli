@@ -576,6 +576,25 @@ pub fn rule_r21(skill: &Skill, ctx: &RuleContext<'_>) -> Vec<Violation> {
     check_symlink(skill, &link, RuleId::R21AgentsSymlink)
 }
 
+fn canonical_skill_link(link: &Path) -> std::io::Result<PathBuf> {
+    #[cfg(windows)]
+    if link.is_file() && !link.is_symlink() {
+        // Git with core.symlinks=false checks out a symlink as a file containing
+        // its relative target. Validate that target against the canonical skill
+        // below, without requiring Developer Mode or changing checkout files.
+        let text = fs::read_to_string(link)?;
+        let target = Path::new(&text);
+        if !text.is_empty() && !text.chars().any(char::is_control) && target.is_relative() {
+            return link
+                .parent()
+                .unwrap_or(Path::new("."))
+                .join(target)
+                .canonicalize();
+        }
+    }
+    link.canonicalize()
+}
+
 fn check_symlink(skill: &Skill, link: &Path, rule: RuleId) -> Vec<Violation> {
     if !link.exists() && !link.is_symlink() {
         return vec![Violation::new(
@@ -586,7 +605,7 @@ fn check_symlink(skill: &Skill, link: &Path, rule: RuleId) -> Vec<Violation> {
             format!("symlink `{}` is missing", link.display()),
         )];
     }
-    let target = match link.canonicalize() {
+    let target = match canonical_skill_link(link) {
         Ok(p) => p,
         Err(_) => {
             return vec![Violation::new(

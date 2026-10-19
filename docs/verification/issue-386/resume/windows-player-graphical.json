@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-10-03T21:56:57.372479+00:00",
+  "argv": [
+    "<workspace>\\.cache\\issue-386\\resume\\player-output\\WindowsPlayer_4b6c2fee84804da0a39f64ddb4dc292d\\Player.exe",
+    "-screen-fullscreen",
+    "0",
+    "-screen-width",
+    "640",
+    "-screen-height",
+    "360",
+    "-logFile",
+    "<workspace>\\.cache\\issue-386\\resume\\player-output\\WindowsPlayer_4b6c2fee84804da0a39f64ddb4dc292d\\graphical-launch.txt"
+  ],
+  "exe_sha256": "413a04009d5fc13e03fe4e5c6941a8606c63c103edd08853efc6c9bd57e6151b",
+  "passed": true,
+  "player_pid": 14980,
+  "visible_owned_window": true,
+  "pixels": {
+    "width": 640,
+    "height": 360,
+    "sampledChannelRange": 164
+  },
+  "png_sha256": "5680ebd152535218ac43870615c74e4ec0ea185751d762043176312b3cd5b32e",
+  "observation": "Windows Player rendered varying pixels in its visible client area; gameplay input was not tested",
+  "finished_at": "2026-10-03T21:57:03.031333+00:00"
+}

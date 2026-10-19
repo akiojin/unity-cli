@@ -1,0 +1,8 @@
+   Compiling unity-cli v0.18.1 (<workspace>)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.68s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-6f9d4071c936636c.exe)
+
+running 1 test
+test core::failure::tests::failed_batch_preserves_first_failure_message_and_all_results ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 556 filtered out; finished in 0.00s

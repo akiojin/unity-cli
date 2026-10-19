@@ -1,0 +1,54 @@
+Unity 6000.4.4f1; port 6489; artifacts <profile>\AppData\Local\Temp\input-actions-persistence-oyi524qv
+Unity host 1 ready: <profile>\AppData\Local\Temp\input-actions-persistence-oyi524qv\unity-1.log
+PASS create_action_map: source map/action/binding contents and IDs match memory
+PASS create_action_map: source control schemes match memory
+PASS create_action_map: reimport preserves structure and IDs
+PASS add_input_action: source map/action/binding contents and IDs match memory
+PASS add_input_action: source control schemes match memory
+PASS add_input_action: reimport preserves structure and IDs
+PASS add_input_binding: source map/action/binding contents and IDs match memory
+PASS add_input_binding: source control schemes match memory
+PASS add_input_binding: reimport preserves structure and IDs
+PASS remove_input_binding: source map/action/binding contents and IDs match memory
+PASS remove_input_binding: source control schemes match memory
+PASS remove_input_binding: reimport preserves structure and IDs
+PASS create_composite_binding: source map/action/binding contents and IDs match memory
+PASS create_composite_binding: source control schemes match memory
+PASS create_composite_binding: reimport preserves structure and IDs
+PASS remove_all_bindings: source map/action/binding contents and IDs match memory
+PASS remove_all_bindings: source control schemes match memory
+PASS remove_all_bindings: reimport preserves structure and IDs
+PASS add_input_binding: source map/action/binding contents and IDs match memory
+PASS add_input_binding: source control schemes match memory
+PASS add_input_binding: reimport preserves structure and IDs
+PASS remove_input_action: source map/action/binding contents and IDs match memory
+PASS remove_input_action: source control schemes match memory
+PASS remove_input_action: reimport preserves structure and IDs
+PASS create_action_map: source map/action/binding contents and IDs match memory
+PASS create_action_map: source control schemes match memory
+PASS create_action_map: reimport preserves structure and IDs
+PASS remove_action_map: source map/action/binding contents and IDs match memory
+PASS remove_action_map: source control schemes match memory
+PASS remove_action_map: reimport preserves structure and IDs
+PASS manage_control_schemes: source map/action/binding contents and IDs match memory
+PASS manage_control_schemes: source control schemes match memory
+PASS manage_control_schemes: reimport preserves structure and IDs
+PASS manage_control_schemes: source map/action/binding contents and IDs match memory
+PASS manage_control_schemes: source control schemes match memory
+PASS manage_control_schemes: reimport preserves structure and IDs
+PASS manage_control_schemes: source map/action/binding contents and IDs match memory
+PASS manage_control_schemes: source control schemes match memory
+PASS manage_control_schemes: reimport preserves structure and IDs
+PASS add_input_binding: source map/action/binding contents and IDs match memory
+PASS add_input_binding: source control schemes match memory
+PASS add_input_binding: reimport preserves structure and IDs
+Unity host 2 ready: <profile>\AppData\Local\Temp\input-actions-persistence-oyi524qv\unity-2.log
+PASS Editor restart preserves maps/actions/bindings/schemes and IDs
+PASS Editor restart preserves source JSON
+PASS remove_action_map: source map/action/binding contents and IDs match memory
+PASS remove_action_map: source control schemes match memory
+PASS remove_action_map: reimport preserves structure and IDs
+PASS manage_control_schemes: source map/action/binding contents and IDs match memory
+PASS manage_control_schemes: source control schemes match memory
+PASS manage_control_schemes: reimport preserves structure and IDs
+{"unity_version": "6000.4.4f1", "passed": 50, "failed": 0, "editor_starts": 2, "artifacts": "<profile>\\AppData\\Local\\Temp\\input-actions-persistence-oyi524qv"}

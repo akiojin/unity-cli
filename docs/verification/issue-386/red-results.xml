@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="11" failures="3" errors="0" skipped="0" time="0.845"><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldAddToBuildSettings_WhenRequested" time="0.177"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldAddToBuildSettings_WhenRequested
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldCreateNestedFolders" time="0.050"><failure message="  {
+  &quot;error&quot;: &quot;Failed to save scene&quot;
+}
+  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+">  {
+  &quot;error&quot;: &quot;Failed to save scene&quot;
+}
+  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldCreateNestedFolders
+Parent directory must exist before creating asset at: Assets/TestScenes/Nested/Generated/TestScene_Nested.unity
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldFailForEmptySceneName" time="0.032"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldFailForEmptySceneName
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldFailForExistingScene" time="0.137"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldFailForExistingScene
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldFailForInvalidPath" time="0.030"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldFailForInvalidPath
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldFailForInvalidSceneName" time="0.033"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldFailForInvalidSceneName
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldHandleMissingParameters" time="0.030"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldHandleMissingParameters
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldNotLoadScene_WhenLoadSceneIsFalse" time="0.076"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldNotLoadScene_WhenLoadSceneIsFalse
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldWorkWithCustomPath" time="0.108"><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldWorkWithCustomPath
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="CreateScene_ShouldWorkWithMinimalParameters" time="0.085"><failure message="  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+">  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.CreateScene_ShouldWorkWithMinimalParameters
+Parent directory must exist before creating asset at: Assets/Scenes/TestScene_Auto.unity
+</system-out></testcase><testcase classname="UnityCliBridge.Tests.SceneHandlerTests" name="SaveScene_ShouldCreateNestedFolders" time="0.086"><failure message="  {
+  &quot;error&quot;: &quot;Failed to save scene&quot;
+}
+  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+">  {
+  &quot;error&quot;: &quot;Failed to save scene&quot;
+}
+  Expected: null
+  But was:  &quot;Failed to save scene&quot;
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.SceneHandlerTests.SaveScene_ShouldCreateNestedFolders
+Parent directory must exist before creating asset at: Assets/TestScenes/Saved/Generated/TestScene_Saved.unity
+</system-out></testcase></testsuite></testsuites>

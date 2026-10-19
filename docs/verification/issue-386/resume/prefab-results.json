@@ -1,0 +1,17 @@
+{
+  "started_at": "2026-10-03T21:05:33.051246+00:00",
+  "editors": [
+    {
+      "version": "6000.4.4f1",
+      "status": "PASS",
+      "passed": 45,
+      "failed": 0,
+      "artifacts": "<workspace>\\.cache\\issue-386\\resume\\prefab-final\\existing",
+      "editmode": {
+        "passed": 22,
+        "failed": 0,
+        "runId": "2dcd238f-7de3-4150-96d2-619a59fd3afb"
+      }
+    }
+  ]
+}

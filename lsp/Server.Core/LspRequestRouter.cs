@@ -124,7 +124,7 @@ public sealed class LspRequestRouter
 
         if (method == "unitycli/ping")
         {
-            return Response(id, new { ok = true });
+            return Response(id, new { ok = true, fileUriEncoding = true });
         }
 
         if (method == "unitycli/referencesByName")
@@ -264,15 +264,8 @@ public sealed class LspRequestRouter
         _ => null
     };
 
-    private static string Uri2Path(string uri)
-    {
-        if (uri.StartsWith("file://", StringComparison.Ordinal))
-        {
-            uri = uri.Substring("file://".Length);
-        }
-
-        return uri.Replace('/', Path.DirectorySeparatorChar);
-    }
+    private static string Uri2Path(string uri) =>
+        LspPathUtilities.Uri2Path(uri);
 
     private static string Path2Uri(string path) =>
         LspPathUtilities.Path2Uri(path);

@@ -60,7 +60,7 @@ impl FastEmbedder {
             std::env::set_var("ORT_DYLIB_PATH", dylib);
         }
         let model_id = format!("{model:?}");
-        let options = fastembed::InitOptions::new(model);
+        let options = fastembed::TextInitOptions::new(model);
         let inner = fastembed::TextEmbedding::try_new(options)
             .map_err(|e| anyhow!("failed to initialize embedding model: {e}"))?;
         Ok(Self {
@@ -400,6 +400,41 @@ mod tests {
         save_embedding_index(&path, &index).unwrap();
         let loaded = load_embedding_index(&path).unwrap();
         assert_eq!(loaded, index);
+    }
+
+    #[test]
+    fn embedding_reads_fastembed6_bincode1_fixture() {
+        // Written by save_embedding_index with fastembed 6.1.0 and bincode 1.3.3
+        // before the fastembed 7 migration. Do not regenerate with the new writer.
+        let bytes =
+            include_bytes!("../../tests/fixtures/reference-embedding/fastembed6-bincode1.bin");
+        let tmp = TempDir::new().unwrap();
+        let path = tmp.path().join(EMBEDDING_INDEX_REL_PATH);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, bytes).unwrap();
+
+        let index = load_embedding_index(&path).unwrap();
+        let model = fastembed::EmbeddingModel::BGESmallENV15;
+        let model_info = fastembed::TextEmbedding::get_model_info(&model).unwrap();
+        assert_eq!(index.version, EMBEDDING_INDEX_VERSION);
+        assert_eq!(index.model_id, format!("{model:?}"));
+        assert_eq!(index.dim, model_info.dim);
+        assert_eq!(index.items.len(), 1);
+        let item = &index.items[0];
+        assert_eq!(item.symbol, "UnityEngine.Animator");
+        assert_eq!(item.kind, "class");
+        assert_eq!(item.path, "Runtime/Export/Animation/Animator.bindings.cs");
+        assert_eq!(item.line, 42);
+        let mut query = vec![0.0; model_info.dim];
+        query[0] = 1.0;
+        assert_eq!(item.vector, query);
+        let hits = search(&index, &query, 1);
+        assert_eq!(hits[0].0, *item);
+        assert!((hits[0].1 - 1.0).abs() < f32::EPSILON);
+
+        // Updating an existing index must also retain its on-disk format.
+        save_embedding_index(&path, &index).unwrap();
+        assert_eq!(fs::read(&path).unwrap(), bytes);
     }
 
     #[test]

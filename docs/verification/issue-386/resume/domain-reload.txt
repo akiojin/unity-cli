@@ -1,0 +1,3 @@
+PASS domainReloadEnabled=True: 2 passed, 0 failed
+PASS domainReloadEnabled=False: 2 passed, 0 failed
+Evidence: <workspace>\.cache\issue-386\resume\domain-reload.json; pass

@@ -1,0 +1,11 @@
+{
+  "url": "https://public-cdn.cloud.unity3d.com/hub/prod/cli/1.0.0-beta.11/unity-windows-x64.exe",
+  "manifest_url": "https://public-cdn.cloud.unity3d.com/hub/prod/cli/1.0.0-beta.11/latest.json",
+  "version": "1.0.0-beta.11",
+  "sha256": "4cad9230dd98cc8d123d3ef9d18fef5e7ee65f353814c3cf9d94d9129293dda3",
+  "official_sha256_matched": true,
+  "bytes": 26154920,
+  "binary": "<workspace>\\.cache\\issue-386\\resume\\official-windows\\unity.exe",
+  "version_exit": 0,
+  "version_stdout": "{\n  \"success\": true,\n  \"command\": \"version\",\n  \"data\": {\n    \"version\": \"1.0.0-beta.11\",\n    \"channel\": \"beta\",\n    \"commit\": null,\n    \"platform\": \"win32\",\n    \"arch\": \"x64\",\n    \"runtime\": \".NET 10.0.12\"\n  },\n  \"errors\": [],\n  \"warnings\": []\n}\n"
+}

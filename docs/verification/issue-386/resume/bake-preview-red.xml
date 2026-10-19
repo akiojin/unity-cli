@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Unity" tests="1" failures="1" errors="0" skipped="0" time="0.530"><testcase classname="UnityCliBridge.Tests.BakeHandlerTests" name="PreviewSceneDoesNotBlockSavedScene" time="0.530"><failure message="  {
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;code&quot;: &quot;MULTIPLE_SCENES&quot;,
+  &quot;reason&quot;: &quot;Load only the target scene before baking.&quot;,
+  &quot;error&quot;: &quot;Load only the target scene before baking.&quot;,
+  &quot;unityVersion&quot;: &quot;6000.4.4f1&quot;
+}
+  Expected string length 7 but was 5. Strings differ at index 0.
+  Expected: &quot;running&quot;
+  But was:  &quot;error&quot;
+  -----------^
+">  {
+  &quot;status&quot;: &quot;error&quot;,
+  &quot;code&quot;: &quot;MULTIPLE_SCENES&quot;,
+  &quot;reason&quot;: &quot;Load only the target scene before baking.&quot;,
+  &quot;error&quot;: &quot;Load only the target scene before baking.&quot;,
+  &quot;unityVersion&quot;: &quot;6000.4.4f1&quot;
+}
+  Expected string length 7 but was 5. Strings differ at index 0.
+  Expected: &quot;running&quot;
+  But was:  &quot;error&quot;
+  -----------^
+</failure><system-out>[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.BakeHandlerTests.PreviewSceneDoesNotBlockSavedScene
+</system-out></testcase></testsuite></testsuites>

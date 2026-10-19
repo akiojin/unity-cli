@@ -16,6 +16,8 @@ use crate::lspd;
 
 const MAX_HEADER_BYTES: usize = 16 * 1024;
 const DEFAULT_TIMEOUT_MS: u64 = 60_000;
+const DEFAULT_AUTO_TIMEOUT_MS: u64 = 10_000;
+const AUTO_INSTALL_MARKER_TTL: Duration = Duration::from_secs(600);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LspMode {
@@ -64,6 +66,11 @@ pub fn maybe_execute(
         return None;
     }
 
+    // Only symbol search defaults to `auto` (see `route_search`); write tools
+    // keep their direct-session default unless a mode is set explicitly.
+    if !lsp_mode_is_set() {
+        return None;
+    }
     let mode = lsp_mode();
     if mode == LspMode::Off {
         return None;
@@ -76,6 +83,158 @@ pub fn maybe_execute(
         (LspMode::Auto, Err(_)) => None,
         (LspMode::Off, _) => None,
     }
+}
+
+/// Why a symbol search was answered by the local regex index instead of the LSP.
+#[derive(Debug, Clone)]
+pub struct LspFallback {
+    pub reason: &'static str,
+    pub detail: String,
+}
+
+impl LspFallback {
+    fn new(reason: &'static str, detail: impl Into<String>) -> Self {
+        Self {
+            reason,
+            detail: detail.into(),
+        }
+    }
+
+    /// Marks an index-backed response so callers can tell the LSP was not used.
+    pub fn annotate(&self, value: &mut Value) {
+        if let Some(map) = value.as_object_mut() {
+            map.insert("backend".to_string(), json!("index"));
+            map.insert("fallbackReason".to_string(), json!(self.reason));
+            map.insert("fallbackDetail".to_string(), json!(self.detail));
+        }
+    }
+}
+
+pub enum SearchRoute {
+    Lsp(Result<Value>),
+    Index(LspFallback),
+}
+
+/// Routes the read-only symbol search tools. `auto` (the default) prefers the
+/// LSP but never waits longer than `UNITY_CLI_LSP_AUTO_TIMEOUT_MS`, and never
+/// blocks on the first LSP download.
+pub fn route_search(tool_name: &str, params: &Value, project_root: &Path) -> SearchRoute {
+    match lsp_mode() {
+        LspMode::Off => SearchRoute::Index(LspFallback::new(
+            "lsp_disabled",
+            "UNITY_CLI_LSP_MODE=off selects the local symbol index",
+        )),
+        LspMode::Required => SearchRoute::Lsp(execute_via_daemon(tool_name, params, project_root)),
+        LspMode::Auto => match execute_auto(tool_name, params, project_root) {
+            Ok(value) => SearchRoute::Lsp(Ok(value)),
+            Err(fallback) => SearchRoute::Index(fallback),
+        },
+    }
+}
+
+fn execute_auto(
+    tool_name: &str,
+    params: &Value,
+    project_root: &Path,
+) -> std::result::Result<Value, LspFallback> {
+    let installed = lsp_manager::binary_path()
+        .map(|path| path.exists())
+        .unwrap_or(false);
+    if !installed {
+        let detail = match request_background_install() {
+            Ok(()) => "C# LSP is not installed yet; installing it in the background".to_string(),
+            Err(error) => {
+                format!("C# LSP is not installed and the background install failed: {error:#}")
+            }
+        };
+        return Err(LspFallback::new("lsp_not_installed", detail));
+    }
+
+    let tool_name = tool_name.to_string();
+    let params = params.clone();
+    let project_root = project_root.to_path_buf();
+    run_with_timeout(auto_timeout(), move || {
+        execute_via_daemon(&tool_name, &params, &project_root)
+    })
+}
+
+fn run_with_timeout<F>(timeout: Duration, call: F) -> std::result::Result<Value, LspFallback>
+where
+    F: FnOnce() -> Result<Value> + Send + 'static,
+{
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || {
+        let _ = sender.send(call());
+    });
+    match receiver.recv_timeout(timeout) {
+        Ok(Ok(value)) => Ok(value),
+        Ok(Err(error)) => Err(LspFallback::new("lsp_unavailable", format!("{error:#}"))),
+        Err(mpsc::RecvTimeoutError::Timeout) => Err(LspFallback::new(
+            "lsp_timeout",
+            format!(
+                "LSP did not answer within {}ms (UNITY_CLI_LSP_AUTO_TIMEOUT_MS); it keeps warming up in lspd",
+                timeout.as_millis()
+            ),
+        )),
+        Err(mpsc::RecvTimeoutError::Disconnected) => Err(LspFallback::new(
+            "lsp_unavailable",
+            "LSP worker ended without a response",
+        )),
+    }
+}
+
+fn auto_timeout() -> Duration {
+    let millis = env::var("UNITY_CLI_LSP_AUTO_TIMEOUT_MS")
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(DEFAULT_AUTO_TIMEOUT_MS);
+    Duration::from_millis(millis)
+}
+
+fn auto_install_marker() -> Result<PathBuf> {
+    Ok(lsp_manager::install_dir()?.join(".auto-install-requested"))
+}
+
+/// Starts `unity-cli lsp install` detached so the download survives this
+/// short-lived CLI process. A marker keeps concurrent calls from racing on the
+/// same download file.
+fn request_background_install() -> Result<()> {
+    let marker = auto_install_marker()?;
+    let fresh = fs_modified_age(&marker).is_some_and(|age| age < AUTO_INSTALL_MARKER_TTL);
+    if fresh {
+        return Ok(());
+    }
+    if let Some(parent) = marker.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create {}", parent.display()))?;
+    }
+    std::fs::write(&marker, now_epoch_ms().to_string())
+        .with_context(|| format!("Failed to write {}", marker.display()))?;
+    spawn_background_install()
+}
+
+fn fs_modified_age(path: &Path) -> Option<Duration> {
+    let modified = std::fs::metadata(path).ok()?.modified().ok()?;
+    std::time::SystemTime::now().duration_since(modified).ok()
+}
+
+#[cfg(not(test))]
+fn spawn_background_install() -> Result<()> {
+    let exe = env::current_exe().context("Failed to resolve unity-cli executable")?;
+    Command::new(exe)
+        .args(["lsp", "install"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .context("Failed to spawn background C# LSP install")?;
+    Ok(())
+}
+
+#[cfg(test)]
+fn spawn_background_install() -> Result<()> {
+    Ok(())
 }
 
 fn execute_via_daemon(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
@@ -215,7 +374,7 @@ fn handle_get_symbols(
         return Err(anyhow!("File not found: {rel}"));
     }
 
-    let uri = file_uri(&abs);
+    let uri = file_uri(&abs, session.file_uri_encoding)?;
     let response = session.request(
         "textDocument/documentSymbol",
         json!({
@@ -296,7 +455,7 @@ fn handle_find_symbol(
             Some(value) => value,
             None => continue,
         };
-        let rel_path = match uri_to_rel_path(project_root, uri) {
+        let rel_path = match uri_to_rel_path(project_root, uri, session.file_uri_encoding) {
             Some(value) => value,
             None => continue,
         };
@@ -383,8 +542,8 @@ fn handle_find_refs(
     let mut refs = response.as_array().cloned().unwrap_or_default();
 
     refs.sort_by(|a, b| {
-        let a_path = ref_path(project_root, a).unwrap_or_default();
-        let b_path = ref_path(project_root, b).unwrap_or_default();
+        let a_path = ref_path(project_root, a, session.file_uri_encoding).unwrap_or_default();
+        let b_path = ref_path(project_root, b, session.file_uri_encoding).unwrap_or_default();
         let a_line = a.get("line").and_then(Value::as_u64).unwrap_or(0);
         let b_line = b.get("line").and_then(Value::as_u64).unwrap_or(0);
         let a_col = a.get("column").and_then(Value::as_u64).unwrap_or(0);
@@ -402,7 +561,7 @@ fn handle_find_refs(
     let mut last_path: Option<String> = None;
 
     for item in refs {
-        let Some(path) = ref_path(project_root, &item) else {
+        let Some(path) = ref_path(project_root, &item, session.file_uri_encoding) else {
             continue;
         };
 
@@ -1072,17 +1231,29 @@ fn normalize_rel_path(raw: &str) -> Option<String> {
     Some(parts.join("/"))
 }
 
-fn file_uri(path: &Path) -> String {
-    format!("file://{}", path.to_string_lossy().replace('\\', "/"))
+fn file_uri(path: &Path, encoded: bool) -> Result<String> {
+    if !encoded {
+        return Ok(format!(
+            "file://{}",
+            path.to_string_lossy().replace('\\', "/")
+        ));
+    }
+
+    url::Url::from_file_path(path)
+        .map(|uri| uri.to_string())
+        .map_err(|()| anyhow!("LSP file paths must be absolute"))
 }
 
-fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
+fn uri_to_rel_path(project_root: &Path, uri: &str, encoded: bool) -> Option<String> {
     if !uri.starts_with("file://") {
         return None;
     }
 
-    let raw = uri.trim_start_matches("file://").replace('\\', "/");
-    let path = PathBuf::from(raw);
+    let path = if encoded {
+        url::Url::parse(uri).ok()?.to_file_path().ok()?
+    } else {
+        PathBuf::from(uri.trim_start_matches("file://").replace('\\', "/"))
+    };
     let rel = path
         .strip_prefix(project_root)
         .ok()
@@ -1092,10 +1263,10 @@ fn uri_to_rel_path(project_root: &Path, uri: &str) -> Option<String> {
     normalize_rel_path(&rel)
 }
 
-fn ref_path(project_root: &Path, item: &Value) -> Option<String> {
+fn ref_path(project_root: &Path, item: &Value, encoded: bool) -> Option<String> {
     let path = item.get("path").and_then(Value::as_str)?;
     if path.starts_with("file://") {
-        return uri_to_rel_path(project_root, path);
+        return uri_to_rel_path(project_root, path, encoded);
     }
     normalize_rel_path(path)
 }
@@ -1117,15 +1288,20 @@ fn now_epoch_ms() -> u64 {
         .unwrap_or(0)
 }
 
+fn lsp_mode_is_set() -> bool {
+    env::var("UNITY_CLI_LSP_MODE").is_ok_and(|value| !value.trim().is_empty())
+}
+
 fn lsp_mode() -> LspMode {
     let raw = env::var("UNITY_CLI_LSP_MODE")
         .ok()
-        .unwrap_or_else(|| "off".to_string())
+        .unwrap_or_default()
+        .trim()
         .to_ascii_lowercase();
 
     match raw.as_str() {
         "required" => LspMode::Required,
-        "auto" => LspMode::Auto,
+        "" | "auto" => LspMode::Auto,
         _ => LspMode::Off,
     }
 }
@@ -1148,6 +1324,7 @@ struct LspSession {
     rx: Receiver<Value>,
     next_id: u64,
     timeout: Duration,
+    file_uri_encoding: bool,
 }
 
 impl LspSession {
@@ -1191,8 +1368,13 @@ impl LspSession {
             rx,
             next_id: 1,
             timeout: lsp_timeout(),
+            file_uri_encoding: false,
         };
 
+        // Older published servers treat file URIs as unescaped path strings.
+        let ping = session.request("unitycli/ping", json!({}))?;
+        session.file_uri_encoding =
+            ping.get("fileUriEncoding").and_then(Value::as_bool) == Some(true);
         session.initialize(project_root)?;
         Ok(session)
     }
@@ -1205,7 +1387,7 @@ impl LspSession {
             "method": "initialize",
             "params": {
                 "processId": std::process::id(),
-                "rootUri": file_uri(project_root),
+                "rootUri": file_uri(project_root, self.file_uri_encoding)?,
                 "capabilities": {}
             }
         }))?;
@@ -1408,13 +1590,19 @@ mod tests {
     use std::process::{Command, Stdio};
     #[cfg(unix)]
     use std::sync::{Mutex, OnceLock};
+    #[cfg(unix)]
+    use std::time::Duration;
 
+    #[cfg(unix)]
     use super::{
-        build_remove_symbol_request, collect_document_symbols, execute_direct, file_uri, get_apply,
-        id_matches, is_retryable_session_error, kind_from_lsp, maybe_execute,
-        normalize_lsp_write_result, normalize_rel_path, path_matches_scope, read_message, ref_path,
-        require_name_path, require_relative_path, reset_cached_session, to_project_relative_or_raw,
-        uri_to_rel_path,
+        auto_timeout, execute_direct, lsp_mode, maybe_execute, read_message, reset_cached_session,
+        route_search, run_with_timeout, LspMode, SearchRoute,
+    };
+    use super::{
+        build_remove_symbol_request, collect_document_symbols, file_uri, get_apply, id_matches,
+        is_retryable_session_error, kind_from_lsp, normalize_lsp_write_result, normalize_rel_path,
+        path_matches_scope, ref_path, require_name_path, require_relative_path,
+        to_project_relative_or_raw, uri_to_rel_path,
     };
 
     #[cfg(unix)]
@@ -1498,7 +1686,9 @@ while True:
     method = message.get("method")
     message_id = message.get("id")
 
-    if method == "initialize":
+    if method == "unitycli/ping":
+        send_message({"jsonrpc": "2.0", "id": message_id, "result": {"ok": True, "fileUriEncoding": True}})
+    elif method == "initialize":
         send_message({"jsonrpc": "2.0", "id": message_id, "result": {"capabilities": {"documentSymbolProvider": True}}})
     elif method == "initialized":
         continue
@@ -1636,14 +1826,17 @@ while True:
         let rel = "Assets/Scripts/Player.cs";
         let abs = root.path().join(rel);
 
-        let uri = file_uri(&abs);
-        assert_eq!(uri_to_rel_path(root.path(), &uri).as_deref(), Some(rel));
+        let uri = file_uri(&abs, true).expect("file URI should convert");
         assert_eq!(
-            ref_path(root.path(), &json!({ "path": uri })).as_deref(),
+            uri_to_rel_path(root.path(), &uri, true).as_deref(),
             Some(rel)
         );
         assert_eq!(
-            ref_path(root.path(), &json!({ "path": rel })).as_deref(),
+            ref_path(root.path(), &json!({ "path": uri }), true).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": rel }), true).as_deref(),
             Some(rel)
         );
     }
@@ -1651,7 +1844,68 @@ while True:
     #[test]
     fn uri_to_rel_path_rejects_non_file_uris() {
         let root = tempdir().expect("tempdir should succeed");
-        assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs").is_none());
+        assert!(uri_to_rel_path(root.path(), "https://example.com/file.cs", true).is_none());
+    }
+
+    #[test]
+    fn canonical_file_uris_preserve_encoded_paths_and_assets_scope() {
+        let root = tempfile::Builder::new()
+            .prefix("lsp URI 日本語 #%-")
+            .tempdir()
+            .expect("tempdir should succeed");
+        let rel = "Assets/Scripts/日本語 # %20.cs";
+        let abs = root.path().join(rel);
+        let uri = url::Url::from_file_path(&abs)
+            .expect("absolute file path should convert")
+            .to_string();
+
+        assert_eq!(
+            uri_to_rel_path(root.path(), &uri, true).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(file_uri(&abs, true).expect("file URI should convert"), uri);
+        assert!(path_matches_scope(
+            &uri_to_rel_path(root.path(), &uri, true).expect("file URI should resolve"),
+            "assets"
+        ));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn canonical_windows_drive_and_unc_uris_resolve_assets_paths() {
+        for (root, uri) in [
+            (r"C:\repo", "file:///C:/repo/Assets/Player.cs"),
+            (
+                r"\\server\share\repo",
+                "file://server/share/repo/Assets/Player.cs",
+            ),
+        ] {
+            assert_eq!(
+                uri_to_rel_path(std::path::Path::new(root), uri, true).as_deref(),
+                Some("Assets/Player.cs")
+            );
+        }
+    }
+
+    #[test]
+    fn legacy_file_uris_preserve_raw_paths_for_older_servers() {
+        let root = tempfile::Builder::new()
+            .prefix("legacy URI 日本語 #%-")
+            .tempdir()
+            .expect("tempdir should succeed");
+        let rel = "Assets/日本語 # %20.cs";
+        let path = root.path().join(rel);
+        let uri = file_uri(&path, false).expect("legacy file URI should convert");
+
+        assert!(uri.ends_with(rel));
+        assert_eq!(
+            uri_to_rel_path(root.path(), &uri, false).as_deref(),
+            Some(rel)
+        );
+        assert_eq!(
+            ref_path(root.path(), &json!({ "path": uri }), false).as_deref(),
+            Some(rel)
+        );
     }
 
     #[test]
@@ -1831,7 +2085,10 @@ while True:
                 .to_str()
                 .expect("tools root path should be valid UTF-8"),
         );
-        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _uri = EnvVarGuard::set(
+            "FAKE_LSP_PLAYER_URI",
+            &file_uri(&player_path, true).expect("file URI should convert"),
+        );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
             project_dir
@@ -1911,7 +2168,10 @@ while True:
                 .to_str()
                 .expect("tools root path should be valid UTF-8"),
         );
-        let _uri = EnvVarGuard::set("FAKE_LSP_PLAYER_URI", &file_uri(&player_path));
+        let _uri = EnvVarGuard::set(
+            "FAKE_LSP_PLAYER_URI",
+            &file_uri(&player_path, true).expect("file URI should convert"),
+        );
         let _out = EnvVarGuard::set(
             "FAKE_LSP_OUTPUT_PATH",
             project_dir
@@ -2026,5 +2286,183 @@ while True:
             .is_err());
 
         std::env::remove_var("UNITY_CLI_LSP_MODE");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lsp_mode_defaults_to_auto_when_unset() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let _mode = EnvVarGuard::set("UNITY_CLI_LSP_MODE", "");
+        assert_eq!(lsp_mode(), LspMode::Auto);
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+        assert_eq!(lsp_mode(), LspMode::Auto);
+        std::env::set_var("UNITY_CLI_LSP_MODE", "OFF");
+        assert_eq!(lsp_mode(), LspMode::Off);
+        std::env::set_var("UNITY_CLI_LSP_MODE", "Required");
+        assert_eq!(lsp_mode(), LspMode::Required);
+        std::env::set_var("UNITY_CLI_LSP_MODE", "auto");
+        assert_eq!(lsp_mode(), LspMode::Auto);
+        std::env::set_var("UNITY_CLI_LSP_MODE", "bogus");
+        assert_eq!(lsp_mode(), LspMode::Off);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn auto_timeout_uses_env_override_and_default() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let _timeout = EnvVarGuard::set("UNITY_CLI_LSP_AUTO_TIMEOUT_MS", "250");
+        assert_eq!(auto_timeout(), Duration::from_millis(250));
+        std::env::set_var("UNITY_CLI_LSP_AUTO_TIMEOUT_MS", "0");
+        assert_eq!(auto_timeout(), Duration::from_millis(10_000));
+        std::env::set_var("UNITY_CLI_LSP_AUTO_TIMEOUT_MS", "nope");
+        assert_eq!(auto_timeout(), Duration::from_millis(10_000));
+        std::env::remove_var("UNITY_CLI_LSP_AUTO_TIMEOUT_MS");
+        assert_eq!(auto_timeout(), Duration::from_millis(10_000));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn run_with_timeout_returns_value_or_times_out() {
+        let fast = run_with_timeout(Duration::from_secs(5), || Ok(json!({"ok": true})));
+        assert_eq!(fast.expect("fast call should succeed")["ok"], true);
+
+        let failing = run_with_timeout(Duration::from_secs(5), || Err(anyhow!("boom")));
+        let fallback = failing.expect_err("failing call should fall back");
+        assert_eq!(fallback.reason, "lsp_unavailable");
+        assert!(fallback.detail.contains("boom"));
+
+        let slow = run_with_timeout(Duration::from_millis(50), || {
+            std::thread::sleep(Duration::from_millis(500));
+            Ok(json!({}))
+        });
+        let fallback = slow.expect_err("slow call should time out");
+        assert_eq!(fallback.reason, "lsp_timeout");
+        assert!(fallback.detail.contains("50ms"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn route_search_falls_back_to_index_with_reason() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let root = tempdir().expect("tempdir should be created");
+        let tools = tempdir().expect("tempdir should be created");
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let _skip_updates = EnvVarGuard::set("UNITY_CLI_TEST_SKIP_MANAGED_UPDATE", "1");
+        let _mode = EnvVarGuard::set("UNITY_CLI_LSP_MODE", "off");
+        let params = json!({"path":"Assets/Scripts/Player.cs"});
+
+        let SearchRoute::Index(off) = route_search("get_symbols", &params, root.path()) else {
+            panic!("off mode should use the index");
+        };
+        assert_eq!(off.reason, "lsp_disabled");
+        let mut annotated = json!({"success": true});
+        off.annotate(&mut annotated);
+        assert_eq!(annotated["backend"], "index");
+        assert_eq!(annotated["fallbackReason"], "lsp_disabled");
+        assert!(annotated["fallbackDetail"]
+            .as_str()
+            .expect("detail should be a string")
+            .contains("UNITY_CLI_LSP_MODE=off"));
+
+        // Default (unset) mode without an installed LSP falls back immediately and
+        // requests a background install exactly once per marker lifetime.
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+        let SearchRoute::Index(missing) = route_search("find_symbol", &params, root.path()) else {
+            panic!("auto mode without LSP should use the index");
+        };
+        assert_eq!(missing.reason, "lsp_not_installed");
+        let marker = super::auto_install_marker().expect("marker path should resolve");
+        assert!(marker.exists(), "background install should be requested");
+        let first_stamp = fs::read_to_string(&marker).expect("marker should be readable");
+        let SearchRoute::Index(again) = route_search("find_symbol", &params, root.path()) else {
+            panic!("auto mode without LSP should use the index");
+        };
+        assert_eq!(again.reason, "lsp_not_installed");
+        assert_eq!(
+            fs::read_to_string(&marker).expect("marker should be readable"),
+            first_stamp,
+            "a fresh marker must not re-request the install"
+        );
+
+        // Installed LSP whose daemon cannot start falls back with the error.
+        setup_fake_lsp_server(tools.path());
+        let _timeout = EnvVarGuard::set("UNITY_CLI_LSP_AUTO_TIMEOUT_MS", "20000");
+        let SearchRoute::Index(unavailable) = route_search("find_refs", &params, root.path())
+        else {
+            panic!("auto mode with a broken daemon should use the index");
+        };
+        assert_eq!(unavailable.reason, "lsp_unavailable");
+
+        // Required mode keeps surfacing the LSP error instead of falling back.
+        std::env::set_var("UNITY_CLI_LSP_MODE", "required");
+        let SearchRoute::Lsp(result) = route_search("find_refs", &params, root.path()) else {
+            panic!("required mode should not fall back");
+        };
+        assert!(result.is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_tools_keep_direct_session_default_when_mode_is_unset() {
+        use std::io::{BufRead, Write as _};
+
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let root = tempdir().expect("tempdir should be created");
+        let tools = tempdir().expect("tempdir should be created");
+        setup_fake_lsp_server(tools.path());
+        let _tools = EnvVarGuard::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools
+                .path()
+                .to_str()
+                .expect("tools root path should be valid UTF-8"),
+        );
+        let _skip_updates = EnvVarGuard::set("UNITY_CLI_TEST_SKIP_MANAGED_UPDATE", "1");
+        let _mode = EnvVarGuard::set("UNITY_CLI_LSP_MODE", "");
+
+        // A fake lspd that answers exactly one request proves which path ran.
+        let socket = crate::daemon::runtime::DaemonRuntimePaths::new("lspd")
+            .and_then(|paths| paths.socket_file())
+            .expect("lspd socket path should resolve");
+        fs::create_dir_all(socket.parent().expect("socket should have a parent"))
+            .expect("socket parent should be created");
+        let _ = fs::remove_file(&socket);
+        let listener =
+            std::os::unix::net::UnixListener::bind(&socket).expect("fake lspd should bind");
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("fake lspd should accept");
+            let mut line = String::new();
+            BufReader::new(stream.try_clone().expect("stream should clone"))
+                .read_line(&mut line)
+                .expect("request should be readable");
+            stream
+                .write_all(b"{\"ok\":true,\"result\":{\"via\":\"lspd\"}}\n")
+                .expect("response should be written");
+        });
+
+        let params = json!({"relative":"Assets/Scripts/Player.cs","newText":"class P {}"});
+        for unset in ["", "  "] {
+            std::env::set_var("UNITY_CLI_LSP_MODE", unset);
+            assert!(
+                maybe_execute("write_csharp_file", &params, root.path()).is_none(),
+                "unset mode must leave writes on the direct LSP session"
+            );
+        }
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+        assert!(maybe_execute("write_csharp_file", &params, root.path()).is_none());
+
+        std::env::set_var("UNITY_CLI_LSP_MODE", "auto");
+        let via_daemon = maybe_execute("write_csharp_file", &params, root.path())
+            .expect("explicit auto should use lspd")
+            .expect("fake lspd should answer");
+        assert_eq!(via_daemon["via"], "lspd");
+        server.join().expect("fake lspd should finish");
+        let _ = fs::remove_file(&socket);
     }
 }

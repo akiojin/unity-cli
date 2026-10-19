@@ -2,7 +2,7 @@ name: Auto Merge PR
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     branches:
       - main
       - develop
@@ -16,6 +16,7 @@ jobs:
     name: Enable auto-merge
     runs-on: ubuntu-latest
     if: |
+      github.event.action != 'labeled' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (github.event.pull_request.user.login == 'akiojin' ||
@@ -58,3 +59,89 @@ jobs:
 
           echo "Failed to enable auto-merge after 10 minutes" >&2
           exit 1
+
+  # External (fork) PRs: a write+ reviewer approves the threat review by adding
+  # `reviewed-safe`. Only the head SHA seen at label time may merge.
+  # Fork code is never checked out; every step only calls the gh API.
+  external-reviewed:
+    name: Enable auto-merge for reviewed external PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'reviewed-safe' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'develop'
+    steps:
+      - name: Verify reviewer and enable pinned auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.event.sender.login }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          LABEL: reviewed-safe
+        run: |
+          set -euo pipefail
+
+          revoke() {
+            echo "$1" >&2
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$LABEL" || true
+            exit 1
+          }
+
+          if [ "$ACTOR" != "akiojin" ]; then
+            permission=$(gh api "repos/$REPO/collaborators/$ACTOR/permission" --jq .permission || echo "none")
+            case "$permission" in
+              admin|maintain|write) ;;
+              *) revoke "$ACTOR has '$permission' permission; write or higher is required to approve" ;;
+            esac
+          fi
+
+          current_sha=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq .headRefOid)
+          if [ "$current_sha" != "$HEAD_SHA" ]; then
+            revoke "Head moved from $HEAD_SHA to $current_sha after labeling; re-review required"
+          fi
+
+          for i in $(seq 1 60); do
+            echo "Attempt $i: enable auto-merge for #$PR_NUMBER at $HEAD_SHA"
+
+            if gh pr merge "$PR_NUMBER" --auto --merge --match-head-commit "$HEAD_SHA" --repo "$REPO"; then
+              echo "Auto-merge enabled"
+              exit 0
+            fi
+
+            mergeable=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json mergeable --jq .mergeable || echo "UNKNOWN")
+            if [ "$mergeable" = "CONFLICTING" ]; then
+              echo "PR has merge conflicts; cannot auto-merge" >&2
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Failed to enable auto-merge after 10 minutes" >&2
+          exit 1
+
+  # A push after approval invalidates the review: drop the label and auto-merge.
+  external-revoke:
+    name: Revoke review on new external commits
+    runs-on: ubuntu-latest
+    if: |
+      github.event.action == 'synchronize' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'reviewed-safe')
+    steps:
+      - name: Remove reviewed-safe and disable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          LABEL: reviewed-safe
+        run: |
+          set -euo pipefail
+
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$LABEL"
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --disable-auto \
+            || echo "Auto-merge was not enabled"
+          echo "New commits after review; re-review and re-add $LABEL"

@@ -9,7 +9,8 @@ Drives a built unity-cli binary; no Unity Editor is needed:
   setup       `setup --dry-run` prints the Bridge install plan and writes
               nothing (#363)
   screenshot  a silent fake Editor makes `capture_screenshot` time out and fall
-              back to an OS screenshot that must be a real PNG (#369)
+              back to an OS screenshot that must be a real PNG (#369). Linux
+              checks the X11 tools, or grim when WAYLAND_DISPLAY is set (#465)
 
 Unix isolates the home directory through $HOME. Windows resolves the profile
 through the shell API instead of %USERPROFILE%, so the lockfiles go into the
@@ -38,10 +39,11 @@ from pathlib import Path
 CHECKS = ("discovery", "setup", "screenshot")
 IS_WINDOWS = os.name == "nt"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
-# X11 tools the CLI tries on Linux, in order (src/tooling/os_capture.rs).
-# The Wayland tools (grim, gnome-screenshot, spectacle) need a compositor that
-# CI runners do not have, so they stay with the real-machine checks in #386.
+# Tools the CLI tries on Linux, in order (src/tooling/os_capture.rs). grim runs
+# under a headless wlroots compositor (#465); gnome-screenshot and spectacle
+# need a full desktop session, so they stay with the real-machine checks in #386.
 X11_TOOLS = ("import", "scrot", "maim")
+WAYLAND_TOOLS = ("grim",)
 
 results: list[tuple[str, bool, str]] = []
 
@@ -251,7 +253,7 @@ def check_screenshot(runner: Runner) -> None:
         tools = {"powershell": None}
     elif sys.platform.startswith("linux"):
         tools = {}
-        for tool in X11_TOOLS:
+        for tool in WAYLAND_TOOLS if os.environ.get("WAYLAND_DISPLAY") else X11_TOOLS:
             resolved = shutil.which(tool)
             if resolved is None:
                 check(f"screenshot: {tool} is installed", False, "not on PATH")

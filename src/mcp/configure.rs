@@ -31,7 +31,16 @@ fn destination(client: McpClient, local: bool) -> Result<PathBuf> {
     let base = if local {
         std::env::current_dir()?
     } else {
-        dirs::home_dir().context("Home directory unavailable")?
+        // Windows' shell API ignores a process-local USERPROFILE override.
+        // Honor it so configuration follows the selected profile, including tests.
+        #[cfg(windows)]
+        let home = std::env::var_os("USERPROFILE")
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .or_else(dirs::home_dir);
+        #[cfg(not(windows))]
+        let home = dirs::home_dir();
+        home.context("Home directory unavailable")?
     }
     .canonicalize()?;
     if !local {

@@ -11,6 +11,9 @@ permissions:
   contents: read
 
 jobs:
+  lsp-write-reliability:
+    uses: ./.github/workflows/lsp-write-reliability.yml
+
   cli-latency:
     name: CLI Latency (required)
     runs-on: ubuntu-latest
@@ -49,7 +52,7 @@ jobs:
 
       - name: Upload CLI latency evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cli-latency
           path: artifacts/cli-latency*.json
@@ -135,6 +138,11 @@ jobs:
         shell: pwsh
         run: ./tests/scripts/install-ps1-binary-test.ps1 -Binary target/debug/unity-cli.exe
 
+      - name: Install the built binary with install-from-source.ps1
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./tests/scripts/install-from-source-ps1-test.ps1 -Binary target/debug/unity-cli.exe
+
   linux-platform-checks:
     name: Linux Platform Checks
     runs-on: ubuntu-latest
@@ -155,10 +163,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Install Xvfb and X11 screenshot tools
+      - name: Install Xvfb, X11 screenshot tools, sway and grim
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb imagemagick scrot maim
+          sudo apt-get install -y xvfb imagemagick scrot maim sway grim
 
       - name: Build unity-cli
         run: cargo build --bin unity-cli
@@ -168,10 +176,47 @@ jobs:
           xvfb-run -a -s "-screen 0 1280x720x24"
           python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli
 
+      - name: Install the built binary with install-from-source.sh
+        run: sh tests/scripts/install-from-source-sh-test.sh target/debug/unity-cli
+
+      - name: Check the grim OS screenshot fallback under headless sway
+        # A wlroots compositor on the headless backend with the software
+        # renderer; WAYLAND_DISPLAY switches the check to grim (#465).
+        env:
+          WLR_BACKENDS: headless
+          WLR_LIBINPUT_NO_DEVICES: '1'
+          WLR_RENDERER: pixman
+        run: |
+          XDG_RUNTIME_DIR="$(mktemp -d)"
+          export XDG_RUNTIME_DIR
+          chmod 700 "$XDG_RUNTIME_DIR"
+          sway -c /dev/null > "$RUNNER_TEMP/sway.log" 2>&1 &
+          socket=""
+          for _ in $(seq 1 50); do
+            socket="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' | head -n 1)"
+            [ -n "$socket" ] && break
+            sleep 0.2
+          done
+          if [ -z "$socket" ]; then
+            cat "$RUNNER_TEMP/sway.log"
+            echo "sway did not create a Wayland socket" >&2
+            exit 1
+          fi
+          WAYLAND_DISPLAY="$(basename "$socket")"
+          export WAYLAND_DISPLAY
+          python3 tests/scripts/platform-checks.py --unity-cli target/debug/unity-cli --checks screenshot
+
   lsp-test:
     name: LSP Tests (required)
+    needs: lsp-write-reliability
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Require passing LSP write measurements on every OS
+        env:
+          RELIABILITY_RESULT: ${{ needs.lsp-write-reliability.result }}
+        run: test "$RELIABILITY_RESULT" = success
+
       - uses: actions/checkout@v7
 
       - name: Setup .NET SDK 10
@@ -184,6 +229,21 @@ jobs:
 
       - name: Test hot reload validation and execution observations
         run: dotnet test tests/hot-reload/HotReload.Tests.csproj
+
+  windows-lsp-test:
+    name: Windows LSP Tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET SDK 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run dotnet test
+        run: dotnet test lsp/Server.Tests.csproj
 
   rust-coverage:
     name: Rust Coverage >= 90% (required)
@@ -217,14 +277,16 @@ jobs:
             --fail-under-lines 90 \
             -- --test-threads=1
 
+      # Codecov upload is best-effort: the 90% gate above stays required, an external outage must not block merges (#472).
       - name: Upload Rust coverage to Codecov
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/rust/cobertura.xml
           flags: rust
           name: rust-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
 
   lsp-coverage:
@@ -247,14 +309,16 @@ jobs:
             /p:ThresholdType=line \
             /p:ThresholdStat=total
 
+      # Codecov upload is best-effort: the 90% gate above stays required, an external outage must not block merges (#472).
       - name: Upload LSP coverage to Codecov
+        continue-on-error: true
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lsp/coverage.cobertura.xml
           flags: lsp
           name: lsp-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: true
 
   lsp-perf:

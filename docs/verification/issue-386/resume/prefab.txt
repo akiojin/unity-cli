@@ -1,0 +1,65 @@
+Evidence: <workspace>\.cache\issue-386\resume\prefab-final
+Unity 6000.4.4f1
+PASS existing create_prefab creates inherited Variant: expected 'Variant', got 'Variant'
+PASS Variant and base are explicit apply targets
+PASS Variant apply leaves base unchanged: expected 1, got 1.0
+PASS base edit propagates to Variant: expected 7, got 7.0
+PASS Variant override survives base edit: expected 3, got 3.0
+PASS individual property applies to base through Variant: expected 2.5, got 2.5
+PASS individual property reverts: expected 7, got 7.0
+PASS revert preserves unrelated override: expected 4, got 4.0
+PASS object override reverts: expected 2.5, got 2.5
+PASS object override applies to Variant: expected 5, got 5.0
+PASS structured property override
+PASS structured added and removed components
+PASS revert added component: expected False, got False
+PASS revert removed component: expected True, got True
+PASS structured property override
+PASS structured added and removed components
+PASS apply added component: expected True, got True
+PASS apply removed component: expected False, got False
+PASS component apply to Variant leaves base intact: expected True, got True
+PASS manage_prefab_overrides rejects INVALID_APPLY_TARGET
+PASS ineligible base apply fails before other overrides change: expected False, got False
+PASS existing create_prefab creates inherited Variant: expected 'Variant', got 'Variant'
+PASS all properties applied to Variant: expected 11, got 11.0
+PASS all addition applied to Variant: expected True, got True
+PASS all removal applied to Variant: expected True, got True
+PASS all property overrides reverted: expected 11, got 11.0
+PASS all removed components restored: expected True, got True
+PASS all added components reverted: expected True, got True
+PASS existing create_prefab creates inherited Variant: expected 'Variant', got 'Variant'
+PASS all properties applied to Base: expected 11, got 11.0
+PASS all addition applied to Base: expected True, got True
+PASS all removal applied to Base: expected True, got True
+PASS all property overrides reverted: expected 11, got 11.0
+PASS all removed components restored: expected True, got True
+PASS all added components reverted: expected True, got True
+PASS Variant override persists after reload: expected 3, got 3.0
+PASS base apply persists after reload: expected 11, got 11.0
+PASS Outermost disconnects outer root
+PASS Outermost reports nested connections accurately
+PASS Outermost nested connection verified independently: expected True, got True
+PASS Completely disconnects outer root
+PASS Completely reports nested connections accurately
+PASS Completely nested connection verified independently: expected False, got False
+PASS unpack_prefab rejects NOT_PREFAB_INSTANCE_ROOT
+PASS inactive Prefab root can be inspected
+PASS focused EditMode: 22 passed, 0 failed
+{
+  "started_at": "2026-10-03T21:05:33.051246+00:00",
+  "editors": [
+    {
+      "version": "6000.4.4f1",
+      "status": "PASS",
+      "passed": 45,
+      "failed": 0,
+      "artifacts": "<workspace>\\.cache\\issue-386\\resume\\prefab-final\\existing",
+      "editmode": {
+        "passed": 22,
+        "failed": 0,
+        "runId": "2dcd238f-7de3-4150-96d2-619a59fd3afb"
+      }
+    }
+  ]
+}

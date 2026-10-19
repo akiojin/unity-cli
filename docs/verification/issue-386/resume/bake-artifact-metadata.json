@@ -1,0 +1,67 @@
+[
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Empty/Empty.unity",
+    "bytes": 3606,
+    "sha256": "5c276ea6c3621876c7d993fb924cd28e0fbf4a688c6a1aa3836649bdbbbae0c5"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy/NavMesh.asset",
+    "bytes": 7720,
+    "sha256": "5595c0b9bdf772fc4672d56969c5fc7d2fbb9a5d35de049dabf8b6f4cafffc53"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Legacy/Legacy.unity",
+    "bytes": 18413,
+    "sha256": "3a4568641fd655197c5d45c3862f833ece3905ea964a94d290e89a4d1dffb0d6"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/LightingData.asset",
+    "bytes": 18177,
+    "sha256": "09a2d12600d0e84ab0c33112ec7078fa486734ade2150e7d038be9490d16e36d"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/Lightmap-0_comp_light.exr",
+    "bytes": 30656,
+    "sha256": "a5e264877518b72fce6a4ff6a850aa75233f3d2f35fbcbb6999ce2ee7f0b9652"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting/ReflectionProbe-0.exr",
+    "bytes": 133557,
+    "sha256": "2fd8c777d30adf04ea0853a0ad64f45313477598f5610fd8738bc1603777b2a2"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Lighting/Lighting.unity",
+    "bytes": 18375,
+    "sha256": "d465ae4dc335123d9274353fe445528e529d4a0fe7bfdfdfe81c0dde3c3b8969"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/NoOutput/NoOutput.unity",
+    "bytes": 20158,
+    "sha256": "17f43b216c331933e81ed6e7b8e346e76ea312b58d6e42cd37b8e7e0f3f90aab"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion/OcclusionCullingData.asset",
+    "bytes": 3297,
+    "sha256": "1fb2419647675b3e4d40f3a9880b326031f3cf031dfa55f11089ab00ac1529da"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Occlusion/Occlusion.unity",
+    "bytes": 18427,
+    "sha256": "706a0bfa069e223625b7831918a2ae88edf5341f572e0a84a4e6e943421fe522"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-1460193e843a4c22b9df488c8680ff44.asset",
+    "bytes": 7752,
+    "sha256": "e86eec5ffa392d5a5f86c9563002ffc838eef368b108c673e21dc2f064ae5b03"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Surface/NavMesh-e93b59e165ad4e07a7d2c53838f25092.asset",
+    "bytes": 7752,
+    "sha256": "8902cfa09d93a255529a92f8b2246134907d86f8e064c6d3171da456eb967537"
+  },
+  {
+    "path": "Assets/Scenes/Generated/E2E/Baking/Surface/Surface.unity",
+    "bytes": 20246,
+    "sha256": "c35c9f2f3ca249d1dc8051bef48e5feb80e63ba3e4fbf1dc454bdb58e4edbe78"
+  }
+]

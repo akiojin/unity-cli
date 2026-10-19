@@ -1,0 +1,535 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using UnityCli.Lsp.Core;
+using Xunit;
+
+public sealed class SourceFileFormatTests
+{
+    private const string Original = "public class Sample\n{\n    public int Run() { return 1; }\n}\n";
+
+    // Every BOM the reader recognises, plus UTF-8 without one.
+    private static readonly string[] Encodings = { "utf-8", "utf-8-bom", "utf-16le", "utf-16be", "utf-32le", "utf-32be" };
+
+    public static TheoryData<string, string, string> ExistingFileEdits()
+    {
+        var data = new TheoryData<string, string, string>();
+        foreach (var operation in new[] { "write", "apply", "replace_body", "insert_before", "insert_after", "remove", "rename" })
+        foreach (var encoding in Encodings)
+        foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        {
+            data.Add(operation, encoding, newline);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(ExistingFileEdits))]
+    public async Task ExistingFileEdits_KeepTheOriginalBomAndNewlines(string operation, string encoding, string newline)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(Path.Combine(root, "Assets"));
+        var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+        await File.WriteAllBytesAsync(scriptPath, Encode(Original, encoding, newline));
+        try
+        {
+            var service = new LspEditService(root, new LspFileLockProvider());
+            // Inputs always use LF so a CRLF file also proves newline preservation.
+            const string written = "public class Sample\n{\n    public int Run() { return 2; }\n}\n";
+            using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = written } }));
+            var (result, expected) = operation switch
+            {
+                "write" => (await service.WriteCSharpFileAsync("Assets/Sample.cs", written, true, true, false), written),
+                "apply" => (await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false), written),
+                "replace_body" => (await service.ReplaceSymbolBodyAsync("Assets/Sample.cs", "Sample/Run", "{ return 2; }", true), written),
+                "insert_before" => (await service.InsertAroundSymbolAsync("Assets/Sample.cs", "Sample/Run", "public int Added;\n", false, true),
+                    "public class Sample\n{\npublic int Added;\n    public int Run() { return 1; }\n}\n"),
+                "insert_after" => (await service.InsertAroundSymbolAsync("Assets/Sample.cs", "Sample/Run", "public int Added;\n", true, true),
+                    "public class Sample\n{\n    public int Run() { return 1; }\npublic int Added;\n}\n"),
+                "remove" => (await service.RemoveSymbolAsync("Assets/Sample.cs", "Sample/Run", true, false, false),
+                    // KeepExteriorTrivia leaves the member's indentation and line break behind.
+                    "public class Sample\n{\n    \n}\n"),
+                _ => (await service.RenameByNamePathAsync("Assets/Sample.cs", "Sample/Run", "Execute", true),
+                    Original.Replace("Run", "Execute")),
+            };
+
+            using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), response.RootElement.ToString());
+            Assert.Equal(Encode(expected, encoding, newline), await File.ReadAllBytesAsync(scriptPath));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RenameAcrossFiles_KeepsEachFileFormat()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(Path.Combine(root, "Assets"));
+        const string declaration = "namespace Demo\n{\n    public partial class Sample {}\n}\n";
+        const string use = "namespace Demo\n{\n    public class Consumer { public Sample Value; }\n}\n";
+        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs"), Encode(declaration, "utf-8-bom", "\r\n"));
+        await File.WriteAllBytesAsync(Path.Combine(root, "Assets", "Use.cs"), Encode(use, "utf-8", "\n"));
+        try
+        {
+            var service = new LspEditService(root, new LspFileLockProvider());
+
+            var result = await service.RenameByNamePathAsync("Assets/Sample.cs", "Sample", "Renamed", true);
+
+            using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), response.RootElement.ToString());
+            Assert.Equal(Encode(declaration.Replace("Sample", "Renamed"), "utf-8-bom", "\r\n"),
+                await File.ReadAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs")));
+            Assert.Equal(Encode(use.Replace("Sample", "Renamed"), "utf-8", "\n"),
+                await File.ReadAllBytesAsync(Path.Combine(root, "Assets", "Use.cs")));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("public class Sample {}\n")]
+    [InlineData("using UnityEngine;\r\npublic class Sample : MonoBehaviour {}\r\n")]
+    public async Task CreateCSharpFile_WritesUtf8WithoutBomAndKeepsGivenNewlines(string text)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(root);
+        try
+        {
+            var service = new LspEditService(root, new LspFileLockProvider());
+
+            var result = await service.CreateCSharpFileAsync("Assets/Sample.cs", text, false, true, true, false);
+
+            using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), response.RootElement.ToString());
+            Assert.Equal(Encoding.UTF8.GetBytes(text), await File.ReadAllBytesAsync(Path.Combine(root, "Assets", "Sample.cs")));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task WriteCSharpFile_TreatsANewlineOnlyDifferenceAsNoChange()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(Path.Combine(root, "Assets"));
+        var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+        await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8-bom", "\r\n"));
+        try
+        {
+            var service = new LspEditService(root, new LspFileLockProvider());
+
+            var result = await service.WriteCSharpFileAsync("Assets/Sample.cs", Original, true, true, false);
+
+            using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+            Assert.Equal("no_change", response.RootElement.GetProperty("reason").GetString());
+            Assert.Equal(Encode(Original, "utf-8-bom", "\r\n"), await File.ReadAllBytesAsync(scriptPath));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("a\r\nb\nc\n", "x\ny\n", "x\ny\n")]
+    [InlineData("single line", "x\r\ny\n", "x\r\ny\n")]
+    [InlineData("a\r\nb\r\n", "x\ny\r\nz\rw", "x\r\ny\r\nz\r\nw")]
+    [InlineData("a\nb\n", "x\ry\r\nz\rw", "x\ny\nz\nw")]
+    [InlineData("a\nb\n", "x\r\ny\n", "x\ny\n")]
+    [InlineData("a\rb\r", "x\ny\r\nz\rw", "x\ry\rz\rw")]
+    [InlineData("a\rb\nc\r", "x\ny\n", "x\ny\n")]
+    public void ApplyNewlines_OnlyRewritesWhenTheOriginalUsesOneConvention(string original, string text, string expected)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes(original));
+
+        Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    public static TheoryData<string, string> NewlineMatrix()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var original in new[] { "\n", "\r\n", "\r" })
+        foreach (var input in new[] { "\n", "\r\n", "\r" })
+        {
+            data.Add(original, input);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(NewlineMatrix))]
+    public async Task EditInputNewlines_AreSavedInTheOriginalConvention(string originalNewline, string inputNewline)
+    {
+        const string written = "public class Sample\n{\n    public int Run() { return 2; }\n}\n";
+        foreach (var operation in new[] { "write", "apply", "create_overwrite" })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(Path.Combine(root, "Assets"));
+            var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+            await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8", originalNewline));
+            try
+            {
+                var service = new LspEditService(root, new LspFileLockProvider());
+                var input = written.Replace("\n", inputNewline);
+                using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = input } }));
+                var result = operation switch
+                {
+                    "write" => await service.WriteCSharpFileAsync("Assets/Sample.cs", input, true, true, false),
+                    "apply" => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false),
+                    _ => await service.CreateCSharpFileAsync("Assets/Sample.cs", input, true, true, true, false),
+                };
+
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), operation + ": " + response.RootElement);
+                Assert.Equal(Encode(written, "utf-8", originalNewline), await File.ReadAllBytesAsync(scriptPath));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    // A lone CR inside a string literal is part of the string's value, so it is never rewritten;
+    // lone CRs anywhere else (code, comments) are line terminators and follow the file's convention.
+    [Theory]
+    [InlineData("\n", "var a = @\"x\ry\";\rvar b = 1;\n", "var a = @\"x\ry\";\nvar b = 1;\n")]
+    [InlineData("\r\n", "var a = @\"x\ry\";\rvar b = 1;\n", "var a = @\"x\ry\";\r\nvar b = 1;\r\n")]
+    [InlineData("\n", "var a = $@\"x\r{b}\ry\";\r", "var a = $@\"x\r{b}\ry\";\n")]
+    [InlineData("\r\n", "var a = \"\"\"\n  x\ry\n  \"\"\";\r", "var a = \"\"\"\r\n  x\ry\r\n  \"\"\";\r\n")]
+    [InlineData("\n", "var a = $\"\"\"\n  x\r{b}\n  \"\"\";\r", "var a = $\"\"\"\n  x\r{b}\n  \"\"\";\n")]
+    [InlineData("\n", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\r", "var a = \"\"\"\n  x\ry\n  \"\"\"u8;\n")]
+    [InlineData("\n", "// comment\rvar a = 1; /* x\ry */\r", "// comment\nvar a = 1; /* x\ny */\n")]
+    [InlineData("\n", "var a = \"x\ry\";\r", "var a = \"x\ny\";\n")]
+    [InlineData("\n", "var a = @\"x\r#\";\r", "var a = @\"x\r#\";\n")]
+    [InlineData("\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\fif UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\r#endif\n", "#\u00a0if UNITY_EDITOR\nvar a = @\"x\ry\";\n#endif\n")]
+    // A directive-looking line inside a string of an inactive branch is string content once that branch is active.
+    [InlineData("\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n", "#if A\nvar a = @\"x\r#elif false\r\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#else\ry\";\n#endif\n")]
+    [InlineData("\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n", "#if A\nvar a = @\"x\r#endif\ry\";\n#endif\n")]
+    // No configuration reaches this #else: when the #if is skipped, the raw string's "#if B" line opens a
+    // nested group that swallows the #else, so only the raw string's CRs are string content.
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  #if B\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  #if B\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r\n#else\r\n{1}\";\r\n#endif\r\n")]
+    [InlineData("\r\n", "#if false\nvar a = \"\"\"\n  x\r  \"\"\";\n#else\nvar a = $@\"x\r#else\r{1}\";\n#endif\n", "#if false\r\nvar a = \"\"\"\r\n  x\r  \"\"\";\r\n#else\r\nvar a = $@\"x\r#else\r{1}\";\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n", "#if A\n#if B\nvar a = @\"x\r#elif C\r#endif\ry\";\n#endif\n#endif\n")]
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
+    [InlineData("\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if false\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\r\n", "#if A\nvar s = @\"\n#elif B\nx\"\"@\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\r\nvar s = @\"\r\n#elif B\r\nx\"\"@\"\";\r\nvar a = 1;\r\nvar b = 2;\r\n#endif\r\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nx\"\"@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // A CR stays when any configuration that parses without errors reads it as string content.
+    [InlineData("\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n", "#if A\nvar s = \"\"\"\"\n#else\nvar t = @\"\n\"\"\"\";\nvar u = 1;\rvar v = 2;\n//\";\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#else\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    [InlineData("\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\rvar b = 2;\n#endif\n", "#if A\nint q;\n#elif B\nvar s = @\"\n#endif\nvar t = \"\"+@\"\"\";\nvar a = 1;\nvar b = 2;\n#endif\n")]
+    // An unterminated literal is not valid C#: its extent is unknown, so it keeps no CR.
+    [InlineData("\n", "var a = @\"x\ry;\r", "var a = @\"x\ny;\n")]
+    [InlineData("\n", "var a = $@\"x\r{1}y;\r", "var a = $@\"x\n{1}y;\n")]
+    [InlineData("\n", "var a = \"\"\"\n  x\ry;\r", "var a = \"\"\"\n  x\ny;\n")]
+    // A missing semicolon alone or an unrelated syntax error does not change a literal's extent.
+    [InlineData("\n", "@\"x\ry\"", "@\"x\ry\"")]
+    [InlineData("\n", "var broken = ;\nvar a = @\"x\ry\";\r", "var broken = ;\nvar a = @\"x\ry\";\n")]
+    // An unterminated comment or string in one branch must not change how another branch is lexed.
+    [InlineData("\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n", "#if false\n/*\n#else\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n", "#if UNITY_EDITOR\n/*\n#elif UNITY_STANDALONE\nvar a = @\"x\ry\";\n#endif\n")]
+    [InlineData("\n", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\r", "#if UNITY_EDITOR\nvar b = @\"\n#else\nvar a = 1;\n#endif\nvar c = @\"x\ry\";\n")]
+    [InlineData("\r\n", "#if UNITY_EDITOR\nvar b = \"\"\"\n#endif\nvar a = 1;\rvar c = @\"x\ry\";\n", "#if UNITY_EDITOR\r\nvar b = \"\"\"\r\n#endif\r\nvar a = 1;\r\nvar c = @\"x\ry\";\r\n")]
+    public void ApplyNewlines_KeepsLoneCrInsideStringLiterals(string originalNewline, string text, string expected)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a" + originalNewline + "b" + originalNewline));
+
+        Assert.Equal(expected, format.ApplyNewlines(text));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesMalformedDirectivesAndManyBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        Assert.Equal("#if\nvar a = 1;\n#endif\n", format.ApplyNewlines("#if\rvar a = 1;\r#endif\r"));
+
+        var block = "#if A\nvar a = @\"x\r#else\ry\";\n#else\nvar b = 1;\r#endif\n";
+        var input = string.Concat(Enumerable.Repeat(block, 400));
+        Assert.Equal(string.Concat(Enumerable.Repeat(block.Replace(";\r#endif", ";\n#endif"), 400)), format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_ActivatesBranchesWithDirectivesLongerThanTheFirstWindow()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Range(0, 60).Select(i => "SYMBOL_" + i));
+        foreach (var directive in new[] { "#elif " + condition, "#else // " + new string('x', 300) })
+        {
+            var input = "#if false\nvar a = 1;\r" + directive + "\nvar b = @\"x\ry\";\r#endif\n";
+            Assert.True(directive.Length > 256);
+            Assert.Equal("#if false\nvar a = 1;\n" + directive + "\nvar b = @\"x\ry\";\n#endif\n", format.ApplyNewlines(input));
+        }
+    }
+
+    public static TheoryData<string, string, string, string> InactiveBranchStrings()
+    {
+        var data = new TheoryData<string, string, string, string>();
+        foreach (var newline in new[] { "\n", "\r\n", "\r" })
+        foreach (var inputNewline in new[] { "\n", "\r\n", "\r" })
+        foreach (var literal in new[]
+        {
+            "@\"x\ry\"",
+            "\"\"\"\n    x\r    y\n    \"\"\"",
+            "\"\"\"\n    x\r    y\n    \"\"\"u8",
+            "$@\"x\r{1}\ry\"",
+            "$\"\"\"\n    x\r    {1}\r    y\n    \"\"\"",
+            "@\"x\r#if OTHER\r#endif\ry\"",
+        })
+        foreach (var branch in new[]
+        {
+            "#if UNITY_EDITOR\n{0}\n#endif\n",
+            "\t# if UNITY_EDITOR\n{0}\n\t# endif\n",
+            "#if false\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#elif UNITY_STANDALONE\n{0}\n#endif\n",
+            "#if true\nint enabled = 1;\n#else\n{0}\n#endif\n",
+            "#if UNITY_EDITOR\n#if UNITY_STANDALONE\n{0}\n#endif\n#endif\n",
+            "#define UNITY_EDITOR\n#if !UNITY_EDITOR\n{0}\n#endif\n",
+            "#if false\n/*\n#else\n{0}\n#endif\n",
+            "#if false\n/*\n#elif UNITY_EDITOR\n{0}\n#else\nint enabled = 1;\n#endif\n",
+            "#if UNITY_EDITOR\n#if true\n/*\n#else\n{0}\n#endif\n#endif\n",
+        })
+        {
+            data.Add(newline, inputNewline, literal, branch);
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(InactiveBranchStrings))]
+    public async Task EditInputNewlines_KeepStringCrsInInactiveBranches(string newline, string inputNewline, string literal, string branch)
+    {
+        // Construct expected bytes separately: source line breaks follow the original convention,
+        // while lone CRs inside the literal (including CR input line breaks) are retained.
+        var declaration = "var text = " + literal + ";";
+        var input = branch.Replace("\n", inputNewline).Replace("{0}", declaration.Replace("\n", inputNewline));
+        var literalNewline = inputNewline == "\r" ? "\r" : newline;
+        var expectedDeclaration = declaration.Replace("\n", literalNewline);
+        // The interpolated raw fixture's first/last line breaks delimit the content;
+        // only its explicit CRs between x, the interpolation, and y belong to the value.
+        if (inputNewline == "\r" && literal.StartsWith("$\"\"\"\n", StringComparison.Ordinal))
+            expectedDeclaration = declaration.Replace("\n", newline);
+        var expected = branch.Replace("\n", newline).Replace("{0}", expectedDeclaration);
+        foreach (var operation in new[] { "write", "apply", "create_overwrite" })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "unity-cli-format-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(Path.Combine(root, "Assets"));
+            var scriptPath = Path.Combine(root, "Assets", "Sample.cs");
+            await File.WriteAllBytesAsync(scriptPath, Encode(Original, "utf-8-bom", newline));
+            try
+            {
+                var service = new LspEditService(root, new LspFileLockProvider());
+                using var files = JsonDocument.Parse(JsonSerializer.Serialize(new[] { new { relative = "Assets/Sample.cs", newText = input } }));
+                var result = operation switch
+                {
+                    "write" => await service.WriteCSharpFileAsync("Assets/Sample.cs", input, true, true, false),
+                    "apply" => await service.ApplyCSharpEditsAsync(files.RootElement, true, true, false),
+                    _ => await service.CreateCSharpFileAsync("Assets/Sample.cs", input, true, true, true, false),
+                };
+
+                using var response = JsonDocument.Parse(JsonSerializer.Serialize(result));
+                Assert.True(response.RootElement.GetProperty("applied").GetBoolean(), operation + ": " + response.RootElement);
+                var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+                Assert.Equal(encoding.GetPreamble().Concat(encoding.GetBytes(expected)).ToArray(), await File.ReadAllBytesAsync(scriptPath));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsDirectiveLookingLinesInClassFieldStrings()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\r#else\npublic string B = $@\"u\r#else\r{1}\rv\";\r#endif\r}\r";
+        const string expected = "class C\n{\n#if UNITY_EDITOR\npublic string A = @\"x\r#else\ry\";\n#else\npublic string B = $@\"u\r#else\r{1}\rv\";\n#endif\n}\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedNestedBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\r#endif\r";
+        // Activating the inner #if closes its string at the sibling's opening quote.
+        // The PM union policy protects that closed token despite the malformed statement.
+        const string expected = "#if UNITY_EDITOR\n#if true\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_HandlesLongConditionalExpressions()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var condition = string.Join(" || ", Enumerable.Repeat("UNITY_EDITOR", 80));
+        var input = "#if " + condition + "\nvar a = @\"x\ry\";\r#endif\r";
+        var expected = "#if " + condition + "\nvar a = @\"x\ry\";\n#endif\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsClosedStringCrsAcrossMalformedSiblingBranches()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\r#endif\rvar b = 1;\r";
+        const string expected = "#if false\n@\"unfinished\n#else\nvar prefix = 1;\rvar a = @\"x\ry\";\n#endif\nvar b = 1;\n";
+
+        Assert.Equal(expected, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesCrsInInactiveCommentsAndDirectiveMessages()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if UNITY_EDITOR\r// @\"x\ry\"\r/* @\"x\ry\" */\r#error @\"x\ry\"\r#endif\r";
+
+        Assert.Equal(input.Replace("\r", "\n"), format.ApplyNewlines(input));
+    }
+
+    [Theory]
+    [InlineData("var s = $@\"outer\n{ @\"inner\rtext\" }\n")]
+    [InlineData("var s = $@\"outer\n{ $@\"inner\r{1}\" }\n")]
+    [InlineData("var s = $$\"\"\"\nouter\n{{ @\"inner\rtext\" }}\n")]
+    public void ApplyNewlines_KeepsClosedInnerLiteralCrsInUnterminatedInterpolation(string input)
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    [Fact]
+    public void ApplyNewlines_NormalizesOnlyUnterminatedOuterInterpolationCrs()
+    {
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal("var s = $@\"outer\n{ @\"inner\rtext\" }\n",
+            format.ApplyNewlines("var s = $@\"outer\r{ @\"inner\rtext\" }\r"));
+    }
+
+    [Fact]
+    public void ApplyNewlines_KeepsRecoveredFieldLiteralAfterUnterminatedInterpolation()
+    {
+        const string input = "var s = $@\"outer\n{ @\"inner\rtext\" }\nclass C { string f = @\"a\r#else\rb\"; }\n";
+        var format = new LspSourceFileFormat(new UTF8Encoding(false), "\n");
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    // #520: an unterminated literal in one branch must not hide a sibling branch, and a directive-looking
+    // line inside a nested branch's string must not close the wrong group. Each input keeps its CRs
+    // because some branch-selection configuration reads them inside a closed string.
+    [Theory]
+    [InlineData("#if true\n#if C\nvar w = @\"p\r#endif\rq\";\n#endif\n#endif\nvar s = @\"x\ry\";\n")]
+    [InlineData("#if B\n#if A\nvar v = @\"p\r#else\rq\";\n#endif\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n#if false\nvar w = @\"p\r#endif\rq\";\n#endif\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if B\n#if A\n#if true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n#endif\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#else\nvar s = @\"x\ry\";\n#endif\n")]
+    [InlineData("#if true\nvar t = @\"\n#elif false\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\nvar u = \"\"\"\n#endif\nclass C { string f = @\"a\r#else\rb\"; }\n")]
+    [InlineData("#if A\nclass C { string f = @\"a\r#else\rb\"; }\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    [InlineData("#if B\nclass C { string f = @\"a\r#else\rb\"; }\nvar u = \"\"\"\n#endif\n")]
+    // Minimal generator mismatches: an unterminated "/*" or "@\"" in a taken branch hides the next branch.
+    [InlineData("#if true\n/*\n#else\nvar v = @\"p\r#else\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#elif C\nvar w = @\"p\r#endif\rq\";\n#endif\n")]
+    [InlineData("#if true\n/*\n#endif\nvar w = @\"p\r#endif\rq\";\n")]
+    [InlineData("#if B\n#elif true\nvar t = @\"\n#endif\nvar z = $@\"k\r{1}\";\n")]
+    public void ApplyNewlines_KeepsClosedStringCrsInBranchesHiddenByUnterminatedLiterals(string input)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+
+        Assert.Equal(input, format.ApplyNewlines(input));
+    }
+
+    // #520: each nested group is solved once, so a string whose "#else" line splits a group in two does
+    // not double the work per nesting level.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ApplyNewlines_StaysFastAcrossDeeplyNestedBranches(bool nestInElif)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string literal = "var v = @\"p\r#else\rq\";\n";
+        var input = "int x = 1;\r\n";
+        for (var depth = 1; depth <= 30; depth++)
+        {
+            input = nestInElif
+                ? "#if A" + depth + "\nint y;\n#elif B" + depth + "\n" + literal + input + "#endif\n"
+                : "#if A" + depth + "\n" + literal + input + "#elif B" + depth + "\n" + literal + "#endif\n";
+        }
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r\n", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1), "took " + watch.Elapsed);
+    }
+
+    // #520: the cost follows the directive count: no state rescans a skipped group, a run of directives,
+    // or an unterminated comment that the lexer reads to the end of the file.
+    [Theory]
+    [InlineData("nested")]
+    [InlineData("elif")]
+    [InlineData("comment")]
+    [InlineData("stray")]
+    public void ApplyNewlines_StaysFastWithThousandsOfDirectives(string shape)
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        var input = shape switch
+        {
+            "nested" => string.Concat(Enumerable.Repeat("#if A\nint a;\r", 2000)) + string.Concat(Enumerable.Repeat("#endif\n", 2000)),
+            "elif" => "#if A\nint a;\r" + string.Concat(Enumerable.Range(0, 4000).Select(i => "#elif S" + i + "\nint a;\r")) + "#endif\n",
+            "comment" => string.Concat(Enumerable.Repeat("#if A\n/*\n#endif\nint a;\r", 1000)),
+            _ => string.Concat(Enumerable.Repeat("#endif\n#else\nint a;\r", 2000)),
+        };
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var actual = format.ApplyNewlines(input);
+        watch.Stop();
+
+        Assert.Equal(input.Replace("\r", "\n"), actual);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(3), "took " + watch.Elapsed);
+    }
+
+    // #520: past its state budget the scan cannot tell string CRs from line breaks, so it keeps every lone CR.
+    [Fact]
+    public void ApplyNewlines_KeepsEveryLoneCrWhenTheScanExceedsItsBudget()
+    {
+        var format = LspSourceFileFormat.Detect(Encoding.UTF8.GetBytes("a\nb\n"));
+        const string input = "#if A\nvar a = @\"x\ry\";\r#else\nint b;\r\n#endif\n";
+
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\r#else\nint b;\n#endif\n", format.ApplyNewlines(input, maxScanStates: 1));
+        Assert.Equal("#if A\nvar a = @\"x\ry\";\n#else\nint b;\n#endif\n", format.ApplyNewlines(input));
+    }
+
+    private static byte[] Encode(string lfText, string encoding, string newline)
+    {
+        Encoding target = encoding switch
+        {
+            "utf-8" => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            "utf-8-bom" => new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
+            "utf-16le" => new UnicodeEncoding(bigEndian: false, byteOrderMark: true),
+            "utf-16be" => new UnicodeEncoding(bigEndian: true, byteOrderMark: true),
+            "utf-32le" => new UTF32Encoding(bigEndian: false, byteOrderMark: true),
+            "utf-32be" => new UTF32Encoding(bigEndian: true, byteOrderMark: true),
+            _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, null),
+        };
+        return target.GetPreamble().Concat(target.GetBytes(lfText.Replace("\n", newline))).ToArray();
+    }
+}

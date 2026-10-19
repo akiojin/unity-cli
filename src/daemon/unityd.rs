@@ -494,7 +494,7 @@ pub async fn try_batch(
     ))
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 fn ping() -> Result<()> {
     let response = request(DaemonRequest::Ping)?;
     if response.ok {
@@ -826,6 +826,7 @@ async fn handle_request(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::io::{BufRead, BufReader, Write};
     use tempfile::tempdir;
 

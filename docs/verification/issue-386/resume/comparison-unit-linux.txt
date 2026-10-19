@@ -1,0 +1,20 @@
+test_benchmark_does_not_reuse_another_projects_daemon_or_host (test_compare_official.CompareTests.test_benchmark_does_not_reuse_another_projects_daemon_or_host) ... ok
+test_coexistence_rejects_a_different_editor_version (test_compare_official.CompareTests.test_coexistence_rejects_a_different_editor_version) ... ok
+test_coexistence_rejects_a_different_project (test_compare_official.CompareTests.test_coexistence_rejects_a_different_project) ... ok
+test_empty_read_and_unapplied_material_are_not_success (test_compare_official.CompareTests.test_empty_read_and_unapplied_material_are_not_success) ... ok
+test_eval_must_report_completed (test_compare_official.CompareTests.test_eval_must_report_completed) ... ok
+test_failed_create_is_not_a_measurement (test_compare_official.CompareTests.test_failed_create_is_not_a_measurement) ... ok
+test_official_nested_failure_is_rejected (test_compare_official.CompareTests.test_official_nested_failure_is_rejected) ... ok
+test_process_checks_accept_the_shared_cli_envelope (test_compare_official.CompareTests.test_process_checks_accept_the_shared_cli_envelope) ... ok
+test_read_uses_same_asset_within_official_authoring_root (test_compare_official.CompareTests.test_read_uses_same_asset_within_official_authoring_root) ... ok
+test_resident_operations_match_all_23_staff_operations (test_compare_official.CompareTests.test_resident_operations_match_all_23_staff_operations) ... ok
+test_shell_rejects_in_band_failure (test_compare_official.CompareTests.test_shell_rejects_in_band_failure) ... ok
+test_shell_rejects_mismatched_id (test_compare_official.CompareTests.test_shell_rejects_mismatched_id) ... ok
+test_shell_reuses_process_and_correlates_responses (test_compare_official.CompareTests.test_shell_reuses_process_and_correlates_responses) ... ok
+test_shell_timeout_is_bounded (test_compare_official.CompareTests.test_shell_timeout_is_bounded) ... ok
+test_transition_waits_for_completed_state (test_compare_official.CompareTests.test_transition_waits_for_completed_state) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.948s
+
+OK

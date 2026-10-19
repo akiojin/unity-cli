@@ -1,0 +1,8 @@
+{
+  "passed": 6,
+  "failed": 0,
+  "total": 6,
+  "artifacts": "<workspace>\\.cache\\issue-386\\resume\\video-final",
+  "host": "127.0.0.1",
+  "port": "6487"
+}

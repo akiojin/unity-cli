@@ -1,0 +1,25 @@
+{
+  "command": [
+    "<workspace>\\target\\debug\\unity-cli.exe",
+    "--port",
+    "6493",
+    "test",
+    "--project-path",
+    "<workspace>\\.cache\\issue-386\\resume\\hot-reload-windows\\Project",
+    "--mode",
+    "playmode",
+    "--filter",
+    "InputSimulationAutomationPlayModeTests",
+    "--disable-domain-reload",
+    "--timeout",
+    "240",
+    "--report",
+    "junit",
+    "--output",
+    "<workspace>\\.cache\\issue-386\\resume\\InputSimulationAutomationPlayModeTests-counter-green.xml"
+  ],
+  "mode": "native Windows headless / isolated minimal fixture",
+  "exit_code": 0,
+  "tests": 11,
+  "failed": 0
+}

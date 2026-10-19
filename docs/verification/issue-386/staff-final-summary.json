@@ -1,0 +1,610 @@
+{
+  "started_at": "2026-10-03T14:58:11.479989+00:00",
+  "source_commit": "338f426119b61123567b74028e7e8fe3bd99caa5",
+  "binary_sha256": "abb04eca3cee68b3260c4701f6a10b2b053c87c1eaef95423117143cf4288eeb",
+  "cases": {
+    "staff-play-settings": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "editor",
+        "eval",
+        "\nvar before = new { enabled = UnityEditor.EditorSettings.enterPlayModeOptionsEnabled,\n    options = UnityEditor.EditorSettings.enterPlayModeOptions.ToString() };\nUnityEditor.EditorSettings.enterPlayModeOptionsEnabled = true;\nUnityEditor.EditorSettings.enterPlayModeOptions = UnityEditor.EnterPlayModeOptions.DisableDomainReload;\nvar assembly = typeof(UnityEditor.EditorWindow).Assembly;\nvar game = assembly.GetType(\"UnityEditor.GameView\", true);\nUnityEditor.EditorWindow.GetWindow(game, false, \"Game\", false);\nvar type = assembly.GetType(\"UnityEditor.PlayModeView\", true);\nvar property = type.GetProperty(\"enterPlayModeBehavior\");\nforeach (var view in UnityEngine.Resources.FindObjectsOfTypeAll(type))\n    property.SetValue(view, System.Enum.Parse(property.PropertyType, \"PlayUnfocused\"));\nreturn before;\n",
+        "--mode",
+        "statements"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.635,
+      "success": true
+    },
+    "staff-get_editor_state-1": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046,
+      "success": true
+    },
+    "staff-create_scene-2": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "create_scene",
+        "--json",
+        "{\"sceneName\": \"Issue386_Staff_1791039493306097700\", \"path\": \"Assets/Scenes/Generated/E2E/Performance\", \"loadScene\": true}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.44,
+      "success": true
+    },
+    "staff-create_gameobject-3": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "create_gameobject",
+        "--json",
+        "{\"name\": \"Perf394Target\", \"primitiveType\": \"cube\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.114,
+      "success": true
+    },
+    "staff-create_material-4": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "create_material",
+        "--json",
+        "{\"materialPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfSource.mat\", \"shader\": \"Unlit/Color\", \"overwrite\": true}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.392,
+      "success": true
+    },
+    "staff-save_scene-5": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "save_scene",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.314,
+      "success": true
+    },
+    "staff-get_editor_state-6": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.808,
+      "success": true
+    },
+    "staff-get_hierarchy-7": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_hierarchy",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.427,
+      "success": true
+    },
+    "staff-find_gameobject-8": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "find_gameobject",
+        "--json",
+        "{\"name\": \"Perf394Target\", \"exactMatch\": true}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.056,
+      "success": true
+    },
+    "staff-get_component_values-9": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_component_values",
+        "--json",
+        "{\"gameObjectName\": \"Perf394Target\", \"componentType\": \"Transform\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.064,
+      "success": true
+    },
+    "staff-modify_gameobject-10": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "modify_gameobject",
+        "--json",
+        "{\"path\": \"/Perf394Target\", \"position\": {\"x\": 1, \"y\": 2, \"z\": 3}}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.048,
+      "success": true
+    },
+    "staff-create_gameobject-11": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "create_gameobject",
+        "--json",
+        "{\"name\": \"Perf394Cube\", \"primitiveType\": \"cube\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.039,
+      "success": true
+    },
+    "staff-add_component-12": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "add_component",
+        "--json",
+        "{\"gameObjectPath\": \"/Perf394Cube\", \"componentType\": \"Rigidbody\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.055,
+      "success": true
+    },
+    "staff-remove_component-13": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "remove_component",
+        "--json",
+        "{\"gameObjectPath\": \"/Perf394Cube\", \"componentType\": \"Rigidbody\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.048,
+      "success": true
+    },
+    "staff-delete_gameobject-14": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "delete_gameobject",
+        "--json",
+        "{\"path\": \"/Perf394Cube\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.053,
+      "success": true
+    },
+    "staff-get_scene_info-15": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_scene_info",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.042,
+      "success": true
+    },
+    "staff-save_scene-16": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "save_scene",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.059,
+      "success": true
+    },
+    "staff-read_console-17": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "read_console",
+        "--json",
+        "{\"count\": 20}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.046,
+      "success": true
+    },
+    "staff-capture_screenshot-18": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "capture_screenshot",
+        "--json",
+        "{\"captureMode\": \"game\", \"width\": 1280, \"height\": 720, \"includeUI\": false, \"encodeAsBase64\": false, \"osFallback\": false}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.113,
+      "success": true
+    },
+    "staff-manage_asset_database-19": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "manage_asset_database",
+        "--json",
+        "{\"action\": \"find_assets\", \"filter\": \"t:Material\", \"searchInFolders\": [\"Assets/Scenes/Generated/E2E/Performance\"]}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.223,
+      "success": true
+    },
+    "staff-manage_asset_database-20": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "manage_asset_database",
+        "--json",
+        "{\"action\": \"copy_asset\", \"fromPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfSource.mat\", \"toPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfCopy.mat\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.07,
+      "success": true
+    },
+    "staff-manage_asset_database-21": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "manage_asset_database",
+        "--json",
+        "{\"action\": \"move_asset\", \"fromPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfCopy.mat\", \"toPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfMoved.mat\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.088,
+      "success": true
+    },
+    "staff-manage_asset_database-22": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "manage_asset_database",
+        "--json",
+        "{\"action\": \"delete_asset\", \"assetPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfMoved.mat\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.271,
+      "success": true
+    },
+    "staff-manage_asset_import_settings-23": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "manage_asset_import_settings",
+        "--json",
+        "{\"action\": \"get\", \"assetPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfSource.mat\"}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.047,
+      "success": true
+    },
+    "staff-modify_material-24": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "modify_material",
+        "--json",
+        "{\"materialPath\": \"Assets/Scenes/Generated/E2E/Performance/PerfSource.mat\", \"properties\": {\"_Color\": [0.2, 0.4, 0.8, 1]}}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.083,
+      "success": true
+    },
+    "staff-get_project_settings-25": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_project_settings",
+        "--json",
+        "{\"includeTime\": true, \"includePlayer\": false}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.246,
+      "success": true
+    },
+    "staff-read-26": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "read",
+        "--json",
+        "{\"path\": \"Packages/com.akiojin.unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs\", \"maxLines\": 50}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.036,
+      "success": true
+    },
+    "staff-play_game-27": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "play_game",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.05,
+      "success": true
+    },
+    "staff-get_editor_state-28": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.219,
+      "success": true
+    },
+    "staff-get_editor_state-29": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.224,
+      "success": true
+    },
+    "staff-get_editor_state-30": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.463,
+      "success": true
+    },
+    "staff-stop_game-31": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "stop_game",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.463,
+      "success": true
+    },
+    "staff-get_editor_state-32": {
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-386\\red-project",
+        "--timeout-ms",
+        "60000",
+        "raw",
+        "get_editor_state",
+        "--json",
+        "{}"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.429,
+      "success": true
+    }
+  },
+  "play_settings": {
+    "enterPlayModeOptionsEnabled": true,
+    "enterPlayModeOptions": "DisableDomainReload",
+    "enterPlayModeBehavior": "PlayUnfocused",
+    "previous": {
+      "enabled": false,
+      "options": "None"
+    }
+  },
+  "finished_at": "2026-10-03T14:58:19.377632+00:00"
+}

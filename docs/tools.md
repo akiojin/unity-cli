@@ -369,6 +369,12 @@ python3 scripts/e2e-prefab.py --launch --editmode --versions 6000.3.25f1,2022.3.
 | `apply_csharp_edits`    | Apply structured C# source edits |
 | `create_class`          | Create a C# class                |
 
+The C# write tools keep the file encoding of an existing file: its byte order
+mark (present or absent) and, when the file uses a single newline convention
+(LF or CRLF), that convention for the whole saved text. New files from
+`create_csharp_file` and `create_class` are UTF-8 without a BOM and keep the
+newlines of the given text.
+
 `hot_reload` changes the body of existing methods while Play Mode keeps running
 (scene, objects and field values are preserved; the `.cs` file on disk is not
 modified). Prerequisites: the optional FastScriptReload 1.8.0 package installed

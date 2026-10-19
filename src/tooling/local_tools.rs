@@ -70,12 +70,11 @@ pub fn maybe_execute_local_tool(tool_name: &str, params: &Value) -> Option<Resul
         "read" => Some(local_read(params)),
         "search" => Some(local_search(params)),
         "list_packages" => Some(local_list_packages()),
-        "get_symbols" => Some(local_get_symbols(params)),
-        "build_index" => Some(local_build_index(params)),
+        "get_symbols" | "build_index" | "find_symbol" | "find_refs" => {
+            Some(local_symbol_search(tool_name, params))
+        }
         "update_index" => Some(local_update_index(params)),
         "get_index_status" => Some(local_get_index_status()),
-        "find_symbol" => Some(local_find_symbol(params)),
-        "find_refs" => Some(local_find_refs(params)),
         "rename_symbol" => Some(local_lsp_write("rename_symbol", params)),
         "replace_symbol_body" => Some(local_lsp_write("replace_symbol_body", params)),
         "insert_before_symbol" => Some(local_lsp_write("insert_before_symbol", params)),
@@ -246,12 +245,25 @@ fn local_list_packages() -> Result<Value> {
     }))
 }
 
+fn local_symbol_search(tool_name: &str, params: &Value) -> Result<Value> {
+    let index_search: fn(&Value) -> Result<Value> = match tool_name {
+        "get_symbols" => local_get_symbols,
+        "build_index" => local_build_index,
+        "find_symbol" => local_find_symbol,
+        _ => local_find_refs,
+    };
+    let root = project_root()?;
+    let fallback = match crate::lsp::route_search(tool_name, params, &root) {
+        crate::lsp::SearchRoute::Lsp(result) => return result,
+        crate::lsp::SearchRoute::Index(fallback) => fallback,
+    };
+    let mut value = index_search(params)?;
+    fallback.annotate(&mut value);
+    Ok(value)
+}
+
 fn local_get_symbols(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("get_symbols", params, &root) {
-        return result;
-    }
-
     let path = params
         .get("path")
         .and_then(Value::as_str)
@@ -276,10 +288,6 @@ fn local_get_symbols(params: &Value) -> Result<Value> {
 
 fn local_build_index(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("build_index", params, &root) {
-        return result;
-    }
-
     let exclude_package_cache = params
         .get("excludePackageCache")
         .and_then(Value::as_bool)
@@ -466,10 +474,6 @@ fn local_update_index(params: &Value) -> Result<Value> {
 
 fn local_find_symbol(params: &Value) -> Result<Value> {
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("find_symbol", params, &root) {
-        return result;
-    }
-
     let name = params
         .get("name")
         .and_then(Value::as_str)
@@ -571,10 +575,6 @@ fn local_find_refs(params: &Value) -> Result<Value> {
         .clamp(0, 20) as usize;
 
     let root = project_root()?;
-    if let Some(result) = crate::lsp::maybe_execute("find_refs", params, &root) {
-        return result;
-    }
-
     let index = match load_index_if_exists(&root) {
         Ok(Some(index)) if index_is_ready(&index) => index,
         Ok(_) => {
@@ -898,7 +898,10 @@ async fn poll_compile_state(config: &RuntimeConfig) -> Result<Value> {
 }
 
 fn requires_unityengine_using(inherits: Option<&str>) -> bool {
-    matches!(inherits.map(str::trim), Some("MonoBehaviour"))
+    matches!(
+        inherits.map(str::trim),
+        Some("MonoBehaviour" | "ScriptableObject")
+    )
 }
 
 fn local_create_class(params: &Value) -> Result<Value> {
@@ -943,6 +946,24 @@ fn local_create_class(params: &Value) -> Result<Value> {
         return Err(anyhow!("File already exists: {rel_path}"));
     }
 
+    let body = render_class_template(name, namespace, inherits);
+
+    // Write through the same LSP path as `create_csharp_file` so the generated
+    // class is validated and the post-write pipeline sees an LSP result.
+    let mut result = local_lsp_write(
+        "create_csharp_file",
+        &json!({
+            "relative": rel_path,
+            "text": body,
+            "overwrite": false
+        }),
+    )?;
+    result["path"] = json!(rel_path);
+    result["content"] = json!(body);
+    Ok(result)
+}
+
+fn render_class_template(name: &str, namespace: Option<&str>, inherits: Option<&str>) -> String {
     let mut body = String::new();
     if requires_unityengine_using(inherits) {
         body.push_str("using UnityEngine;\n\n");
@@ -963,17 +984,7 @@ fn local_create_class(params: &Value) -> Result<Value> {
         body.push_str("}\n");
     }
 
-    if let Some(parent) = abs_path.parent() {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
-    }
-    fs::write(&abs_path, &body).with_context(|| format!("Failed to write file: {rel_path}"))?;
-
-    Ok(json!({
-        "success": true,
-        "path": rel_path,
-        "content": body
-    }))
+    body
 }
 
 fn project_root() -> Result<PathBuf> {
@@ -1513,7 +1524,7 @@ mod tests {
     use super::{
         build_snippet, collect_cs_files, extract_symbols_from_text, index_is_ready,
         index_not_ready_response, maybe_execute_local_tool, normalize_rel_or_abs_path,
-        normalize_rel_path, path_matches_scope, requires_unityengine_using,
+        normalize_rel_path, path_matches_scope, render_class_template, requires_unityengine_using,
         resolve_candidate_project_path, strip_csharp_comments, symbol_name_matches, IndexedFile,
         SymbolIndex,
     };
@@ -1524,6 +1535,28 @@ mod tests {
     fn env_lock() -> &'static Mutex<()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    struct ScopedEnv {
+        key: &'static str,
+        previous: Option<std::ffi::OsString>,
+    }
+
+    impl ScopedEnv {
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var_os(key);
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for ScopedEnv {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => std::env::set_var(self.key, value),
+                None => std::env::remove_var(self.key),
+            }
+        }
     }
 
     fn write_file(path: &Path, content: &str) {
@@ -1640,6 +1673,7 @@ mod tests {
     #[test]
     fn get_symbols_extracts_class_and_method() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1651,6 +1685,8 @@ mod tests {
             maybe_execute_local_tool("get_symbols", &json!({"path":"Assets/Scripts/Player.cs"}))
                 .expect("tool should be handled")
                 .expect("get_symbols should succeed");
+        assert_eq!(value["backend"], "index");
+        assert_eq!(value["fallbackReason"], "lsp_disabled");
 
         let symbols = value["symbols"]
             .as_array()
@@ -1669,8 +1705,46 @@ mod tests {
     }
 
     #[test]
+    fn get_symbols_defaults_to_lsp_and_reports_index_fallback() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        let tools = tempfile::tempdir().expect("tools dir should be created");
+        write_file(
+            &tmp.path().join("Assets/Scripts/Player.cs"),
+            "public class Player { public void Jump() {} }\n",
+        );
+        let _root = ScopedEnv::set(
+            "UNITY_PROJECT_ROOT",
+            tmp.path().to_str().expect("project root should be UTF-8"),
+        );
+        let _tools = ScopedEnv::set(
+            "UNITY_CLI_TOOLS_ROOT",
+            tools.path().to_str().expect("tools root should be UTF-8"),
+        );
+        let previous_mode = std::env::var_os("UNITY_CLI_LSP_MODE");
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+
+        let value =
+            maybe_execute_local_tool("get_symbols", &json!({"path":"Assets/Scripts/Player.cs"}))
+                .expect("tool should be handled")
+                .expect("get_symbols should fall back to the index");
+
+        if let Some(mode) = previous_mode {
+            std::env::set_var("UNITY_CLI_LSP_MODE", mode);
+        }
+        assert_eq!(value["backend"], "index");
+        assert_eq!(value["fallbackReason"], "lsp_not_installed");
+        assert!(value["symbols"]
+            .as_array()
+            .expect("symbols should be an array")
+            .iter()
+            .any(|symbol| symbol["name"] == "Player"));
+    }
+
+    #[test]
     fn find_symbol_returns_index_not_ready_before_build() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1691,6 +1765,7 @@ mod tests {
     #[test]
     fn build_index_and_find_symbol_roundtrip() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1740,6 +1815,7 @@ mod tests {
     #[test]
     fn update_index_refreshes_symbol_names() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         let target = tmp.path().join("Assets/Scripts/Player.cs");
         write_file(&target, "public class BeforeName {}\n");
@@ -1777,6 +1853,7 @@ mod tests {
     #[test]
     fn find_refs_supports_cursor_paging() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _lsp_off = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Player.cs"),
@@ -1829,56 +1906,19 @@ mod tests {
     }
 
     #[test]
-    fn create_class_generates_simple_class() {
-        let _guard = env_lock().lock().expect("lock should succeed");
-        let tmp = tempfile::tempdir().expect("temp dir should be created");
-        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
-
-        let value = maybe_execute_local_tool(
-            "create_class",
-            &json!({"name":"EnemyAI","folder":"Assets/Scripts/AI"}),
-        )
-        .expect("tool should be handled")
-        .expect("create_class should succeed");
-
-        assert_eq!(value["success"], true);
-        assert_eq!(value["path"], "Assets/Scripts/AI/EnemyAI.cs");
-        let content = value["content"].as_str().expect("content should be string");
+    fn create_class_template_generates_simple_class() {
+        let content = render_class_template("EnemyAI", None, None);
         assert!(!content.contains("using UnityEngine;"));
         assert!(content.contains("public class EnemyAI"));
-
-        let file_content = std::fs::read_to_string(tmp.path().join("Assets/Scripts/AI/EnemyAI.cs"))
-            .expect("file should exist");
-        assert_eq!(file_content, content);
-
-        std::env::remove_var("UNITY_PROJECT_ROOT");
     }
 
     #[test]
-    fn create_class_with_namespace_and_inherits() {
-        let _guard = env_lock().lock().expect("lock should succeed");
-        let tmp = tempfile::tempdir().expect("temp dir should be created");
-        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
-
-        let value = maybe_execute_local_tool(
-            "create_class",
-            &json!({
-                "name": "Player",
-                "namespace": "Game.Characters",
-                "inherits": "MonoBehaviour",
-                "folder": "Assets/Scripts"
-            }),
-        )
-        .expect("tool should be handled")
-        .expect("create_class should succeed");
-
-        assert_eq!(value["success"], true);
-        let content = value["content"].as_str().expect("content should be string");
+    fn create_class_template_with_namespace_and_inherits() {
+        let content =
+            render_class_template("Player", Some("Game.Characters"), Some("MonoBehaviour"));
         assert!(content.contains("namespace Game.Characters"));
         assert!(content.contains("using UnityEngine;"));
         assert!(content.contains("public class Player : MonoBehaviour"));
-
-        std::env::remove_var("UNITY_PROJECT_ROOT");
     }
 
     #[test]
@@ -2089,10 +2129,24 @@ namespace Demo.Game
     }
 
     #[test]
-    fn requires_unityengine_using_only_for_monobehaviour() {
+    fn requires_unityengine_using_for_unqualified_unityengine_bases() {
         assert!(requires_unityengine_using(Some("MonoBehaviour")));
-        assert!(!requires_unityengine_using(Some("ScriptableObject")));
+        assert!(requires_unityengine_using(Some("ScriptableObject")));
+        assert!(requires_unityengine_using(Some(" ScriptableObject ")));
+        assert!(!requires_unityengine_using(Some(
+            "UnityEngine.ScriptableObject"
+        )));
+        assert!(!requires_unityengine_using(Some("BaseService")));
         assert!(!requires_unityengine_using(None));
+    }
+
+    #[test]
+    fn create_class_template_scriptableobject_resolves_unityengine() {
+        let content = render_class_template("Sample", None, Some("ScriptableObject"));
+        assert_eq!(
+            content,
+            "using UnityEngine;\n\npublic class Sample : ScriptableObject\n{\n}\n"
+        );
     }
 
     #[test]
@@ -2121,6 +2175,27 @@ namespace Demo.Game
                 "{tool} should mention LSP requirement"
             );
         }
+
+        std::env::remove_var("UNITY_PROJECT_ROOT");
+        std::env::remove_var("UNITY_CLI_LSP_MODE");
+    }
+
+    #[test]
+    fn create_class_requires_lsp_and_does_not_write_directly() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
+        std::env::set_var("UNITY_CLI_LSP_MODE", "off");
+
+        let result = maybe_execute_local_tool(
+            "create_class",
+            &json!({"name":"EnemyAI","folder":"Assets/Scripts/AI"}),
+        )
+        .expect("tool should be handled");
+
+        assert!(result.is_err(), "create_class should fail when LSP is off");
+        assert!(result.unwrap_err().to_string().contains("requires LSP"));
+        assert!(!tmp.path().join("Assets/Scripts/AI/EnemyAI.cs").exists());
 
         std::env::remove_var("UNITY_PROJECT_ROOT");
         std::env::remove_var("UNITY_CLI_LSP_MODE");

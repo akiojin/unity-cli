@@ -1,0 +1,4 @@
+markdownlint-cli2 v0.23.3 (markdownlint v0.41.1)
+Finding: docs/comparison.md docs/hot-reload.md docs/verification/issue-386/README.md docs/verification/issue-386/resume/*.md packaging/winget/README.md tasks/lessons.md
+Linting: 8 files
+Summary: 0 issues in 0 files

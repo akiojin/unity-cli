@@ -1,0 +1,9 @@
+done: create_gameobject
+done: hierarchy
+done: eval
+process background PASS
+resident frontmost FAIL Invalid official NDJSON response: {'id': '15', 'exitCode': 6, 'envelope': {'success': False, 'command': 'unity command find_assets', 'data': None, 'errors': [{'code': 'COMMAND_FAILED', 'message': 'Pipeline server returned 400 Bad Request: Parameter Validation Failed. Illegal characters in path.'}], 'warnings': []}}
+Traceback (most recent call last):
+  File "<workspace>\.cache\issue-386\windows-comparison.py", line 168, in <module>
+    raise RuntimeError(report['error'])
+RuntimeError: Invalid official NDJSON response: {'id': '15', 'exitCode': 6, 'envelope': {'success': False, 'command': 'unity command find_assets', 'data': None, 'errors': [{'code': 'COMMAND_FAILED', 'message': 'Pipeline server returned 400 Bad Request: Parameter Validation Failed. Illegal characters in path.'}], 'warnings': []}}

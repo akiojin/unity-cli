@@ -1,0 +1,67 @@
+{
+  "conditions": {
+    "started_at": "2026-10-04T00:00:25.043499+00:00",
+    "os": "Windows-11-10.0.26300-SP0",
+    "arch": "AMD64",
+    "logical_cpus": 32,
+    "unity": "6000.4.4f1",
+    "editor_pid": 34324,
+    "iterations": 100,
+    "warmup": 3,
+    "unity_cli_build": "native Windows debug 0.18.1",
+    "official_cli_version": "1.0.0-beta.11",
+    "pipeline_version": "0.8.0-exp.1",
+    "unity_cli_sha256": "087d057cd62483c3c0aa64ceb85a77421349f2ace1ba236a13c1ddcffe909d35",
+    "official_cli_sha256": "4cad9230dd98cc8d123d3ef9d18fef5e7ee65f353814c3cf9d94d9129293dda3",
+    "benchmark_sha256": "8b4a77c97260fec724a5d1187c1561a7a0f25d9c3734fe8eada1c0a3ca4bc1e6",
+    "windows_adapter_sha256": "c47d896f41e81c6db8ba63ced94e927388b55cc81796b54578b3135685929c8a",
+    "windows_adapter": "Original benchmark operations, validation, focus-discard and alternating order; Windows HWND foreground inspection and bounded reader thread replace macOS focus and POSIX select. No platform spoofing.",
+    "background_condition": "Owned Editor minimized, because Windows refused activation of the existing GWT background window. This differs from macOS visible-background measurements.",
+    "host_contention": "Other project canonical verification was active on this host; results are observations, no Windows budget or prior baseline was enforced.",
+    "coexistence": {
+      "same_project": true,
+      "unity_version": "6000.4.4f1",
+      "official_state": "ready",
+      "project_identity_sha256": "f87f40b8af586b040ebc3f0d64bf076a0bebf421cd38cb9af459bc31f2a0c69a"
+    },
+    "play_settings": {
+      "assetNamingUsesSpace": true,
+      "defaultBehaviorMode": "Mode3D",
+      "enterPlayModeOptions": "DisableDomainReload",
+      "enterPlayModeOptionsEnabled": true,
+      "prefabModeRegularEnvironment": "None",
+      "prefabModeUIEnvironment": "None",
+      "serializationMode": "ForceText",
+      "unityRemote": "",
+      "unityRemoteCompression": "",
+      "unityRemoteResolution": ""
+    },
+    "unityd_pid": 56288
+  },
+  "runs": [
+    {
+      "mode": "process",
+      "focus": "frontmost",
+      "status": "PASS",
+      "source": "previous completed run, original conditions preserved"
+    },
+    {
+      "mode": "process",
+      "focus": "background",
+      "status": "PASS",
+      "source": "previous completed run, original conditions preserved"
+    },
+    {
+      "mode": "resident",
+      "focus": "frontmost",
+      "status": "PASS",
+      "error": null
+    },
+    {
+      "mode": "resident",
+      "focus": "background",
+      "status": "PASS",
+      "error": null
+    }
+  ]
+}

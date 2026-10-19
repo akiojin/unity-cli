@@ -71,7 +71,11 @@ C# ソースコードの静的解析を行う Language Server Protocol 実装で
 - **役割**:
   - シンボル検索・参照解析
   - インデックスの構築と更新
-- **起動制御**: `UNITY_CLI_LSP_MODE` 環境変数で制御 (`off` | `auto` | `required`)
+- **起動制御**: `UNITY_CLI_LSP_MODE` 環境変数で制御 (`off` | `auto` | `required`、既定は `auto`)
+  - `auto`: `get_symbols` / `find_symbol` / `find_refs` / `build_index` は LSP を優先する。LSP が未インストール（バックグラウンドで `unity-cli lsp install` を起動）、起動失敗、または `UNITY_CLI_LSP_AUTO_TIMEOUT_MS`（既定 10000ms）以内に応答しない場合はローカルインデックスに戻り、結果に `backend: "index"` / `fallbackReason` / `fallbackDetail` を含める
+  - `off`: 常にローカルの正規表現インデックスを使う（`fallbackReason: "lsp_disabled"`）
+  - `required`: LSP を必須とし、失敗をそのままエラーにする
+  - 書き込み系ツール（`write_csharp_file` など）は、未設定時は従来どおり direct LSP セッションを使う。lspd 経由にするのは `auto` / `required` を明示したときだけ
 
 ## 通信プロトコル
 
@@ -123,7 +127,9 @@ CLI 側                        Unity Editor 側
 | `UNITY_CLI_HOST` | Unity Editor の接続先ホスト | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor の接続先ポート | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ミリ秒) | ― |
-| `UNITY_CLI_LSP_MODE` | LSP 起動モード | `off` |
+| `UNITY_CLI_LSP_MODE` | LSP 起動モード | `auto` |
+| `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | `auto` のシンボル検索が LSP を待つ上限 (ミリ秒) | `10000` |
+| `UNITY_CLI_LSPD_START_TIMEOUT_MS` | lspd 自動起動で `ping` 応答を待つ上限 (ミリ秒)。起動プロセスが途中で終了した場合は待たずに失敗し、エラーに待ち時間と `lspd.log` の場所を含める | `60000` |
 | `UNITY_CLI_LSP_COMMAND` | LSP 実行コマンド | ― |
 | `UNITY_CLI_LSP_BIN` | LSP 実行ファイルパス | ― |
 | `UNITY_PROJECT_ROOT` | Unity プロジェクトルート | ― |

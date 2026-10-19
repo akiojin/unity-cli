@@ -1,0 +1,60 @@
+[
+  {
+    "tool": "grim",
+    "started_at": "2026-10-03T20:53:36.396523+00:00",
+    "real_editor": false,
+    "exit_code": 0,
+    "stdout": {
+      "command": "raw capture_screenshot",
+      "data": {
+        "captureMode": "game",
+        "fallback": "os",
+        "fallbackTool": "grim",
+        "fileSize": 4319,
+        "height": 720,
+        "message": "Desktop screenshot captured by the OS (Unity Editor did not respond)",
+        "note": "Unity Editor did not respond (OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)); captured the whole desktop with an OS screenshot instead. The Editor main thread may be blocked by a modal dialog. Pass \"osFallback\": false to get the timeout error instead.",
+        "path": "/tmp/issue386-grim-hycf6y8w/CaptureProject/.unity/capture/image_os_1791060819733.png",
+        "width": 1280
+      },
+      "errors": [],
+      "success": true,
+      "warnings": []
+    },
+    "stderr": "\u001b[2m2026-10-03T20:53:39.731779Z\u001b[0m \u001b[33m WARN\u001b[0m Unity did not respond; falling back to OS screenshot \u001b[3merror\u001b[0m\u001b[2m=\u001b[0mOPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)\n",
+    "png": {
+      "size": [
+        1280,
+        720
+      ],
+      "sha256": "b4d1a3754933377521fe5c694fb1f6275e229cba8fa5db7b4ea4f9fb51e5e9e4"
+    },
+    "passed": true,
+    "finished_at": "2026-10-03T20:53:39.789517+00:00"
+  },
+  {
+    "tool": "spectacle",
+    "started_at": "2026-10-03T20:53:39.793108+00:00",
+    "real_editor": false,
+    "exit_code": 6,
+    "stdout": {
+      "command": "raw capture_screenshot",
+      "data": {
+        "code": "TIMEOUT",
+        "error": "OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed",
+        "status": "error"
+      },
+      "errors": [
+        {
+          "code": "TIMEOUT",
+          "message": "OS screenshot fallback also failed: No OS screenshot tool succeeded (grim: No such file or directory (os error 2); gnome-screenshot: No such file or directory (os error 2); spectacle: exited with exit status: 1: On Wayland, Spectacle requires KDE Plasma's KWin compositor, which does not seem to be available. Use Spectacle on KDE Plasma, or use a different screenshot tool.; import: No such file or directory (os error 2); scrot: No such file or directory (os error 2); maim: No such file or directory (os error 2)): OPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    },
+    "stderr": "\u001b[2m2026-10-03T20:53:43.042585Z\u001b[0m \u001b[33m WARN\u001b[0m Unity did not respond; falling back to OS screenshot \u001b[3merror\u001b[0m\u001b[2m=\u001b[0mOPERATION_FAILED: Timed out while waiting for Unity response header: deadline has elapsed (code: TIMEOUT)\n",
+    "passed": false,
+    "finished_at": "2026-10-03T20:53:43.687922+00:00"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "results": [
+    {
+      "name": "live Editor readiness",
+      "passed": true
+    },
+    {
+      "name": "branch-only real fetch",
+      "passed": true
+    },
+    {
+      "name": "branch-only cache reuse",
+      "passed": true
+    },
+    {
+      "name": "omitted branch preserves cached provenance",
+      "passed": true
+    },
+    {
+      "name": "explicit version and branch",
+      "passed": true
+    }
+  ]
+}

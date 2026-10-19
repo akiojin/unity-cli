@@ -1,0 +1,72 @@
+[
+  {
+    "argv": [
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "test",
+      "--project-path",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--mode",
+      "playmode",
+      "--filter",
+      "TouchGesturePlayModeTests",
+      "--disable-domain-reload",
+      "--timeout",
+      "240",
+      "--report",
+      "junit",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\TouchGesturePlayModeTests-gui-final.xml"
+    ],
+    "name": "TouchGesturePlayModeTests",
+    "source_hashes": {
+      "Editor/Handlers/InputSystemHandler.cs": "7ac08b4f3d6ae849269707f7d7db32cbdbe287617003705272e767864e6b2434",
+      "Tests/PlayMode/InputSimulationAutomationPlayModeTests.cs": "a2dc48d02587b040e1356ebded544702a5d847ad1bb454db71bc09b39e16a44b",
+      "Tests/PlayMode/TouchGesturePlayModeTests.cs": "c23e5769c36205ef9fbb41d13be465deab504a8d2aa312b30788928f5884a69e"
+    },
+    "started_at": "2026-10-04T01:31:29.965189+00:00",
+    "editor": "native Windows GUI Unity 6000.4.4f1",
+    "exit_code": 0,
+    "tests": 15,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "finished_at": "2026-10-04T01:31:54.269500+00:00"
+  },
+  {
+    "argv": [
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "test",
+      "--project-path",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--mode",
+      "playmode",
+      "--filter",
+      "InputSimulationAutomationPlayModeTests",
+      "--disable-domain-reload",
+      "--timeout",
+      "240",
+      "--report",
+      "junit",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\InputSimulationAutomationPlayModeTests-gui-final.xml"
+    ],
+    "name": "InputSimulationAutomationPlayModeTests",
+    "source_hashes": {
+      "Editor/Handlers/InputSystemHandler.cs": "7ac08b4f3d6ae849269707f7d7db32cbdbe287617003705272e767864e6b2434",
+      "Tests/PlayMode/InputSimulationAutomationPlayModeTests.cs": "a2dc48d02587b040e1356ebded544702a5d847ad1bb454db71bc09b39e16a44b",
+      "Tests/PlayMode/TouchGesturePlayModeTests.cs": "c23e5769c36205ef9fbb41d13be465deab504a8d2aa312b30788928f5884a69e"
+    },
+    "started_at": "2026-10-04T01:31:54.270009+00:00",
+    "editor": "native Windows GUI Unity 6000.4.4f1",
+    "exit_code": 0,
+    "tests": 11,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "finished_at": "2026-10-04T01:32:06.230517+00:00"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "observed_at": "2026-10-03T15:48:32.464333+00:00",
+  "source_file_sha256": {
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/SceneHandler.cs": "3d44351bdbeda87ffb1a432f3ac013e6c86f2709935bbc7462e01e057a3cc2f9",
+    "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/Handlers/SceneHandlerTests.cs": "381ffee4c4341d6ab7442523ff4e4cec82ae3d9fe8d8239de1edfbbb7bda4717",
+    "src/app/editor.rs": "12ea2e975445003f9f47e5a8b9e62bbf9c5c7be5ca5e1393ef6bfab022c67199",
+    "src/app/setup.rs": "eab8bdf7cd59500812ac40c9acc104cf5a6c2c35140733e23571583a0829aa1f",
+    "src/app/test_runner.rs": "f8023e20459795926704614160cbb05b782f1fdc8b32e6c196d7695b38ae5691",
+    "src/daemon/unityd.rs": "3cbc5499fc3edb1b8ad3422a864e2e64c94a8f2be4f73f98513a4e5df55d629d",
+    "src/lsp/client.rs": "7c676ee0a967f79f6914140c1e147d29b58100ac5ec4fa41829b32563bbfd838",
+    "src/lsp/daemon.rs": "581ac8fd1f9df763069df66c0ed17d6507919ee63c52afff9741aa452f49fc7b",
+    "src/skills/tests.rs": "77bdd7487e0abc90357bf64d9f3ebc84d6e0f3fba42963a97b368381c15b0fa5",
+    "tests/setup_dry_run.rs": "b833e5151da71df57eba9770fa88d446a6142c605c5c56a94ae76f0e64344ea8",
+    "src/mcp/configure.rs": "eced95030b0b011ae2a661b4b8cec1420549064c4945aa74242cc6e38523be64",
+    "tests/mcp.rs": "bcecb2c5333ddff5d980c9d8f62bfcd6a0e802bda8b8e18b04e213ad7c73a9c8"
+  },
+  "binary_sha256": "9204ab2ad1edaa4b511e559401a04a84b628153c74b08e240d54c4720369eb59",
+  "note": "Latest native Cargo checks include the MCP profile fix; earlier Windows functional measurements retain their own binary hash."
+}

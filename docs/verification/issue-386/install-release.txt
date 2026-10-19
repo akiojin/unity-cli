@@ -1,0 +1,9 @@
+Detected platform: win-x64
+Fetching latest release...
+Release: v0.18.1
+Downloading unity-cli-win-x64...
+Checksum verified.
+Installed unity-cli 0.18.1 -> E:\unity-cli\work\issue-386\.cache\issue-386\installed-tools\unity-cli\win-x64\unity-cli.exe
+
+Done. Run 'unity-cli --version' to verify.
+unity-cli 0.18.1

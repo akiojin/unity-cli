@@ -458,7 +458,21 @@ namespace UnityCliBridge.Tests.PlayMode
 
         private static int GetStatusInt(string key)
         {
-            var match = Regex.Match(GetStatusText(), "^" + Regex.Escape(key) + "=(\\d+)$", RegexOptions.Multiline);
+            return ParseStatusInt(GetStatusText(), key);
+        }
+
+        [TestCase("MouseReleases=1\r\n", "MouseReleases", 1)]
+        [TestCase("TouchPresses=2\nTouchReleases=1\n", "TouchReleases", 1)]
+        [TestCase("MouseReleases=1", "MouseReleases", 1)]
+        [TestCase("MouseReleases=1\r\n", "TouchReleases", 0)]
+        public void StatusCounterParser_HandlesLineEndings(string status, string key, int expected)
+        {
+            Assert.That(ParseStatusInt(status, key), Is.EqualTo(expected));
+        }
+
+        private static int ParseStatusInt(string status, string key)
+        {
+            var match = Regex.Match(status, "^" + Regex.Escape(key) + "=(\\d+)\\r?$", RegexOptions.Multiline);
             return match.Success ? int.Parse(match.Groups[1].Value) : 0;
         }
     }

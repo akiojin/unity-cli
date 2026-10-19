@@ -1,0 +1,45 @@
+[
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_at": "2026-10-03T22:56:01.133701+00:00",
+    "log": "clippy-all-features-final.txt",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T22:56:06.120231+00:00"
+  },
+  {
+    "argv": [
+      "cargo",
+      "doc",
+      "--workspace",
+      "--no-deps",
+      "--document-private-items"
+    ],
+    "started_at": "2026-10-03T22:56:06.120677+00:00",
+    "log": "rustdoc-final.txt",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T22:56:15.763277+00:00"
+  },
+  {
+    "argv": [
+      "bunx",
+      "markdownlint-cli2",
+      "docs/comparison.md",
+      "docs/verification/issue-386/README.md",
+      "docs/verification/issue-386/resume/README.md",
+      "packaging/winget/README.md"
+    ],
+    "started_at": "2026-10-03T22:56:15.763736+00:00",
+    "log": "markdownlint-final.txt",
+    "exit_code": 0,
+    "finished_at": "2026-10-03T22:56:18.391255+00:00"
+  }
+]

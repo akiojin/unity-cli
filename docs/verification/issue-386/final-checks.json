@@ -1,0 +1,58 @@
+[
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_at": "2026-10-03T15:40:57.221387+00:00",
+    "finished_at": "2026-10-03T15:40:58.257958+00:00",
+    "exit_code": 0,
+    "log": "fmt.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_at": "2026-10-03T15:40:58.258389+00:00",
+    "finished_at": "2026-10-03T15:41:08.285820+00:00",
+    "exit_code": 0,
+    "log": "clippy.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--all-targets",
+      "--no-fail-fast",
+      "--",
+      "--test-threads=1"
+    ],
+    "started_at": "2026-10-03T15:41:08.286169+00:00",
+    "finished_at": "2026-10-03T15:42:46.665584+00:00",
+    "exit_code": 101,
+    "log": "cargo-all-final.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "run",
+      "--",
+      "skills",
+      "lint",
+      "--severity",
+      "error"
+    ],
+    "started_at": "2026-10-03T15:42:46.666218+00:00",
+    "finished_at": "2026-10-03T15:42:48.136472+00:00",
+    "exit_code": 1,
+    "log": "skills-lint-final.txt"
+  }
+]

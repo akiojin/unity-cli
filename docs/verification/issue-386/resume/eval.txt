@@ -1,0 +1,21 @@
+{"assetsPath": "<workspace>/.cache/issue-386/staff-project/Assets", "codeIndexRoot": "<workspace>/.cache/issue-386/staff-project/.unity/cache/code-index", "packagesPath": "<workspace>/.cache/issue-386/staff-project/Packages", "projectRoot": "<workspace>/.cache/issue-386/staff-project", "unity": {"platform": "WindowsEditor", "productName": "staff-project", "unityVersion": "6000.4.4f1"}}
+PASS AC-1 numeric expression
+PASS AC-3 create
+PASS AC-2 read scene object
+PASS Unity Object descriptor
+PASS AC-3 modify
+PASS requestId deduplication and status
+PASS AC-4 compile diagnostics
+PASS AC-4 runtime exception
+PASS captured logs
+PASS JSON array
+PASS statements without return
+PASS unknown status
+PASS #391 identical source reuses its compilation
+PASS #391 AC-3 newly loaded assembly resolves
+PASS #391 AC-3 types resolve across Domain Reload
+soak {"iterations": 1000, "evaluations": 1000, "emittedAssemblies": 4, "loadedAssemblies": 4, "managedMemoryGrowthBytes": 2658304, "storedResults": 256}
+PASS #391 AC-4 1000 consecutive evaluations stay within bounds
+PASS AC-5 no persistent C# files
+PASS Play Mode expression
+Eval E2E: 18 passed, 0 failed

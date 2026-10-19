@@ -4,6 +4,8 @@
 #
 # The download is verified against the release SHA256SUMS (or the release
 # manifest for older releases) and the install aborts on any mismatch.
+# Transient network errors (no response, 408, 429, 5xx) are retried with
+# backoff by curl; a missing file (404) is not.
 #
 # Environment:
 #   UNITY_CLI_VERSION           install a specific tag instead of the latest
@@ -17,6 +19,11 @@ LINK_DIR="${HOME}/.local/bin"
 # --- helpers ----------------------------------------------------------------
 
 die() { echo "error: $*" >&2; exit 1; }
+
+# curl with backoff retries for transient failures only.
+fetch() {
+    curl -fsSL --retry 3 --retry-connrefused "$@"
+}
 
 need() {
     command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
@@ -72,7 +79,7 @@ if [ -n "${UNITY_CLI_VERSION:-}" ]; then
     case "$TAG" in v*) ;; *) TAG="v${TAG}" ;; esac
 else
     echo "Fetching latest release..."
-    TAG=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+    TAG=$(fetch "https://api.github.com/repos/${REPO}/releases/latest" \
         | grep '"tag_name"' | head -1 | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
 fi
 
@@ -85,14 +92,22 @@ ASSET_NAME="unity-cli-${RID}"
 
 # 2. Resolve the expected SHA-256 and asset URL.
 #    Prefer SHA256SUMS; fall back to the manifest for releases without it.
-SUMS=$(curl -fsSL "${BASE_URL}/${TAG}/SHA256SUMS" 2>/dev/null) || SUMS=""
+#    Only a definitive "not there" (HTTP error 22, unreadable file:// 37)
+#    selects the fallback; a network failure aborts with its cause.
+SUMS_RC=0
+SUMS=$(fetch "${BASE_URL}/${TAG}/SHA256SUMS") || SUMS_RC=$?
+case "$SUMS_RC" in
+    0) ;;
+    22|37) SUMS="" ;;
+    *) die "failed to download SHA256SUMS (curl exit ${SUMS_RC})" ;;
+esac
 if [ -n "$SUMS" ]; then
     EXPECTED_SHA=$(printf '%s\n' "$SUMS" \
         | awk -v name="$ASSET_NAME" '{ f = $2; sub(/^\*/, "", f); if (f == name) { print tolower($1); exit } }')
     [ -z "$EXPECTED_SHA" ] && die "SHA256SUMS has no entry for ${ASSET_NAME}"
     ASSET_URL="${BASE_URL}/${TAG}/${ASSET_NAME}"
 else
-    MANIFEST=$(curl -fsSL "${BASE_URL}/${TAG}/unity-cli-manifest.json") \
+    MANIFEST=$(fetch "${BASE_URL}/${TAG}/unity-cli-manifest.json") \
         || die "failed to download SHA256SUMS or manifest"
     ASSET_URL=$(echo "$MANIFEST" | grep -A2 "\"${RID}\"" | grep '"url"' | head -1 \
         | sed 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
@@ -108,7 +123,7 @@ mkdir -p "$DEST_DIR"
 TMP="${DEST_DIR}/unity-cli.download"
 
 echo "Downloading ${ASSET_NAME}..."
-curl -fsSL -o "$TMP" "$ASSET_URL" || { rm -f "$TMP"; die "download failed"; }
+fetch -o "$TMP" "$ASSET_URL" || { rm -f "$TMP"; die "download failed"; }
 
 # 4. Verify SHA-256 before touching the installed binary
 ACTUAL_SHA=$(sha256_check "$TMP")

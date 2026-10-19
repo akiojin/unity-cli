@@ -127,7 +127,7 @@ def resident_operations():
         ("save_scene", {}),
         ("console", {"tail": 20, "level": "log"}),
         ("screenshot", {"view": "game", "width": 1280, "height": 720}),
-        ("find_assets", {"type": "Material", "search_in": [bench.FIXTURE]}),
+        ("find_assets", {"type": "Material", "search_in": bench.FIXTURE}),
         ("copy_asset", {"asset": bench.SOURCE, "destination": bench.COPIED}),
         ("move_asset", {"asset": bench.COPIED, "destination": bench.MOVED}),
         ("delete_asset", {"asset": bench.MOVED, "confirm": True}),

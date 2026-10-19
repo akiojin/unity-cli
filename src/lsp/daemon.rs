@@ -3,7 +3,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -15,6 +15,10 @@ use crate::daemon::runtime::DaemonRuntimePaths;
 use crate::lsp_manager;
 
 const DAEMON_IDLE_TIMEOUT_SECS: u64 = 600;
+/// Upper bound for an auto-started lspd to answer `ping`. A cold start on a
+/// busy machine has been measured at more than 12 seconds, so the wait is
+/// generous; a startup process that exits fails immediately instead.
+const DAEMON_START_TIMEOUT_MS: u64 = 60_000;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -131,27 +135,80 @@ pub fn start_background() -> Result<Value> {
     let _ = lsp_manager::ensure_latest_lsp_for_daemon()?;
 
     let exe = daemon_command_path()?;
-    Command::new(&exe)
-        .arg("lspd")
-        .arg("serve")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .context("Failed to spawn lspd background process")?;
+    let log_path = log_file_path()?;
+    if let Some(parent) = log_path.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create daemon directory: {}", parent.display()))?;
+    }
+    let log = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+        .with_context(|| format!("Failed to open lspd log: {}", log_path.display()))?;
+    let mut child = crate::daemon::spawn::spawn_detached(
+        Command::new(&exe)
+            .arg("lspd")
+            .arg("serve")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::from(log)),
+    )
+    .context("Failed to spawn lspd background process")?;
 
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while Instant::now() < deadline {
-        if ping().is_ok() {
-            return Ok(json!({
-                "success": true,
-                "running": true
-            }));
+    wait_until_ready(&mut child, daemon_start_timeout(), &log_path, || {
+        ping().is_ok()
+    })?;
+    // Reap the daemon if it exits while this process is still alive.
+    thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(json!({
+        "success": true,
+        "running": true
+    }))
+}
+
+/// Polls `ready` until it succeeds, the startup process exits, or `timeout`
+/// elapses. A timed-out startup process is killed so it cannot linger.
+fn wait_until_ready(
+    child: &mut Child,
+    timeout: Duration,
+    log_path: &Path,
+    mut ready: impl FnMut() -> bool,
+) -> Result<()> {
+    let started = Instant::now();
+    loop {
+        if ready() {
+            return Ok(());
+        }
+        if let Some(status) = child
+            .try_wait()
+            .context("Failed to inspect lspd startup process")?
+        {
+            // A concurrent auto-start may have won the listener; its daemon
+            // is serving even though this startup process exited.
+            if ready() {
+                return Ok(());
+            }
+            return Err(anyhow!(
+                "lspd exited during startup ({status}) after {} ms; see {}",
+                started.elapsed().as_millis(),
+                log_path.display()
+            ));
+        }
+        if started.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(anyhow!(
+                "lspd failed to start within {} ms (waited {} ms); see {} \
+                 (set UNITY_CLI_LSPD_START_TIMEOUT_MS to wait longer)",
+                timeout.as_millis(),
+                started.elapsed().as_millis(),
+                log_path.display()
+            ));
         }
         thread::sleep(Duration::from_millis(100));
     }
-
-    Err(anyhow!("lspd failed to start within timeout"))
 }
 
 pub fn stop() -> Result<Value> {
@@ -485,16 +542,27 @@ fn connect_client() -> Result<ClientStream> {
 
     #[cfg(not(unix))]
     {
-        let stream = std::net::TcpStream::connect(("127.0.0.1", daemon_port()))
-            .context("Failed to connect to lspd TCP endpoint")?;
-        stream
-            .set_read_timeout(Some(Duration::from_secs(10)))
-            .context("Failed to set lspd read timeout")?;
-        stream
-            .set_write_timeout(Some(Duration::from_secs(10)))
-            .context("Failed to set lspd write timeout")?;
-        Ok(stream)
+        connect_tcp_client(daemon_port())
     }
+}
+
+#[cfg(not(unix))]
+fn connect_tcp_client(port: u16) -> Result<ClientStream> {
+    // A closed loopback port takes seconds to fail on Windows. Startup probes
+    // must return promptly so auto-start can spawn/poll lspd without TCP retries.
+    // Match unityd's connection deadline; RPC timeouts remain independent.
+    let stream = std::net::TcpStream::connect_timeout(
+        &std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+        Duration::from_millis(100),
+    )
+    .context("Failed to connect to lspd TCP endpoint")?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .context("Failed to set lspd read timeout")?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(10)))
+        .context("Failed to set lspd write timeout")?;
+    Ok(stream)
 }
 
 fn is_would_block(error: &std::io::Error) -> bool {
@@ -507,6 +575,20 @@ fn daemon_idle_timeout_secs() -> u64 {
         .and_then(|v| v.parse::<u64>().ok())
         .filter(|v| *v > 0)
         .unwrap_or(DAEMON_IDLE_TIMEOUT_SECS)
+}
+
+fn daemon_start_timeout() -> Duration {
+    Duration::from_millis(
+        env::var("UNITY_CLI_LSPD_START_TIMEOUT_MS")
+            .ok()
+            .and_then(|v| v.parse::<u64>().ok())
+            .filter(|v| *v > 0)
+            .unwrap_or(DAEMON_START_TIMEOUT_MS),
+    )
+}
+
+fn log_file_path() -> Result<PathBuf> {
+    Ok(DaemonRuntimePaths::new("lspd")?.dir()?.join("lspd.log"))
 }
 
 fn pid_file_path() -> Result<PathBuf> {
@@ -561,8 +643,57 @@ fn cleanup_stale_files_on_start() {
 mod tests {
     use super::*;
     use serde_json::json;
-    use std::io::{self, BufRead, BufReader, Write};
+    use std::io::{self, Write};
+    #[cfg(unix)]
+    use std::io::{BufRead, BufReader};
     use tempfile::tempdir;
+
+    #[cfg(not(unix))]
+    #[test]
+    fn tcp_connect_without_a_daemon_returns_promptly() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        drop(listener);
+
+        let started = Instant::now();
+        let error = connect_tcp_client(port).expect_err("no daemon is listening");
+        assert!(error
+            .to_string()
+            .contains("Failed to connect to lspd TCP endpoint"));
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "a missing local daemon must not wait for Windows TCP retries: {:?}",
+            started.elapsed()
+        );
+    }
+
+    #[cfg(not(unix))]
+    #[test]
+    fn tcp_connect_to_a_running_daemon_preserves_io_timeouts_and_responses() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let mut client = connect_tcp_client(listener.local_addr().unwrap().port()).unwrap();
+        assert_eq!(
+            client.read_timeout().unwrap(),
+            Some(Duration::from_secs(10))
+        );
+        assert_eq!(
+            client.write_timeout().unwrap(),
+            Some(Duration::from_secs(10))
+        );
+
+        let (mut server, _) = listener.accept().unwrap();
+        server
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .unwrap();
+        client.write_all(b"{\"type\":\"ping\"}\n").unwrap();
+        let mut request = String::new();
+        BufReader::new(&mut server).read_line(&mut request).unwrap();
+        assert_eq!(request, "{\"type\":\"ping\"}\n");
+        server.write_all(b"{\"ok\":true}\n").unwrap();
+        let mut response = String::new();
+        BufReader::new(client).read_line(&mut response).unwrap();
+        assert_eq!(response, "{\"ok\":true}\n");
+    }
 
     fn env_lock() -> &'static std::sync::Mutex<()> {
         crate::test_env::env_lock()
@@ -602,6 +733,7 @@ mod tests {
         (dir, env)
     }
 
+    #[cfg(unix)]
     fn ensure_local_lsp_binary() {
         let binary = crate::lsp_manager::binary_path().expect("binary path should resolve");
         if let Some(parent) = binary.parent() {
@@ -1083,6 +1215,122 @@ mod tests {
         server.join().expect("server thread should join");
         assert!(!pid.exists(), "pid file should be cleaned up");
         assert!(!socket.exists(), "socket file should be cleaned up");
+    }
+
+    fn exiting_child(code: i32) -> std::process::Child {
+        #[cfg(unix)]
+        let mut command = Command::new("sh");
+        #[cfg(unix)]
+        command.args(["-c", &format!("exit {code}")]);
+        #[cfg(windows)]
+        let mut command = Command::new("cmd");
+        #[cfg(windows)]
+        command.args(["/C", &format!("exit {code}")]);
+        command.spawn().expect("exiting child should spawn")
+    }
+
+    fn sleeping_child() -> std::process::Child {
+        #[cfg(unix)]
+        let mut command = Command::new("sleep");
+        #[cfg(unix)]
+        command.arg("30");
+        #[cfg(windows)]
+        let mut command = Command::new("ping");
+        #[cfg(windows)]
+        command.args(["-n", "30", "127.0.0.1"]);
+        command
+            .stdout(Stdio::null())
+            .spawn()
+            .expect("sleeping child should spawn")
+    }
+
+    #[test]
+    fn wait_until_ready_fails_immediately_when_startup_process_exits() {
+        let log = Path::new("/tmp/lspd-test.log");
+        let mut child = exiting_child(3);
+        let started = Instant::now();
+        let error = wait_until_ready(&mut child, Duration::from_secs(30), log, || false)
+            .expect_err("an exited startup process must fail");
+        assert!(started.elapsed() < Duration::from_secs(10));
+        let message = error.to_string();
+        assert!(message.contains("exited during startup"), "{message}");
+        assert!(message.contains(&log.display().to_string()), "{message}");
+    }
+
+    #[test]
+    fn wait_until_ready_reports_waited_time_and_log_on_timeout() {
+        let log = Path::new("/tmp/lspd-test.log");
+        let mut child = sleeping_child();
+        let error = wait_until_ready(&mut child, Duration::from_millis(300), log, || false)
+            .expect_err("a daemon that never answers must time out");
+        let message = error.to_string();
+        assert!(message.contains("within 300 ms"), "{message}");
+        assert!(message.contains("waited"), "{message}");
+        assert!(message.contains(&log.display().to_string()), "{message}");
+        assert!(
+            child
+                .try_wait()
+                .expect("child should be inspectable")
+                .is_some(),
+            "a timed-out startup process must not be left running"
+        );
+    }
+
+    #[test]
+    fn wait_until_ready_keeps_polling_while_the_daemon_is_alive() {
+        let log = Path::new("/tmp/lspd-test.log");
+        let mut child = sleeping_child();
+        let mut probes = 0;
+        wait_until_ready(&mut child, Duration::from_secs(30), log, || {
+            probes += 1;
+            probes >= 5
+        })
+        .expect("a live daemon that answers late should be accepted");
+        assert_eq!(probes, 5);
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+
+    #[test]
+    fn wait_until_ready_accepts_a_daemon_started_by_a_concurrent_caller() {
+        let log = Path::new("/tmp/lspd-test.log");
+        let mut child = exiting_child(1);
+        let _ = child.wait();
+        let mut probes = 0;
+        wait_until_ready(&mut child, Duration::from_secs(30), log, || {
+            probes += 1;
+            probes >= 2
+        })
+        .expect("an exited loser of a startup race should accept the running daemon");
+    }
+
+    #[test]
+    fn daemon_start_timeout_uses_env_override() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        std::env::remove_var("UNITY_CLI_LSPD_START_TIMEOUT_MS");
+        assert_eq!(daemon_start_timeout(), Duration::from_secs(60));
+
+        let _env = EnvVarGuard::set("UNITY_CLI_LSPD_START_TIMEOUT_MS", "1500");
+        assert_eq!(daemon_start_timeout(), Duration::from_millis(1500));
+
+        drop(_env);
+        let _invalid = EnvVarGuard::set("UNITY_CLI_LSPD_START_TIMEOUT_MS", "0");
+        assert_eq!(daemon_start_timeout(), Duration::from_secs(60));
+    }
+
+    #[test]
+    fn daemon_log_lives_in_the_lspd_runtime_dir() {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        let log = log_file_path().expect("log path should resolve");
+        let dir = DaemonRuntimePaths::new("lspd")
+            .and_then(|paths| paths.dir())
+            .expect("runtime dir should resolve");
+        assert_eq!(log, dir.join("lspd.log"));
     }
 
     #[test]

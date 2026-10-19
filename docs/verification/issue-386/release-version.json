@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "<worktree>\\.cache\\issue-386\\installed-tools\\unity-cli\\win-x64\\unity-cli.exe",
+    "--version"
+  ],
+  "exit_code": 0,
+  "stdout": "unity-cli 0.18.1\n",
+  "stderr": "",
+  "observed_at": "2026-10-03T15:01:21.887453+00:00"
+}

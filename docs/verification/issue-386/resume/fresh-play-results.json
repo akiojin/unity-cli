@@ -1,0 +1,56 @@
+[
+  {
+    "argv": [
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "test",
+      "--project-path",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--mode",
+      "playmode",
+      "--filter",
+      "TouchGesturePlayModeTests",
+      "--disable-domain-reload",
+      "--timeout",
+      "240",
+      "--report",
+      "junit",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\TouchGesturePlayModeTests-fresh.xml"
+    ],
+    "name": "TouchGesturePlayModeTests",
+    "started_at": "2026-10-03T22:56:41.476870+00:00",
+    "exit_code": 0,
+    "tests": 15,
+    "failed": 0,
+    "finished_at": "2026-10-03T22:57:03.993174+00:00"
+  },
+  {
+    "argv": [
+      "<workspace>\\target\\debug\\unity-cli.exe",
+      "--port",
+      "6487",
+      "test",
+      "--project-path",
+      "<workspace>\\.cache\\issue-386\\staff-project",
+      "--mode",
+      "playmode",
+      "--filter",
+      "InputSimulationAutomationPlayModeTests",
+      "--disable-domain-reload",
+      "--timeout",
+      "240",
+      "--report",
+      "junit",
+      "--output",
+      "<workspace>\\.cache\\issue-386\\resume\\InputSimulationAutomationPlayModeTests-fresh.xml"
+    ],
+    "name": "InputSimulationAutomationPlayModeTests",
+    "started_at": "2026-10-03T22:57:03.993573+00:00",
+    "exit_code": 8,
+    "tests": 7,
+    "failed": 2,
+    "finished_at": "2026-10-03T22:57:18.660143+00:00"
+  }
+]

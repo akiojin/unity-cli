@@ -1,0 +1,6 @@
+PASS: live Editor readiness
+PASS: real project automatic fetch/status/grep
+PASS: 6000.4.12f1 automatic exact tag/status/grep
+PASS: 6000.4 explicit public ref/status/grep
+Passed: 4; Failed: 0; Total: 4
+Artifacts: <workspace>\.cache\issue-386\resume\reference-fixed\reference-resolution
