@@ -284,7 +284,10 @@ pub fn extract_zip_to(archive_bytes: &[u8], dest: &Path) -> Result<()> {
         let mut file = archive
             .by_index(i)
             .with_context(|| format!("failed to read zip entry {i}"))?;
-        let raw_name = file.name().to_string();
+        let raw_name = file
+            .name()
+            .with_context(|| format!("failed to read name of zip entry {i}"))?
+            .into_owned();
         let stripped = match strip_prefix(&raw_name, &prefix) {
             Some(s) if !s.is_empty() => s.to_string(),
             _ => continue,
@@ -317,7 +320,9 @@ fn detect_top_level_prefix(archive: &mut zip::ZipArchive<Cursor<&[u8]>>) -> Resu
         return Err(anyhow!("zip archive is empty"));
     }
     let first = archive.by_index(0).context("zip archive has no entries")?;
-    let name = first.name();
+    let name = first
+        .name()
+        .context("failed to read name of first zip entry")?;
     if let Some(idx) = name.find('/') {
         Ok(name[..=idx].to_string())
     } else {
