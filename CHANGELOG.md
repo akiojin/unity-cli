@@ -1,5 +1,113 @@
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-19
+
+### Breaking changes and migration
+
+- `create_class` now writes through the C# LSP write path (the same path as
+  `create_csharp_file`) instead of writing the file directly
+  ([#493](https://github.com/akiojin/unity-cli/pull/493)). With
+  `UNITY_CLI_LSP_MODE=off` it now fails with a "requires LSP" error and writes
+  nothing; in v0.18.1 it wrote the file silently. Arguments are unchanged, and
+  the output keeps `success` / `path` / `content` and adds the LSP result fields
+  (`applied`, `changedFiles`, `diagnostics`, `backend`).
+  Migration: remove `UNITY_CLI_LSP_MODE=off` (or set it to `auto` /
+  `required`) and install the LSP with `unity-cli lsp install`. Automation that
+  must run without the LSP should write the `.cs` file itself, then run
+  `unity-cli raw refresh_assets` and check `get_compilation_state`.
+
+### Features
+
+- *(lsp)* Make LSP the default backend for C# symbol search
+  (`get_symbols` / `find_symbol` / `find_refs` / `build_index`). An unset
+  `UNITY_CLI_LSP_MODE` now means `auto`: the LSP is used when available, and the
+  local index is used otherwise, with `backend: "index"` and a `fallbackReason`
+  (`lsp_not_installed`, `lsp_unavailable`, `lsp_timeout`, `lsp_disabled`).
+  `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` (default 10000) sets the fallback timeout. A
+  missing LSP is installed in the background
+  ([#495](https://github.com/akiojin/unity-cli/pull/495)).
+- *(scripts)* Add `scripts/install-from-source.sh` / `.ps1` to install a source
+  build as the managed binary ([#481](https://github.com/akiojin/unity-cli/pull/481)).
+- *(skills)* Route C# script creation and compile-error fixes through the LSP
+  write tools, with a documented fallback when the LSP write path fails
+  ([#493](https://github.com/akiojin/unity-cli/pull/493),
+  [#496](https://github.com/akiojin/unity-cli/pull/496)).
+
+### 🐛 Bug Fixes
+
+- *(lsp)* Keep the original BOM (UTF-8, UTF-16 LE/BE, UTF-32 LE/BE) and newline
+  convention (LF, CRLF, lone CR) when the C# LSP write tools save a file
+  ([#507](https://github.com/akiojin/unity-cli/pull/507),
+  [#513](https://github.com/akiojin/unity-cli/pull/513)).
+- *(lsp)* Normalize a lone CR in edits to the file's newline style in LF and
+  CRLF files, while keeping CRs that are part of string values, including in
+  inactive and malformed preprocessor branches
+  ([#517](https://github.com/akiojin/unity-cli/pull/517),
+  [#518](https://github.com/akiojin/unity-cli/pull/518),
+  [#519](https://github.com/akiojin/unity-cli/pull/519),
+  [#521](https://github.com/akiojin/unity-cli/pull/521)).
+- *(lsp)* Keep trailing comments when `replace_symbol_body` replaces a method
+  body ([#503](https://github.com/akiojin/unity-cli/pull/503)).
+- *(lsp)* Add `using UnityEngine;` to ScriptableObject classes from
+  `create_class` ([#502](https://github.com/akiojin/unity-cli/pull/502)).
+- *(lsp)* Resolve canonical file URIs across Windows and Unix, so Assets symbol
+  search works with `file:///C:/...` roots
+  ([#512](https://github.com/akiojin/unity-cli/pull/512)).
+- *(lsp)* Wait for a live auto-started lspd (up to
+  `UNITY_CLI_LSPD_START_TIMEOUT_MS`, default 60000) instead of failing after
+  5 seconds, log lspd stderr to `lspd.log`, and bound Windows cold-start TCP
+  connection waits ([#505](https://github.com/akiojin/unity-cli/pull/505),
+  [#506](https://github.com/akiojin/unity-cli/pull/506)).
+- *(update)* Keep the installed CLI on `unityd start` / `lspd` when
+  `UNITY_CLI_NO_AUTO_UPDATE=1` ([#479](https://github.com/akiojin/unity-cli/pull/479)).
+- *(install)* Retry transient download errors in `install.sh` / `install.ps1`
+  ([#515](https://github.com/akiojin/unity-cli/pull/515)).
+- *(windows)* Harden Editor launches, `\\?\` path handling, MCP profile
+  isolation, reference fetch and bake validation on Windows
+  ([#471](https://github.com/akiojin/unity-cli/pull/471)).
+
+### 🧪 Testing
+
+- *(lsp)* Measure C# write reliability on macOS, Linux and Windows
+  ([#497](https://github.com/akiojin/unity-cli/pull/497),
+  [#508](https://github.com/akiojin/unity-cli/pull/508),
+  [#510](https://github.com/akiojin/unity-cli/pull/510)).
+- *(ci)* Check the published install on Windows, Wayland `grim` screenshots and
+  the global skills install ([#466](https://github.com/akiojin/unity-cli/pull/466)).
+
+### 📚 Documentation
+
+- *(readme)* Split install instructions into an LLM-agent prompt and a manual
+  path; the prompt also updates the CLI and the Unity bridge
+  ([#485](https://github.com/akiojin/unity-cli/pull/485),
+  [#489](https://github.com/akiojin/unity-cli/pull/489)).
+- *(skills)* Document per-tool GameObject parameter names
+  ([#478](https://github.com/akiojin/unity-cli/pull/478)).
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Auto-merge reviewed external PRs pinned to the labeled head SHA
+  ([#492](https://github.com/akiojin/unity-cli/pull/492)); make the Codecov
+  upload non-fatal ([#473](https://github.com/akiojin/unity-cli/pull/473)).
+- *(deps)* Update cargo, npm and GitHub Actions dependencies, keeping bincode 1
+  so existing embedding indexes still load, and move to zip 9 for reference
+  archive extraction
+  ([#467](https://github.com/akiojin/unity-cli/pull/467),
+  [#469](https://github.com/akiojin/unity-cli/pull/469),
+  [#476](https://github.com/akiojin/unity-cli/pull/476),
+  [#482](https://github.com/akiojin/unity-cli/pull/482),
+  [#483](https://github.com/akiojin/unity-cli/pull/483),
+  [#524](https://github.com/akiojin/unity-cli/pull/524),
+  [#526](https://github.com/akiojin/unity-cli/pull/526), for
+  [#525](https://github.com/akiojin/unity-cli/issues/525)).
+
+### Acknowledgements
+
+- Thanks to @arghhhhh for
+  [#478](https://github.com/akiojin/unity-cli/pull/478),
+  [#479](https://github.com/akiojin/unity-cli/pull/479) and
+  [#481](https://github.com/akiojin/unity-cli/pull/481).
+
 ## [0.18.1] - 2026-10-03
 
 ### 📦 Distribution
