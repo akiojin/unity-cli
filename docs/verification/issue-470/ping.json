@@ -1,0 +1,20 @@
+{
+  "command": "system ping",
+  "data": {
+    "bridgeVersion": "0.19.0",
+    "echo": null,
+    "message": "pong",
+    "projectPath": "<worktree>\\.cache\\issue-470\\unity-created\\project",
+    "supportsSafeClose": true,
+    "timestamp": "2026-10-24T18:48:17.9824356Z",
+    "versionCheck": {
+      "bridgeVersion": "0.19.0",
+      "cliVersion": "0.19.0",
+      "message": "CLI and bridge are both 0.19.0",
+      "status": "match"
+    }
+  },
+  "errors": [],
+  "success": true,
+  "warnings": []
+}

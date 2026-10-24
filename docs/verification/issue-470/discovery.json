@@ -1,0 +1,22 @@
+{
+  "command": "instances list",
+  "data": [
+    {
+      "active": false,
+      "host": "127.0.0.1",
+      "id": "127.0.0.1:53828",
+      "last_checked_at": "1792867694",
+      "lockfile": "<worktree>\\.cache\\issue-470\\unity-created\\editors\\44416.json",
+      "pid": 44416,
+      "port": 53828,
+      "project_path": "<worktree>\\.cache\\issue-470\\unity-created\\project",
+      "source": "lockfile",
+      "state": "ready",
+      "status": "up",
+      "unity_version": "6000.4.4f1"
+    }
+  ],
+  "errors": [],
+  "success": true,
+  "warnings": []
+}
