@@ -1,0 +1,722 @@
+[
+  {
+    "path": "Editor/AssemblyInfo.cs",
+    "checkout_sha256": "f5bf2774b92d869f7ea2a3c87c6974a104a41d8002e99769ce30716ddad0100b",
+    "installed_sha256": "f5bf2774b92d869f7ea2a3c87c6974a104a41d8002e99769ce30716ddad0100b"
+  },
+  {
+    "path": "Editor/Core/BridgeAuthentication.cs",
+    "checkout_sha256": "871557b97a948ffdbec962315462973ff6c45b0f114f8a03fbd0afd97f2761d9",
+    "installed_sha256": "871557b97a948ffdbec962315462973ff6c45b0f114f8a03fbd0afd97f2761d9"
+  },
+  {
+    "path": "Editor/Core/BridgeCommandRouter.cs",
+    "checkout_sha256": "85e6512f55ce1f3aaaabeb932bb62427923e01294a02df4e676b0d1656878c45",
+    "installed_sha256": "85e6512f55ce1f3aaaabeb932bb62427923e01294a02df4e676b0d1656878c45"
+  },
+  {
+    "path": "Editor/Core/BridgeCommandStats.cs",
+    "checkout_sha256": "642395e4cd0ca2103c08a7c8285dc5c35374ccf8d39620ae2190d417d1b063dc",
+    "installed_sha256": "642395e4cd0ca2103c08a7c8285dc5c35374ccf8d39620ae2190d417d1b063dc"
+  },
+  {
+    "path": "Editor/Core/EditorLockfile.cs",
+    "checkout_sha256": "051d096a8d7c91aee149f52c6e51723e413569b882992b292687394e1f5cca30",
+    "installed_sha256": "051d096a8d7c91aee149f52c6e51723e413569b882992b292687394e1f5cca30"
+  },
+  {
+    "path": "Editor/Core/Settings/UnityCliBridgeSettings.cs",
+    "checkout_sha256": "476915a60ac6098c16ec1f4cc399b9d902e07dd2f47c12ec413a1ec038d73c8d",
+    "installed_sha256": "476915a60ac6098c16ec1f4cc399b9d902e07dd2f47c12ec413a1ec038d73c8d"
+  },
+  {
+    "path": "Editor/Core/UnityCliBridgeHost.cs",
+    "checkout_sha256": "dfa7ea54765ed4596948d2f4796f368230fccb2cd8a731075e604fe71249af43",
+    "installed_sha256": "dfa7ea54765ed4596948d2f4796f368230fccb2cd8a731075e604fe71249af43"
+  },
+  {
+    "path": "Editor/Evaluation/EvalCompiler.cs",
+    "checkout_sha256": "9d79bfa84b6da3fc908d303c5827588382186d0f0b7fc30308d7d91d063feb95",
+    "installed_sha256": "9d79bfa84b6da3fc908d303c5827588382186d0f0b7fc30308d7d91d063feb95"
+  },
+  {
+    "path": "Editor/Evaluation/EvalResult.cs",
+    "checkout_sha256": "fc911481ccbba5fb4db6479bdd0efbc27c5424318da6198276673964769e4df6",
+    "installed_sha256": "fc911481ccbba5fb4db6479bdd0efbc27c5424318da6198276673964769e4df6"
+  },
+  {
+    "path": "Editor/Evaluation/EvalResultSerializer.cs",
+    "checkout_sha256": "abddbde10e2b353c2b8265cb6f079c5e55ebcf88691cac90b53fff21d0b81b0a",
+    "installed_sha256": "abddbde10e2b353c2b8265cb6f079c5e55ebcf88691cac90b53fff21d0b81b0a"
+  },
+  {
+    "path": "Editor/GUIStyles.cs",
+    "checkout_sha256": "82e300b967f31749029120992091d915182e79d9572fed8e4f453aa78785e26a",
+    "installed_sha256": "82e300b967f31749029120992091d915182e79d9572fed8e4f453aa78785e26a"
+  },
+  {
+    "path": "Editor/Handlers/AddressablesHandler.cs",
+    "checkout_sha256": "a620255c5f07dba5ca578f33c8ee39ea2537cbea58c55de204628376c573ed83",
+    "installed_sha256": "a620255c5f07dba5ca578f33c8ee39ea2537cbea58c55de204628376c573ed83"
+  },
+  {
+    "path": "Editor/Handlers/AnimationCurveHandler.cs",
+    "checkout_sha256": "c4bd7b64015693fea47202b2124363fb76abbf35bd4728a6cd123b8bb64b5183",
+    "installed_sha256": "c4bd7b64015693fea47202b2124363fb76abbf35bd4728a6cd123b8bb64b5183"
+  },
+  {
+    "path": "Editor/Handlers/AnimatorStateHandler.cs",
+    "checkout_sha256": "d17a6e56a23b686cbe9620ba3e120372c2b106e4cf95fb6b6d842302f0251ef0",
+    "installed_sha256": "d17a6e56a23b686cbe9620ba3e120372c2b106e4cf95fb6b6d842302f0251ef0"
+  },
+  {
+    "path": "Editor/Handlers/AssetDatabaseHandler.cs",
+    "checkout_sha256": "29595579250bb5617f9ddbd9b07d16abe988c7872ab452112958e8c113bcd3c6",
+    "installed_sha256": "29595579250bb5617f9ddbd9b07d16abe988c7872ab452112958e8c113bcd3c6"
+  },
+  {
+    "path": "Editor/Handlers/AssetDependencyHandler.cs",
+    "checkout_sha256": "910ef2b5b3db5eaeedfdc03a8bbd320aa2596c14d670cb47ee828c2e53379abb",
+    "installed_sha256": "910ef2b5b3db5eaeedfdc03a8bbd320aa2596c14d670cb47ee828c2e53379abb"
+  },
+  {
+    "path": "Editor/Handlers/AssetImportSettingsHandler.cs",
+    "checkout_sha256": "8289b2026407470d48fc6298b6a565dd359eb2898b4e29b16bf807683660fe92",
+    "installed_sha256": "8289b2026407470d48fc6298b6a565dd359eb2898b4e29b16bf807683660fe92"
+  },
+  {
+    "path": "Editor/Handlers/AssetManagementHandler.cs",
+    "checkout_sha256": "a2f71f476a5111dabab71ad933f7f29b4f898b93e1dd6cd337ff40e151f9f09d",
+    "installed_sha256": "a2f71f476a5111dabab71ad933f7f29b4f898b93e1dd6cd337ff40e151f9f09d"
+  },
+  {
+    "path": "Editor/Handlers/AudioMixerHandler.cs",
+    "checkout_sha256": "d2769167d227dceb58a40dc72bef0b8d96849a8d86f155cb5d5b1b75b32e4088",
+    "installed_sha256": "d2769167d227dceb58a40dc72bef0b8d96849a8d86f155cb5d5b1b75b32e4088"
+  },
+  {
+    "path": "Editor/Handlers/BakeHandler.cs",
+    "checkout_sha256": "fcec0685c04aca0a16f4151a60433f0201c5a751676733bee7f95b2f24b66ec6",
+    "installed_sha256": "fcec0685c04aca0a16f4151a60433f0201c5a751676733bee7f95b2f24b66ec6"
+  },
+  {
+    "path": "Editor/Handlers/CompilationHandler.cs",
+    "checkout_sha256": "27d951887017fc53d139429a0df969403990d44931e85024e23115581da4b816",
+    "installed_sha256": "27d951887017fc53d139429a0df969403990d44931e85024e23115581da4b816"
+  },
+  {
+    "path": "Editor/Handlers/ComponentHandler.cs",
+    "checkout_sha256": "0fbd3e717fb9f5669bfd189167432af510b3cc39809ffb3a3452bb2f3c5b8f0b",
+    "installed_sha256": "0fbd3e717fb9f5669bfd189167432af510b3cc39809ffb3a3452bb2f3c5b8f0b"
+  },
+  {
+    "path": "Editor/Handlers/ConsoleHandler.cs",
+    "checkout_sha256": "7bcc60e2fef08a7a2af99d6bf28ccd7c5b726f6f555087d860cf980e04135d11",
+    "installed_sha256": "7bcc60e2fef08a7a2af99d6bf28ccd7c5b726f6f555087d860cf980e04135d11"
+  },
+  {
+    "path": "Editor/Handlers/EvalHandler.cs",
+    "checkout_sha256": "f266c1c41dfce38c29dfcd0717d5847c6e47f589d1adbb7d24b5669e3ebc6511",
+    "installed_sha256": "f266c1c41dfce38c29dfcd0717d5847c6e47f589d1adbb7d24b5669e3ebc6511"
+  },
+  {
+    "path": "Editor/Handlers/GameObjectHandler.cs",
+    "checkout_sha256": "7d9278b0c3aad0f7d465d7e53fa5a7b95d395967bca183b92f372d81d82290c5",
+    "installed_sha256": "7d9278b0c3aad0f7d465d7e53fa5a7b95d395967bca183b92f372d81d82290c5"
+  },
+  {
+    "path": "Editor/Handlers/HotReloadHandler.cs",
+    "checkout_sha256": "cfcc666c1dda25ee6242197313840f8c329f9dd07c1a5ab186b686bcfc331cc1",
+    "installed_sha256": "cfcc666c1dda25ee6242197313840f8c329f9dd07c1a5ab186b686bcfc331cc1"
+  },
+  {
+    "path": "Editor/Handlers/InputActionsHandler.cs",
+    "checkout_sha256": "82734155316ab4f04df81643556a1484139fac981c607305fa3f5332455e727b",
+    "installed_sha256": "82734155316ab4f04df81643556a1484139fac981c607305fa3f5332455e727b"
+  },
+  {
+    "path": "Editor/Handlers/InputSystemHandler.cs",
+    "checkout_sha256": "7ac08b4f3d6ae849269707f7d7db32cbdbe287617003705272e767864e6b2434",
+    "installed_sha256": "7ac08b4f3d6ae849269707f7d7db32cbdbe287617003705272e767864e6b2434"
+  },
+  {
+    "path": "Editor/Handlers/InputSystemHandlerFallback.cs",
+    "checkout_sha256": "4d088df2899c2b180d3304a5b31968ada6e8c3fbd68d46ec309d1a29813a9d8c",
+    "installed_sha256": "4d088df2899c2b180d3304a5b31968ada6e8c3fbd68d46ec309d1a29813a9d8c"
+  },
+  {
+    "path": "Editor/Handlers/LayerManagementHandler.cs",
+    "checkout_sha256": "ab3e90c380081e1c1fc2d0e5cfdba34de275d91cff7fd54a69adb55173253f12",
+    "installed_sha256": "ab3e90c380081e1c1fc2d0e5cfdba34de275d91cff7fd54a69adb55173253f12"
+  },
+  {
+    "path": "Editor/Handlers/MenuHandler.cs",
+    "checkout_sha256": "51a056681b5659d54a821964314a07ddefda622c90d2c313c673e2d66577c43b",
+    "installed_sha256": "51a056681b5659d54a821964314a07ddefda622c90d2c313c673e2d66577c43b"
+  },
+  {
+    "path": "Editor/Handlers/PackageManagerHandler.cs",
+    "checkout_sha256": "3d99a672f8a0a3e6264f7e8405d0f034506b81447cd991eb4487d07124066039",
+    "installed_sha256": "3d99a672f8a0a3e6264f7e8405d0f034506b81447cd991eb4487d07124066039"
+  },
+  {
+    "path": "Editor/Handlers/PackageSettingsHandler.cs",
+    "checkout_sha256": "eafca859ca116708dfbca93e58ccbdfde0d6f26fb5819db2d375b296b7da1158",
+    "installed_sha256": "eafca859ca116708dfbca93e58ccbdfde0d6f26fb5819db2d375b296b7da1158"
+  },
+  {
+    "path": "Editor/Handlers/PlayerBuildHandler.cs",
+    "checkout_sha256": "1ffb4431b431ab3f35294233c5cb43dad42d95ac608efa198a77240f786d7849",
+    "installed_sha256": "1ffb4431b431ab3f35294233c5cb43dad42d95ac608efa198a77240f786d7849"
+  },
+  {
+    "path": "Editor/Handlers/PlayModeHandler.cs",
+    "checkout_sha256": "545b79b500fb17d46da7040674b4d02b77851c8c66855938dfcef06a70326994",
+    "installed_sha256": "545b79b500fb17d46da7040674b4d02b77851c8c66855938dfcef06a70326994"
+  },
+  {
+    "path": "Editor/Handlers/PrefabWorkflowHandler.cs",
+    "checkout_sha256": "0106f679c66ae6181db436afc3e2aefbacc0450c632f680bdf13b00d03b12e11",
+    "installed_sha256": "0106f679c66ae6181db436afc3e2aefbacc0450c632f680bdf13b00d03b12e11"
+  },
+  {
+    "path": "Editor/Handlers/ProfilerHandler.cs",
+    "checkout_sha256": "0049de955e03dd33f5c2d1c749d709b328c0f8b7262d1099c87fa42752e2cae8",
+    "installed_sha256": "0049de955e03dd33f5c2d1c749d709b328c0f8b7262d1099c87fa42752e2cae8"
+  },
+  {
+    "path": "Editor/Handlers/ProjectSettingsHandler.cs",
+    "checkout_sha256": "e83186a128b9fee351c449ebb55cfb10c47bc69ff3b2530ea2fa7ae019c5ac3c",
+    "installed_sha256": "e83186a128b9fee351c449ebb55cfb10c47bc69ff3b2530ea2fa7ae019c5ac3c"
+  },
+  {
+    "path": "Editor/Handlers/RegistryConfigHandler.cs",
+    "checkout_sha256": "61ca153796ace082d5d6d4300a634564b6bef649f470bbd6643cb336d98d857d",
+    "installed_sha256": "61ca153796ace082d5d6d4300a634564b6bef649f470bbd6643cb336d98d857d"
+  },
+  {
+    "path": "Editor/Handlers/SceneAnalysisHandler.cs",
+    "checkout_sha256": "8f28d0974ddc61537f1be2db2bfc66fb2b55665c675b304546477e88a83454ec",
+    "installed_sha256": "8f28d0974ddc61537f1be2db2bfc66fb2b55665c675b304546477e88a83454ec"
+  },
+  {
+    "path": "Editor/Handlers/SceneHandler.cs",
+    "checkout_sha256": "3d44351bdbeda87ffb1a432f3ac013e6c86f2709935bbc7462e01e057a3cc2f9",
+    "installed_sha256": "3d44351bdbeda87ffb1a432f3ac013e6c86f2709935bbc7462e01e057a3cc2f9"
+  },
+  {
+    "path": "Editor/Handlers/ScreenshotHandler.cs",
+    "checkout_sha256": "8a863341f242d10f7c650a3d5cb45ee71f4ed8b95bb89cefd79d6dde0d2920ae",
+    "installed_sha256": "8a863341f242d10f7c650a3d5cb45ee71f4ed8b95bb89cefd79d6dde0d2920ae"
+  },
+  {
+    "path": "Editor/Handlers/SelectionHandler.cs",
+    "checkout_sha256": "171a7b7d756fb0e72b866c65b86ef8d0384a943907b22ef21ba77f64f665ee8b",
+    "installed_sha256": "171a7b7d756fb0e72b866c65b86ef8d0384a943907b22ef21ba77f64f665ee8b"
+  },
+  {
+    "path": "Editor/Handlers/TagManagementHandler.cs",
+    "checkout_sha256": "605ce808926fc8ca155cbc2f8698dabb17a366ca2942d40dd5aa137430788b79",
+    "installed_sha256": "605ce808926fc8ca155cbc2f8698dabb17a366ca2942d40dd5aa137430788b79"
+  },
+  {
+    "path": "Editor/Handlers/TestExecutionHandler.cs",
+    "checkout_sha256": "80dfc477215085b4bcf3a9fe683c64c4d772e6549681fae77764aadea5658e55",
+    "installed_sha256": "80dfc477215085b4bcf3a9fe683c64c4d772e6549681fae77764aadea5658e55"
+  },
+  {
+    "path": "Editor/Handlers/TimelineHandler.cs",
+    "checkout_sha256": "186ffcf7fb8488d710dc4a8228507d008c6f0e8d0ce0d26865b6588818465c24",
+    "installed_sha256": "186ffcf7fb8488d710dc4a8228507d008c6f0e8d0ce0d26865b6588818465c24"
+  },
+  {
+    "path": "Editor/Handlers/ToolManagementHandler.cs",
+    "checkout_sha256": "f710d6c62045a44add563f7551e96a8e9b95d3c4175be04d1bee4f68cf24275b",
+    "installed_sha256": "f710d6c62045a44add563f7551e96a8e9b95d3c4175be04d1bee4f68cf24275b"
+  },
+  {
+    "path": "Editor/Handlers/UIInteractionHandler.cs",
+    "checkout_sha256": "9b50474c9b85b514012b24099ce7ec9fbd3149a5fafcdc6536e0f4a70dc0ccdc",
+    "installed_sha256": "9b50474c9b85b514012b24099ce7ec9fbd3149a5fafcdc6536e0f4a70dc0ccdc"
+  },
+  {
+    "path": "Editor/Handlers/VfxGraphHandler.cs",
+    "checkout_sha256": "c0f87ee1acf901f72d1c0bbb7d93cbe74a1db3c6b0ad5afd547be843c439b1f3",
+    "installed_sha256": "c0f87ee1acf901f72d1c0bbb7d93cbe74a1db3c6b0ad5afd547be843c439b1f3"
+  },
+  {
+    "path": "Editor/Handlers/VideoCaptureHandler.cs",
+    "checkout_sha256": "f14d051c31b879cd3580f769920a0f9f37c96fc7ee89397e3bdca7004e5495b2",
+    "installed_sha256": "f14d051c31b879cd3580f769920a0f9f37c96fc7ee89397e3bdca7004e5495b2"
+  },
+  {
+    "path": "Editor/Handlers/WindowManagementHandler.cs",
+    "checkout_sha256": "dff51d2a1a6948e0b41365a9ecb9bb94121b683c9a680ed522da29957dbe9cd8",
+    "installed_sha256": "dff51d2a1a6948e0b41365a9ecb9bb94121b683c9a680ed522da29957dbe9cd8"
+  },
+  {
+    "path": "Editor/Helpers/AssetEditingGuard.cs",
+    "checkout_sha256": "9fb4a2d2adc424fd091a9a148f818e64e5d74fe1e533c6ef9c7de33f694c10d4",
+    "installed_sha256": "9fb4a2d2adc424fd091a9a148f818e64e5d74fe1e533c6ef9c7de33f694c10d4"
+  },
+  {
+    "path": "Editor/Helpers/CapturePathResolver.cs",
+    "checkout_sha256": "b2f8bc620ec86d0b1611c7525ed4fcb9197fc9173a63486a0b859e8b4adadddf",
+    "installed_sha256": "b2f8bc620ec86d0b1611c7525ed4fcb9197fc9173a63486a0b859e8b4adadddf"
+  },
+  {
+    "path": "Editor/Helpers/CSharpTextFilter.cs",
+    "checkout_sha256": "6881161e74484ad58db6e2fa1bf38f644587473d3a5dd7942be54b01459d90c9",
+    "installed_sha256": "6881161e74484ad58db6e2fa1bf38f644587473d3a5dd7942be54b01459d90c9"
+  },
+  {
+    "path": "Editor/Helpers/DebouncedAssetRefresh.cs",
+    "checkout_sha256": "5b613ec81f4cad856d17e077e45390d9c326813f807d7b1297b4276b5b14a98b",
+    "installed_sha256": "5b613ec81f4cad856d17e077e45390d9c326813f807d7b1297b4276b5b14a98b"
+  },
+  {
+    "path": "Editor/Helpers/GlobMatcher.cs",
+    "checkout_sha256": "4650cefc8954e5104eba3661a6fe331df99f75ca760d264b2982da1afa01c03b",
+    "installed_sha256": "4650cefc8954e5104eba3661a6fe331df99f75ca760d264b2982da1afa01c03b"
+  },
+  {
+    "path": "Editor/Helpers/ObjectIdentity.cs",
+    "checkout_sha256": "2ff0c252e42103ae06fd878c72e65affab21b0fbfed7ff099ce94de06571a49e",
+    "installed_sha256": "2ff0c252e42103ae06fd878c72e65affab21b0fbfed7ff099ce94de06571a49e"
+  },
+  {
+    "path": "Editor/Helpers/PathPolicy.cs",
+    "checkout_sha256": "64797fcdff122cecfba944e4a693628725c033b5bb9d266b021a82e07ee1db50",
+    "installed_sha256": "64797fcdff122cecfba944e4a693628725c033b5bb9d266b021a82e07ee1db50"
+  },
+  {
+    "path": "Editor/Helpers/PlayModeChangeWarningHelper.cs",
+    "checkout_sha256": "34d89d8401114999062026ab785b209cf46f5b4310a9c148b2031ba8b290371c",
+    "installed_sha256": "34d89d8401114999062026ab785b209cf46f5b4310a9c148b2031ba8b290371c"
+  },
+  {
+    "path": "Editor/Helpers/PlayModeCommandPolicy.cs",
+    "checkout_sha256": "e321b74cd8c6afd16fccaaa7b1e5b9ed65394dce73863ae46799826b33fbf5c6",
+    "installed_sha256": "e321b74cd8c6afd16fccaaa7b1e5b9ed65394dce73863ae46799826b33fbf5c6"
+  },
+  {
+    "path": "Editor/Helpers/RefreshController.cs",
+    "checkout_sha256": "e99c54c4eb246656920657c3945f5d9b01d2a1aaf8b4c213f34696ae40f13baf",
+    "installed_sha256": "e99c54c4eb246656920657c3945f5d9b01d2a1aaf8b4c213f34696ae40f13baf"
+  },
+  {
+    "path": "Editor/Helpers/Response.cs",
+    "checkout_sha256": "6e61ea01ae889ac70929e7e2083d8320615dd72de36729c202224b53a376ecee",
+    "installed_sha256": "6e61ea01ae889ac70929e7e2083d8320615dd72de36729c202224b53a376ecee"
+  },
+  {
+    "path": "Editor/Helpers/RuntimeChangeJournal.cs",
+    "checkout_sha256": "24ad65172665331336cdde230ef03168fa171f10425531843b96afd3b51218cf",
+    "installed_sha256": "24ad65172665331336cdde230ef03168fa171f10425531843b96afd3b51218cf"
+  },
+  {
+    "path": "Editor/HotReloadOptional/FastScriptReloadAdapter.cs",
+    "checkout_sha256": "51a864fb0e153972179a5d238725954c243786393db4222f6ac01b2dcc523009",
+    "installed_sha256": "51a864fb0e153972179a5d238725954c243786393db4222f6ac01b2dcc523009"
+  },
+  {
+    "path": "Editor/HotReloadOptional/PreviewValidation.cs",
+    "checkout_sha256": "07a7054a89b78ba5588fabf4ffa25046d1db5cef8659357ce8fa897f6ec87ff7",
+    "installed_sha256": "07a7054a89b78ba5588fabf4ffa25046d1db5cef8659357ce8fa897f6ec87ff7"
+  },
+  {
+    "path": "Editor/Logging/BridgeLogger.cs",
+    "checkout_sha256": "a2480c2b300e8b9950e0ae84b9694fb57a6a1aa63b926e3555bc718f1721a430",
+    "installed_sha256": "a2480c2b300e8b9950e0ae84b9694fb57a6a1aa63b926e3555bc718f1721a430"
+  },
+  {
+    "path": "Editor/Logging/LogCapture.cs",
+    "checkout_sha256": "80ca6cae82afca1e969c21b39e84e2a58bee025d96bdab7f215545572a332c25",
+    "installed_sha256": "80ca6cae82afca1e969c21b39e84e2a58bee025d96bdab7f215545572a332c25"
+  },
+  {
+    "path": "Editor/McpServerWindow.cs",
+    "checkout_sha256": "744bfb607ef1cb9ae97a5f53616e209898a0cb67a8fc66f3156bf9e92ebbd254",
+    "installed_sha256": "744bfb607ef1cb9ae97a5f53616e209898a0cb67a8fc66f3156bf9e92ebbd254"
+  },
+  {
+    "path": "Editor/MenuItems.cs",
+    "checkout_sha256": "8c03f7a8b6e0787f968e388983e0c1f7044828e1b1899542c894626629336760",
+    "installed_sha256": "8c03f7a8b6e0787f968e388983e0c1f7044828e1b1899542c894626629336760"
+  },
+  {
+    "path": "Editor/Models/BridgeStatus.cs",
+    "checkout_sha256": "13892ed6d575c21a773448db4e4c195d44c8a70f1611ec97d4c363b7c054b4ab",
+    "installed_sha256": "13892ed6d575c21a773448db4e4c195d44c8a70f1611ec97d4c363b7c054b4ab"
+  },
+  {
+    "path": "Editor/Models/Command.cs",
+    "checkout_sha256": "6b762db4d89510bf1e615f96805b6618ba36f782ed474cbfaa20aaabac517e10",
+    "installed_sha256": "6b762db4d89510bf1e615f96805b6618ba36f782ed474cbfaa20aaabac517e10"
+  },
+  {
+    "path": "Editor/Recorder/VideoCaptureBackend.cs",
+    "checkout_sha256": "8cb0d8194ada838c68ac7bbf13c55ad3bdf39393e5935392c0db1882564a44b8",
+    "installed_sha256": "8cb0d8194ada838c68ac7bbf13c55ad3bdf39393e5935392c0db1882564a44b8"
+  },
+  {
+    "path": "Editor/SampleWorkflows.cs",
+    "checkout_sha256": "4a8df2b077ecceafefefd1cb9c19e803eca051f08d36fecb4b8a7787b527bc1b",
+    "installed_sha256": "4a8df2b077ecceafefefd1cb9c19e803eca051f08d36fecb4b8a7787b527bc1b"
+  },
+  {
+    "path": "Editor/Settings/UnityCliBridgeProjectSettings.cs",
+    "checkout_sha256": "33769705a02e98e5bc78611f3ac125353984818897141bfd28891df7e5115c22",
+    "installed_sha256": "33769705a02e98e5bc78611f3ac125353984818897141bfd28891df7e5115c22"
+  },
+  {
+    "path": "Editor/Settings/UnityCliBridgeSettingsProvider.cs",
+    "checkout_sha256": "41b3b721fec57e0bf29342e6093e2d63ac5418cbc896c9af6debe6a1dbb2a530",
+    "installed_sha256": "41b3b721fec57e0bf29342e6093e2d63ac5418cbc896c9af6debe6a1dbb2a530"
+  },
+  {
+    "path": "Editor/Tests/AnimatorStateHandlerTests.cs",
+    "checkout_sha256": "01b7abf32d86a34307d899b96234411e657b999572ca00c0c06add65a5e6bab4",
+    "installed_sha256": "01b7abf32d86a34307d899b96234411e657b999572ca00c0c06add65a5e6bab4"
+  },
+  {
+    "path": "Editor/Tests/ComponentHandlerTests.cs",
+    "checkout_sha256": "9cb226cb1c43a2e9ac2b16d352b10fc40801f8e197d7fb134e7ed3afe6c8c7ee",
+    "installed_sha256": "9cb226cb1c43a2e9ac2b16d352b10fc40801f8e197d7fb134e7ed3afe6c8c7ee"
+  },
+  {
+    "path": "Editor/Tests/Helpers/EditorStateResponseTests.cs",
+    "checkout_sha256": "477935d54940e46c9433f1f63595eb659225354327c8b43ef77975597f417a7a",
+    "installed_sha256": "477935d54940e46c9433f1f63595eb659225354327c8b43ef77975597f417a7a"
+  },
+  {
+    "path": "Editor/Tests/InputSystemHandlerTests.cs",
+    "checkout_sha256": "5f4bb90814087e46cc8bfcab2ba8201746af2064e125963a7d37b79a6d8b1e5a",
+    "installed_sha256": "5f4bb90814087e46cc8bfcab2ba8201746af2064e125963a7d37b79a6d8b1e5a"
+  },
+  {
+    "path": "Editor/Timeline/TimelineBackend.cs",
+    "checkout_sha256": "1777e39b70beb7ab35d02efdfdf563ee9f44af9064b1985c3ba6025f8485260e",
+    "installed_sha256": "1777e39b70beb7ab35d02efdfdf563ee9f44af9064b1985c3ba6025f8485260e"
+  },
+  {
+    "path": "Editor/Tools/BuiltinToolNames.cs",
+    "checkout_sha256": "077f5a962b04cf7ad611b4365c3164922e26e4256bae7ea7066ea2a7f443cd34",
+    "installed_sha256": "077f5a962b04cf7ad611b4365c3164922e26e4256bae7ea7066ea2a7f443cd34"
+  },
+  {
+    "path": "Editor/Tools/CustomToolParameter.cs",
+    "checkout_sha256": "f5d1ad1bad082ff4064ae1beacfed1378cc01d0ec0aff1b681f2d4b2760157c9",
+    "installed_sha256": "f5d1ad1bad082ff4064ae1beacfed1378cc01d0ec0aff1b681f2d4b2760157c9"
+  },
+  {
+    "path": "Editor/Tools/CustomToolRegistry.cs",
+    "checkout_sha256": "14f62c717e6a9925ede74cebbe008a40663057d5b36a5359d06ee8c7cde2bd39",
+    "installed_sha256": "14f62c717e6a9925ede74cebbe008a40663057d5b36a5359d06ee8c7cde2bd39"
+  },
+  {
+    "path": "Editor/Tools/UnityCliArgAttribute.cs",
+    "checkout_sha256": "df7470aeb0d24c3d4db0d59fbaa7d0cec8196afdf22eae43c686373bd3622845",
+    "installed_sha256": "df7470aeb0d24c3d4db0d59fbaa7d0cec8196afdf22eae43c686373bd3622845"
+  },
+  {
+    "path": "Editor/Tools/UnityCliToolAttribute.cs",
+    "checkout_sha256": "4f46faa8b69039aeae371fb2586d6e71c5bec5a1868e046e638177200ed5e431",
+    "installed_sha256": "4f46faa8b69039aeae371fb2586d6e71c5bec5a1868e046e638177200ed5e431"
+  },
+  {
+    "path": "Runtime/IMGUI/ImguiControlRegistry.cs",
+    "checkout_sha256": "adf7303443891b41609e3ba8f493f05891a49794fdacfbe2e1f46d94fd23d592",
+    "installed_sha256": "adf7303443891b41609e3ba8f493f05891a49794fdacfbe2e1f46d94fd23d592"
+  },
+  {
+    "path": "Tests/Editor/CompilationHandlerTests.cs",
+    "checkout_sha256": "d7b346843af15839b10883dab73e4c964544272be57ff2997fc1ae1ee2200828",
+    "installed_sha256": "d7b346843af15839b10883dab73e4c964544272be57ff2997fc1ae1ee2200828"
+  },
+  {
+    "path": "Tests/Editor/ConsoleSeverityTests.cs",
+    "checkout_sha256": "5c02cf492a70d53f8f747cfad54a36e26990fba4e0573944c7e0f0fa99d2a27d",
+    "installed_sha256": "5c02cf492a70d53f8f747cfad54a36e26990fba4e0573944c7e0f0fa99d2a27d"
+  },
+  {
+    "path": "Tests/Editor/Core/BridgeAuthenticationTests.cs",
+    "checkout_sha256": "12c7ac85eaed2a9f009b6f0d3d15b42583fbbc3220646be1ecc1ab594ae39506",
+    "installed_sha256": "12c7ac85eaed2a9f009b6f0d3d15b42583fbbc3220646be1ecc1ab594ae39506"
+  },
+  {
+    "path": "Tests/Editor/Core/BridgeCommandRouterTests.cs",
+    "checkout_sha256": "c919f97f3ad8c062024a9bfbb9254ccd64421593484969b07bb910a6178e1197",
+    "installed_sha256": "c919f97f3ad8c062024a9bfbb9254ccd64421593484969b07bb910a6178e1197"
+  },
+  {
+    "path": "Tests/Editor/Core/BridgeCommandStatsTests.cs",
+    "checkout_sha256": "1b91c9c88c896aa3f53fd0ff0836ce5be50ac9d7d537000c3a5aa5709374bcd5",
+    "installed_sha256": "1b91c9c88c896aa3f53fd0ff0836ce5be50ac9d7d537000c3a5aa5709374bcd5"
+  },
+  {
+    "path": "Tests/Editor/Core/EditorLockfileTests.cs",
+    "checkout_sha256": "65078e49429fa48aa65a91acd578c2aec5c5ec2aa0bdeeab7016e809d7e7ab32",
+    "installed_sha256": "65078e49429fa48aa65a91acd578c2aec5c5ec2aa0bdeeab7016e809d7e7ab32"
+  },
+  {
+    "path": "Tests/Editor/CustomToolRegistryTests.cs",
+    "checkout_sha256": "beb77e538073ca54cbe12a9d3befcf91f6097a64b1b46cd3ff13ac191885972f",
+    "installed_sha256": "beb77e538073ca54cbe12a9d3befcf91f6097a64b1b46cd3ff13ac191885972f"
+  },
+  {
+    "path": "Tests/Editor/DomainReloadE2ESettings.cs",
+    "checkout_sha256": "bb1ec09027ae88a4e5260d606928e5c26823b783f30d8a74a9ba21b44c9f9e43",
+    "installed_sha256": "bb1ec09027ae88a4e5260d606928e5c26823b783f30d8a74a9ba21b44c9f9e43"
+  },
+  {
+    "path": "Tests/Editor/EvalHandlerTests.cs",
+    "checkout_sha256": "4eb4e149341f55ce67148ea3e0c11d2ba2bda75b565cfb304281f53cda61c7a8",
+    "installed_sha256": "4eb4e149341f55ce67148ea3e0c11d2ba2bda75b565cfb304281f53cda61c7a8"
+  },
+  {
+    "path": "Tests/Editor/Handlers/AnimationCurveHandlerTests.cs",
+    "checkout_sha256": "228fd9cc0633fcdfb96ea49250be179af3d851009c28ba0b5d9fdd60366a3abf",
+    "installed_sha256": "228fd9cc0633fcdfb96ea49250be179af3d851009c28ba0b5d9fdd60366a3abf"
+  },
+  {
+    "path": "Tests/Editor/Handlers/AssetManagementHandlerTests.cs",
+    "checkout_sha256": "89f83a316218ca4b7132f5aca258b6baffc5f1b3723361bfcb94fdc7bf0cc47b",
+    "installed_sha256": "89f83a316218ca4b7132f5aca258b6baffc5f1b3723361bfcb94fdc7bf0cc47b"
+  },
+  {
+    "path": "Tests/Editor/Handlers/AudioAuthoringTests.cs",
+    "checkout_sha256": "d7c9fe1c8fdf60781ccdb9aa7c55bbcbe82d81b249d5ccf2b86e2c02fefbd3d5",
+    "installed_sha256": "d7c9fe1c8fdf60781ccdb9aa7c55bbcbe82d81b249d5ccf2b86e2c02fefbd3d5"
+  },
+  {
+    "path": "Tests/Editor/Handlers/BakeHandlerTests.cs",
+    "checkout_sha256": "0297a5ce0d0679fe02a0f5108e6aded7b053978765c34d975d6d15d4df9c8673",
+    "installed_sha256": "0297a5ce0d0679fe02a0f5108e6aded7b053978765c34d975d6d15d4df9c8673"
+  },
+  {
+    "path": "Tests/Editor/Handlers/ComponentHandlerTests.cs",
+    "checkout_sha256": "1e7700c928cecc2889c16d8d6bb6fda3e273d7ee244e4cc326f5809574e480a1",
+    "installed_sha256": "1e7700c928cecc2889c16d8d6bb6fda3e273d7ee244e4cc326f5809574e480a1"
+  },
+  {
+    "path": "Tests/Editor/Handlers/ConsoleAndProjectSettingsHandlerTests.cs",
+    "checkout_sha256": "e96aaeb721b5cce584de9c6eaa9f02650d0a71c2c5684c77b1d630f92b28185b",
+    "installed_sha256": "e96aaeb721b5cce584de9c6eaa9f02650d0a71c2c5684c77b1d630f92b28185b"
+  },
+  {
+    "path": "Tests/Editor/Handlers/EditorControlHandlerTests.cs",
+    "checkout_sha256": "66ae8afde519e5fcee6cd096a35e8f327687a84684bf7c114065c82e1ccc06ad",
+    "installed_sha256": "66ae8afde519e5fcee6cd096a35e8f327687a84684bf7c114065c82e1ccc06ad"
+  },
+  {
+    "path": "Tests/Editor/Handlers/GameObjectHandlerTests.cs",
+    "checkout_sha256": "6ce13289f875524f931dfeb596599ce6ef44c9f84fd27ea3dfbd63988d86bf13",
+    "installed_sha256": "6ce13289f875524f931dfeb596599ce6ef44c9f84fd27ea3dfbd63988d86bf13"
+  },
+  {
+    "path": "Tests/Editor/Handlers/GamepadStickValueTests.cs",
+    "checkout_sha256": "20bf3187f3b60c5f4a1ce63bd13e5b1cffcdc0e7d1c89eac48e0a3dd52705554",
+    "installed_sha256": "20bf3187f3b60c5f4a1ce63bd13e5b1cffcdc0e7d1c89eac48e0a3dd52705554"
+  },
+  {
+    "path": "Tests/Editor/Handlers/HotReloadHandlerTests.cs",
+    "checkout_sha256": "866178f9c4b3d30863a87672a3c21312535bedb0fce5cf02b1cad2fcae80a6da",
+    "installed_sha256": "866178f9c4b3d30863a87672a3c21312535bedb0fce5cf02b1cad2fcae80a6da"
+  },
+  {
+    "path": "Tests/Editor/Handlers/InputActionsHandlerTests.cs",
+    "checkout_sha256": "a35e4ee7137923f07118da95795ebabd3c59cf677d895639cff600a237263d00",
+    "installed_sha256": "a35e4ee7137923f07118da95795ebabd3c59cf677d895639cff600a237263d00"
+  },
+  {
+    "path": "Tests/Editor/Handlers/InputActionsPersistenceTests.cs",
+    "checkout_sha256": "4f8a5af3fa243bbfa6d632c03e1a29b5c915a4a85ba09d0e2293d02286c0bea4",
+    "installed_sha256": "4f8a5af3fa243bbfa6d632c03e1a29b5c915a4a85ba09d0e2293d02286c0bea4"
+  },
+  {
+    "path": "Tests/Editor/Handlers/LoadSceneTests.cs",
+    "checkout_sha256": "1f9bb3d07e6c249e2c4c729c30d839b9a18bc58a10e343e8978f7f08e42c0bf8",
+    "installed_sha256": "1f9bb3d07e6c249e2c4c729c30d839b9a18bc58a10e343e8978f7f08e42c0bf8"
+  },
+  {
+    "path": "Tests/Editor/Handlers/PackageAndAddressablesHandlerTests.cs",
+    "checkout_sha256": "9086ee170a352ac52c41dfbce6f2ec471f42bfa0a90439925558be3437ba2a65",
+    "installed_sha256": "9086ee170a352ac52c41dfbce6f2ec471f42bfa0a90439925558be3437ba2a65"
+  },
+  {
+    "path": "Tests/Editor/Handlers/PlayerBuildHandlerTests.cs",
+    "checkout_sha256": "7c8b09e4606c23acdce1e99ff5bf9f6d3027b54af3a95ee597bdd527d66ee10b",
+    "installed_sha256": "7c8b09e4606c23acdce1e99ff5bf9f6d3027b54af3a95ee597bdd527d66ee10b"
+  },
+  {
+    "path": "Tests/Editor/Handlers/PlayModeHandlerTests.cs",
+    "checkout_sha256": "cb8f1211d44638bb667ac653051a8218162a12afb968231298026b670701c06a",
+    "installed_sha256": "cb8f1211d44638bb667ac653051a8218162a12afb968231298026b670701c06a"
+  },
+  {
+    "path": "Tests/Editor/Handlers/PrefabWorkflowHandlerTests.cs",
+    "checkout_sha256": "f921d5cb2d90903e2f06c810117fbb6c77b4838d262668033fb31e6a35f65eb7",
+    "installed_sha256": "f921d5cb2d90903e2f06c810117fbb6c77b4838d262668033fb31e6a35f65eb7"
+  },
+  {
+    "path": "Tests/Editor/Handlers/ProfilerHandlerTests.cs",
+    "checkout_sha256": "1e75d06f8cf7397d7f3c315cb2f4dc4f81b101d6f8496257cd8f4325b2e67ebe",
+    "installed_sha256": "1e75d06f8cf7397d7f3c315cb2f4dc4f81b101d6f8496257cd8f4325b2e67ebe"
+  },
+  {
+    "path": "Tests/Editor/Handlers/SceneHandlerTests.cs",
+    "checkout_sha256": "381ffee4c4341d6ab7442523ff4e4cec82ae3d9fe8d8239de1edfbbb7bda4717",
+    "installed_sha256": "381ffee4c4341d6ab7442523ff4e4cec82ae3d9fe8d8239de1edfbbb7bda4717"
+  },
+  {
+    "path": "Tests/Editor/Handlers/ScreenshotHandlerTests.cs",
+    "checkout_sha256": "328dfdf4276c55ab06a2e1d6af212015383a9210b17b1cc6c158359f12ce5a2a",
+    "installed_sha256": "328dfdf4276c55ab06a2e1d6af212015383a9210b17b1cc6c158359f12ce5a2a"
+  },
+  {
+    "path": "Tests/Editor/Handlers/TestExecutionHandlerCollectorTests.cs",
+    "checkout_sha256": "103021dd5c50a10e911bded54d9468cccff201e56d578642d0964ad1eebcf3fc",
+    "installed_sha256": "103021dd5c50a10e911bded54d9468cccff201e56d578642d0964ad1eebcf3fc"
+  },
+  {
+    "path": "Tests/Editor/Handlers/TestExecutionHandlerTests.cs",
+    "checkout_sha256": "52bf3ed5285093cf1079a58ec816187a447370f86884999536c1f67ee259e779",
+    "installed_sha256": "52bf3ed5285093cf1079a58ec816187a447370f86884999536c1f67ee259e779"
+  },
+  {
+    "path": "Tests/Editor/Handlers/TimelineHandlerTests.cs",
+    "checkout_sha256": "dd95612e40b8e8d7e48d0b21eb4b616109eab50f46d444d43261f0b3333b34d6",
+    "installed_sha256": "dd95612e40b8e8d7e48d0b21eb4b616109eab50f46d444d43261f0b3333b34d6"
+  },
+  {
+    "path": "Tests/Editor/Handlers/UIInteractionHandlerTests.cs",
+    "checkout_sha256": "3eae84802e518b63c39d753e2869260199b3d8636521a631efa5a81e31b8a88b",
+    "installed_sha256": "3eae84802e518b63c39d753e2869260199b3d8636521a631efa5a81e31b8a88b"
+  },
+  {
+    "path": "Tests/Editor/Handlers/VfxGraphHandlerTests.cs",
+    "checkout_sha256": "3144843d4806dabe2f273f151ccc3d5619bb33f88212b3265a3fd335151e46df",
+    "installed_sha256": "3144843d4806dabe2f273f151ccc3d5619bb33f88212b3265a3fd335151e46df"
+  },
+  {
+    "path": "Tests/Editor/Handlers/VideoCaptureOptionalPackageTests.cs",
+    "checkout_sha256": "fa96dd7397ffc275d6742c69d25de58f88ff63aa6b95c36e4c9c3b597325e3ee",
+    "installed_sha256": "fa96dd7397ffc275d6742c69d25de58f88ff63aa6b95c36e4c9c3b597325e3ee"
+  },
+  {
+    "path": "Tests/Editor/Helpers/CapturePathResolverTests.cs",
+    "checkout_sha256": "d34039d87a272072463922898b8eb1855e3dccf0c8ff45f2f57cd4afd2776e0c",
+    "installed_sha256": "d34039d87a272072463922898b8eb1855e3dccf0c8ff45f2f57cd4afd2776e0c"
+  },
+  {
+    "path": "Tests/Editor/Helpers/PlayModeChangeWarningHelperTests.cs",
+    "checkout_sha256": "262b743469876e7a2bb0dec8e37ad2ae00af144d15af1e98a6d9d3feb20cfe60",
+    "installed_sha256": "262b743469876e7a2bb0dec8e37ad2ae00af144d15af1e98a6d9d3feb20cfe60"
+  },
+  {
+    "path": "Tests/Editor/Helpers/ResponseTests.cs",
+    "checkout_sha256": "7d3dcc2be36afa8f9d7c7e40c1c3bb88bf021ca01e64e5c08d8581b26b07c330",
+    "installed_sha256": "7d3dcc2be36afa8f9d7c7e40c1c3bb88bf021ca01e64e5c08d8581b26b07c330"
+  },
+  {
+    "path": "Tests/Editor/Helpers/TaskTestUtility.cs",
+    "checkout_sha256": "25eae4b55e7bdb88b7870deb61a5de9da96b644ac1154b107c7494568db3e7c8",
+    "installed_sha256": "25eae4b55e7bdb88b7870deb61a5de9da96b644ac1154b107c7494568db3e7c8"
+  },
+  {
+    "path": "Tests/Editor/Helpers/TestMethodReturnTypeTests.cs",
+    "checkout_sha256": "4dfc85bdf77a0e8672c9c02219f4ede5042821cbe6d467cf0d986d427f4a0f6b",
+    "installed_sha256": "4dfc85bdf77a0e8672c9c02219f4ede5042821cbe6d467cf0d986d427f4a0f6b"
+  },
+  {
+    "path": "Tests/Editor/InputActionNotificationTests.cs",
+    "checkout_sha256": "c89044d81626c7291e0c46a803d8b079f32aec6582338bbfba86200243ae33e7",
+    "installed_sha256": "c89044d81626c7291e0c46a803d8b079f32aec6582338bbfba86200243ae33e7"
+  },
+  {
+    "path": "Tests/Editor/Integration/UnityCliBridgeIntegrationTests.cs",
+    "checkout_sha256": "50cddc17064d06938053f3b05e1fc51da91fd89b2b92d50de644ba8d96c13bb4",
+    "installed_sha256": "50cddc17064d06938053f3b05e1fc51da91fd89b2b92d50de644ba8d96c13bb4"
+  },
+  {
+    "path": "Tests/Editor/Models/BridgeStatusTests.cs",
+    "checkout_sha256": "b3727e66c684e7b35d0541b796120829f03b5af4fc187aaa8c9b7e3386796355",
+    "installed_sha256": "b3727e66c684e7b35d0541b796120829f03b5af4fc187aaa8c9b7e3386796355"
+  },
+  {
+    "path": "Tests/Editor/Models/CommandTests.cs",
+    "checkout_sha256": "3485023425c026c9e462165c4fe70be4804945ddba1ae64d34219164563ebc5d",
+    "installed_sha256": "3485023425c026c9e462165c4fe70be4804945ddba1ae64d34219164563ebc5d"
+  },
+  {
+    "path": "Tests/Editor/ObjectIdentityTests.cs",
+    "checkout_sha256": "97e8793caff5a4d2c18e7e2a7fe9801c6728f62d407bd4fd1e10ac67b047800c",
+    "installed_sha256": "97e8793caff5a4d2c18e7e2a7fe9801c6728f62d407bd4fd1e10ac67b047800c"
+  },
+  {
+    "path": "Tests/Editor/RuntimeChangePersistenceTests.cs",
+    "checkout_sha256": "315da9558d87e174af046e87861b9d2cd51e9e5d5a0ff44f20b640c9a64351eb",
+    "installed_sha256": "315da9558d87e174af046e87861b9d2cd51e9e5d5a0ff44f20b640c9a64351eb"
+  },
+  {
+    "path": "Tests/Editor/TestExecutionHandlerPersistenceTests.cs",
+    "checkout_sha256": "9f59bc0362d40beb786e1c92cfe255cd9353d2ce15ae9e94aa51e45224b5add1",
+    "installed_sha256": "9f59bc0362d40beb786e1c92cfe255cd9353d2ce15ae9e94aa51e45224b5add1"
+  },
+  {
+    "path": "Tests/Editor/TestExecutionHandlerReloadTests.cs",
+    "checkout_sha256": "36489c178afe13f916dbf46e98086263db864be69a1c9b75db6f5036ef0da3a7",
+    "installed_sha256": "36489c178afe13f916dbf46e98086263db864be69a1c9b75db6f5036ef0da3a7"
+  },
+  {
+    "path": "Tests/Editor/TestExecutionHandlerWatchdogTests.cs",
+    "checkout_sha256": "714ab9208744f1001b106d04ebb4033181452bc0886f9cddb50a9dc07ad6b33a",
+    "installed_sha256": "714ab9208744f1001b106d04ebb4033181452bc0886f9cddb50a9dc07ad6b33a"
+  },
+  {
+    "path": "Tests/Editor/UnityCliBridgeHostConnectionTests.cs",
+    "checkout_sha256": "cdba837d26cb30f5c91c20df8e2de0ffc97bb88754d2d2a7c0ca0b8960baedfd",
+    "installed_sha256": "cdba837d26cb30f5c91c20df8e2de0ffc97bb88754d2d2a7c0ca0b8960baedfd"
+  },
+  {
+    "path": "Tests/PlayMode/DomainReloadResultTests.cs",
+    "checkout_sha256": "2986ce4925ea43e6a59aa8cce64d630ba09d64c15195e19337293b41076e8c72",
+    "installed_sha256": "2986ce4925ea43e6a59aa8cce64d630ba09d64c15195e19337293b41076e8c72"
+  },
+  {
+    "path": "Tests/PlayMode/GamepadStickInputPlayModeTests.cs",
+    "checkout_sha256": "e1a934aac05eec16acf1c2c14b42d3c4c38d88fa14c0fecf66e649e73ca8b5d1",
+    "installed_sha256": "e1a934aac05eec16acf1c2c14b42d3c4c38d88fa14c0fecf66e649e73ca8b5d1"
+  },
+  {
+    "path": "Tests/PlayMode/InputSimulationAutomationPlayModeTests.cs",
+    "checkout_sha256": "a2dc48d02587b040e1356ebded544702a5d847ad1bb454db71bc09b39e16a44b",
+    "installed_sha256": "a2dc48d02587b040e1356ebded544702a5d847ad1bb454db71bc09b39e16a44b"
+  },
+  {
+    "path": "Tests/PlayMode/LongRunningInPlayContextTests.cs",
+    "checkout_sha256": "49983463371a8d9489feae7c79400838a90992c52d238ac2a21f97a45b86db0a",
+    "installed_sha256": "49983463371a8d9489feae7c79400838a90992c52d238ac2a21f97a45b86db0a"
+  },
+  {
+    "path": "Tests/PlayMode/TestResultCountingPlayModeTests.cs",
+    "checkout_sha256": "3166fb3d3b1a00c25f9cec2356dc98a01fbbcd0b2d1dfeecc0d6370238f5a49e",
+    "installed_sha256": "3166fb3d3b1a00c25f9cec2356dc98a01fbbcd0b2d1dfeecc0d6370238f5a49e"
+  },
+  {
+    "path": "Tests/PlayMode/TouchGesturePlayModeTests.cs",
+    "checkout_sha256": "c23e5769c36205ef9fbb41d13be465deab504a8d2aa312b30788928f5884a69e",
+    "installed_sha256": "c23e5769c36205ef9fbb41d13be465deab504a8d2aa312b30788928f5884a69e"
+  },
+  {
+    "path": "Tests/PlayMode/UIAllSystemsAutomationPlayModeTests.cs",
+    "checkout_sha256": "adfce478cdb4d5e51f55dbe57f54e32c063cc751c6d975a86e33348e9f08ccf0",
+    "installed_sha256": "adfce478cdb4d5e51f55dbe57f54e32c063cc751c6d975a86e33348e9f08ccf0"
+  },
+  {
+    "path": "Tests/PlayMode/Vfx/VfxRuntimePlayModeTests.cs",
+    "checkout_sha256": "35ad7428cd0289d51fa9c61a15be23819d46e6c73a3cef6b0fe4b0f65b15edb9",
+    "installed_sha256": "35ad7428cd0289d51fa9c61a15be23819d46e6c73a3cef6b0fe4b0f65b15edb9"
+  }
+]

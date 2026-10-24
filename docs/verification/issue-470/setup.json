@@ -1,0 +1,62 @@
+{
+  "command": "setup",
+  "data": {
+    "binary": {
+      "ok": true,
+      "onPath": null,
+      "path": "<worktree>\\target\\debug\\unity-cli.exe",
+      "version": "0.19.0"
+    },
+    "bridge": {
+      "action": "install",
+      "declared": "0.19.0",
+      "dryRun": false,
+      "inputBackends": {
+        "changed": true,
+        "previous": 0
+      },
+      "installed": true,
+      "manifestChanged": true,
+      "manifestPath": "<worktree>\\.cache\\issue-470\\unity-created\\project\\Packages\\manifest.json",
+      "notes": [
+        "Set PlayerSettings activeInputHandler to Both (2) so the Input System dependency imports without a restart prompt"
+      ],
+      "package": "com.akiojin.unity-cli-bridge",
+      "projectPath": "<worktree>\\.cache\\issue-470\\unity-created\\project",
+      "registry": true,
+      "resolvedVersion": null,
+      "source": "registry",
+      "versionCheck": {
+        "bridgeVersion": "0.19.0",
+        "cliVersion": "0.19.0",
+        "message": "CLI and bridge are both 0.19.0",
+        "status": "match"
+      }
+    },
+    "editor": {
+      "bridgeVersion": "0.19.0",
+      "endpoint": "127.0.0.1:53828",
+      "projectMatches": true,
+      "projectPath": "<worktree>\\.cache\\issue-470\\unity-created\\project",
+      "reachable": true,
+      "versionCheck": {
+        "bridgeVersion": "0.19.0",
+        "cliVersion": "0.19.0",
+        "message": "CLI and bridge are both 0.19.0",
+        "status": "match"
+      }
+    },
+    "launch": {
+      "editorPath": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.4f1\\Editor\\Unity.exe",
+      "launched": true,
+      "pid": 44416,
+      "port": 53828,
+      "unityVersion": "6000.4.4f1"
+    },
+    "ok": true,
+    "warnings": []
+  },
+  "errors": [],
+  "success": true,
+  "warnings": []
+}

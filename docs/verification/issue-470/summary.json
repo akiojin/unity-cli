@@ -1,0 +1,88 @@
+{
+  "started_at": "2026-10-24T18:47:05.139496+00:00",
+  "source_commit": "1d021ffb23d6960f9eae501d54a23e32057f6b81",
+  "binary_sha256": "93b2958d343f41575382656f94c02de15be30618bb283d6ddde711b85cf0bfb2",
+  "unity_version": "6000.4.4f1",
+  "checks": [
+    {
+      "name": "setup exits successfully",
+      "status": "PASS"
+    },
+    {
+      "name": "AC-2 real setup installs Bridge in a fresh Unity-created project",
+      "status": "PASS"
+    },
+    {
+      "name": "AC-2 launched Editor answers for the requested project",
+      "status": "PASS"
+    },
+    {
+      "name": "AC-1 real Bridge lockfile matches launched PID, project and port",
+      "status": "PASS"
+    },
+    {
+      "name": "discovery exits successfully",
+      "status": "PASS"
+    },
+    {
+      "name": "AC-1 no explicit ports: discovery reports a live lockfile source",
+      "status": "PASS"
+    },
+    {
+      "name": "ping exits successfully",
+      "status": "PASS"
+    }
+  ],
+  "commands": [
+    {
+      "name": "setup",
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-470\\unity-created\\project",
+        "--port",
+        "53828",
+        "setup",
+        "--launch-editor",
+        "--wait-secs",
+        "600"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 69.169
+    },
+    {
+      "name": "discovery",
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-470\\unity-created\\project",
+        "instances",
+        "list"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.844
+    },
+    {
+      "name": "ping",
+      "argv": [
+        "<worktree>\\target\\debug\\unity-cli.exe",
+        "--output",
+        "json",
+        "--project-path",
+        "<worktree>\\.cache\\issue-470\\unity-created\\project",
+        "system",
+        "ping"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.523
+    }
+  ],
+  "editor_pid": 44416,
+  "editor_exited": true,
+  "editor_lockfile_removed_on_exit": true,
+  "finished_at": "2026-10-24T18:48:23.005014+00:00"
+}
