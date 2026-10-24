@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Fixes
+
+- `create_class` once again writes the generated `.cs` file directly when
+  `UNITY_CLI_LSP_MODE=off`, restoring the v0.18.1 behavior. Other modes keep
+  the LSP write path and its result fields; other C# write tools still require
+  the LSP ([#531](https://github.com/akiojin/unity-cli/issues/531)).
+
 ## [0.19.0] - 2026-10-19
 
 ### Breaking changes and migration

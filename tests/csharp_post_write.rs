@@ -37,7 +37,18 @@ impl Fixture {
     }
 
     fn call(&self, tool: &str, params: &Value, port: u16) -> Value {
-        let output = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
+        self.call_with_lsp_mode(tool, params, port, None)
+    }
+
+    fn call_with_lsp_mode(
+        &self,
+        tool: &str,
+        params: &Value,
+        port: u16,
+        mode: Option<&str>,
+    ) -> Value {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_unity-cli"));
+        command
             .args([
                 "--output",
                 "json",
@@ -61,9 +72,11 @@ impl Fixture {
             .env("UNITY_CLI_EDITORS_DIR", self.root.path().join("editors"))
             .env("UNITY_PROJECT_ROOT", self.root.path().join("wrong-project"))
             .env("UNITY_CLI_PORT", "1")
-            .env_remove("UNITY_CLI_LSP_MODE")
-            .output()
-            .unwrap();
+            .env_remove("UNITY_CLI_LSP_MODE");
+        if let Some(mode) = mode {
+            command.env("UNITY_CLI_LSP_MODE", mode);
+        }
+        let output = command.output().unwrap();
         let envelope: Value = serde_json::from_slice(&output.stdout).unwrap();
         let payload = envelope["data"].clone();
         assert_eq!(
@@ -244,8 +257,14 @@ fn post_write_tools_use_explicit_endpoint_and_include_compile_results() {
 
 #[test]
 fn create_class_writes_through_lsp_and_keeps_output_shape() {
+    for mode in [None, Some("auto"), Some("required")] {
+        assert_create_class_lsp_output(mode);
+    }
+}
+
+fn assert_create_class_lsp_output(mode: Option<&str>) {
     let fixture = Fixture::new();
-    let response = fixture.call(
+    let response = fixture.call_with_lsp_mode(
         "create_class",
         &json!({
             "name": "EnemyAI",
@@ -254,6 +273,7 @@ fn create_class_writes_through_lsp_and_keeps_output_shape() {
             "folder": "Assets/Scripts/AI"
         }),
         1,
+        mode,
     );
     assert_eq!(response["success"], true, "{response}");
     assert_eq!(response["backend"], "lsp", "{response}");
