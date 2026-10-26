@@ -102,5 +102,52 @@ class ComparisonEvidenceTests(unittest.TestCase):
                     self.assertRegex(cell, r'\[[^]]+\](?:\(|\[)', row)
 
 
+class StaffReportEvidenceTests(unittest.TestCase):
+    def rows(self, text, heading):
+        section = text.split(heading, 1)[1].split('\n##', 1)[0]
+        return [[cell.strip() for cell in line.strip('|').split('|')]
+                for line in section.splitlines() if line.startswith('|')][2:]
+
+    def test_staff_features_preserve_original_japanese_and_english_marks(self):
+        source = (ROOT / 'docs/verification/issue-534/staff-report-2026-10-05.md').read_text(encoding='utf-8')
+        document = (ROOT / 'docs/comparison.md').read_text(encoding='utf-8')
+        original = self.rows(source, '#### 機能比較')
+        japanese = self.rows(document, '### スタッフ調査の機能比較')
+        english = self.rows(document, '### Staff feature comparison')
+        self.assertEqual(len(original), 24)
+        self.assertEqual(japanese, original)
+        self.assertEqual(len(english), len(original))
+        for translated, row in zip(english, original):
+            for actual, expected in zip(translated[1:], row[1:]):
+                self.assertEqual(actual[0] if actual[0] in '○△—' else 'n/a',
+                                 expected[0] if expected[0] in '○△—' else 'n/a')
+
+    def test_staff_medians_match_source_in_both_languages(self):
+        source = (ROOT / 'docs/verification/issue-534/staff-report-2026-10-05.md').read_text(encoding='utf-8')
+        document = (ROOT / 'docs/comparison.md').read_text(encoding='utf-8')
+        original = self.rows(source, '#### 速度比較')
+        self.assertEqual(len(original), 23)
+        for heading in ('### Staff speed comparison', '### スタッフ調査の速度比較'):
+            rows = self.rows(document, heading)
+            self.assertEqual(len(rows), 23)
+            self.assertEqual([row[1:] for row in rows], [row[1:] for row in original])
+            self.assertTrue(all(float(row[1].split()[0]) < float(row[2].split()[0])
+                                for row in rows))
+
+    def test_report_provenance_and_reconstructed_category_mapping(self):
+        document = (ROOT / 'docs/comparison.md').read_text(encoding='utf-8')
+        for language in ('English', '日本語'):
+            section = document.split(f'## {language}\n', 1)[1].split('\n## ', 1)[0]
+            for fact in ('2026-10-05', 'Windows', '6000.4.12f1', '0.18.1',
+                         '1.0.0-beta.11', '0.7.0-exp.1', '[staff-report]', '○', '△', '—'):
+                self.assertIn(fact, section)
+        mapping = (ROOT / 'docs/verification/issue-386/resume/staff-scope-reconstruction.md').read_text(encoding='utf-8')
+        rows = self.rows(mapping, '## 原本受領と13カテゴリの対応（2026-10-26）')
+        self.assertEqual(len(rows), 13)
+        self.assertEqual([int(row[0].split('.')[0]) for row in rows], list(range(1, 14)))
+        self.assertIn('daemon lifecycle', rows[6][2])
+        self.assertIn('not reported', rows[6][2])
+
+
 if __name__ == '__main__':
     unittest.main()
