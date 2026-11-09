@@ -18,10 +18,10 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@eslint/js": "^10.0.1",
-    "@google/gemini-cli": "^0.66.0",
+    "@google/gemini-cli": "^0.67.0",
     "@openai/codex": "^0.166.0",
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
     "husky": "^9.1.7",
     "markdownlint-cli": "^0.50.0",
     "prettier": "^3.9.10"
