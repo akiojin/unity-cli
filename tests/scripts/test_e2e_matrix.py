@@ -1,6 +1,8 @@
 """Host-free contract tests for the real Editor matrix runner."""
 import importlib.util
 import json
+import os
+import re
 from pathlib import Path
 import tempfile
 import subprocess
@@ -15,6 +17,57 @@ spec.loader.exec_module(matrix)
 
 
 class MatrixTests(unittest.TestCase):
+    def test_hub_layout_supports_windows_and_preserves_macos(self):
+        windows = Path('C:/Program Files/Unity/Hub/Editor/7000.0.0a16/Editor/Unity.exe')
+        self.assertEqual(matrix.editor_layout(windows),
+                         ('7000.0.0a16', windows.parent / 'Data'))
+        mac = Path('/Applications/Unity/Hub/Editor/6000.7.0b2/Unity.app/Contents/MacOS/Unity')
+        self.assertEqual(matrix.editor_layout(mac), ('6000.7.0b2', mac.parent.parent))
+        with self.assertRaisesRegex(ValueError, 'Hub Editor path'):
+            matrix.editor_layout(Path('/tmp/unversioned/Unity.exe'))
+
+    def test_windows_defaults_include_all_issue_544_editors(self):
+        with patch.object(matrix.sys, 'platform', 'win32'), patch.dict(
+                matrix.os.environ, {'ProgramFiles': 'C:/Program Files'}):
+            editors = matrix.default_editors()
+        self.assertEqual([matrix.editor_layout(editor)[0] for editor in editors],
+                         ['6000.3.28f1', '6000.6.8f1', '7000.0.0a16'])
+        self.assertTrue(all(editor.name == 'Unity.exe' for editor in editors))
+
+    def test_windows_listener_ownership_ignores_remote_port_and_other_processes(self):
+        output = ('  TCP    127.0.0.1:6508  0.0.0.0:0  LISTENING  1234\n'
+                  '  TCP    127.0.0.1:6509  127.0.0.1:6508  ESTABLISHED  5678\n')
+        with patch.object(matrix.sys, 'platform', 'win32'), patch.object(
+                matrix.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, output)):
+            self.assertEqual(matrix.listener_pids(6508), {1234})
+            self.assertEqual(matrix.listener_pids(6510), set())
+
+    def test_ping_requires_matching_reported_cli_and_bridge_versions(self):
+        self.assertTrue(matrix.matching_ping({'versionCheck': {
+            'status': 'match', 'cliVersion': '0.19.0', 'bridgeVersion': '0.19.0'}}))
+        for value in ({}, {'versionCheck': {'status': 'match'}},
+                      {'versionCheck': {'status': 'mismatch', 'cliVersion': '0.19.0', 'bridgeVersion': '0.18.1'}}):
+            self.assertFalse(matrix.matching_ping(value))
+
+    def test_runtime_requires_positive_mono_or_coreclr_evidence(self):
+        mono = {'state': 'completed', 'value': True}
+        non_mono = {'state': 'completed', 'value': False}
+        corelib = {'state': 'completed', 'value': 'System.Private.CoreLib'}
+        self.assertEqual(matrix.editor_runtime(mono), 'Mono')
+        self.assertEqual(matrix.editor_runtime(non_mono, corelib), 'CoreCLR')
+        for first, second in (({}, None), (non_mono, None), (non_mono, {'value': 'System.Private.CoreLib'})):
+            with self.assertRaisesRegex(ValueError, 'runtime'):
+                matrix.editor_runtime(first, second)
+
+    def test_macos_listener_ownership_and_inspection_errors(self):
+        with patch.object(matrix.sys, 'platform', 'darwin'), patch.object(
+                matrix.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '1234\n')):
+            self.assertEqual(matrix.listener_pids(6508), {1234})
+        with patch.object(matrix.sys, 'platform', 'darwin'), patch.object(
+                matrix.subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'denied')):
+            with self.assertRaisesRegex(RuntimeError, 'inspect listener ownership'):
+                matrix.listener_pids(6508)
+
     def test_gui_fixture_regenerates_only_urp_upgrade_cache(self):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
@@ -62,24 +115,24 @@ class MatrixTests(unittest.TestCase):
         self.assertTrue(expected <= set(matrix.DEFAULT_SUITES))
         for name, commands in suites.items():
             for command in commands:
-                self.assertIn('/checkout/cli', command, name)
+                self.assertIn(str(args.unity_cli), command, name)
         persistence = suites['input-actions-persistence'][0]
         self.assertIn(str(editor), persistence)
-        self.assertIn('/run/persistence/project', persistence)
+        self.assertIn(str(Path('/run/persistence/project')), persistence)
         windows = suites['player-build'][1]
         self.assertIn('StandaloneWindows64', windows)
-        self.assertIn('/run/windows/project', windows)
+        self.assertIn(str(Path('/run/windows/project')), windows)
         self.assertIn(str(editor), windows)
 
     def test_missing_windows_module_is_probed_on_current_editor(self):
         from argparse import Namespace
         args = Namespace(unity_cli=Path('/checkout/cli'), port=6532)
         with patch.object(Path, 'is_dir', return_value=False):
-            suites = matrix.extended_suites(Path('/hub/Unity.app/Contents/MacOS/Unity'),
+            suites = matrix.extended_suites(Path('/hub/6000.3.28f1/Unity.app/Contents/MacOS/Unity'),
                                             args, Path('/run/project'), Path('/run'))
         windows = suites['player-build'][1]
         self.assertNotIn('--launch', windows)
-        self.assertIn('/run/project', windows)
+        self.assertIn(str(Path('/run/project')), windows)
         self.assertEqual(windows[windows.index('--port') + 1], '6532')
 
     def test_packages_follow_editor_catalog_and_preserve_bridge(self):
@@ -97,6 +150,20 @@ class MatrixTests(unittest.TestCase):
     def test_missing_vfx_catalog_entry_is_not_silently_skipped(self):
         with self.assertRaisesRegex(ValueError, "visualeffectgraph"):
             matrix.package_manifest("6000.7.0b2", {}, [])
+
+    def test_unity_seven_uses_its_catalog_instead_of_unity_six_package_pins(self):
+        names = ('visualeffectgraph', 'render-pipelines.universal', 'test-framework', 'timeline', 'ugui',
+                 'addressables', 'inputsystem', 'recorder', 'ai.navigation')
+        catalog = {'com.unity.' + name: {'version': '7.0.0'} for name in names}
+        catalog['com.unity.addressables']['version'] = '4.1.2'
+        result = matrix.package_manifest('7000.0.0a16', catalog, [])['dependencies']
+        self.assertEqual(result['com.unity.addressables'], '4.1.2')
+        self.assertEqual(result['com.unity.inputsystem'], '7.0.0')
+        self.assertEqual(matrix.package_manifest('6000.6.8f1', catalog, [])['dependencies']
+                         ['com.unity.addressables'], '2.9.1')
+        del catalog['com.unity.addressables']
+        with self.assertRaisesRegex(ValueError, 'addressables'):
+            matrix.package_manifest('7000.0.0a16', catalog, [])
 
     def test_readiness_rejects_error_missing_and_busy_states(self):
         for value in [{}, {"error": "offline"}, {"isCompiling": True, "isUpdating": False},
@@ -121,6 +188,83 @@ class MatrixTests(unittest.TestCase):
                                  {}, log, 0.05)
             self.assertEqual(matrix.run_suite([sys.executable, "-c", "raise SystemExit(3)"],
                                              {}, log, 5), 3)
+
+    def test_shell_suite_preserves_unity_paths_and_uses_lf_json(self):
+        with tempfile.TemporaryFile() as log:
+            status = matrix.run_suite(
+                ['bash', '-c', "jq -nc --arg path /Canvas/InputE2E_Panel '{path:$path}'"],
+                dict(os.environ), log, 20)
+            self.assertEqual(status, 0)
+            log.seek(0)
+            output = log.read()
+            self.assertEqual(json.loads(output), {'path': '/Canvas/InputE2E_Panel'})
+            self.assertNotIn(b'\r', output)
+
+    def test_shell_suite_can_read_a_posix_input_file_with_native_jq(self):
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as log:
+            path = Path(directory) / 'input.json'
+            payload = {'path': '/Canvas', 'text': '\u65e5\u672c\u8a9e'}
+            path.write_text(json.dumps(payload), encoding='utf-8')
+            command = ('input="$JQ_INPUT_FILE"; if command -v cygpath >/dev/null; then '
+                       'input="$(cygpath -u "$input")"; fi; jq -c . "$input"')
+            status = matrix.run_suite(['bash', '-c', command],
+                                     dict(os.environ, JQ_INPUT_FILE=str(path)), log, 20)
+            self.assertEqual(status, 0)
+            log.seek(0)
+            self.assertEqual(json.loads(log.read()), payload)
+
+    def test_shell_python_reads_utf8_metrics_without_a_locale_dependency(self):
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as log:
+            command = "printf '\u65e5\u672c\u8a9e' | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'"
+            env = matrix.runtime_environment(Path(directory), Path('cli'))
+            status = matrix.run_suite(['bash', '-c', command], env, log, 20)
+            self.assertEqual(status, 0)
+            log.seek(0)
+            self.assertEqual(json.loads(log.read()), '\u65e5\u672c\u8a9e')
+
+    def test_lsp_size_metrics_keep_diagnostics_separate_and_preserve_failure_exit(self):
+        source = (ROOT / 'scripts/lsp-perf-check.sh').read_text(encoding='utf-8')
+        functions = '\n'.join(re.search(r'(?ms)^' + name + r'\(\) \{.*?^\}', source)[0]
+                              for name in ('calc_stats_json', 'collect_csv', 'run_lsp_case'))
+        command = '''set -euo pipefail
+fake_cli() { printf '%s\\n' '{"data":{"backend":"lsp"}}'; }
+now_ms() { printf '1\\n'; }
+calc_size_json() {
+  printf 'fixture diagnostic\\n' >&2
+  printf '%s\\n' '{"bytes":1,"chars":1,"tokens":1}'
+  return "$METRICS_RC"
+}
+UNITY_CLI=fake_cli
+WARMUP=0
+RUNS=1
+''' + functions + '''
+run_lsp_case fixture fixture '{}' 100
+printf '%s\\n' "$CASE_RESULT_JSON"
+'''
+        for exit_code in (0, 9):
+            with self.subTest(exit_code=exit_code), tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as log:
+                env = matrix.runtime_environment(Path(directory), Path('cli'))
+                env['METRICS_RC'] = str(exit_code)
+                status = matrix.run_suite(['bash', '-c', command], env, log, 20)
+                self.assertEqual(status == 0, exit_code == 0)
+                log.seek(0)
+                output = log.read().decode('utf-8')
+                if exit_code == 0:
+                    self.assertIn('fixture diagnostic', output)
+                    self.assertTrue(json.loads(output.splitlines()[-1])['pass'])
+
+    def test_runtime_isolates_registry_and_does_not_inherit_another_editors_token(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(matrix.sys, 'platform', 'win32'), patch.dict(os.environ, {
+                'UNITY_CLI_EDITORS_DIR': 'unrelated-project/editors',
+                'UNITY_CLI_AUTH_TOKEN_FILE': 'unrelated-project/private.json'}):
+            output = Path(directory)
+            env = matrix.runtime_environment(output, Path('cli'))
+            self.assertEqual(Path(env['UNITY_CLI_EDITORS_DIR']), output / 'editors')
+            self.assertNotIn('UNITY_CLI_AUTH_TOKEN_FILE', env)
+            self.assertGreater(int(env['UNITY_CLI_UNITYD_PORT']), 0)
+            self.assertGreater(int(env['UNITY_CLI_LSPD_PORT']), 0)
+            self.assertNotEqual(env['UNITY_CLI_UNITYD_PORT'], env['UNITY_CLI_LSPD_PORT'])
+            self.assertEqual(os.environ['UNITY_CLI_AUTH_TOKEN_FILE'], 'unrelated-project/private.json')
 
     def test_fixture_is_isolated_and_ignores_package_hash_files(self):
         with tempfile.TemporaryDirectory() as directory:

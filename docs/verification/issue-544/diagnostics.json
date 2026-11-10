@@ -1,0 +1,70 @@
+[
+  {
+    "case": "unity7_old_addressables",
+    "source_log": ".cache\\issue-544\\alpha-compile\\7000.0.0a16-nye8bimf\\editor.log",
+    "compiler_errors": [
+      "Library\\PackageCache\\com.unity.addressables@8460f1c9c927\\Editor\\Build\\Layout\\BuildLayout.cs(683,48): error CS0052: Inconsistent accessibility: field type 'List<Tuple<string, string>>' is less accessible than field 'BuildLayout.SchemaData.KvpDetails'"
+    ]
+  },
+  {
+    "case": "prefab_legacy_identity",
+    "source_log": ".cache\\issue-544\\alpha-v3-compile\\red-editor.log",
+    "compiler_errors": [
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(104,30): error CS0619: 'EditorUtility.InstanceIDToObject(int)' is obsolete: 'InstanceIDToObject(int) is obsolete. Use EditorUtility.EntityIdToObject instead.'",
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(130,75): error CS0619: 'Object.GetInstanceID()' is obsolete: 'Use GetEntityId instead.'",
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(184,26): error CS0619: 'Object.GetInstanceID()' is obsolete: 'Use GetEntityId instead.'",
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(37,46): error CS0619: 'Object.GetInstanceID()' is obsolete: 'Use GetEntityId instead.'",
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(57,34): error CS0619: 'Object.GetInstanceID()' is obsolete: 'Use GetEntityId instead.'",
+      "Packages\\unity-cli-bridge\\Editor\\Handlers\\PrefabWorkflowHandler.cs(59,40): error CS0619: 'Object.GetInstanceID()' is obsolete: 'Use GetEntityId instead.'"
+    ]
+  },
+  {
+    "case": "removed_cpu_lightmapper",
+    "source_log": ".cache\\issue-544\\alpha-v3-compile\\green-editor.log",
+    "compiler_errors": [
+      "Assets\\Editor\\UnityCliBakeE2EFixture.cs(92,31): error CS0619: 'LightingSettings.Lightmapper.ProgressiveCPU' is obsolete: 'The Progressive CPU lightmapper has been removed. Use Lightmapper.ProgressiveGPU or Lightmapper.UnityComputeGPU instead. #from(7000.0) (UnityUpgradable) -> UnityEngine.LightingSettings/Lightmapper.ProgressiveGPU'"
+    ]
+  },
+  {
+    "case": "lspd_client_disconnect_terminates_listener",
+    "source_log": ".cache/issue-544/matrix-v7-direct/lspd.log",
+    "diagnostics": [
+      "GENERAL_ERROR: Failed to write daemon response: 既存の接続はリモート ホストに強制的に切断されました。 (os error 10054)"
+    ],
+    "subsequent_startup_error": "GENERAL_ERROR: Failed to bind lspd TCP listener: 通常、各ソケット アドレスに対してプロトコル、ネットワーク アドレス、またはポートのどれか 1 つのみを使用できます。 (os error 10048)",
+    "version": "6000.3.28f1",
+    "failed_lsp_cases": 6,
+    "tool_calls_passed": 135,
+    "unique_tools_passed": 123,
+    "regression": "listener_survives_a_bad_client_and_answers_the_next_ping",
+    "red": ".cache/issue-544/lspd-disconnect-red.txt",
+    "green": ".cache/issue-544/lspd-disconnect-green.txt"
+  },
+  {
+    "case": "unnamed_scene_after_focused_nunit",
+    "version": "6000.3.28f1",
+    "source_report": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v8-direct\\6000.3.28f1-aelia1m6\\result.json",
+    "error": "{\"command\":\"raw save_scene\",\"data\":{\"error\":\"Scene has never been saved. Please provide a scenePath.\"},\"errors\":[{\"code\":\"OPERATION_FAILED\",\"message\":\"Scene has never been saved. Please provide a scenePath. (code: UNKNOWN_ERROR)\"}],\"success\":false,\"warnings\":[]}\n",
+    "suite_statuses": {
+      "compile": "PASS",
+      "input": "PASS",
+      "timeline": "PASS",
+      "vfx": "PASS",
+      "eval": "PASS",
+      "hot-reload": "PASS",
+      "reload": "PASS",
+      "all-tools": "PASS",
+      "prefab-tests": "PASS"
+    }
+  },
+  {
+    "case": "private_auth_file_temporarily_missing_after_alpha_reload",
+    "version": "7000.0.0a16",
+    "source_report": ".cache/issue-544/matrix-v9-direct/7000.0.0a16-54y15ioe/result.json",
+    "eval_transcript": "{\"assetsPath\": \"E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v9-direct/7000.0.0a16-54y15ioe/project/Assets\", \"codeIndexRoot\": \"E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v9-direct/7000.0.0a16-54y15ioe/project/.unity/cache/code-index\", \"packagesPath\": \"E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v9-direct/7000.0.0a16-54y15ioe/project/Packages\", \"projectRoot\": \"E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v9-direct/7000.0.0a16-54y15ioe/project\", \"unity\": {\"platform\": \"WindowsEditor\", \"productName\": \"UnityCliBridge\", \"unityVersion\": \"7000.0.0a16\"}}\nPASS AC-1 numeric expression\nPASS AC-3 create\nPASS AC-2 read scene object\nPASS Unity Object descriptor\nPASS AC-3 modify\nPASS requestId deduplication and status\nPASS AC-4 compile diagnostics\nPASS AC-4 runtime exception\nPASS captured logs\nPASS JSON array\nPASS statements without return\nPASS unknown status\nPASS #391 identical source reuses its compilation\nPASS #391 AC-3 newly loaded assembly resolves\nPASS #391 AC-3 types resolve across Domain Reload\nFAIL #391 AC-4 1000 consecutive evaluations stay within bounds: {\"command\":\"editor eval\",\"data\":null,\"errors\":[{\"code\":\"GENERAL_ERROR\",\"message\":\"Evaluation may still be running (requestId=eval-e2e-c48742a9b6744010ad39b4f0e6f43c7a-7288722299bd471fb0516d24d64c6dfd). Query `unity-cli editor eval-status eval-e2e-c48742a9b6744010ad39b4f0e6f43c7a-7288722299bd471fb0516d24d64c6dfd` on the same endpoint; do not automatically rerun: Failed to connect to Unity at 127.0.0.1:6548. Run `unity-cli doctor --output json` to diagnose (Safe Mode / compile errors, bridge not installed, port in use, Editor not running, sandbox): Unable to read Editor authentication file: 指定されたファイルが見つかりません。 (os error 2)\"}],\"success\":false,\"warnings\":[]}\n\nPASS AC-5 no persistent C# files\nPASS Play Mode expression\nEval E2E: 17 passed, 1 failed\n",
+    "regressions": [
+      "connect_waits_for_the_same_private_token_file_before_sending_a_request",
+      "missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request"
+    ]
+  }
+]

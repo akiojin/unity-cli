@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityCliBridge.Helpers;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -69,7 +70,7 @@ namespace UnityCliBridge.Tests
         private JObject Request(string action, string scope, Object target = null, string assetPath = Base)
         {
             var result = new JObject { ["gameObjectPath"] = "/" + instance.name, ["action"] = action, ["scope"] = scope };
-            if (target != null) result["instanceId"] = target.GetInstanceID();
+            if (target != null) result["instanceId"] = ObjectIdentity.GetInstanceId(target);
             if (action == "apply") result["assetPath"] = assetPath;
             return result;
         }
@@ -112,9 +113,25 @@ namespace UnityCliBridge.Tests
             var result = Call("GetOverrides", new JObject { ["gameObjectPath"] = "/" + instance.name });
             Ok(result);
             Assert.IsTrue(result["properties"].Any(p => p.Value<string>("propertyPath") == "m_Size.x"));
-            Assert.IsTrue(result["addedComponents"].Any(p => p.Value<int>("instanceId") == added.GetInstanceID()));
+            Assert.IsTrue(result["addedComponents"].Any(p => p.Value<int>("instanceId") == ObjectIdentity.GetInstanceId(added)));
             Assert.AreEqual("UnityEngine.SphereCollider", result["removedComponents"][0].Value<string>("type"));
             Assert.AreNotEqual(0, result["removedComponents"][0].Value<int>("assetComponentId"));
+        }
+
+        [Test]
+        public void ListedPropertyIdentityCanBeUsedToRevertTheSameComponent()
+        {
+            EditBox(3);
+            var box = instance.GetComponent<BoxCollider>();
+            var listing = Call("GetOverrides", new JObject { ["gameObjectPath"] = "/" + instance.name });
+            Ok(listing);
+            var property = listing["properties"].Single(p => p.Value<string>("propertyPath") == "m_Size.x");
+            Assert.AreSame(box, ObjectIdentity.FindObject(property.Value<int>("instanceId")));
+            var request = Request("revert", "property");
+            request["instanceId"] = property["instanceId"].DeepClone();
+            request["propertyPath"] = "m_Size.x";
+            Ok(Call("ManageOverrides", request));
+            Assert.AreEqual(1, box.size.x);
         }
 
         [TestCase("apply")]
@@ -153,7 +170,7 @@ namespace UnityCliBridge.Tests
             var assetComponent = AssetDatabase.LoadAssetAtPath<GameObject>(Base).GetComponent<SphereCollider>();
             Object.DestroyImmediate(instance.GetComponent<SphereCollider>());
             var request = Request(action, "removed_component", instance);
-            request["assetComponentId"] = assetComponent.GetInstanceID();
+            request["assetComponentId"] = ObjectIdentity.GetInstanceId(assetComponent);
             Ok(Call("ManageOverrides", request));
             Assert.AreEqual(action == "revert", AssetDatabase.LoadAssetAtPath<GameObject>(Base).GetComponent<SphereCollider>() != null);
             Assert.AreEqual(action == "revert", instance.GetComponent<SphereCollider>() != null);

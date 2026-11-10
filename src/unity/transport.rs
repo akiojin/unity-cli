@@ -49,9 +49,42 @@ impl UnityClient {
     }
 
     pub async fn connect(config: &RuntimeConfig) -> Result<Self> {
-        let auth_token = super::auth::token_for(config)?;
+        let started = Instant::now();
+        let explicit_token_file =
+            std::env::var_os("UNITY_CLI_AUTH_TOKEN_FILE").map(std::path::PathBuf::from);
+        let mut waited_for_token = false;
+        let auth_token = loop {
+            match explicit_token_file
+                .as_deref()
+                .map_or_else(|| super::auth::token_for(config), super::auth::read_token)
+            {
+                Ok(token) => break token,
+                Err(error)
+                    if explicit_token_file.is_some()
+                        && error
+                            .downcast_ref::<std::io::Error>()
+                            .is_some_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+                        && started.elapsed() < config.timeout =>
+                {
+                    waited_for_token = true;
+                    // A reload/heartbeat can briefly replace this private file.
+                    // No request has been sent; never fall back to another token.
+                    tokio::time::sleep(
+                        std::time::Duration::from_millis(25)
+                            .min(config.timeout.saturating_sub(started.elapsed())),
+                    )
+                    .await;
+                }
+                Err(error) => return Err(error),
+            }
+        };
+        let connect_timeout = if waited_for_token {
+            config.timeout.saturating_sub(started.elapsed())
+        } else {
+            config.timeout
+        };
         let stream = timeout(
-            config.timeout,
+            connect_timeout,
             TcpStream::connect((config.host.as_str(), config.port)),
         )
         .await
@@ -302,6 +335,81 @@ mod tests {
             let result = client.call_tool("ping", json!({})).await;
             server.await.unwrap();
             assert!(result.is_ok());
+        });
+    }
+
+    #[test]
+    fn connect_waits_for_the_same_private_token_file_before_sending_a_request() {
+        let lock = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&lock);
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let token = "reloaded-private-token-do-not-log";
+            let directory = tempfile::tempdir().unwrap();
+            let file = directory.path().join("editor.json");
+            let other_file = directory.path().join("other-editor.json");
+            std::env::set_var("UNITY_CLI_AUTH_TOKEN_FILE", &file);
+            let (port, server) = spawn_mock_server(move |request| {
+                assert_eq!(request["authToken"], token);
+                json!({"status":"success","result":{"ok":true}})
+            })
+            .await;
+            let publish = tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                std::fs::write(
+                    &other_file,
+                    json!({"authToken":"other-editor-token"}).to_string(),
+                )
+                .unwrap();
+                std::env::set_var("UNITY_CLI_AUTH_TOKEN_FILE", other_file);
+                std::fs::write(file, json!({"authToken":token}).to_string()).unwrap();
+            });
+            let config = RuntimeConfig {
+                host: "127.0.0.1".into(),
+                port,
+                timeout: Duration::from_secs(2),
+            };
+            let mut client = UnityClient::connect(&config).await.unwrap();
+            assert!(client.call_tool("ping", json!({})).await.unwrap()["ok"]
+                .as_bool()
+                .unwrap());
+            publish.await.unwrap();
+            server.await.unwrap();
+        });
+    }
+
+    #[test]
+    fn missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request() {
+        let lock = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&lock);
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let directory = tempfile::tempdir().unwrap();
+            std::env::set_var(
+                "UNITY_CLI_AUTH_TOKEN_FILE",
+                directory.path().join("missing.json"),
+            );
+            let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+            let config = RuntimeConfig {
+                host: "127.0.0.1".into(),
+                port: listener.local_addr().unwrap().port(),
+                timeout: Duration::from_millis(50),
+            };
+            let started = std::time::Instant::now();
+            let outcome =
+                tokio::time::timeout(Duration::from_secs(2), UnityClient::connect(&config))
+                    .await
+                    .expect("credential wait must be bounded");
+            let error = outcome.err().expect("missing credentials must fail");
+            assert!(started.elapsed() >= config.timeout);
+            assert!(format!("{error:#}").contains("Unable to read Editor authentication file"));
+            assert!(
+                tokio::time::timeout(Duration::from_millis(10), listener.accept())
+                    .await
+                    .is_err()
+            );
         });
     }
 

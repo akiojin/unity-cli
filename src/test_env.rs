@@ -35,6 +35,8 @@ impl<'a> TestEnvironment<'a> {
         for key in [
             "UNITY_CLI_HOST",
             "UNITY_CLI_PORT",
+            "UNITY_CLI_UNITYD_PORT",
+            "UNITY_CLI_LSPD_PORT",
             "UNITY_CLI_TIMEOUT_MS",
             "UNITY_PROJECT_ROOT",
             "UNITY_CLI_ALLOW_UNAUTHENTICATED",

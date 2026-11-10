@@ -83,6 +83,7 @@ ehthumbs_vista.db
 *~
 
 # Test output
+__pycache__/
 coverage/
 .nyc_output/
 tests/.reports/

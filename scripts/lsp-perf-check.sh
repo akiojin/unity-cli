@@ -249,7 +249,7 @@ run_lsp_case() {
       return 1
     fi
 
-    size_json="$(printf '%s' "${normalized}" | calc_size_json 2>&1)"
+    size_json="$(printf '%s' "${normalized}" | calc_size_json)"
     rc=$?
     if [[ ${rc} -ne 0 ]] || ! jq -e . >/dev/null 2>&1 <<<"${size_json}"; then
       CASE_FAIL_REASON="${case_name}: failed to calculate size metrics"

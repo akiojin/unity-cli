@@ -4,6 +4,50 @@ The minimum Bridge version is Unity 2022.3 (`package.json`). The local acceptanc
 matrix covers the following installed release and prerelease Editors. New streams
 must be added to `scripts/e2e-matrix.py` and verified before claiming support.
 
+## Windows verification matrix
+
+Verified on 2026-11-10 (Windows 11 x64) against the updated checkout source.
+All three Editors loaded the Bridge with zero compilation errors and reported
+matching CLI/Bridge version fields (0.19.0).
+
+| Editor | Runtime | VFX Graph | Baseline suites | All-tools | Focused EditMode tests |
+| --- | --- | --- | --- | --- | --- |
+| 6000.3.28f1 | Mono | 17.3.0 | PASS | 123/123, 135 calls | 26/26 |
+| 6000.6.8f1 | Mono | 17.6.0 | PASS | 123/123, 135 calls | 26/26 |
+| 7000.0.0a16 | CoreCLR | 17.7.0 | PASS | 123/123, 135 calls | 26/26 |
+
+Each baseline passed input (39 calls), Timeline (40 checks), VFX (64 checks),
+eval (18 checks plus 1,000 consecutive evaluations), hot-reload rejection
+(8 checks), and two real PlayMode tests under each Domain Reload setting.
+The focused EditMode total is 23 Prefab workflow tests and 3 object-identity tests.
+The report records `full_matrix: false`: these results establish the original
+baseline and all-tools sweep, with the exclusions documented in each transcript.
+See the [UTC times, retained results and source fingerprint](verification/issue-544.md).
+
+Windows Hub installations are supported at
+`%ProgramFiles%/Unity/Hub/Editor/<version>/Editor/Unity.exe`. The Windows runner
+defaults to 6000.3.28f1, 6000.6.8f1 and 7000.0.0a16. Each run creates its own
+Editor registry, tools directory and loopback daemon ports so other open projects
+do not supply its connection or authentication state.
+
+The baseline comprises Bridge/package compilation, a matching CLI/Bridge ping,
+input simulation, Timeline, VFX, C# eval (including 1,000 evaluations), optional
+hot-reload error contracts, both PlayMode/domain-reload configurations, and the
+all-tools sweep including LSP performance. The additional `prefab-tests` suite
+runs the Prefab workflow and object-identity EditMode fixtures.
+
+Unity 7.0 Alpha 7000.0.0a16 uses CoreCLR in this Windows **Editor**; the runner
+checks both the absence of `Mono.Runtime` and the presence of
+`System.Private.CoreLib`. The Unity 6 Windows Editors in this matrix use Mono.
+This distinction does not change the dated Unity 6000.7 macOS results below.
+The Unity 7 fixture selects Addressables, Input System, Recorder and AI Navigation
+from that Editor's bundled catalog, alongside VFX/URP, Test Framework, Timeline
+and uGUI. Unity 6 fixtures retain their previously tested optional package pins.
+
+7000.0.0a16 is an alpha: results apply to this exact installed build and package
+set. Player backends, the extended suites below, and actual optional hot-reload
+method replacement require their own runs; the baseline does not establish them.
+
 ## macOS verification matrix
 
 Verified on 2026-09-30 (macOS, Apple Silicon) against the final Bridge source.
@@ -39,7 +83,8 @@ suite's clean-console check caught Unity's internal
 an SDF bake while two matrix groups shared the machine. Neither involves Bridge
 code; both are recorded rather than counted as passes.
 
-Windows hardware verification remains deferred under Issue #340 AC-6.
+The historical Issue #340 matrix above is macOS-only. The Windows baseline
+extension is tracked by [Issue #544](https://github.com/akiojin/unity-cli/issues/544).
 
 ### Extended acceptance suites
 
@@ -65,7 +110,7 @@ is claimed for these installations.
 
 Tool examples and skill discovery are tracked by
 [#393](https://github.com/akiojin/unity-cli/issues/393), as permitted by #392 AC-6.
-Windows hardware execution remains outside this matrix under
+Windows hardware execution of these **extended** suites remains outside this matrix under
 [#386](https://github.com/akiojin/unity-cli/issues/386).
 
 ## VFX Graph contract per package version
@@ -113,13 +158,14 @@ library names and expectations from the installed VFX Graph package, and verify
 
 ## Unity 6000.7 and CoreCLR
 
-Unity 6000.7 runs the Editor, including Play Mode, on Mono. CoreCLR is an
+The verified 6000.7.0a2/b2 macOS Editors, including Play Mode, run on Mono. CoreCLR is an
 experimental **Player** scripting backend; choosing it for a build does not
 switch Editor Bridge, eval or hot reload to CoreCLR. See Unity's official
 [CoreCLR documentation, Code reload](https://docs.unity.com/en-us/engine/6000.7/manual/scripting/compilation-and-code-reload/script-compilation/backends/coreclr).
 
-6000.7 の Editor は Mono で検証済みです。CoreCLR は Player バックエンドであり、
-Editor 機能の実行ランタイムを変更しません。CoreCLR Editor 検証は対象外です。
+この 6000.7 macOS マトリクスの Editor は Mono で検証済みです。ここでの CoreCLR は Player バックエンドであり、
+Editor 機能の実行ランタイムを変更しません。この過去のマトリクスでは CoreCLR Editor 検証は対象外です。
+7000.0.0a16 の Windows CoreCLR Editor 検証は、上記の Windows マトリクスに記載します。
 CoreCLR Player ビルド・実行も本 Issue の対象外であり、検証済みとは扱いません。
 
 6000.7.0a2's bundled Test Framework clears, rather than invalidates, its loaded

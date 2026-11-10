@@ -1,0 +1,1366 @@
+{
+  "started_at": "2026-11-10T11:01:11.422866+00:00",
+  "full_matrix": false,
+  "editors": [
+    {
+      "editor": "C:\\Program Files\\Unity\\Hub\\Editor\\7000.0.0a16\\Editor\\Unity.exe",
+      "status": "PASS",
+      "suites": [
+        {
+          "name": "compile",
+          "status": "PASS"
+        },
+        {
+          "name": "input",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\input.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "timeline",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\timeline.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "vfx",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+              "--artifacts",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\vfx"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\vfx.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+                "--artifacts",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\vfx"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "eval",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\eval.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "hot-reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+              "--expect",
+              "missing"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\hot-reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+                "--expect",
+                "missing"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+              "--cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\reload.json"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+                "--cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\reload.json"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "all-tools",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--skip-quit"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\all-tools.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--skip-quit"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "prefab-tests",
+          "command": [
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "PrefabWorkflowHandlerTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\PrefabWorkflowHandlerTests.xml"
+            ],
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "ObjectIdentityTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\ObjectIdentityTests.xml"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\prefab-tests.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "PrefabWorkflowHandlerTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\PrefabWorkflowHandlerTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            },
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "ObjectIdentityTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\ObjectIdentityTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        }
+      ],
+      "artifacts": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r",
+      "started_at": "2026-11-10T11:01:12.479464+00:00",
+      "version": "7000.0.0a16",
+      "packages": {
+        "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
+        "com.unity.visualeffectgraph": "17.7.0",
+        "com.unity.render-pipelines.universal": "17.7.0",
+        "com.unity.ugui": "7.0.0",
+        "com.unity.test-framework": "1.9.0",
+        "com.unity.timeline": "6.7.0",
+        "com.unity.addressables": "4.1.2",
+        "com.unity.inputsystem": "7.0.0",
+        "com.unity.recorder": "5.1.7",
+        "com.unity.ai.navigation": "2.0.16",
+        "com.unity.modules.accessibility": "1.0.0",
+        "com.unity.modules.adaptiveperformance": "1.0.0",
+        "com.unity.modules.ai": "1.0.0",
+        "com.unity.modules.amd": "1.0.0",
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.modules.cloth": "1.0.0",
+        "com.unity.modules.director": "1.0.0",
+        "com.unity.modules.hierarchy": "1.0.0",
+        "com.unity.modules.hierarchycore": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.localizationruntime": "1.0.0",
+        "com.unity.modules.metalfx": "1.0.0",
+        "com.unity.modules.nvidia": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.physicscore2d": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.smartstrings": "1.0.0",
+        "com.unity.modules.spriteatlas": "1.0.0",
+        "com.unity.modules.spritemask": "1.0.0",
+        "com.unity.modules.subsystems": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0",
+        "com.unity.modules.tetgen": "1.0.0",
+        "com.unity.modules.tilemap": "1.0.0",
+        "com.unity.modules.timelinefoundation": "1.0.0",
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.uielementsnative": "1.0.0",
+        "com.unity.modules.umbra": "1.0.0",
+        "com.unity.modules.unityanalytics": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequestassetbundle": "1.0.0",
+        "com.unity.modules.unitywebrequestaudio": "1.0.0",
+        "com.unity.modules.unitywebrequesttexture": "1.0.0",
+        "com.unity.modules.unitywebrequestwww": "1.0.0",
+        "com.unity.modules.vectorgraphics": "1.0.0",
+        "com.unity.modules.vehicles": "1.0.0",
+        "com.unity.modules.video": "1.0.0",
+        "com.unity.modules.wind": "1.0.0",
+        "com.unity.modules.xr": "1.0.0"
+      },
+      "launch": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\7000.0.0a16\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+        "-executeMethod",
+        "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+        "-logFile",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\editor.log"
+      ],
+      "pid": 17196,
+      "compilation": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 349,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-10T11:03:39.0235050Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "editor_info": {
+        "assetsPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/Assets",
+        "codeIndexRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/.unity/cache/code-index",
+        "packagesPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/Packages",
+        "projectRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project",
+        "unity": {
+          "platform": "WindowsEditor",
+          "productName": "UnityCliBridge",
+          "unityVersion": "7000.0.0a16"
+        }
+      },
+      "resolved_vfx": "17.7.0",
+      "ping": {
+        "bridgeVersion": "0.19.0",
+        "echo": null,
+        "message": "pong",
+        "projectPath": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\7000.0.0a16-3yx33w0r\\project",
+        "supportsSafeClose": true,
+        "timestamp": "2026-11-10T11:05:00.4114026Z",
+        "versionCheck": {
+          "bridgeVersion": "0.19.0",
+          "cliVersion": "0.19.0",
+          "message": "CLI and bridge are both 0.19.0",
+          "status": "match"
+        }
+      },
+      "runtime_probe": {
+        "diagnostics": [],
+        "exception": null,
+        "logs": [],
+        "requestId": "cli-31604-18e6aa41a3fb6d94-0",
+        "state": "completed",
+        "value": false
+      },
+      "corelib_probe": {
+        "diagnostics": [],
+        "exception": null,
+        "logs": [],
+        "requestId": "cli-13632-18e6aa41d9b6d7e8-0",
+        "state": "completed",
+        "value": "System.Private.CoreLib"
+      },
+      "runtime": "CoreCLR",
+      "finished_at": "2026-11-10T11:10:31.493166+00:00"
+    },
+    {
+      "editor": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.28f1\\Editor\\Unity.exe",
+      "status": "PASS",
+      "suites": [
+        {
+          "name": "compile",
+          "status": "PASS"
+        },
+        {
+          "name": "input",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\input.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "timeline",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\timeline.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "vfx",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+              "--artifacts",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\vfx"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\vfx.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+                "--artifacts",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\vfx"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "eval",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\eval.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "hot-reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+              "--expect",
+              "missing"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\hot-reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+                "--expect",
+                "missing"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+              "--cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\reload.json"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+                "--cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\reload.json"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "all-tools",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--skip-quit"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\all-tools.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--skip-quit"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "prefab-tests",
+          "command": [
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "PrefabWorkflowHandlerTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\PrefabWorkflowHandlerTests.xml"
+            ],
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "ObjectIdentityTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\ObjectIdentityTests.xml"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\prefab-tests.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "PrefabWorkflowHandlerTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\PrefabWorkflowHandlerTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            },
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "ObjectIdentityTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\ObjectIdentityTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        }
+      ],
+      "artifacts": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0",
+      "started_at": "2026-11-10T11:10:31.495886+00:00",
+      "version": "6000.3.28f1",
+      "packages": {
+        "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
+        "com.unity.visualeffectgraph": "17.3.0",
+        "com.unity.render-pipelines.universal": "17.3.0",
+        "com.unity.ugui": "2.0.0",
+        "com.unity.test-framework": "1.6.0",
+        "com.unity.timeline": "1.8.13",
+        "com.unity.addressables": "2.9.1",
+        "com.unity.inputsystem": "1.19.0",
+        "com.unity.recorder": "5.1.6",
+        "com.unity.ai.navigation": "2.0.13",
+        "com.unity.modules.accessibility": "1.0.0",
+        "com.unity.modules.adaptiveperformance": "1.0.0",
+        "com.unity.modules.ai": "1.0.0",
+        "com.unity.modules.amd": "1.0.0",
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.modules.cloth": "1.0.0",
+        "com.unity.modules.director": "1.0.0",
+        "com.unity.modules.hierarchy": "1.0.0",
+        "com.unity.modules.hierarchycore": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.nvidia": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.subsystems": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0",
+        "com.unity.modules.tilemap": "1.0.0",
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.uielementsnative": "1.0.0",
+        "com.unity.modules.umbra": "1.0.0",
+        "com.unity.modules.unityanalytics": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequestassetbundle": "1.0.0",
+        "com.unity.modules.unitywebrequestaudio": "1.0.0",
+        "com.unity.modules.unitywebrequesttexture": "1.0.0",
+        "com.unity.modules.unitywebrequestwww": "1.0.0",
+        "com.unity.modules.vectorgraphics": "1.0.0",
+        "com.unity.modules.vehicles": "1.0.0",
+        "com.unity.modules.video": "1.0.0",
+        "com.unity.modules.vr": "1.0.0",
+        "com.unity.modules.wind": "1.0.0",
+        "com.unity.modules.xr": "1.0.0"
+      },
+      "launch": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.28f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+        "-executeMethod",
+        "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+        "-logFile",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\editor.log"
+      ],
+      "pid": 46860,
+      "compilation": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 47,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-10T11:11:31.0108580Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "editor_info": {
+        "assetsPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.3.28f1-n4q14h_0/project/Assets",
+        "codeIndexRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.3.28f1-n4q14h_0/project/.unity/cache/code-index",
+        "packagesPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.3.28f1-n4q14h_0/project/Packages",
+        "projectRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.3.28f1-n4q14h_0/project",
+        "unity": {
+          "platform": "WindowsEditor",
+          "productName": "UnityCliBridge",
+          "unityVersion": "6000.3.28f1"
+        }
+      },
+      "resolved_vfx": "17.3.0",
+      "ping": {
+        "bridgeVersion": "0.19.0",
+        "echo": null,
+        "message": "pong",
+        "projectPath": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.3.28f1-n4q14h_0\\project",
+        "supportsSafeClose": true,
+        "timestamp": "2026-11-10T11:12:27.4930011Z",
+        "versionCheck": {
+          "bridgeVersion": "0.19.0",
+          "cliVersion": "0.19.0",
+          "message": "CLI and bridge are both 0.19.0",
+          "status": "match"
+        }
+      },
+      "runtime_probe": {
+        "diagnostics": [],
+        "exception": null,
+        "logs": [],
+        "requestId": "cli-52588-18e6aaa9bc5e32dc-0",
+        "state": "completed",
+        "value": true
+      },
+      "runtime": "Mono",
+      "finished_at": "2026-11-10T11:17:16.512165+00:00"
+    },
+    {
+      "editor": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.8f1\\Editor\\Unity.exe",
+      "status": "PASS",
+      "suites": [
+        {
+          "name": "compile",
+          "status": "PASS"
+        },
+        {
+          "name": "input",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\input.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-input-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "timeline",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\timeline.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-timeline.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "vfx",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+              "--artifacts",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\vfx"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\vfx.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-vfx.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+                "--artifacts",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\vfx"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "eval",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\eval.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-eval.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "hot-reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--project",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+              "--expect",
+              "missing"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\hot-reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-hot-reload.py",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--project",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+                "--expect",
+                "missing"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "reload",
+          "command": [
+            [
+              "python3",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+              "--cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\reload.json"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\reload.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "python3",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-test-domain-reload.py",
+                "--cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\reload.json"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "all-tools",
+          "command": [
+            [
+              "bash",
+              "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+              "--unity-cli",
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--port",
+              "6548",
+              "--skip-quit"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\all-tools.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "bash",
+                "E:\\unity-cli\\work\\issue-544\\scripts\\e2e-all-tools.sh",
+                "--unity-cli",
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--port",
+                "6548",
+                "--skip-quit"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        },
+        {
+          "name": "prefab-tests",
+          "command": [
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "PrefabWorkflowHandlerTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\PrefabWorkflowHandlerTests.xml"
+            ],
+            [
+              "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+              "--host",
+              "127.0.0.1",
+              "--port",
+              "6548",
+              "test",
+              "--project-path",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+              "--mode",
+              "editmode",
+              "--filter",
+              "ObjectIdentityTests",
+              "--report",
+              "nunit",
+              "--output",
+              "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\ObjectIdentityTests.xml"
+            ]
+          ],
+          "log": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\prefab-tests.log",
+          "status": "PASS",
+          "steps": [
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "PrefabWorkflowHandlerTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\PrefabWorkflowHandlerTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            },
+            {
+              "command": [
+                "E:\\unity-cli\\work\\issue-544\\target\\debug\\unity-cli.exe",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "6548",
+                "test",
+                "--project-path",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+                "--mode",
+                "editmode",
+                "--filter",
+                "ObjectIdentityTests",
+                "--report",
+                "nunit",
+                "--output",
+                "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\ObjectIdentityTests.xml"
+              ],
+              "returncode": 0,
+              "status": "PASS"
+            }
+          ],
+          "returncode": 0
+        }
+      ],
+      "artifacts": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin",
+      "started_at": "2026-11-10T11:17:16.515442+00:00",
+      "version": "6000.6.8f1",
+      "packages": {
+        "com.akiojin.unity-cli-bridge": "file:unity-cli-bridge",
+        "com.unity.visualeffectgraph": "17.6.0",
+        "com.unity.render-pipelines.universal": "17.6.0",
+        "com.unity.ugui": "2.6.0",
+        "com.unity.test-framework": "1.8.0",
+        "com.unity.timeline": "6.6.0",
+        "com.unity.addressables": "2.9.1",
+        "com.unity.inputsystem": "1.19.0",
+        "com.unity.recorder": "5.1.6",
+        "com.unity.ai.navigation": "2.0.13",
+        "com.unity.modules.accessibility": "1.0.0",
+        "com.unity.modules.adaptiveperformance": "1.0.0",
+        "com.unity.modules.ai": "1.0.0",
+        "com.unity.modules.amd": "1.0.0",
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.modules.cloth": "1.0.0",
+        "com.unity.modules.director": "1.0.0",
+        "com.unity.modules.hierarchy": "1.0.0",
+        "com.unity.modules.hierarchycore": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.nvidia": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.physicscore2d": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.subsystems": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0",
+        "com.unity.modules.tetgen": "1.0.0",
+        "com.unity.modules.tilemap": "1.0.0",
+        "com.unity.modules.timelinefoundation": "1.0.0",
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.uielementsnative": "1.0.0",
+        "com.unity.modules.umbra": "1.0.0",
+        "com.unity.modules.unityanalytics": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequestassetbundle": "1.0.0",
+        "com.unity.modules.unitywebrequestaudio": "1.0.0",
+        "com.unity.modules.unitywebrequesttexture": "1.0.0",
+        "com.unity.modules.unitywebrequestwww": "1.0.0",
+        "com.unity.modules.vectorgraphics": "1.0.0",
+        "com.unity.modules.vehicles": "1.0.0",
+        "com.unity.modules.video": "1.0.0",
+        "com.unity.modules.wind": "1.0.0",
+        "com.unity.modules.xr": "1.0.0"
+      },
+      "launch": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.8f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+        "-executeMethod",
+        "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
+        "-logFile",
+        "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\editor.log"
+      ],
+      "pid": 53192,
+      "compilation": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 90,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-10T11:18:33.1579895Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "editor_info": {
+        "assetsPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.6.8f1-9ofsuhin/project/Assets",
+        "codeIndexRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.6.8f1-9ofsuhin/project/.unity/cache/code-index",
+        "packagesPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.6.8f1-9ofsuhin/project/Packages",
+        "projectRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/6000.6.8f1-9ofsuhin/project",
+        "unity": {
+          "platform": "WindowsEditor",
+          "productName": "UnityCliBridge",
+          "unityVersion": "6000.6.8f1"
+        }
+      },
+      "resolved_vfx": "17.6.0",
+      "ping": {
+        "bridgeVersion": "0.19.0",
+        "echo": null,
+        "message": "pong",
+        "projectPath": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+        "supportsSafeClose": true,
+        "timestamp": "2026-11-10T11:19:26.0318588Z",
+        "versionCheck": {
+          "bridgeVersion": "0.19.0",
+          "cliVersion": "0.19.0",
+          "message": "CLI and bridge are both 0.19.0",
+          "status": "match"
+        }
+      },
+      "runtime_probe": {
+        "diagnostics": [],
+        "exception": null,
+        "logs": [],
+        "requestId": "cli-49212-18e6ab0b2f06c180-0",
+        "state": "completed",
+        "value": true
+      },
+      "runtime": "Mono",
+      "finished_at": "2026-11-10T11:23:49.926677+00:00"
+    }
+  ],
+  "daemon_ports": {
+    "UNITY_CLI_UNITYD_PORT": 58283,
+    "UNITY_CLI_LSPD_PORT": 58284
+  },
+  "status": "PASS"
+}

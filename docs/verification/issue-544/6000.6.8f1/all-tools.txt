@@ -1,0 +1,192 @@
+E2E All-Tools Test Suite
+  Run ID: 20261110-202109
+  Host: 127.0.0.1
+  Port: 6548
+  CLI: E:\unity-cli\work\issue-544\target\debug\unity-cli.exe
+  UNITY_PROJECT_ROOT: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.6.8f1-9ofsuhin\project
+  Log: /tmp/unity-cli-e2e-all-tools-20261110-202109.log
+
+--- LSP Performance Check ---
+  lsp_performance_check           ... PASS
+
+Detected 154 tools.
+
+--- Running tools ---
+  create_scene                   ... PASS
+  load_scene                     ... PASS
+  create_gameobject              ... PASS
+  manage_timeline                ... PASS
+  get_timeline                   ... PASS
+  eval_csharp                    ... PASS
+  get_eval_status                ... PASS
+  get_eval_stats                 ... PASS
+  hot_reload_status              ... PASS
+  add_component                  ... PASS
+  add_component                  ... PASS
+  modify_component               ... PASS
+  set_component_field            ... PASS
+  get_component_types            ... PASS
+  list_components                ... PASS
+  get_component_values           ... PASS
+  find_by_component              ... PASS
+  get_gameobject_details         ... PASS
+  get_object_references          ... PASS
+  analyze_scene_contents         ... PASS
+  get_animator_state             ... PASS
+  play_game                      ... PASS
+  get_animator_runtime_info      ... PASS
+  stop_game                      ... PASS
+  find_gameobject                ... PASS
+  get_hierarchy                  ... PASS
+  modify_gameobject              ... PASS
+  create_material                ... PASS
+  modify_material                ... PASS
+  manage_asset_import_settings   ... PASS
+  manage_asset_database          ... PASS
+  manage_asset_import_settings   ... PASS
+  refresh_assets                 ... PASS
+  create_animator_controller     ... PASS
+  create_animation_clip          ... PASS
+  create_sprite_atlas            ... PASS
+  create_prefab                  ... PASS
+  instantiate_prefab             ... PASS
+  modify_prefab                  ... PASS
+  open_prefab                    ... PASS
+  save_prefab                    ... PASS
+  exit_prefab_mode               ... PASS
+  remove_component               ... PASS
+  delete_gameobject              ... PASS
+  manage_asset_database          ... PASS
+  refresh_assets                 ... PASS
+  create_action_map              ... PASS
+  add_input_action               ... PASS
+  add_input_binding              ... PASS
+  create_composite_binding       ... PASS
+  remove_input_binding           ... PASS
+  remove_all_bindings            ... PASS
+  remove_input_action            ... PASS
+  manage_control_schemes         ... PASS
+  analyze_input_actions_asset    ... PASS
+  get_input_actions_state        ... PASS
+  remove_action_map              ... PASS
+  analyze_asset_dependencies     ... PASS
+  addressables_manage            ... PASS
+  addressables_build             ... PASS
+  addressables_analyze           ... PASS
+  execute_menu_item              ... PASS
+  load_scene                     ... PASS
+  list_scenes                    ... PASS
+  get_scene_info                 ... PASS
+  save_scene                     ... PASS
+  clear_logs                     ... PASS
+  clear_console                  ... PASS
+  read_console                   ... PASS
+  manage_layers                  ... PASS
+  manage_tags                    ... PASS
+  manage_selection               ... PASS
+  manage_tools                   ... PASS
+  manage_windows                 ... PASS
+  package_manager                ... PASS
+  registry_config                ... PASS
+  get_editor_info                ... PASS
+  get_project_settings           ... PASS
+  update_project_settings        ... PASS
+  get_compilation_state          ... PASS
+  build_index                    ... PASS
+  update_index                   ... PASS
+  get_index_status               ... PASS
+  find_symbol                    ... PASS
+  get_symbols                    ... PASS
+  find_refs                      ... PASS
+  validate_text_edits            ... PASS
+  write_csharp_file              ... PASS
+  create_csharp_file             ... PASS
+  apply_csharp_edits             ... PASS
+  replace_symbol_body            ... PASS
+  insert_before_symbol           ... PASS
+  insert_after_symbol            ... PASS
+  create_class                   ... PASS
+  read                           ... PASS
+  search                         ... PASS
+  list_packages                  ... PASS
+  list_tools                     ... PASS
+  get_command_stats              ... PASS
+  ping                           ... PASS
+  get_editor_state               ... PASS
+  get_project_setting            ... PASS
+  set_project_setting            ... PASS
+  set_package_setting            ... PASS
+  get_package_setting            ... PASS
+  profiler_get_metrics           ... PASS
+  profiler_start                 ... PASS
+  profiler_status                ... PASS
+  profiler_stop                  ... PASS
+  run_tests                      ... PASS
+  get_test_status                ... PASS
+  execute_menu_item              ... PASS
+  load_scene                     ... PASS
+  play_game                      ... PASS
+  input_keyboard                 ... PASS
+  input_mouse                    ... PASS
+  input_gamepad                  ... PASS
+  input_touch                    ... PASS
+  create_input_sequence          ... PASS
+  get_current_input_state        ... PASS
+  find_ui_elements               ... PASS
+  get_ui_element_state           ... PASS
+  click_ui_element               ... PASS
+  set_ui_element_value           ... PASS
+  simulate_ui_input              ... PASS
+  capture_video_start            ... PASS
+  capture_video_status           ... PASS
+  capture_video_stop             ... PASS
+  pause_game                     ... PASS
+  pause_game                     ... PASS
+  stop_game                      ... PASS
+  manage_asset_database          ... PASS
+  execute_menu_item              ... PASS
+  capture_screenshot             ... PASS
+  analyze_screenshot             ... PASS
+  quit_editor                     ... SKIP
+
+Known skipped tools:
+  - build_player: Requires platform build modules and an isolated output/project; covered by scripts/e2e-player-build.py.
+  - edit_animation_curve: Mutates the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.
+  - get_animation_curves: Requires the numeric AnimationClip fixture; covered by scripts/e2e-animation-curves-batch-host.sh.
+  - get_build_status: Requires a build_player job; covered by scripts/e2e-player-build.py.
+  - get_prefab_overrides: Requires property and structural overrides; covered by scripts/e2e-prefab.py on both acceptance Editors.
+  - get_scene_bake_status: Requires a start_scene_bake job; covered by scripts/e2e-bake-batch-host.sh.
+  - hot_reload: Requires the optional FastScriptReload backend and a supported host; covered by scripts/e2e-hot-reload-batch-host.sh.
+  - manage_audio_mixer: Requires disposable mixer and WAV assets; covered by scripts/e2e-audio-batch-host.sh on both acceptance Editors.
+  - manage_prefab_overrides: Mutates inherited Prefab assets; dedicated persistence and apply-target coverage in scripts/e2e-prefab.py.
+  - reference_clean: Deletes reference-cache data; must run against a disposable cache.
+  - reference_diff: Requires two fetched UnityCsReference versions; validated separately from Editor runtime tools.
+  - reference_embed_build: Requires embedding model downloads and a disposable reference cache.
+  - reference_embed_search: Requires a built embedding index and model downloads.
+  - reference_fetch: Downloads UnityCsReference into a separate cache; covered by scripts/e2e-reference-fetch.sh.
+  - reference_find_symbol: Requires a fetched and indexed UnityCsReference cache; validated separately from Editor runtime tools.
+  - reference_grep: Requires a fetched UnityCsReference cache; validated separately from Editor runtime tools.
+  - reference_resolve_symbol_at: Requires a fetched and indexed UnityCsReference cache; validated separately from Editor runtime tools.
+  - reference_search: Requires a fetched UnityCsReference cache; validated separately from Editor runtime tools.
+  - reference_status: Requires the isolated reference-cache lifecycle; covered by scripts/e2e-reference-fetch.sh.
+  - reference_view: Requires a fetched UnityCsReference cache; validated separately from Editor runtime tools.
+  - remove_symbol: Deletes project fixture symbols used by later tests; requires a disposable C# workspace.
+  - rename_symbol: Changes project fixture symbols used by later tests; requires a disposable C# workspace.
+  - start_scene_bake: Requires target-specific bake fixtures and long-running jobs; covered by scripts/e2e-bake-batch-host.sh.
+  - unpack_prefab: Destructively removes Prefab connections; dedicated nested hierarchy coverage in scripts/e2e-prefab.py.
+  - vfx_apply: Requires the optional VFX Graph package and graph fixture; covered by scripts/e2e-vfx-batch-host.sh.
+  - vfx_bake_sdf: Requires VFX Graph and GPU compute support; covered by scripts/e2e-vfx-batch-host.sh.
+  - vfx_describe_graph: Requires the optional VFX Graph package and graph fixture; covered by scripts/e2e-vfx-batch-host.sh.
+  - vfx_list_library: Requires the optional VFX Graph package; covered by scripts/e2e-vfx-batch-host.sh.
+  - vfx_runtime: Requires an active VFX graph and GPU runtime; covered by scripts/e2e-vfx-batch-host.sh.
+  - vfx_settings: Mutates VFX-specific project settings; covered in an isolated VFX fixture by scripts/e2e-vfx-batch-host.sh.
+
+--- Summary ---
+  Invocations PASSED: 135
+  Invocations FAILED: 0
+  Unique tools expected: 154
+  Unique tools called:   123
+  Unique tools passed:   123
+  Unique tools failed:   0
+
+Log file: /tmp/unity-cli-e2e-all-tools-20261110-202109.log

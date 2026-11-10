@@ -148,8 +148,8 @@ fn socket_path() -> Result<PathBuf> {
 }
 
 #[cfg(not(unix))]
-fn daemon_port() -> u16 {
-    6422
+fn daemon_port() -> Result<u16> {
+    super::runtime::tcp_port("UNITY_CLI_UNITYD_PORT", 6422)
 }
 
 fn idle_timeout_secs() -> u64 {
@@ -554,7 +554,7 @@ fn connect_client() -> Result<std::os::unix::net::UnixStream> {
 #[cfg(not(unix))]
 fn connect_client() -> Result<std::net::TcpStream> {
     let stream = std::net::TcpStream::connect_timeout(
-        &std::net::SocketAddr::from(([127, 0, 0, 1], daemon_port())),
+        &std::net::SocketAddr::from(([127, 0, 0, 1], daemon_port()?)),
         Duration::from_millis(100),
     )
     .context("Failed to connect to unityd TCP endpoint")?;
@@ -594,7 +594,7 @@ pub async fn serve_forever() -> Result<()> {
 
     #[cfg(not(unix))]
     let listener = {
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", daemon_port()))
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", daemon_port()?))
             .await
             .context("Failed to bind unityd TCP listener")?;
         listener
