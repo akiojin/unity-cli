@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+      - name: Prevent legacy Bridge identity API regressions
+        run: python3 -m unittest discover -s tests/scripts -p test_bridge_object_identity.py -v
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
