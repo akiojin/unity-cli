@@ -85,7 +85,7 @@ fn main() {
 
 class MacOSReleaseCI(unittest.TestCase):
     def test_required_rust_gate_rejects_missing_or_failed_macos_links(self):
-        workflow = yaml.safe_load((ROOT / '.github/workflows/test.yml').read_text())
+        workflow = yaml.safe_load((ROOT / '.github/workflows/test.yml').read_text(encoding='utf-8'))
         gate = workflow['jobs']['rust-test']
         self.assertEqual(gate['needs'], 'macos-release')
         self.assertEqual(gate['if'], 'always()')
@@ -106,7 +106,7 @@ class MacOSReleaseCI(unittest.TestCase):
                 self.assertIn('macOS release matrix:', run.stdout)
 
     def test_prs_build_both_macos_release_targets_without_skipping(self):
-        workflow = yaml.safe_load((ROOT / '.github/workflows/test.yml').read_text())
+        workflow = yaml.safe_load((ROOT / '.github/workflows/test.yml').read_text(encoding='utf-8'))
         triggers = workflow.get('on', workflow.get(True))
         self.assertIn('develop', triggers['pull_request']['branches'])
         self.assertNotIn('paths', triggers['pull_request'])
@@ -124,7 +124,7 @@ class MacOSReleaseCI(unittest.TestCase):
     def test_release_and_pr_ci_use_same_deployment_targets(self):
         matrices = []
         for filename, job in [('release.yml', 'build'), ('test.yml', 'macos-release')]:
-            workflow = yaml.safe_load((ROOT / '.github/workflows' / filename).read_text())
+            workflow = yaml.safe_load((ROOT / '.github/workflows' / filename).read_text(encoding='utf-8'))
             build_job = workflow['jobs'][job]
             matrix = build_job['strategy']['matrix']['include']
             matrices.append({entry['target']: entry.get('deployment_target')
