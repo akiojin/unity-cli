@@ -1,11 +1,59 @@
-## [Unreleased]
+## [0.19.1] - 2026-11-10
 
-### Fixes
+### 🐛 Bug Fixes
 
-- `create_class` once again writes the generated `.cs` file directly when
-  `UNITY_CLI_LSP_MODE=off`, restoring the v0.18.1 behavior. Other modes keep
-  the LSP write path and its result fields; other C# write tools still require
-  the LSP ([#531](https://github.com/akiojin/unity-cli/issues/531)).
+- *(bridge)* Fix the CS0619 compile errors in `PrefabWorkflowHandler` on
+  Unity 6000.5 and newer (including Unity 7.0 Alpha), where the obsolete
+  `GetInstanceID()` / `EditorUtility.InstanceIDToObject` APIs are errors. Prefab
+  override listing and apply/revert now resolve object identities through the
+  version-aware `ObjectIdentity` helper
+  ([#546](https://github.com/akiojin/unity-cli/issues/546),
+  [#551](https://github.com/akiojin/unity-cli/pull/551)).
+- *(lsp)* `create_class` once again writes the generated `.cs` file directly
+  when `UNITY_CLI_LSP_MODE=off`, restoring the v0.18.1 behavior. Other modes
+  keep the LSP write path and its result fields; other C# write tools still
+  require the LSP ([#531](https://github.com/akiojin/unity-cli/issues/531),
+  [#532](https://github.com/akiojin/unity-cli/pull/532)).
+- *(transport)* When `UNITY_CLI_AUTH_TOKEN_FILE` is set, wait (within the
+  request timeout) for that same token file to reappear during a reload
+  instead of failing or falling back to another token
+  ([#551](https://github.com/akiojin/unity-cli/pull/551)).
+- *(lspd)* Keep the LSP daemon listening after a single client connection
+  fails ([#551](https://github.com/akiojin/unity-cli/pull/551)).
+- *(deps)* Bump quinn-proto to 0.11.19 and rustls to 0.23.46
+  ([#529](https://github.com/akiojin/unity-cli/issues/529),
+  [#530](https://github.com/akiojin/unity-cli/pull/530)).
+
+### 🧪 Compatibility
+
+- *(compat)* Verify Unity 7.0 Alpha 7000.0.0a16 (CoreCLR Editor), 6000.6.8f1
+  and 6000.3.28f1 on Windows 11: Bridge compilation, baseline suites and the
+  all-tools sweep pass on all three Editors. The Windows E2E runner isolates
+  the Editor registry, tools directory and daemon ports of each run
+  ([#544](https://github.com/akiojin/unity-cli/issues/544),
+  [#551](https://github.com/akiojin/unity-cli/pull/551)).
+- *(windows)* Add `UNITY_CLI_UNITYD_PORT` (default `6422`) and
+  `UNITY_CLI_LSPD_PORT` (default `6421`) to choose the Windows loopback daemon
+  ports ([#551](https://github.com/akiojin/unity-cli/pull/551)).
+
+### 📚 Documentation
+
+- *(windows)* Record the current Windows setup and discovery evidence
+  ([#533](https://github.com/akiojin/unity-cli/pull/533), for
+  [#470](https://github.com/akiojin/unity-cli/issues/470)).
+- *(comparison)* Publish the October comparison investigation
+  ([#538](https://github.com/akiojin/unity-cli/pull/538)).
+
+### ⚙️ Miscellaneous Tasks
+
+- *(deps)* Update cargo (tokio, ureq, fastembed, libc, similar, zip,
+  toml_edit) and npm development dependencies
+  ([#535](https://github.com/akiojin/unity-cli/pull/535),
+  [#536](https://github.com/akiojin/unity-cli/pull/536),
+  [#539](https://github.com/akiojin/unity-cli/pull/539),
+  [#540](https://github.com/akiojin/unity-cli/pull/540),
+  [#542](https://github.com/akiojin/unity-cli/pull/542),
+  [#543](https://github.com/akiojin/unity-cli/pull/543)).
 
 ## [0.19.0] - 2026-10-19
 
