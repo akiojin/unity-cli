@@ -149,10 +149,12 @@ jobs:
             os: macos-latest
             artifact: unity-cli-osx-arm64
             binary: unity-cli
+            deployment_target: '13.4'
           - target: x86_64-apple-darwin
             os: macos-latest
             artifact: unity-cli-osx-x64
             binary: unity-cli
+            deployment_target: '10.13'
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             artifact: unity-cli-win-x64
@@ -178,7 +180,9 @@ jobs:
           restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-build-
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.deployment_target }}
+        run: cargo build --locked --release --target ${{ matrix.target }}
 
       - name: Rename artifact (Unix)
         if: runner.os != 'Windows'

@@ -151,6 +151,13 @@ export PATH="$HOME/.local/bin:$PATH"
 
 Set `UNITY_CLI_NO_AUTO_UPDATE=1` to disable auto-update.
 
+The Apple silicon CLI requires macOS 13.4 or newer, matching its bundled ONNX
+Runtime. The Intel CLI targets macOS 10.13; reference embeddings also require a
+compatible ONNX Runtime installation. To build from source on Apple silicon,
+install Xcode Command Line Tools and set `MACOSX_DEPLOYMENT_TARGET=13.4` (or newer).
+The build links compiler-rt from the selected Xcode toolchain for CoreML's OS
+availability checks.
+
 #### Package Managers
 
 ```bash
