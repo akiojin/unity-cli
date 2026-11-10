@@ -1,7 +1,51 @@
 # Issue #386: reconstructed staff coverage and Windows execution entrypoints
 
+## 原本受領と13カテゴリの対応（2026-10-26）
+
+オーナーから [Issue #534 のコメント][staff-comment]として、**2026-10-05** 検証の
+スタッフ原資料を受領しました（[保存版](../../issue-534/staff-report-2026-10-05.md)）。
+環境は **Windows / Unity 6000.4.12f1**、**unity-cli / Bridge 0.18.1**、
+**公式 CLI 1.0.0-beta.11 / Pipeline 0.7.0-exp.1**。
+本書の13カテゴリは過去の不具合を検証するための推測分類であり、原資料の24機能行そのもの
+ではありません。以下の行番号は受領した原資料の機能表を上から数えた番号です。
+○＝記載範囲を実測成功、△＝制約・条件付き成功または試験不合格、—＝この版の標準専用機能なし。
+スタッフが報告した範囲と、過去に提案した詳細な検証条件を区別します。
+
+| 再構成カテゴリ | 原本の対応行（unity-cli / 公式） | 原本に基づく訂正・範囲 |
+| --- | --- | --- |
+| 1. Keyboard / gamepad / touch simulation | 8 マウス ○ / —、9 ゲームパッド ○ / —、10 キーボード・タッチ ○ / — | キー72条件、タップ・スワイプの押下・解放、スティック各軸の指定値を確認。マウスは独立した行として扱う。 |
+| 2. InputAction callback notification | 11 InputActionイベント通知 ○ / — | キーボード・マウス・ゲームパッドに加えタッチの通知も確認。下記のfps別・正負対照の全条件まで報告されたとはしない。 |
+| 3. Input Actions type and persistence | 12 Input Actionsアセット編集 ○ / — | Button／PassThrough／Valueを保存し、再import後の型・ID保持を確認。Editor再起動までの保証はこの原資料にはない。 |
+| 4. Video recording formats | 13 録画 ○ / — | MP4・WebM・PNG連番の生成を確認。 |
+| 5. PlayMode test results and Domain Reload | 6 PlayModeテスト ○ / ○ | Domain Reload有効・無効ともフレーム進行・物理落下のテストに成功。5 EditModeテスト ○ / ○ は別の機能行。leaf countの詳細は記載なし。 |
+| 6. C# reference source resolution | 16 UnityのC#参照ソース取得・検索 ○ / — | Unity版に一致するタグの自動選択・取得、ブランチ指定・検索に成功。 |
+| 7. unityd on-demand / idle recovery and latency | 機能表の直接対応行なし。速度表は23操作すべてでunity-cliの中央値が小さい | 常駐unitydと公式NDJSON shellの初期起動を除く比較。daemon lifecycle (cold start, concurrent start, idle recovery): not reported。速度表をこれらの成功証跡に代用しない。 |
+| 8. Animation numeric curves | 17 Animationカーブ / Timeline編集 ○ / ○ | カーブ・トラック・クリップ・バインド設定と評価位置を確認。補間・削除・負例の全条件までは記載なし。 |
+| 9. Timeline track / clip / binding editing | 17 Animationカーブ / Timeline編集 ○ / ○ | 原本はAnimationとTimelineを同じ行にまとめている。 |
+| 10. In-Editor C# eval and caching | 18 C#コードのその場実行（eval） ○ / ○ | 式・Editor操作・結果の再取得を確認。キャッシュ無効化や1000回soakの結果は記載なし。 |
+| 11. Play Mode method hot reload | 19 Play中のホットリロード ○ / ○ | unity-cliはFastScriptReload、公式はCodeReloadを参照する実装で変更・状態保持・復元を確認。 |
+| 12. Lighting / navigation / occlusion bake | 20 ライトマップ・従来NavMesh・Occlusion生成 ○ / ○、21 NavMeshSurfaceベイク ○ / — | 生成・保存・再読み込み後のデータを確認。NavMeshSurfaceは保存・再読み込み後の経路探索にも成功。 |
+| 13. Windows Player build / launch | 22 Windows向け実行ファイルのビルド ○ / ○ | 生成と画面なし起動を確認。描画・入力の実行確認を含むとはしない。 |
+
+13カテゴリに含まれない原本の行も [比較表](../../../comparison.md)へ反映しました。
+1 GameObject・シーン操作、2 アセット操作、3 Material・Import設定、4 Prefab、
+5 EditMode、7 UI検索・クリック、14 Addressables / Sprite Atlas、15 C#シンボル編集、
+23 Docker標準CLI接続、24 Docker公式HTTP API接続が該当します。
+Prefabは原本どおり、unity-cliは直接編集・Prefab Mode保存、公式はVariant・Override適用／復元・
+Unpackにも対応と記録します。後日追加されたローカルPrefab検証を原本の記述へ混ぜません。
+Docker標準CLI接続はunity-cli ○、公式 △（今回の構成で接続不可）。独自HTTP接続は公式 △
+（操作・Play／Stopに成功）、unity-cliは標準CLIで接続できるため対象外で、○/—を補いません。
+
+以下の調査・コマンドは**2026-10-04時点の履歴**です。現在の原本未入手を意味しません。
+旧2026-09-26検証・2026-09-30受領の報告と今回の2026-10-05検証は別の版です。
+今回の原資料受領は、旧ファイルの添付同一性や、旧13カテゴリの詳細検証をすべて証明するものではありません。
+
+[staff-comment]: https://github.com/akiojin/unity-cli/issues/534#issuecomment-6407542749
+
+## Historical reconstruction (2026-10-04)
+
 Read-only scope investigation, 2026-10-04. The original
-`project-state/pm-scratch/staff-report.md` has **not been obtained**. Its text,
+`project-state/pm-scratch/staff-report.md` had **not been obtained** as of 2026-10-04. Its text,
 original row order, precise ○/△/— marks, all positive scenarios, and attachment
 identity cannot be guaranteed by this reconstruction. Do not mark AC-5 complete
 solely because the rows below pass.
@@ -137,8 +181,8 @@ Fetched primary issue snapshots and complete comments remain in this directory
 as `<number>.json` / `<number>.md`, and the pre-implementation scenario summaries
 are in `original-scenarios.md`.
 
-Next verification should run the portable focused suites on prepared isolated
+At that time, the proposed next verification was to run the portable focused suites on prepared isolated
 Windows fixtures and record each category's actual PASS/FAIL/UNSUPPORTED plus
-raw evidence. Keep the completeness comparison and original positive feature
-rows pending until the original report is supplied or the owner explicitly
-rules that a reconstructed scope replaces it.
+raw evidence. The completeness comparison was pending at that time. The received 2026-10-05
+report and its mapping above now replace that missing-input assumption for
+Issue #534; the historical test proposals remain broader than its reported results.

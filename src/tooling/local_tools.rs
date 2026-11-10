@@ -948,6 +948,16 @@ fn local_create_class(params: &Value) -> Result<Value> {
 
     let body = render_class_template(name, namespace, inherits);
 
+    if env::var("UNITY_CLI_LSP_MODE").is_ok_and(|mode| mode.eq_ignore_ascii_case("off")) {
+        if let Some(parent) = abs_path.parent() {
+            fs::create_dir_all(parent)
+                .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
+        }
+        fs::write(&abs_path, &body)
+            .with_context(|| format!("Failed to write file: {}", abs_path.display()))?;
+        return Ok(json!({ "success": true, "path": rel_path, "content": body }));
+    }
+
     // Write through the same LSP path as `create_csharp_file` so the generated
     // class is validated and the post-write pipeline sees an LSP result.
     let mut result = local_lsp_write(
@@ -1924,6 +1934,7 @@ mod tests {
     #[test]
     fn create_class_rejects_existing_file() {
         let _guard = env_lock().lock().expect("lock should succeed");
+        let _mode = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
         write_file(
             &tmp.path().join("Assets/Scripts/Existing.cs"),
@@ -2181,23 +2192,52 @@ namespace Demo.Game
     }
 
     #[test]
-    fn create_class_requires_lsp_and_does_not_write_directly() {
+    fn create_class_writes_directly_when_lsp_is_off() {
         let _guard = env_lock().lock().expect("lock should succeed");
         let tmp = tempfile::tempdir().expect("temp dir should be created");
-        std::env::set_var("UNITY_PROJECT_ROOT", tmp.path());
-        std::env::set_var("UNITY_CLI_LSP_MODE", "off");
+        let _root = ScopedEnv::set("UNITY_PROJECT_ROOT", tmp.path().to_str().unwrap());
+        let _mode = ScopedEnv::set("UNITY_CLI_LSP_MODE", "off");
 
         let result = maybe_execute_local_tool(
             "create_class",
             &json!({"name":"EnemyAI","folder":"Assets/Scripts/AI"}),
         )
-        .expect("tool should be handled");
+        .expect("tool should be handled")
+        .expect("create_class should write directly when LSP is off");
 
-        assert!(result.is_err(), "create_class should fail when LSP is off");
-        assert!(result.unwrap_err().to_string().contains("requires LSP"));
-        assert!(!tmp.path().join("Assets/Scripts/AI/EnemyAI.cs").exists());
+        assert_eq!(result["success"], true);
+        assert_eq!(result["path"], "Assets/Scripts/AI/EnemyAI.cs");
+        assert_eq!(result["content"], "public class EnemyAI\n{\n}\n");
+        assert_eq!(
+            std::fs::read_to_string(tmp.path().join("Assets/Scripts/AI/EnemyAI.cs")).unwrap(),
+            result["content"].as_str().unwrap()
+        );
+    }
 
-        std::env::remove_var("UNITY_PROJECT_ROOT");
-        std::env::remove_var("UNITY_CLI_LSP_MODE");
+    #[test]
+    fn create_class_lsp_off_preserves_unityengine_using_and_path_override() {
+        let _guard = env_lock().lock().expect("lock should succeed");
+        let tmp = tempfile::tempdir().expect("temp dir should be created");
+        let _root = ScopedEnv::set("UNITY_PROJECT_ROOT", tmp.path().to_str().unwrap());
+        let _mode = ScopedEnv::set("UNITY_CLI_LSP_MODE", "OFF");
+
+        for inherits in ["MonoBehaviour", "ScriptableObject"] {
+            let path = format!("Packages/Game/{inherits}Sample.cs");
+            let result = maybe_execute_local_tool(
+                "create_class",
+                &json!({
+                    "name":"Sample", "namespace":"Game", "inherits":inherits, "path":path
+                }),
+            )
+            .expect("tool should be handled")
+            .expect("Unity class should be created without LSP");
+
+            let content = std::fs::read_to_string(tmp.path().join(&path)).unwrap();
+            assert_eq!(result["success"], true);
+            assert_eq!(result["path"], path);
+            assert_eq!(result["content"], content);
+            assert!(content.starts_with("using UnityEngine;\n\nnamespace Game\n"));
+            assert!(content.contains(&format!("public class Sample : {inherits}")));
+        }
     }
 }

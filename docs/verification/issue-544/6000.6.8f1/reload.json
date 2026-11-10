@@ -1,0 +1,347 @@
+{
+  "cases": [
+    {
+      "domainReloadEnabled": true,
+      "settings": {
+        "assetNamingUsesSpace": true,
+        "defaultBehaviorMode": "Mode3D",
+        "enterPlayModeOptions": "None",
+        "enterPlayModeOptionsEnabled": false,
+        "prefabModeRegularEnvironment": "None",
+        "prefabModeUIEnvironment": "None",
+        "serializationMode": "ForceText",
+        "unityRemote": "",
+        "unityRemoteCompression": "",
+        "unityRemoteResolution": ""
+      },
+      "runId": "07d3e701-f601-40ab-a1a1-87946217104c",
+      "status": "pass",
+      "passed": 2,
+      "failed": 0,
+      "result": {
+        "failedTests": 0,
+        "failures": [],
+        "inconclusiveTests": 0,
+        "latestResult": {
+          "fileContent": "{\r\n  \"generatedAt\": \"2026-11-10T11:21:02.5162180Z\",\r\n  \"runStartedAt\": \"2026-11-10T11:21:02.0945995Z\",\r\n  \"durationSeconds\": 0.3386172,\r\n  \"testMode\": \"PlayMode\",\r\n  \"totalTests\": 2,\r\n  \"passed\": 2,\r\n  \"failed\": 0,\r\n  \"skipped\": 0,\r\n  \"inconclusive\": 0,\r\n  \"status\": \"passed\",\r\n  \"failures\": [],\r\n  \"tests\": [\r\n    {\r\n      \"name\": \"FrameAdvances\",\r\n      \"fullName\": \"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\r\n      \"status\": \"Passed\",\r\n      \"duration\": 0.0397866,\r\n      \"message\": null,\r\n      \"stackTrace\": null,\r\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\"\r\n    },\r\n    {\r\n      \"name\": \"RigidbodyFalls\",\r\n      \"fullName\": \"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\r\n      \"status\": \"Passed\",\r\n      \"duration\": 0.1018352,\r\n      \"message\": null,\r\n      \"stackTrace\": null,\r\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\"\r\n    }\r\n  ]\r\n}",
+          "generatedAt": "2026-11-10T11:21:02.5258332Z",
+          "path": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project\\.unity\\test-results\\TestResults_PlayMode_20261110_112057.json",
+          "status": "available",
+          "summary": {
+            "durationSeconds": 0.3386172,
+            "failed": 0,
+            "failures": [],
+            "generatedAt": "2026-11-10T11:21:02.5162180Z",
+            "inconclusive": 0,
+            "passed": 2,
+            "runStartedAt": "2026-11-10T11:21:02.0945995Z",
+            "skipped": 0,
+            "status": "passed",
+            "testMode": "PlayMode",
+            "tests": [
+              {
+                "duration": 0.0397866,
+                "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances",
+                "message": null,
+                "name": "FrameAdvances",
+                "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\r\n",
+                "stackTrace": null,
+                "status": "Passed"
+              },
+              {
+                "duration": 0.1018352,
+                "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls",
+                "message": null,
+                "name": "RigidbodyFalls",
+                "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\r\n",
+                "stackTrace": null,
+                "status": "Passed"
+              }
+            ],
+            "totalTests": 2
+          }
+        },
+        "passedTests": 2,
+        "runId": "07d3e701-f601-40ab-a1a1-87946217104c",
+        "skippedTests": 0,
+        "status": "completed",
+        "success": true,
+        "testMode": "PlayMode",
+        "tests": [
+          {
+            "duration": 0.0397866,
+            "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances",
+            "message": null,
+            "name": "FrameAdvances",
+            "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\r\n",
+            "status": "Passed"
+          },
+          {
+            "duration": 0.1018352,
+            "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls",
+            "message": null,
+            "name": "RigidbodyFalls",
+            "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\r\n",
+            "status": "Passed"
+          }
+        ],
+        "totalTests": 2
+      }
+    },
+    {
+      "domainReloadEnabled": false,
+      "settings": {
+        "assetNamingUsesSpace": true,
+        "defaultBehaviorMode": "Mode3D",
+        "enterPlayModeOptions": "DisableDomainReload",
+        "enterPlayModeOptionsEnabled": true,
+        "prefabModeRegularEnvironment": "None",
+        "prefabModeUIEnvironment": "None",
+        "serializationMode": "ForceText",
+        "unityRemote": "",
+        "unityRemoteCompression": "",
+        "unityRemoteResolution": ""
+      },
+      "runId": "6f953202-6a32-4152-9d56-ff0d0a3b1641",
+      "status": "pass",
+      "passed": 2,
+      "failed": 0,
+      "result": {
+        "failedTests": 0,
+        "failures": [],
+        "inconclusiveTests": 0,
+        "latestResult": {
+          "fileContent": "{\r\n  \"generatedAt\": \"2026-11-10T11:21:06.2334105Z\",\r\n  \"runStartedAt\": \"2026-11-10T11:21:06.1156164Z\",\r\n  \"durationSeconds\": 0.1038016,\r\n  \"testMode\": \"PlayMode\",\r\n  \"totalTests\": 2,\r\n  \"passed\": 2,\r\n  \"failed\": 0,\r\n  \"skipped\": 0,\r\n  \"inconclusive\": 0,\r\n  \"status\": \"passed\",\r\n  \"failures\": [],\r\n  \"tests\": [\r\n    {\r\n      \"name\": \"FrameAdvances\",\r\n      \"fullName\": \"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\r\n      \"status\": \"Passed\",\r\n      \"duration\": 0.0006847,\r\n      \"message\": null,\r\n      \"stackTrace\": null,\r\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\"\r\n    },\r\n    {\r\n      \"name\": \"RigidbodyFalls\",\r\n      \"fullName\": \"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\r\n      \"status\": \"Passed\",\r\n      \"duration\": 0.0938069,\r\n      \"message\": null,\r\n      \"stackTrace\": null,\r\n      \"output\": \"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\"\r\n    }\r\n  ]\r\n}",
+          "generatedAt": "2026-11-10T11:21:06.2349280Z",
+          "path": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project\\.unity\\test-results\\TestResults_PlayMode_20261110_112105.json",
+          "status": "available",
+          "summary": {
+            "durationSeconds": 0.1038016,
+            "failed": 0,
+            "failures": [],
+            "generatedAt": "2026-11-10T11:21:06.2334105Z",
+            "inconclusive": 0,
+            "passed": 2,
+            "runStartedAt": "2026-11-10T11:21:06.1156164Z",
+            "skipped": 0,
+            "status": "passed",
+            "testMode": "PlayMode",
+            "tests": [
+              {
+                "duration": 0.0006847,
+                "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances",
+                "message": null,
+                "name": "FrameAdvances",
+                "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\r\n",
+                "stackTrace": null,
+                "status": "Passed"
+              },
+              {
+                "duration": 0.0938069,
+                "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls",
+                "message": null,
+                "name": "RigidbodyFalls",
+                "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\r\n",
+                "stackTrace": null,
+                "status": "Passed"
+              }
+            ],
+            "totalTests": 2
+          }
+        },
+        "passedTests": 2,
+        "runId": "6f953202-6a32-4152-9d56-ff0d0a3b1641",
+        "skippedTests": 0,
+        "status": "completed",
+        "success": true,
+        "testMode": "PlayMode",
+        "tests": [
+          {
+            "duration": 0.0006847,
+            "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances",
+            "message": null,
+            "name": "FrameAdvances",
+            "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\r\n",
+            "status": "Passed"
+          },
+          {
+            "duration": 0.0938069,
+            "fullName": "UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls",
+            "message": null,
+            "name": "RigidbodyFalls",
+            "output": "[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\r\n",
+            "status": "Passed"
+          }
+        ],
+        "totalTests": 2
+      }
+    }
+  ],
+  "calls": [
+    {
+      "tool": "ping",
+      "parameters": {},
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw ping\",\"data\":{\"bridgeVersion\":\"0.19.0\",\"echo\":null,\"message\":\"pong\",\"projectPath\":\"E:\\\\unity-cli\\\\work\\\\issue-544\\\\.cache\\\\issue-544\\\\matrix-v11-direct\\\\6000.6.8f1-9ofsuhin\\\\project\",\"supportsSafeClose\":true,\"timestamp\":\"2026-11-10T11:20:57.7273663Z\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_project_settings",
+      "parameters": {
+        "includePlayer": false,
+        "includeEditor": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_project_settings\",\"data\":{\"editor\":{\"assetNamingUsesSpace\":true,\"defaultBehaviorMode\":\"Mode3D\",\"enterPlayModeOptions\":\"DisableDomainReload\",\"enterPlayModeOptionsEnabled\":true,\"prefabModeRegularEnvironment\":\"None\",\"prefabModeUIEnvironment\":\"None\",\"serializationMode\":\"ForceText\",\"unityRemote\":\"\",\"unityRemoteCompression\":\"\",\"unityRemoteResolution\":\"\"}},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "execute_menu_item",
+      "parameters": {
+        "action": "execute",
+        "menuPath": "Tools/Unity CLI/Test Runner E2E/Enable Domain Reload"
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw execute_menu_item\",\"data\":{\"executed\":true,\"executionTime\":1,\"menuExists\":true,\"menuPath\":\"Tools/Unity CLI/Test Runner E2E/Enable Domain Reload\",\"message\":\"Menu item executed successfully\",\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_project_settings",
+      "parameters": {
+        "includePlayer": false,
+        "includeEditor": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_project_settings\",\"data\":{\"editor\":{\"assetNamingUsesSpace\":true,\"defaultBehaviorMode\":\"Mode3D\",\"enterPlayModeOptions\":\"None\",\"enterPlayModeOptionsEnabled\":false,\"prefabModeRegularEnvironment\":\"None\",\"prefabModeUIEnvironment\":\"None\",\"serializationMode\":\"ForceText\",\"unityRemote\":\"\",\"unityRemoteCompression\":\"\",\"unityRemoteResolution\":\"\"}},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "run_tests",
+      "parameters": {
+        "testMode": "PlayMode",
+        "filter": "DomainReloadResultTests",
+        "includeDetails": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw run_tests\",\"data\":{\"message\":\"Test execution started. Use get_test_status to check progress.\",\"runId\":\"07d3e701-f601-40ab-a1a1-87946217104c\",\"status\":\"running\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_test_status",
+      "parameters": {
+        "includeTestResults": true,
+        "includeFileContent": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_test_status\",\"data\":{\"elapsedSeconds\":4.2267702,\"message\":\"Test execution in progress\",\"runId\":\"07d3e701-f601-40ab-a1a1-87946217104c\",\"source\":\"run_tests\",\"status\":\"running\",\"testMode\":\"PlayMode\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_test_status",
+      "parameters": {
+        "includeTestResults": true,
+        "includeFileContent": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_test_status\",\"data\":{\"failedTests\":0,\"failures\":[],\"inconclusiveTests\":0,\"latestResult\":{\"fileContent\":\"{\\r\\n  \\\"generatedAt\\\": \\\"2026-11-10T11:21:02.5162180Z\\\",\\r\\n  \\\"runStartedAt\\\": \\\"2026-11-10T11:21:02.0945995Z\\\",\\r\\n  \\\"durationSeconds\\\": 0.3386172,\\r\\n  \\\"testMode\\\": \\\"PlayMode\\\",\\r\\n  \\\"totalTests\\\": 2,\\r\\n  \\\"passed\\\": 2,\\r\\n  \\\"failed\\\": 0,\\r\\n  \\\"skipped\\\": 0,\\r\\n  \\\"inconclusive\\\": 0,\\r\\n  \\\"status\\\": \\\"passed\\\",\\r\\n  \\\"failures\\\": [],\\r\\n  \\\"tests\\\": [\\r\\n    {\\r\\n      \\\"name\\\": \\\"FrameAdvances\\\",\\r\\n      \\\"fullName\\\": \\\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\\",\\r\\n      \\\"status\\\": \\\"Passed\\\",\\r\\n      \\\"duration\\\": 0.0397866,\\r\\n      \\\"message\\\": null,\\r\\n      \\\"stackTrace\\\": null,\\r\\n      \\\"output\\\": \\\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\\\r\\\\n\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"name\\\": \\\"RigidbodyFalls\\\",\\r\\n      \\\"fullName\\\": \\\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\\",\\r\\n      \\\"status\\\": \\\"Passed\\\",\\r\\n      \\\"duration\\\": 0.1018352,\\r\\n      \\\"message\\\": null,\\r\\n      \\\"stackTrace\\\": null,\\r\\n      \\\"output\\\": \\\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\\\r\\\\n\\\"\\r\\n    }\\r\\n  ]\\r\\n}\",\"generatedAt\":\"2026-11-10T11:21:02.5258332Z\",\"path\":\"E:\\\\unity-cli\\\\work\\\\issue-544\\\\.cache\\\\issue-544\\\\matrix-v11-direct\\\\6000.6.8f1-9ofsuhin\\\\project\\\\.unity\\\\test-results\\\\TestResults_PlayMode_20261110_112057.json\",\"status\":\"available\",\"summary\":{\"durationSeconds\":0.3386172,\"failed\":0,\"failures\":[],\"generatedAt\":\"2026-11-10T11:21:02.5162180Z\",\"inconclusive\":0,\"passed\":2,\"runStartedAt\":\"2026-11-10T11:21:02.0945995Z\",\"skipped\":0,\"status\":\"passed\",\"testMode\":\"PlayMode\",\"tests\":[{\"duration\":0.0397866,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\"message\":null,\"name\":\"FrameAdvances\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\",\"stackTrace\":null,\"status\":\"Passed\"},{\"duration\":0.1018352,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\"message\":null,\"name\":\"RigidbodyFalls\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\",\"stackTrace\":null,\"status\":\"Passed\"}],\"totalTests\":2}},\"passedTests\":2,\"runId\":\"07d3e701-f601-40ab-a1a1-87946217104c\",\"skippedTests\":0,\"status\":\"completed\",\"success\":true,\"testMode\":\"PlayMode\",\"tests\":[{\"duration\":0.0397866,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\"message\":null,\"name\":\"FrameAdvances\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\",\"status\":\"Passed\"},{\"duration\":0.1018352,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\"message\":null,\"name\":\"RigidbodyFalls\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\",\"status\":\"Passed\"}],\"totalTests\":2},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_editor_state",
+      "parameters": {},
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_editor_state\",\"data\":{\"state\":{\"applicationContentsPath\":\"C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Data\",\"applicationPath\":\"C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Unity.exe\",\"isCompiling\":false,\"isPaused\":false,\"isPlaying\":false,\"isUpdating\":false,\"playability\":{\"compilation\":null,\"lastPlayRequestTime\":null,\"playRequested\":false,\"reason\":\"ready\"},\"timeSinceStartup\":228.129141},\"status\":\"success\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "execute_menu_item",
+      "parameters": {
+        "action": "execute",
+        "menuPath": "Tools/Unity CLI/Test Runner E2E/Disable Domain Reload"
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw execute_menu_item\",\"data\":{\"executed\":true,\"executionTime\":46,\"menuExists\":true,\"menuPath\":\"Tools/Unity CLI/Test Runner E2E/Disable Domain Reload\",\"message\":\"Menu item executed successfully\",\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_project_settings",
+      "parameters": {
+        "includePlayer": false,
+        "includeEditor": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_project_settings\",\"data\":{\"editor\":{\"assetNamingUsesSpace\":true,\"defaultBehaviorMode\":\"Mode3D\",\"enterPlayModeOptions\":\"DisableDomainReload\",\"enterPlayModeOptionsEnabled\":true,\"prefabModeRegularEnvironment\":\"None\",\"prefabModeUIEnvironment\":\"None\",\"serializationMode\":\"ForceText\",\"unityRemote\":\"\",\"unityRemoteCompression\":\"\",\"unityRemoteResolution\":\"\"}},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "run_tests",
+      "parameters": {
+        "testMode": "PlayMode",
+        "filter": "DomainReloadResultTests",
+        "includeDetails": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw run_tests\",\"data\":{\"message\":\"Test execution started. Use get_test_status to check progress.\",\"runId\":\"6f953202-6a32-4152-9d56-ff0d0a3b1641\",\"status\":\"running\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_test_status",
+      "parameters": {
+        "includeTestResults": true,
+        "includeFileContent": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_test_status\",\"data\":{\"failedTests\":0,\"failures\":[],\"inconclusiveTests\":0,\"latestResult\":{\"fileContent\":\"{\\r\\n  \\\"generatedAt\\\": \\\"2026-11-10T11:21:06.2334105Z\\\",\\r\\n  \\\"runStartedAt\\\": \\\"2026-11-10T11:21:06.1156164Z\\\",\\r\\n  \\\"durationSeconds\\\": 0.1038016,\\r\\n  \\\"testMode\\\": \\\"PlayMode\\\",\\r\\n  \\\"totalTests\\\": 2,\\r\\n  \\\"passed\\\": 2,\\r\\n  \\\"failed\\\": 0,\\r\\n  \\\"skipped\\\": 0,\\r\\n  \\\"inconclusive\\\": 0,\\r\\n  \\\"status\\\": \\\"passed\\\",\\r\\n  \\\"failures\\\": [],\\r\\n  \\\"tests\\\": [\\r\\n    {\\r\\n      \\\"name\\\": \\\"FrameAdvances\\\",\\r\\n      \\\"fullName\\\": \\\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\\",\\r\\n      \\\"status\\\": \\\"Passed\\\",\\r\\n      \\\"duration\\\": 0.0006847,\\r\\n      \\\"message\\\": null,\\r\\n      \\\"stackTrace\\\": null,\\r\\n      \\\"output\\\": \\\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\\\r\\\\n\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"name\\\": \\\"RigidbodyFalls\\\",\\r\\n      \\\"fullName\\\": \\\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\\",\\r\\n      \\\"status\\\": \\\"Passed\\\",\\r\\n      \\\"duration\\\": 0.0938069,\\r\\n      \\\"message\\\": null,\\r\\n      \\\"stackTrace\\\": null,\\r\\n      \\\"output\\\": \\\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\\\r\\\\n\\\"\\r\\n    }\\r\\n  ]\\r\\n}\",\"generatedAt\":\"2026-11-10T11:21:06.2349280Z\",\"path\":\"E:\\\\unity-cli\\\\work\\\\issue-544\\\\.cache\\\\issue-544\\\\matrix-v11-direct\\\\6000.6.8f1-9ofsuhin\\\\project\\\\.unity\\\\test-results\\\\TestResults_PlayMode_20261110_112105.json\",\"status\":\"available\",\"summary\":{\"durationSeconds\":0.1038016,\"failed\":0,\"failures\":[],\"generatedAt\":\"2026-11-10T11:21:06.2334105Z\",\"inconclusive\":0,\"passed\":2,\"runStartedAt\":\"2026-11-10T11:21:06.1156164Z\",\"skipped\":0,\"status\":\"passed\",\"testMode\":\"PlayMode\",\"tests\":[{\"duration\":0.0006847,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\"message\":null,\"name\":\"FrameAdvances\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\",\"stackTrace\":null,\"status\":\"Passed\"},{\"duration\":0.0938069,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\"message\":null,\"name\":\"RigidbodyFalls\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\",\"stackTrace\":null,\"status\":\"Passed\"}],\"totalTests\":2}},\"passedTests\":2,\"runId\":\"6f953202-6a32-4152-9d56-ff0d0a3b1641\",\"skippedTests\":0,\"status\":\"completed\",\"success\":true,\"testMode\":\"PlayMode\",\"tests\":[{\"duration\":0.0006847,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\",\"message\":null,\"name\":\"FrameAdvances\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.FrameAdvances\\r\\n\",\"status\":\"Passed\"},{\"duration\":0.0938069,\"fullName\":\"UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\",\"message\":null,\"name\":\"RigidbodyFalls\",\"output\":\"[unity-cli-bridge][TestExecutionHandler] Test started: UnityCliBridge.Tests.PlayMode.DomainReloadResultTests.RigidbodyFalls\\r\\n\",\"status\":\"Passed\"}],\"totalTests\":2},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_editor_state",
+      "parameters": {},
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_editor_state\",\"data\":{\"state\":{\"applicationContentsPath\":\"C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Data\",\"applicationPath\":\"C:/Program Files/Unity/Hub/Editor/6000.6.8f1/Editor/Unity.exe\",\"isCompiling\":false,\"isPaused\":false,\"isPlaying\":false,\"isUpdating\":false,\"playability\":{\"compilation\":null,\"lastPlayRequestTime\":null,\"playRequested\":false,\"reason\":\"ready\"},\"timeSinceStartup\":231.4621666},\"status\":\"success\"},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "execute_menu_item",
+      "parameters": {
+        "action": "execute",
+        "menuPath": "Tools/Unity CLI/Test Runner E2E/Restore Settings"
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw execute_menu_item\",\"data\":{\"executed\":true,\"executionTime\":0,\"menuExists\":true,\"menuPath\":\"Tools/Unity CLI/Test Runner E2E/Restore Settings\",\"message\":\"Menu item executed successfully\",\"success\":true},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "tool": "get_project_settings",
+      "parameters": {
+        "includePlayer": false,
+        "includeEditor": true
+      },
+      "returncode": 0,
+      "stdout": "{\"command\":\"raw get_project_settings\",\"data\":{\"editor\":{\"assetNamingUsesSpace\":true,\"defaultBehaviorMode\":\"Mode3D\",\"enterPlayModeOptions\":\"DisableDomainReload\",\"enterPlayModeOptionsEnabled\":true,\"prefabModeRegularEnvironment\":\"None\",\"prefabModeUIEnvironment\":\"None\",\"serializationMode\":\"ForceText\",\"unityRemote\":\"\",\"unityRemoteCompression\":\"\",\"unityRemoteResolution\":\"\"}},\"errors\":[],\"success\":true,\"warnings\":[]}\n",
+      "stderr": ""
+    }
+  ],
+  "ping": {
+    "bridgeVersion": "0.19.0",
+    "echo": null,
+    "message": "pong",
+    "projectPath": "E:\\unity-cli\\work\\issue-544\\.cache\\issue-544\\matrix-v11-direct\\6000.6.8f1-9ofsuhin\\project",
+    "supportsSafeClose": true,
+    "timestamp": "2026-11-10T11:20:57.7273663Z"
+  },
+  "originalSettings": {
+    "assetNamingUsesSpace": true,
+    "defaultBehaviorMode": "Mode3D",
+    "enterPlayModeOptions": "DisableDomainReload",
+    "enterPlayModeOptionsEnabled": true,
+    "prefabModeRegularEnvironment": "None",
+    "prefabModeUIEnvironment": "None",
+    "serializationMode": "ForceText",
+    "unityRemote": "",
+    "unityRemoteCompression": "",
+    "unityRemoteResolution": ""
+  },
+  "settingsRestored": true,
+  "status": "pass"
+}

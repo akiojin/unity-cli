@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using UnityCliBridge.Helpers;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -34,7 +35,7 @@ namespace UnityCliBridge.Handlers
                         if (!property.prefabOverride) continue;
                         properties.Add(new JObject
                         {
-                            ["instanceId"] = item.instanceObject.GetInstanceID(),
+                            ["instanceId"] = ObjectIdentity.GetInstanceId(item.instanceObject),
                             ["type"] = item.instanceObject.GetType().FullName,
                             ["gameObjectPath"] = ObjectPath(item.instanceObject),
                             ["propertyPath"] = property.propertyPath,
@@ -54,9 +55,9 @@ namespace UnityCliBridge.Handlers
                 addedComponents = PrefabUtility.GetAddedComponents(root).Select(o => Describe(o.instanceComponent)).ToArray(),
                 removedComponents = PrefabUtility.GetRemovedComponents(root).Select(o => new
                 {
-                    instanceId = o.containingInstanceGameObject.GetInstanceID(),
+                    instanceId = ObjectIdentity.GetInstanceId(o.containingInstanceGameObject),
                     gameObjectPath = ObjectPath(o.containingInstanceGameObject),
-                    assetComponentId = o.assetComponent.GetInstanceID(), type = o.assetComponent.GetType().FullName,
+                    assetComponentId = ObjectIdentity.GetInstanceId(o.assetComponent), type = o.assetComponent.GetType().FullName,
                     assetPath = AssetDatabase.GetAssetPath(o.assetComponent)
                 }).ToArray()
             };
@@ -101,7 +102,7 @@ namespace UnityCliBridge.Handlers
             }
             else
             {
-                var target = EditorUtility.InstanceIDToObject(parameters.Value<int?>("instanceId") ?? 0);
+                var target = ObjectIdentity.FindObject(parameters.Value<int?>("instanceId") ?? 0);
                 var targetObject = target as GameObject ?? (target as Component)?.gameObject;
                 Require(targetObject != null && !EditorUtility.IsPersistent(targetObject)
                     && (targetObject == root || targetObject.transform.IsChildOf(root.transform)),
@@ -127,7 +128,7 @@ namespace UnityCliBridge.Handlers
                     if (scope == "object") selected = PrefabUtility.GetObjectOverrides(root, false).FirstOrDefault(o => o.instanceObject == target);
                     if (scope == "added_component") selected = PrefabUtility.GetAddedComponents(root).FirstOrDefault(o => o.instanceComponent == target);
                     if (scope == "removed_component") selected = PrefabUtility.GetRemovedComponents(root).FirstOrDefault(o =>
-                        o.containingInstanceGameObject == targetObject && o.assetComponent.GetInstanceID() == parameters.Value<int?>("assetComponentId"));
+                        o.containingInstanceGameObject == targetObject && ObjectIdentity.GetInstanceId(o.assetComponent) == parameters.Value<int?>("assetComponentId"));
                     Require(selected != null, "OVERRIDE_NOT_FOUND", "The specified override no longer exists; list overrides again");
                     if (apply)
                     {
@@ -181,7 +182,7 @@ namespace UnityCliBridge.Handlers
 
         private static object Describe(Object target) => new
         {
-            instanceId = target.GetInstanceID(), gameObjectPath = ObjectPath(target), type = target.GetType().FullName
+            instanceId = ObjectIdentity.GetInstanceId(target), gameObjectPath = ObjectPath(target), type = target.GetType().FullName
         };
 
         private static string ObjectPath(Object target)

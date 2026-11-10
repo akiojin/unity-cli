@@ -1,0 +1,3 @@
+PASS domainReloadEnabled=True: 2 passed, 0 failed
+PASS domainReloadEnabled=False: 2 passed, 0 failed
+Evidence: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\7000.0.0a16-3yx33w0r\reload.json; pass

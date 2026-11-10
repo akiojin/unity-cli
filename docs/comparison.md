@@ -4,9 +4,94 @@
 
 ## English
 
+The latest feature and speed tables reproduce the **staff investigation** tested on
+**2026-10-05**, received from the owner on **2026-10-26** in
+[Issue #534][staff-comment] ([saved original][staff-report]). Environment:
+**Windows / Unity 6000.4.12f1**, **unity-cli / Bridge 0.18.1**,
+**official Unity CLI 1.0.0-beta.11 / Pipeline 0.7.0-exp.1**.
+The staff report confirms support for features previously available only in the
+official CLI and lower unity-cli medians for all **23 shared operations** in this run.
+These are staff measurements; the agent has not remeasured them.
+
+### Staff feature comparison
+
+Legend (from the report): **○** = measured success within the stated scope;
+**△** = limited/conditional success or failed test;
+**—** = no standard dedicated feature in this version.
+The original row order, marks and qualifications are preserved below.
+
+| Feature | unity-cli | Official Unity CLI |
+| --- | --- | --- |
+| GameObject and scene operations | ○ | ○ |
+| Asset search, copy, move and delete | ○ | ○ |
+| Material changes and Import settings retrieval | ○ | ○ |
+| Prefab creation, placement and editing | ○ Direct editing and Prefab Mode save | ○ Also supports Variants, applying/reverting Overrides and Unpack |
+| EditMode tests (automated tests without playing the game) | ○ Position set/get and URP standard shader existence checks passed | ○ The same tests passed |
+| PlayMode tests (automated tests while playing the game) | ○ Frame advancement and physics fall tests passed with Domain Reload enabled and disabled | ○ The same tests passed under the same conditions |
+| UI search and click | ○ Event firing after a click confirmed | — |
+| Mouse movement and button state reading | ○ Coordinates, press/release and event notifications confirmed | — |
+| Gamepad input | ○ Button notifications and requested values for each stick axis confirmed | — |
+| Keyboard and touch input | ○ 72 keyboard conditions and tap/swipe press/release confirmed | — |
+| InputAction event notifications (calling handlers in response to input) | ○ Keyboard, mouse, gamepad and touch notifications confirmed | — |
+| Input Actions asset editing | ○ Button/PassThrough/Value saved; types and IDs preserved after reimport | — |
+| Video recording | ○ MP4, WebM and PNG sequences generated | — |
+| Addressables registration/listing and Sprite Atlas creation | ○ | — |
+| C# symbol search, body editing and rename | ○ Changes to definitions and call sites confirmed | — |
+| Unity C# reference source acquisition and search | ○ Automatic selection/acquisition of a matching Unity version tag, explicit branch selection and search passed | — |
+| Animation curves and Timeline editing | ○ Curves, tracks, clips and bindings set; evaluated position confirmed | ○ Curve, track and clip editing confirmed |
+| In-Editor C# execution (eval) | ○ Expressions, Editor operations and result retrieval confirmed | ○ In-Editor C# execution confirmed |
+| Hot reload during Play (applying C# changes without stopping Play) | ○ Changes, state preservation and restoration confirmed with FastScriptReload | ○ Changes, state preservation and restoration confirmed with an implementation referencing CodeReload |
+| Lightmap, legacy NavMesh and Occlusion generation | ○ Generated data confirmed after save and reload | ○ Confirmed under the same conditions |
+| NavMeshSurface bake | ○ Pathfinding passed after save and reload | — Dedicated command not implemented |
+| Windows executable build | ○ Generation and headless launch confirmed | ○ Generation and headless launch confirmed |
+| Standard CLI connection from a Docker Agent to Unity on the host PC | ○ Operations, save and reconnection after Play/Stop passed | △ Could not connect with this Docker configuration |
+| Official HTTP API connection from Docker | Out of scope because the standard CLI can connect | △ Operations and Play/Stop passed with a custom connection script |
+
+### Staff speed comparison
+
+Both tools used their fast standard resident configurations: unity-cli's
+connection daemon **unityd** and the official CLI's process-reusing **NDJSON shell**.
+Initial resident-process startup is excluded. Values are per-operation response
+time **medians**; ms means milliseconds (**1,000 ms = 1 second**).
+The supplied report does not specify sample counts, p95, focus or raw samples;
+the historical benchmark settings below must not be attributed to it.
+
+| Operation | unity-cli | Official Unity CLI |
+| --- | --- | --- |
+| Editor state retrieval | 29.9 ms | 620.0 ms |
+| Hierarchy retrieval | 24.8 ms | 615.8 ms |
+| GameObject search | 21.8 ms | 624.9 ms |
+| Transform retrieval | 29.0 ms | 773.4 ms |
+| Position change | 23.1 ms | 622.6 ms |
+| Cube creation | 22.5 ms | 622.0 ms |
+| Component addition | 21.9 ms | 765.3 ms |
+| Component removal | 22.7 ms | 770.0 ms |
+| GameObject deletion | 22.0 ms | 616.8 ms |
+| Scene information | 21.7 ms | 633.0 ms |
+| Scene save | 73.5 ms | 673.3 ms |
+| Console retrieval | 24.7 ms | 530.7 ms |
+| Screenshot | 49.0 ms | 634.1 ms |
+| Material search | 36.7 ms | 601.2 ms |
+| Asset copy | 160.8 ms | 677.3 ms |
+| Asset move | 92.5 ms | 668.7 ms |
+| Asset deletion | 100.3 ms | 635.8 ms |
+| Import settings retrieval | 31.4 ms | 581.9 ms |
+| Material change | 92.8 ms | 655.3 ms |
+| Time settings retrieval | 42.2 ms | 629.9 ms |
+| C# file read | 24.3 ms | 622.0 ms |
+| Until Play state confirmed | 6188.2 ms | 8558.2 ms |
+| Until Stop state confirmed | 908.3 ms | 1384.2 ms |
+
+### Earlier comparison context (2026-10-02)
+
+The remaining technical comparison, coexistence details and reproduction notes
+describe the earlier **2026-10-02** investigation. Its macOS numbers under
+[Results](#results) retain their own versions, source commits and binary hashes;
+they are separate from the Windows staff report above.
+
 Unity's official toolchain combines the **Unity Plugin for Claude Code**
 (`unity@unity-agent-plugin`), **Unity CLI** (`unity`), and the Editor-side
-**Pipeline** package (`com.unity.pipeline`). This comparison covers
+**Pipeline** package (`com.unity.pipeline`). The earlier comparison covers
 `unity-cli` **0.17.0 development build** (including Bridge authentication), official CLI **1.0.0-beta.11**, and Pipeline
 **0.8.0-exp.1**, checked on **2026-10-02**. It is a versioned comparison,
 not a claim about future beta releases.
@@ -27,7 +112,7 @@ Each table row links to its evidence:
 - [Plugin license][official-license]: Unity Companion License.
 - [Recorded command catalog and package metadata][catalog]: facts read from the installed Pipeline's `package.json` / `LICENSE.md` and both CLIs' command listings; includes package version, minimum Unity version and license URL.
 
-### Feature comparison
+### Feature comparison (2026-10-02 technical context)
 
 | Topic                      | unity-cli                                                                                                                                                                                                                                                  | Official Unity CLI + Pipeline                                                                                                                                                                                                                                                                            |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,9 +141,11 @@ includes successful Test Runner result collection with Domain Reload enabled and
 Prefab, Timeline, InputActions persistence, animation, video, reference fetching,
 baking, real Hot Reload, and a built Windows Player. Complex input passed 11 checks
 after correcting the test's CRLF counter parsing.
-Linux screenshot tools produced real images using TCP fixtures; a licensed Linux
-Unity Editor, winget installation, and comparison with the original staff report
-remain unverified.
+Linux screenshot tools produced real images using TCP fixtures. Linux Editor
+validation is out of scope per the owner decision on 2026-10-25. Winget
+installation is tracked separately in [Issue #537](https://github.com/akiojin/unity-cli/issues/537).
+The staff original is now available above and mapped to the
+[13 reconstructed categories](verification/issue-386/resume/staff-scope-reconstruction.md).
 
 ### Coexistence
 
@@ -157,16 +244,97 @@ Keep the semantic differences in mind:
 
 ## 日本語
 
+最新の機能・速度表は **2026-10-05** 検証の**スタッフ調査**を転記したものです。
+オーナーから **2026-10-26** に受領した [Issue #534 のコメント][staff-comment]
+（[原資料の保存版][staff-report]）を出典とします。比較環境は
+**Windows / Unity 6000.4.12f1**、**unity-cli / Bridge 0.18.1**、
+**公式 Unity CLI 1.0.0-beta.11 / Pipeline 0.7.0-exp.1** です。
+原資料は、前バージョンで公式のみ対応だった部分への対応と、この測定の**共通23操作すべて**で
+unity-cli の中央値が公式を下回ったことを報告しています。数値はスタッフ実測で、
+エージェントによる再計測は行っていません。
+
+### スタッフ調査の機能比較
+
+原資料の凡例: **○**＝記載範囲を実測成功、**△**＝制約・条件付き成功または試験不合格、
+**—**＝この版の標準専用機能なし。行順・値・条件は原資料のとおりです。
+
+| 機能 | unity-cli | Unity公式 |
+| --- | --- | --- |
+| GameObject・シーン操作 | ○ | ○ |
+| アセット検索・コピー・移動・削除 | ○ | ○ |
+| Material変更・Import設定取得 | ○ | ○ |
+| Prefab作成・配置・編集 | ○ 直接編集・Prefab Mode保存 | ○ Variant・Override適用／復元・Unpackにも対応 |
+| EditModeテスト（ゲームを再生せずに行う自動テスト） | ○ 座標の設定・取得、URP標準シェーダーの存在確認に成功 | ○ 同じテストに成功 |
+| PlayModeテスト（ゲームを再生して行う自動テスト） | ○ Domain Reload有効・無効とも、フレーム進行・物理落下のテストに成功 | ○ 同条件・同じテストに成功 |
+| UI検索・クリック | ○ クリック後のイベント発火を確認 | — |
+| マウス移動・ボタン状態読取 | ○ 座標・押下・解放・イベント通知を確認 | — |
+| ゲームパッド入力 | ○ ボタン通知とスティック各軸の指定値を確認 | — |
+| キーボード・タッチ入力 | ○ キー72条件、タップ・スワイプの押下・解放を確認 | — |
+| InputActionイベント通知（入力に応じて処理を呼び出す仕組み） | ○ キーボード・マウス・ゲームパッド・タッチの通知を確認 | — |
+| Input Actionsアセット編集 | ○ Button／PassThrough／Valueを保存し、再import後も型・IDを保持 | — |
+| 録画 | ○ MP4・WebM・PNG連番の生成を確認 | — |
+| Addressables登録・一覧 / Sprite Atlas作成 | ○ | — |
+| C#シンボル検索・本体編集・改名 | ○ 定義と呼び出し箇所への反映を確認 | — |
+| UnityのC#参照ソース取得・検索 | ○ Unity版に一致するタグの自動選択・取得、ブランチ指定・検索に成功 | — |
+| Animationカーブ / Timeline編集 | ○ カーブ・トラック・クリップ・バインドを設定し、評価位置を確認 | ○ カーブ・トラック・クリップの編集を確認 |
+| C#コードのその場実行（eval） | ○ 式・Editor操作・結果の再取得を確認 | ○ Editor内でのC#実行を確認 |
+| Play中のホットリロード（再生を止めずにC#の変更を反映） | ○ FastScriptReloadで変更・状態保持・復元を確認 | ○ CodeReloadを参照する実装で変更・状態保持・復元を確認 |
+| ライトマップ・従来NavMesh・Occlusion生成 | ○ 生成・保存・再読み込み後のデータを確認 | ○ 同条件で確認 |
+| NavMeshSurfaceベイク | ○ 保存・再読み込み後も経路探索に成功 | — 専用コマンドは未実装 |
+| Windows向け実行ファイルのビルド | ○ 生成と画面なし起動を確認 | ○ 生成と画面なし起動を確認 |
+| Docker内AgentからホストPCのUnityへ標準CLIで接続 | ○ 操作・保存・Play／Stop後の再接続に成功 | △ 今回のDocker構成では接続できず |
+| Dockerから公式HTTP API接続 | 標準CLIで接続できるため対象外 | △ 独自接続スクリプトで操作・Play／Stopに成功 |
+
+### スタッフ調査の速度比較
+
+両者の常駐機能を有効にした高速な標準構成での測定です。unity-cli は接続を扱う
+常駐プロセス **unityd**、公式はコマンド実行プロセスを再利用する **NDJSON shell** を起動。
+常駐プロセスの初期起動時間は除外しています。各値は操作ごとの応答時間の**中央値**です。
+ms はミリ秒（**1,000 ms＝1秒**）です。提供レポートにサンプル数・p95・フォーカス条件・
+生データの記載はなく、下記の過去ベンチマークの条件をこの測定に当てはめません。
+
+| 操作 | unity-cli | Unity公式 |
+| --- | --- | --- |
+| Editor状態取得 | 29.9 ms | 620.0 ms |
+| 階層取得 | 24.8 ms | 615.8 ms |
+| GameObject検索 | 21.8 ms | 624.9 ms |
+| Transform取得 | 29.0 ms | 773.4 ms |
+| 位置変更 | 23.1 ms | 622.6 ms |
+| Cube作成 | 22.5 ms | 622.0 ms |
+| Component追加 | 21.9 ms | 765.3 ms |
+| Component削除 | 22.7 ms | 770.0 ms |
+| GameObject削除 | 22.0 ms | 616.8 ms |
+| シーン情報 | 21.7 ms | 633.0 ms |
+| シーン保存 | 73.5 ms | 673.3 ms |
+| Console取得 | 24.7 ms | 530.7 ms |
+| スクリーンショット | 49.0 ms | 634.1 ms |
+| Material検索 | 36.7 ms | 601.2 ms |
+| アセットコピー | 160.8 ms | 677.3 ms |
+| アセット移動 | 92.5 ms | 668.7 ms |
+| アセット削除 | 100.3 ms | 635.8 ms |
+| Import設定取得 | 31.4 ms | 581.9 ms |
+| Material変更 | 92.8 ms | 655.3 ms |
+| Time設定取得 | 42.2 ms | 629.9 ms |
+| C#ファイル読取 | 24.3 ms | 622.0 ms |
+| Play状態確認まで | 6188.2 ms | 8558.2 ms |
+| Stop状態確認まで | 908.3 ms | 1384.2 ms |
+
+### 過去の比較条件（2026-10-02）
+
+以降の技術比較・共存確認・再計測手順は **2026-10-02** の調査です。
+[Results](#results) の macOS 数値は、それぞれのバージョン・ソースコミット・バイナリの
+ハッシュとともに保持しています。上記の Windows スタッフ調査とは別の測定です。
+
 Unity 公式は **Unity Plugin for Claude Code**、**Unity CLI**（`unity`）、
 Editor 側の **Pipeline**（`com.unity.pipeline`）を提供しています。
-このページは **2026-10-02** 時点の `unity-cli` **0.17.0 開発ビルド**（Bridge認証対応込み）、公式 CLI
+下記の過去比較は **2026-10-02** 時点の `unity-cli` **0.17.0 開発ビルド**（Bridge認証対応込み）、公式 CLI
 **1.0.0-beta.11**、Pipeline **0.8.0-exp.1** の比較です。将来の beta 版に
 同じ結果を保証するものではありません。公式資料は上記のコミットに固定しています。
 計測時のソースコミットとバイナリのハッシュは [Results](#results) に記録しています。
 新しい checkout をビルドすれば新しい測定になります。機能表はこのページと同時に
 提供する実装をリンク先として参照します。
 
-### 機能比較
+### 機能比較（2026-10-02 技術比較）
 
 | 項目                     | unity-cli                                                                                                                                                                                                     | 公式 Unity CLI + Pipeline                                                                                                                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -191,8 +359,10 @@ CLI / Bridge 0.18.1、Unity 6000.4.4f1 で実 setup、lockfile 発見、Editor �
 下の速度比較は macOS の計測です。
 [追加の機能検証](verification/issue-386/resume/README.md)では、Domain Reload 有効・無効でのTest Runnerの結果取得、
 Prefab、Timeline、InputActions 保存、Animation、Video、Reference、Bake、実 Hot Reload、実 Windows Player が成功しました。
-複合入力はテストのCRLFカウンター読取を修正して11件成功しました。Linux の画面取得ツールは TCP fixture で実画像を生成しましたが、
-認証済み Linux Unity Editor、winget 導入、スタッフ原資料との網羅性確認は未検証です。
+複合入力はテストのCRLFカウンター読取を修正して11件成功しました。Linux の画面取得ツールは
+TCP fixture で実画像を生成しました。Linux Editor の実機検証は2026-10-25のオーナー判断で
+対象外、winget 導入は [Issue #537](https://github.com/akiojin/unity-cli/issues/537) で扱います。
+スタッフ原資料は上記に反映し、[13カテゴリとの対応](verification/issue-386/resume/staff-scope-reconstruction.md)も記録しました。
 
 ### 同一プロジェクトでの併用
 
@@ -453,3 +623,6 @@ these `1+2` runs. See [eval caching](editor-eval.md#performance-and-caching).
 [catalog]: benchmarks/official-capabilities-2026-10-02.json
 [old-front]: benchmarks/official-comparison-2026-09-30-foreground.json
 [old-back]: benchmarks/official-comparison-2026-09-30-background.json
+
+[staff-comment]: https://github.com/akiojin/unity-cli/issues/534#issuecomment-6407542749
+[staff-report]: verification/issue-534/staff-report-2026-10-05.md

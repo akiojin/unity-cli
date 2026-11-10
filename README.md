@@ -44,7 +44,11 @@ The Bridge requires Unity 2022.3 or newer. The macOS matrix covers
 2022.3.62f3, 6000.0.84f1, 6000.3.25f1, 6000.4.11f1, 6000.5.3f1,
 6000.6.3f1, 6000.7.0a2 and 6000.7.0b2 (acceptance E2E: PASS on 2026-09-30). See the
 [verification dates and results](docs/editor-compatibility.md) before choosing a version.
-Unity 6000.7 Editor runs on Mono; CoreCLR Player builds are outside this matrix.
+The tested 6000.7 macOS Editors use Mono; CoreCLR Player builds are outside this matrix.
+Windows baseline and all-tools checks passed on 6000.3.28f1, 6000.6.8f1 and
+Unity 7.0 Alpha 7000.0.0a16 against the updated source on 2026-11-10.
+The latter runs its Editor on CoreCLR; see the linked Windows results for the
+exact alpha build, packages and tested scope.
 
 ### Install or update with an LLM agent
 
@@ -279,12 +283,16 @@ policy, required CI, and skill documentation changes.
 | `UNITY_CLI_HOST` | Unity Editor host | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
 | `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
-| `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`). `auto` prefers the C# LSP for symbol search and falls back to the local index (`backend: "index"`, `fallbackReason`) | `auto` |
+| `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`). `auto` prefers the C# LSP for symbol search and falls back to the local index (`backend: "index"`, `fallbackReason`). With `off`, `create_class` writes files directly; other C# write tools still require the LSP. | `auto` |
 | `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | Upper bound (ms) for an `auto` symbol search to wait for the LSP before falling back to the local index | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | Downloaded tools root directory | OS default |
+| `UNITY_CLI_UNITYD_PORT` | Windows unityd loopback TCP port (client and daemon) | `6422` |
+| `UNITY_CLI_LSPD_PORT` | Windows LSP daemon loopback TCP port (client and daemon) | `6421` |
 | `UNITY_CLI_NO_AUTO_UPDATE` | Disable background auto-update (`1` to disable) | *(unset)* |
 
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
+Windows daemon ports accept integers from 1 to 65535; unset them to restore the
+defaults. Pass the same values to the daemon and its CLI clients.
 
 ## Documentation
 

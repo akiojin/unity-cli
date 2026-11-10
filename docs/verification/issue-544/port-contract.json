@@ -1,0 +1,50 @@
+[
+  {
+    "value": "0",
+    "exit_code": 1,
+    "response": {
+      "command": "unityd serve",
+      "data": null,
+      "errors": [
+        {
+          "code": "GENERAL_ERROR",
+          "message": "UNITY_CLI_UNITYD_PORT must be a TCP port between 1 and 65535"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "value": "70000",
+    "exit_code": 1,
+    "response": {
+      "command": "unityd serve",
+      "data": null,
+      "errors": [
+        {
+          "code": "GENERAL_ERROR",
+          "message": "UNITY_CLI_UNITYD_PORT must be a TCP port between 1 and 65535"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  },
+  {
+    "value": "not-a-port",
+    "exit_code": 1,
+    "response": {
+      "command": "unityd serve",
+      "data": null,
+      "errors": [
+        {
+          "code": "GENERAL_ERROR",
+          "message": "UNITY_CLI_UNITYD_PORT must be a TCP port between 1 and 65535"
+        }
+      ],
+      "success": false,
+      "warnings": []
+    }
+  }
+]
