@@ -73,6 +73,59 @@ namespace UnityCliBridge.Tests.Editor
         }
 
         [Test]
+        public void QuitEditor_QueuesMainThreadExitOnlyAfterResponseIsSent()
+        {
+            var exitRequested = typeof(BridgeHost).GetField("exitRequested",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(exitRequested, "Exit must be queued for the main-thread update loop");
+            var previous = (int)exitRequested.GetValue(null);
+            var before = UnityEditor.EditorApplication.delayCall;
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            Task pending = null;
+            SemaphoreSlim gate = null;
+            var gateHeld = false;
+            try
+            {
+                exitRequested.SetValue(null, 0);
+                using var receiver = new TcpClient();
+                receiver.Connect((IPEndPoint)listener.LocalEndpoint);
+                using var sender = listener.AcceptTcpClient();
+                var gates = (ConditionalWeakTable<NetworkStream, SemaphoreSlim>)typeof(BridgeHost)
+                    .GetField("SendGates", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+                gate = gates.GetValue(sender.GetStream(), _ => new SemaphoreSlim(1, 1));
+                gate.Wait();
+                gateHeld = true;
+                pending = (Task)typeof(BridgeHost).GetMethod("ProcessCommandInternal",
+                    BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] {
+                    new Command { Id = "quit-flush-order", Type = "quit_editor",
+                        Parameters = new Newtonsoft.Json.Linq.JObject { ["force"] = true } },
+                    sender, DateTime.UtcNow });
+                Assert.IsFalse(pending.IsCompleted, "The response write is blocked");
+                Assert.AreEqual(0, exitRequested.GetValue(null), "Never exit before flushing success");
+                gate.Release();
+                gateHeld = false;
+                Assert.IsTrue(pending.Wait(5000), "Sending must not need a Unity context update");
+                var reader = new BinaryReader(receiver.GetStream());
+                var header = reader.ReadBytes(4);
+                Assert.AreEqual(4, header.Length);
+                if (BitConverter.IsLittleEndian) Array.Reverse(header);
+                var body = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(BitConverter.ToInt32(header, 0)));
+                StringAssert.Contains("Unity Editor quitting", body);
+                Assert.AreEqual(1, exitRequested.GetValue(null));
+                Assert.AreEqual(before, UnityEditor.EditorApplication.delayCall,
+                    "Background Editors must not depend on an inspector delayCall");
+            }
+            finally
+            {
+                if (gateHeld) gate.Release();
+                pending?.Wait(5000);
+                exitRequested.SetValue(null, previous);
+                listener.Stop();
+            }
+        }
+
+        [Test]
         public void QuitEditor_DoesNotScheduleExitBeforeResponseIsSent()
         {
             var before = UnityEditor.EditorApplication.delayCall;

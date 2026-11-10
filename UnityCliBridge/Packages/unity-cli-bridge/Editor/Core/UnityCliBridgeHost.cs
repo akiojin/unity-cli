@@ -34,6 +34,7 @@ namespace UnityCliBridge.Core
         private static Task listenerTask;
         private static bool isProcessingCommand;
         private static Task pendingCommand;
+        private static int exitRequested;
         private static int activeClientCount;
         
         
@@ -665,6 +666,13 @@ namespace UnityCliBridge.Core
                     BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
                 pendingCommand = null;
             }
+            // delayCall depends on inspector updates, which can stop in a
+            // background Windows Editor. This update loop is always pumped.
+            if (Interlocked.Exchange(ref exitRequested, 0) != 0)
+            {
+                EditorApplication.Exit(0);
+                return;
+            }
             isProcessingCommand = true;
             try
             {
@@ -748,9 +756,10 @@ namespace UnityCliBridge.Core
                 if (responseSent && !responseIsError &&
                     string.Equals(command.Type, "quit_editor", StringComparison.OrdinalIgnoreCase))
                 {
-                    // delayCall can run while an asynchronous write is suspended.
-                    // Register only after the complete success frame has been flushed.
-                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                    // A suspended write may resume on a worker thread. Request
+                    // exit only after the complete frame has been flushed; the
+                    // Editor update loop performs it on the main thread.
+                    Interlocked.Exchange(ref exitRequested, 1);
                 }
             }
             catch (Exception ex)
