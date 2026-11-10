@@ -1,0 +1,22 @@
+   Compiling unity-cli v0.19.0 (E:\unity-cli\work\issue-544)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.38s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-3bb5a93075149277.exe)
+
+running 15 tests
+test unity::auth::tests::credentials_are_endpoint_scoped_and_absent_from_discovery_output ... ok
+test unity::auth::tests::explicit_mounted_lockfile_and_invalid_file_errors_do_not_expose_token ... ok
+test unity::auth::tests::only_exact_one_enables_legacy_opt_out ... ok
+test unity::transport::tests::call_tool_returns_error_on_failure_response ... ok
+test unity::transport::tests::call_tool_returns_result_on_success ... ok
+test unity::transport::tests::call_tool_with_timing_reports_non_negative_durations ... ok
+test unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request ... ok
+test unity::transport::tests::every_request_carries_token_from_private_lockfile ... ok
+test unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request ... ok
+test unity::transport::tests::normalize_failure_preserves_complete_error_envelope ... ok
+test unity::transport::tests::normalize_response_handles_success_and_error_shapes ... ok
+test unity::transport::tests::parse_embedded_json_keeps_plain_strings ... ok
+test unity::transport::tests::parse_json_accepts_trimmed_json ... ok
+test unity::transport::tests::parse_json_rejects_empty_and_non_utf8_payload ... ok
+test unity::transport::tests::ping_backfills_bridge_version_from_editor_state_envelope ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 564 filtered out; finished in 9.29s

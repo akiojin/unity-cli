@@ -1,0 +1,67 @@
+PASS get_editor_info: successful response ()
+Editor: {"assetsPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/Assets", "codeIndexRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/.unity/cache/code-index", "packagesPath": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project/Packages", "projectRoot": "E:/unity-cli/work/issue-544/.cache/issue-544/matrix-v11-direct/7000.0.0a16-3yx33w0r/project", "unity": {"platform": "WindowsEditor", "productName": "UnityCliBridge", "unityVersion": "7000.0.0a16"}}
+PASS Unity version is 7000.0.0a16
+PASS get_compilation_state: successful response ()
+PASS C# compilation errorCount is zero
+PASS read_console: successful response ()
+PASS Console response includes structured log entries
+PASS Console contains no Error/Assert/Exception logs: []
+PASS get_editor_state: successful response ()
+PASS Editor starts outside PlayMode
+PASS get_scene_info: successful response ()
+PASS Active scene has no unsaved changes
+PASS create_scene: successful response ()
+PASS vfx_list_library: successful response ()
+PASS installed VFX package exposes a particle-system template
+PASS vfx_apply: successful response ()
+PASS template creates VisualEffectAsset
+PASS vfx_describe_graph: successful response ()
+PASS vfx_apply: successful response ()
+PASS vfx_apply: graph compilation succeeds
+PASS vfx_apply: successful response ()
+PASS vfx_apply: graph compilation succeeds
+PASS vfx_apply: successful response ()
+PASS vfx_apply: graph compilation succeeds
+PASS vfx_apply: successful response ()
+PASS vfx_apply: graph compilation succeeds
+PASS vfx_apply: successful response ()
+PASS vfx_apply: graph compilation succeeds
+PASS explicit graph compile has successful summary
+PASS vfx_describe_graph: successful response ()
+PASS vfx_describe_graph: graph compilation succeeds
+PASS describe confirms successful graph compile
+PASS describe confirms added context
+PASS describe confirms added parameter
+PASS describe confirms exposed parameter name
+PASS describe confirms added block
+PASS VFX graph error count is zero
+PASS create_gameobject: successful response ()
+PASS add_component: successful response ()
+PASS vfx_runtime: successful response ()
+PASS save_scene: successful response ()
+PASS Runtime rig saved in generated test scene
+PASS play_game: successful response ()
+PASS get_editor_state: successful response ()
+PASS get_editor_state: successful response ()
+PASS Editor reached isPlaying=True
+PASS vfx_runtime: successful response ()
+PASS vfx_runtime: successful response ()
+PASS vfx_runtime: successful response ()
+PASS PlayMode parameter value round-trips
+PASS vfx_runtime: successful response ()
+PASS vfx_runtime: successful response ()
+PASS stop_game: successful response ()
+PASS get_editor_state: successful response ()
+PASS Editor reached isPlaying=False
+PASS vfx_bake_sdf: successful response ()
+PASS SDF bake returns asset GUID and nonzero resolution
+PASS manage_asset_database: successful response ()
+PASS SDF asset is a Texture3D
+PASS SDF asset exists on disk
+PASS get_compilation_state: successful response ()
+PASS C# compilation errorCount is zero
+PASS read_console: successful response ()
+PASS Console response includes structured log entries
+PASS Console contains no Error/Assert/Exception logs: []
+Generated assets: Assets/Scenes/Generated/E2E/Vfx/E2E-774b7195274b.vfx Assets/Scenes/Generated/E2E/Vfx/E2E-774b7195274b-SDF.asset
+VFX E2E: passed=64 failed=0

@@ -7,6 +7,24 @@ use anyhow::Result;
 
 use crate::core::runtime_paths::RuntimePaths;
 
+#[cfg(any(not(unix), test))]
+pub fn tcp_port(variable: &str, default: u16) -> Result<u16> {
+    match std::env::var_os(variable) {
+        None => Ok(default),
+        Some(value) => value
+            .to_str()
+            .and_then(|value| value.parse::<u16>().ok())
+            .filter(|port| *port != 0)
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("{variable} must be a TCP port between 1 and 65535"),
+                )
+                .into()
+            }),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DaemonRuntimePaths {
     name: &'static str,
@@ -65,6 +83,28 @@ mod tests {
     use std::process::Command;
 
     use tempfile::tempdir;
+
+    #[test]
+    fn tcp_ports_are_configurable_and_reject_invalid_values() {
+        let lock = crate::test_env::env_lock()
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let _env = crate::test_env::TestEnvironment::new(&lock);
+        for (name, default) in [
+            ("UNITY_CLI_UNITYD_PORT", 6422),
+            ("UNITY_CLI_LSPD_PORT", 6421),
+        ] {
+            std::env::remove_var(name);
+            assert_eq!(super::tcp_port(name, default).unwrap(), default);
+            std::env::set_var(name, "54321");
+            assert_eq!(super::tcp_port(name, default).unwrap(), 54321);
+            for invalid in ["", "0", "65536", "-1", "not-a-port"] {
+                std::env::set_var(name, invalid);
+                let error = super::tcp_port(name, default).unwrap_err().to_string();
+                assert!(error.contains(name), "{error}");
+            }
+        }
+    }
 
     #[test]
     fn runtime_module_builds_without_warnings_when_unix_code_is_disabled() {

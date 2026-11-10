@@ -1,0 +1,105 @@
+   Compiling unity-cli v0.19.0 (E:\unity-cli\work\issue-544)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.26s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-3bb5a93075149277.exe)
+
+running 2 tests
+test unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request ... ok
+test unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 577 filtered out; finished in 0.16s
+
+     Running tests\auth_warning.rs (target\debug\deps\auth_warning-f556cff9a625766d.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests\bridge_package_dependencies.rs (target\debug\deps\bridge_package_dependencies-b607cbd640b04602.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests\build_failure_output.rs (target\debug\deps\build_failure_output-5becdf7fdec9ded9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests\ci_tests.rs (target\debug\deps\ci_tests-ececf941aca50252.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\csharp_edit_skill_fallback.rs (target\debug\deps\csharp_edit_skill_fallback-71d1964d9a3aa49d.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests\csharp_post_write.rs (target\debug\deps\csharp_post_write-1bd086064cd45bc9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\custom_tools.rs (target\debug\deps\custom_tools-00f952f885f9e745.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests\editor_lifecycle.rs (target\debug\deps\editor_lifecycle-74b0d0d4ab241e38.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests\install_script.rs (target\debug\deps\install_script-14fcf16ad701d742.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\json_envelope.rs (target\debug\deps\json_envelope-41428c3033304845.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+     Running tests\mcp.rs (target\debug\deps\mcp-ebeb8d80580207d9.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests\mcp_dynamic.rs (target\debug\deps\mcp_dynamic-7f806b224bd9c510.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests\setup_dry_run.rs (target\debug\deps\setup_dry_run-15788bce1a4066fd.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests\skills_install.rs (target\debug\deps\skills_install-cb989bfed24e8dd7.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests\tool_list_filters.rs (target\debug\deps\tool_list_filters-86defc4fffe28c2c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests\unityd_autostart.rs (target\debug\deps\unityd_autostart-594f8423da54db4b.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

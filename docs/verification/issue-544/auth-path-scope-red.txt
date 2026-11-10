@@ -1,0 +1,30 @@
+   Compiling unity-cli v0.19.0 (E:\unity-cli\work\issue-544)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.79s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-3bb5a93075149277.exe)
+
+running 1 test
+test unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request ... FAILED
+
+failures:
+
+---- unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request stdout ----
+
+thread 'tokio-rt-worker' (8668) panicked at src\unity\transport.rs:350:17:
+assertion `left == right` failed
+  left: String("other-editor-token")
+ right: "reloaded-private-token-do-not-log"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request' (49772) panicked at src\unity\transport.rs:366:63:
+called `Result::unwrap()` on an `Err` value: OPERATION_FAILED
+
+Caused by:
+    early eof
+
+
+failures:
+    unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 578 filtered out; finished in 0.11s
+
+error: test failed, to rerun pass `--bin unity-cli`

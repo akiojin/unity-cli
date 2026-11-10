@@ -1,4 +1,4 @@
-"""Real macOS Editor compatibility matrix; artifacts and failed fixtures are retained."""
+"""Real macOS/Windows Editor compatibility matrix; artifacts and failed fixtures are retained."""
 import argparse
 from datetime import datetime, timezone
 import json
@@ -9,12 +9,62 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSIONS = ("2022.3.62f3", "6000.0.84f1", "6000.3.25f1", "6000.4.11f1",
             "6000.5.3f1", "6000.6.3f1", "6000.7.0a2", "6000.7.0b2")
+WINDOWS_VERSIONS = ("6000.3.28f1", "6000.6.8f1", "7000.0.0a16")
+
+
+def editor_layout(editor):
+    if editor.name.lower() == "unity.exe":
+        version, data = editor.parents[1].name, editor.parent / "Data"
+    else:
+        version, data = editor.parents[3].name, editor.parent.parent
+    if not re.fullmatch(r"\d+\.\d+\.\d+[abfp]\d+", version):
+        raise ValueError("Expected Hub Editor path containing version: " + str(editor))
+    return version, data
+
+
+def default_editors():
+    if sys.platform == "win32":
+        hub = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Unity/Hub/Editor"
+        return [hub / version / "Editor/Unity.exe" for version in WINDOWS_VERSIONS]
+    return [Path(f"/Applications/Unity/Hub/Editor/{v}/Unity.app/Contents/MacOS/Unity") for v in VERSIONS]
+
+
+def runtime_environment(output, unity_cli):
+    env = dict(os.environ, UNITY_CLI_TOOLS_ROOT=str(output / 'tools'),
+               UNITY_CLI_EDITORS_DIR=str(output / 'editors'),
+               UNITY_CLI_NO_AUTO_UPDATE='1', UNITY_CLI=str(unity_cli))
+    env.pop('UNITY_CLI_AUTH_TOKEN_FILE', None)
+    if sys.platform == 'win32':
+        env['PYTHONUTF8'] = '1'
+        # Hold both reservations while choosing distinct loopback endpoints.
+        # A later bind race fails closed in the owned daemon's startup check.
+        with socket.socket() as unityd, socket.socket() as lspd:
+            unityd.bind(('127.0.0.1', 0))
+            lspd.bind(('127.0.0.1', 0))
+            env['UNITY_CLI_UNITYD_PORT'] = str(unityd.getsockname()[1])
+            env['UNITY_CLI_LSPD_PORT'] = str(lspd.getsockname()[1])
+    return env
+
+
+def listener_pids(port):
+    if sys.platform == "win32":
+        result = subprocess.run(["netstat.exe", "-ano", "-p", "TCP"], check=True,
+                                capture_output=True, text=True, errors="replace", timeout=10)
+        return {int(parts[4]) for line in result.stdout.splitlines()
+                if len(parts := line.split()) == 5 and parts[0] == "TCP"
+                and parts[1].rsplit(":", 1)[-1] == str(port) and parts[3] == "LISTENING"}
+    result = subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
+                            capture_output=True, text=True, timeout=5)
+    if result.returncode not in (0, 1):
+        raise RuntimeError("Could not inspect listener ownership: " + result.stderr)
+    return {int(pid) for pid in result.stdout.split()}
 
 
 def package_manifest(version, catalog, modules):
@@ -30,6 +80,14 @@ def package_manifest(version, catalog, modules):
                  "com.unity.inputsystem": "1.14.2" if legacy else "1.19.0",
                  "com.unity.recorder": "4.0.3" if legacy else "5.1.6",
                  "com.unity.ai.navigation": "1.1.5" if legacy else "2.0.13"})
+    # Unity 7's minimum package versions exceed the verified Unity 6 pins.
+    if version.startswith('7000.'):
+        for name in ('com.unity.addressables', 'com.unity.inputsystem',
+                     'com.unity.recorder', 'com.unity.ai.navigation'):
+            selected = catalog.get(name, {}).get('version')
+            if not selected:
+                raise ValueError('Editor package catalog missing ' + name)
+            deps[name] = selected
     deps.update({name: "1.0.0" for name in modules if name.startswith("com.unity.modules.")})
     return {"dependencies": deps, "testables": ["com.akiojin.unity-cli-bridge"]}
 
@@ -39,6 +97,22 @@ def ready(value):
             and value.get("success") is not False
             and value.get("isCompiling") is False and value.get("isUpdating") is False
             and value.get("errorCount", 0) == 0)
+
+
+def matching_ping(value):
+    check = value.get("versionCheck", {})
+    return (check.get("status") == "match" and bool(check.get("cliVersion"))
+            and check.get("cliVersion") == check.get("bridgeVersion"))
+
+
+def editor_runtime(mono, corelib=None):
+    if mono.get('state') == 'completed':
+        if mono.get('value') is True:
+            return 'Mono'
+        if (mono.get('value') is False and corelib and corelib.get('state') == 'completed'
+                and corelib.get('value') == 'System.Private.CoreLib'):
+            return 'CoreCLR'
+    raise ValueError('Could not prove Editor runtime')
 
 
 def all_passed(results):
@@ -93,7 +167,7 @@ def prepare_perf_fixture(project):
 def extended_suites(editor, args, project, destination):
     cli, port = str(args.unity_cli), str(args.port)
     script = lambda name: str(ROOT / 'scripts' / name)
-    windows_module = editor.parent.parent / 'PlaybackEngines/WindowsStandaloneSupport'
+    windows_module = editor_layout(editor)[1] / 'PlaybackEngines/WindowsStandaloneSupport'
     windows = ['python3', script('e2e-player-build.py'), '--cli', cli,
                '--target', 'StandaloneWindows64']
     if windows_module.is_dir():
@@ -158,11 +232,9 @@ def selected_suites(requested, real):
 
 
 def prepare(editor, destination):
-    resources = editor.parent.parent / "Resources/PackageManager"
+    version, data = editor_layout(editor)
+    resources = data / "Resources/PackageManager"
     catalog = json.loads((resources / "Editor/manifest.json").read_text())["packages"]
-    version = editor.parents[3].name
-    if not re.fullmatch(r"\d+\.\d+\.\d+[abfp]\d+", version):
-        raise ValueError("Expected Hub Editor path containing version: " + str(editor))
     project = destination / "project"
     project.mkdir()
     source = ROOT / "UnityCliBridge"
@@ -191,6 +263,13 @@ def stop_owned(process):
 
 
 def run_suite(command, env, stream, timeout):
+    command = list(command)
+    if command[0] == "python3":
+        command[0] = sys.executable
+    if sys.platform == "win32" and command[0] == "bash":
+        # PATH may resolve Windows' WSL launcher instead of Git Bash.
+        command[0] = str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git/bin/bash.exe")
+        env = dict(env, BASH_ENV=str(ROOT / "scripts/e2e-shell-windows.sh"))
     process = subprocess.Popen(command, env=env, stdout=stream, stderr=subprocess.STDOUT,
                                start_new_session=True)
     try:
@@ -198,17 +277,23 @@ def run_suite(command, env, stream, timeout):
     finally:
         if process.poll() is None:
             # Shell suites spawn CLI children. Stop their owned process group too.
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
+            if sys.platform == "win32":
+                subprocess.run(["taskkill.exe", "/PID", str(process.pid), "/T", "/F"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=15)
                 process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait(timeout=5)
+            else:
+                os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.wait(timeout=5)
 
 
 def run_editor(editor, args, output, base_env):
-    destination = Path(tempfile.mkdtemp(prefix=editor.parents[3].name + "-", dir=output))
-    row = {"editor": str(editor), "status": "FAIL", "suites": [], "artifacts": str(destination)}
+    destination = Path(tempfile.mkdtemp(prefix=editor_layout(editor)[0] + "-", dir=output))
+    row = {"editor": str(editor), "status": "FAIL", "suites": [], "artifacts": str(destination),
+           "started_at": datetime.now(timezone.utc).isoformat()}
     host = None
     try:
         version, project, manifest = prepare(editor, destination)
@@ -228,6 +313,9 @@ def run_editor(editor, args, output, base_env):
         row["launch"] = command
         host = subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         row["pid"] = host.pid
+        # Unity rewrites this same private file across domain reloads. Direct eval
+        # calls need not rescan unrelated Editors (and run tasklist on Windows).
+        env['UNITY_CLI_AUTH_TOKEN_FILE'] = str(Path(env['UNITY_CLI_EDITORS_DIR']) / f'{host.pid}.json')
         cli = [str(args.unity_cli), "--host", "127.0.0.1", "--port", str(args.port),
                "--timeout-ms", "10000", "--output", "json"]
 
@@ -248,9 +336,7 @@ def run_editor(editor, args, output, base_env):
                 if re.search(r"\berror CS\d+:|Project has invalid dependencies:", text):
                     raise RuntimeError("Compilation or package resolution failed; see " + str(log))
             try:
-                owners = subprocess.run(["lsof", "-nP", f"-iTCP:{args.port}", "-sTCP:LISTEN", "-t"],
-                                        capture_output=True, text=True, timeout=5)
-                if set(owners.stdout.split()) == {str(host.pid)}:
+                if listener_pids(args.port) == {host.pid}:
                     state = raw("get_compilation_state", {})
                     if ready(state):
                         row["compilation"] = state
@@ -269,11 +355,18 @@ def run_editor(editor, args, output, base_env):
         if row["resolved_vfx"] != manifest["dependencies"]["com.unity.visualeffectgraph"]:
             raise RuntimeError("Resolved VFX version differs from Editor catalog")
         row["suites"].append({"name": "compile", "status": "PASS"})
+        ping = subprocess.run(cli + ["system", "ping"], env=env, text=True,
+                              capture_output=True, timeout=20, check=True)
+        row["ping"] = json.loads(ping.stdout)["data"]
+        if not matching_ping(row["ping"]):
+            raise RuntimeError("CLI/Bridge version mismatch: " + json.dumps(row["ping"]))
         runtime = raw("eval_csharp", {"code": "Type.GetType(\"Mono.Runtime\") != null", "mode": "expression"})
         row["runtime_probe"] = runtime
-        if runtime.get("state") != "completed" or runtime.get("value") is not True:
-            raise RuntimeError("Could not prove Mono Editor runtime: " + json.dumps(runtime))
-        row["runtime"] = "Mono"
+        corelib = None
+        if runtime.get('value') is False:
+            corelib = raw('eval_csharp', {'code': 'typeof(object).Assembly.GetName().Name', 'mode': 'expression'})
+            row['corelib_probe'] = corelib
+        row['runtime'] = editor_runtime(runtime, corelib)
         suites = {
             "perf": ["python3", str(ROOT / "scripts/bench-editor-ops.py"), "--unity-cli", str(args.unity_cli),
                      "--port", str(args.port), "--project", str(project), "--focus", args.perf_focus,
@@ -294,6 +387,11 @@ def run_editor(editor, args, output, base_env):
         suites.update(real)
         suites = {name: [command] for name, command in suites.items()}
         suites.update(extended_suites(editor, args, project, destination))
+        suites['prefab-tests'] = [
+            [str(args.unity_cli), '--host', '127.0.0.1', '--port', str(args.port),
+             'test', '--project-path', str(project), '--mode', 'editmode', '--filter', fixture,
+             '--report', 'nunit', '--output', str(destination / (fixture + '.xml'))]
+            for fixture in ('PrefabWorkflowHandlerTests', 'ObjectIdentityTests')]
         selected = selected_suites(args.suites, real)
         if "perf" in selected:
             selected.insert(selected.index("perf") + 1, "perf-eval")
@@ -327,7 +425,8 @@ def run_editor(editor, args, output, base_env):
                 raise RuntimeError(name + " failed; see " + str(suite_log))
             # Suites mutate scenes. Persist the owned fixture before the next suite's
             # clean-scene precondition; never apply this to a user's open project.
-            if name != "all-tools":
+            # EditMode fixtures may deliberately leave a new, unsaved scene.
+            if name not in ("all-tools", "prefab-tests"):
                 saved = raw("save_scene", {})
                 if saved.get("error") or saved.get("success") is False:
                     raise RuntimeError("Could not save isolated suite fixture: " + json.dumps(saved))
@@ -345,7 +444,7 @@ def run_editor(editor, args, output, base_env):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--editor", type=Path, action="append", help="Hub Unity executable; repeat to select multiple Editors")
-    parser.add_argument("--unity-cli", type=Path, default=ROOT / "target/debug/unity-cli")
+    parser.add_argument("--unity-cli", type=Path, default=ROOT / ("target/debug/unity-cli.exe" if sys.platform == "win32" else "target/debug/unity-cli"))
     parser.add_argument("--lsp-root", type=Path, help="Directory containing built csharp-lsp/<platform>/server; not needed for --suites perf")
     parser.add_argument("--output", type=Path, help="New evidence directory (must not exist)")
     parser.add_argument("--port", type=int, default=6508)
@@ -360,7 +459,7 @@ def main():
                         help="Focus conditions for the GUI perf suite; release acceptance requires both")
     args = parser.parse_args()
     args.unity_cli = args.unity_cli.resolve()
-    editors = args.editor or [Path(f"/Applications/Unity/Hub/Editor/{v}/Unity.app/Contents/MacOS/Unity") for v in VERSIONS]
+    editors = args.editor or default_editors()
     if not args.unity_cli.is_file() or any(not p.is_file() for p in editors):
         parser.error("Build the CLI and install every selected Editor first")
     needs_lsp = args.suites != "perf"
@@ -368,7 +467,7 @@ def main():
         parser.error("--lsp-root must contain a built csharp-lsp directory")
     if args.fsr_path and not (args.fsr_path / "package.json").is_file():
         parser.error("--fsr-path must be the FastScriptReload Assets directory containing package.json")
-    allowed = {"compile", "perf", *DEFAULT_SUITES, *REAL_HOT_RELOAD_SUITES}
+    allowed = {"compile", "perf", "prefab-tests", *DEFAULT_SUITES, *REAL_HOT_RELOAD_SUITES}
     if args.suites and not set(args.suites.split(",")) <= allowed:
         parser.error("Unknown suite; choose from " + ",".join(sorted(allowed)))
     output = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix="unity-cli-matrix-"))
@@ -380,8 +479,11 @@ def main():
         shutil.copytree(args.lsp_root / "csharp-lsp", tools / "csharp-lsp")
     else:
         tools.mkdir()
-    env = dict(os.environ, UNITY_CLI_TOOLS_ROOT=str(tools), UNITY_CLI_NO_AUTO_UPDATE="1", UNITY_CLI=str(args.unity_cli))
+    (output / 'editors').mkdir()
+    env = runtime_environment(output, args.unity_cli)
     report = {"started_at": datetime.now(timezone.utc).isoformat(), "full_matrix": not bool(args.suites), "editors": []}
+    if sys.platform == 'win32':
+        report['daemon_ports'] = {name: int(env[name]) for name in ('UNITY_CLI_UNITYD_PORT', 'UNITY_CLI_LSPD_PORT')}
     daemon = None
     lsp_daemon = None
     try:

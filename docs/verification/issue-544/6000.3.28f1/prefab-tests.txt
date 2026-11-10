@@ -1,0 +1,4 @@
+Reusing Editor (pid 46860)
+23 tests, 0 failed; report: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.3.28f1-n4q14h_0\PrefabWorkflowHandlerTests.xml
+Reusing Editor (pid 46860)
+3 tests, 0 failed; report: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.3.28f1-n4q14h_0\ObjectIdentityTests.xml

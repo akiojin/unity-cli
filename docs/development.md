@@ -446,13 +446,47 @@ scripts/e2e-matrix.sh \
   --lsp-root /tmp/unity-cli-matrix-tools
 ```
 
-Omit `--editor` to run all eight versions listed in the
-[dated compatibility matrix](editor-compatibility.md); repeat it to select several.
+Omit `--editor` to run the platform's versions listed in the
+[dated compatibility matrix](editor-compatibility.md): eight on macOS, or
+6000.3.28f1 / 6000.6.8f1 / 7000.0.0a16 on Windows. Repeat it to select several.
 `--port` chooses an unused local listener port. `--output` names a new evidence
 directory. `--suites compile,input,timeline,vfx` performs a focused diagnostic run;
-its report explicitly records `full_matrix: false`. Acceptance uses the default
-complete suite set. A missing Editor, compiler error, failed suite or timeout
+its report explicitly records `full_matrix: false`. Full extended acceptance uses
+the default complete suite set; the Windows baseline selection below has its own
+explicitly scoped acceptance results. A missing Editor, compiler error, failed suite or timeout
 fails the run. Inspect `matrix.json` and the linked per-suite logs before claiming PASS.
+
+On Windows, use native Python and Git for Windows (the runner uses
+`%ProgramFiles%/Git/bin/bash.exe` for shell suites), with `jq` and the Python
+`tiktoken` package available to those suites. Hub Editors are discovered under
+`%ProgramFiles%/Unity/Hub/Editor/<version>/Editor/Unity.exe`. The runner selects
+unused Windows daemon ports and passes `UNITY_CLI_UNITYD_PORT` /
+`UNITY_CLI_LSPD_PORT` to every child, keeping existing daemons separate.
+For example, in Git Bash:
+
+```bash
+cargo build --bin unity-cli
+dotnet publish lsp/Server.csproj -c Release -r win-x64 --self-contained true \
+  -o .cache/matrix-tools/csharp-lsp/win-x64
+python scripts/e2e-matrix.py \
+  --editor 'C:/Program Files/Unity/Hub/Editor/7000.0.0a16/Editor/Unity.exe' \
+  --lsp-root .cache/matrix-tools --output .cache/windows-alpha-matrix \
+  --suites input,timeline,vfx,eval,hot-reload,reload,all-tools
+```
+
+This selection measures the original baseline and all-tools sweep, including
+package compilation and a `system ping` that requires matching CLI/Bridge
+versions. It records `full_matrix: false`; it does not imply the extended suites
+below have passed. The runner checks the Windows listener's owning PID and keeps
+Unity hierarchy paths and LF JSON intact when using native `jq` from Git Bash.
+Each run has its own Editor registry; direct CLI calls read the owned Editor's
+private authentication file, including across Domain Reload. The CLI
+waits for this same explicitly configured file to reappear within the connection
+timeout when it is briefly absent, before sending any request. Unity 7 fixtures
+select Addressables, Input System, Recorder and AI Navigation from that Editor's
+catalog rather than reusing the Unity 6 pins.
+Append `,prefab-tests` to the baseline selection to run the Prefab workflow and
+object-identity EditMode fixtures, retaining their NUnit XML reports.
 
 The default matrix also includes `bake`, `player-build`, `video-formats`,
 `animation-curves`, `input-actions-persistence`, and `reference`. To reproduce

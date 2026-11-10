@@ -290,8 +290,13 @@ pub fn serve_forever() -> Result<()> {
     let listener = bind_listener()?;
     write_pid_file()?;
 
+    let result = serve_listener(listener, Duration::from_secs(daemon_idle_timeout_secs()));
+    cleanup_stale_files();
+    result
+}
+
+fn serve_listener(listener: ServerListener, idle_timeout: Duration) -> Result<()> {
     let mut last_activity = Instant::now();
-    let idle_timeout = Duration::from_secs(daemon_idle_timeout_secs());
 
     loop {
         match listener.accept() {
@@ -300,9 +305,12 @@ pub fn serve_forever() -> Result<()> {
                     .set_nonblocking(false)
                     .context("Failed to configure blocking daemon stream")?;
                 last_activity = Instant::now();
-                let action = handle_stream(&mut stream)?;
-                if matches!(action, ConnectionAction::Stop) {
-                    break;
+                match handle_stream(&mut stream) {
+                    Ok(ConnectionAction::Stop) => break,
+                    Ok(ConnectionAction::Continue) => {}
+                    // A timed-out/disconnected client must not terminate the
+                    // shared daemon or force Windows to rebind a busy port.
+                    Err(error) => eprintln!("lspd: client connection failed: {error:#}"),
                 }
             }
             Err(error) if is_would_block(&error) => {
@@ -312,13 +320,11 @@ pub fn serve_forever() -> Result<()> {
                 thread::sleep(Duration::from_millis(200));
             }
             Err(error) => {
-                cleanup_stale_files();
                 return Err(anyhow!("lspd accept failed: {error}"));
             }
         }
     }
 
-    cleanup_stale_files();
     Ok(())
 }
 
@@ -516,7 +522,7 @@ fn bind_listener() -> Result<ServerListener> {
 
     #[cfg(not(unix))]
     {
-        let listener = std::net::TcpListener::bind(("127.0.0.1", daemon_port()))
+        let listener = std::net::TcpListener::bind(("127.0.0.1", daemon_port()?))
             .context("Failed to bind lspd TCP listener")?;
         listener
             .set_nonblocking(true)
@@ -542,7 +548,7 @@ fn connect_client() -> Result<ClientStream> {
 
     #[cfg(not(unix))]
     {
-        connect_tcp_client(daemon_port())
+        connect_tcp_client(daemon_port()?)
     }
 }
 
@@ -601,8 +607,8 @@ fn socket_path() -> Result<PathBuf> {
 }
 
 #[cfg(not(unix))]
-fn daemon_port() -> u16 {
-    6421
+fn daemon_port() -> Result<u16> {
+    crate::daemon::runtime::tcp_port("UNITY_CLI_LSPD_PORT", 6421)
 }
 
 fn write_pid_file() -> Result<()> {
@@ -851,6 +857,40 @@ mod tests {
         let mut writer = ZeroWriter;
         let error = write_all_with_retry(&mut writer, b"abc", "zero write").expect_err("must fail");
         assert!(error.to_string().contains("write returned 0 bytes"));
+    }
+
+    #[test]
+    fn listener_survives_a_bad_client_and_answers_the_next_ping() {
+        let _lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        #[cfg(unix)]
+        let listener = bind_listener().unwrap();
+        #[cfg(not(unix))]
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        #[cfg(not(unix))]
+        let _port = EnvVarGuard::set(
+            "UNITY_CLI_LSPD_PORT",
+            &listener.local_addr().unwrap().port().to_string(),
+        );
+        listener.set_nonblocking(true).unwrap();
+        let server = thread::spawn(move || serve_listener(listener, Duration::from_secs(3)));
+
+        let mut bad_client = connect_client().unwrap();
+        bad_client
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        bad_client.write_all(b"invalid request\n").unwrap();
+        let mut response = String::new();
+        assert_eq!(
+            BufReader::new(bad_client).read_line(&mut response).unwrap(),
+            0
+        );
+        let next_ping = ping();
+        let stop = request(DaemonRequest::Stop);
+        let outcome = server.join().unwrap();
+        assert!(next_ping.is_ok(), "{next_ping:?}");
+        assert!(stop.is_ok());
+        assert!(outcome.is_ok(), "{outcome:?}");
     }
 
     #[test]
