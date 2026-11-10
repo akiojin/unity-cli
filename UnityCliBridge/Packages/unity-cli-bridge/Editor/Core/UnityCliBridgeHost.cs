@@ -35,6 +35,9 @@ namespace UnityCliBridge.Core
         private static bool isProcessingCommand;
         private static Task pendingCommand;
         private static int exitRequested;
+        private static readonly Action ExitEditorOnMainThread = () => EditorApplication.Exit(0);
+        private static readonly Func<Command, TcpClient, DateTime, Task> ProcessQueuedCommand =
+            ProcessCommandInternal;
         private static int activeClientCount;
         
         
@@ -655,7 +658,20 @@ namespace UnityCliBridge.Core
         /// </summary>
         private static void ProcessCommandQueue()
         {
+            ProcessCommandQueueCore(ExitEditorOnMainThread, ProcessQueuedCommand);
+        }
+
+        private static void ProcessCommandQueueCore(Action exitEditor,
+            Func<Command, TcpClient, DateTime, Task> processCommand)
+        {
             if (isProcessingCommand) return;
+            // The quit response is already flushed. Unrelated pending work must
+            // not delay exit, including when inspector delayCall is not pumped.
+            if (Interlocked.Exchange(ref exitRequested, 0) != 0)
+            {
+                exitEditor();
+                return;
+            }
             // Unity 2022 does not pump UnitySynchronizationContext while paused.
             // Poll completion from Editor.update so the next handler still starts
             // on the main thread without depending on that context resuming.
@@ -665,13 +681,6 @@ namespace UnityCliBridge.Core
                 if (pendingCommand.IsFaulted)
                     BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
                 pendingCommand = null;
-            }
-            // delayCall depends on inspector updates, which can stop in a
-            // background Windows Editor. This update loop is always pumped.
-            if (Interlocked.Exchange(ref exitRequested, 0) != 0)
-            {
-                EditorApplication.Exit(0);
-                return;
             }
             isProcessingCommand = true;
             try
@@ -684,11 +693,12 @@ namespace UnityCliBridge.Core
                         if (commandQueue.Count == 0) break;
                         item = commandQueue.Dequeue();
                     }
-                    pendingCommand = ProcessCommandInternal(item.command, item.client, item.enqueuedAtUtc);
+                    pendingCommand = processCommand(item.command, item.client, item.enqueuedAtUtc);
                     if (!pendingCommand.IsCompleted) break;
                     if (pendingCommand.IsFaulted)
                         BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
                     pendingCommand = null;
+                    if (Volatile.Read(ref exitRequested) != 0) break;
                 }
             }
             finally

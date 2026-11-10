@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityCliBridge.Models;
 using BridgeHost = UnityCliBridge.Core.UnityCliBridge;
@@ -25,6 +26,90 @@ namespace UnityCliBridge.Tests.Editor
             {
                 while (callbacks.TryDequeue(out var callback)) callback();
             }
+        }
+
+        private sealed class CommandQueueScope : IDisposable
+        {
+            private static FieldInfo Field(string name) => typeof(BridgeHost)
+                .GetField(name, BindingFlags.Static | BindingFlags.NonPublic);
+            private readonly object sync = Field("queueLock").GetValue(null);
+            private readonly FieldInfo pending = Field("pendingCommand");
+            private readonly FieldInfo exiting = Field("exitRequested");
+            private readonly FieldInfo processing = Field("isProcessingCommand");
+            private readonly (Command, TcpClient, DateTime)[] savedCommands;
+            private readonly Task savedPending;
+            private readonly int savedExit;
+            private readonly bool savedProcessing;
+            public readonly Queue<(Command, TcpClient, DateTime)> Commands;
+            public Task Pending { get => (Task)pending.GetValue(null); set => pending.SetValue(null, value); }
+            public int ExitRequested { get => (int)exiting.GetValue(null); set => exiting.SetValue(null, value); }
+
+            public CommandQueueScope()
+            {
+                Monitor.Enter(sync);
+                Commands = (Queue<(Command, TcpClient, DateTime)>)Field("commandQueue").GetValue(null);
+                savedCommands = Commands.ToArray();
+                savedPending = Pending;
+                savedExit = ExitRequested;
+                savedProcessing = (bool)processing.GetValue(null);
+                Commands.Clear();
+                Pending = null;
+                ExitRequested = 0;
+                processing.SetValue(null, false);
+            }
+
+            public void Pump(Action exit, Func<Command, TcpClient, DateTime, Task> process)
+                => typeof(BridgeHost).GetMethod("ProcessCommandQueueCore",
+                    BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { exit, process });
+
+            public void Dispose()
+            {
+                Commands.Clear();
+                foreach (var command in savedCommands) Commands.Enqueue(command);
+                Pending = savedPending;
+                ExitRequested = savedExit;
+                processing.SetValue(null, savedProcessing);
+                Monitor.Exit(sync);
+            }
+        }
+
+        [Test]
+        public void QuitEditor_ExitsBeforeAnUnrelatedPendingCommandCompletes()
+        {
+            using var scope = new CommandQueueScope();
+            var neverCompletes = new TaskCompletionSource<bool>();
+            scope.Pending = neverCompletes.Task;
+            scope.ExitRequested = 1;
+            var exits = 0;
+            scope.Pump(() => exits++, (command, client, time) => Task.CompletedTask);
+            Assert.AreEqual(1, exits, "A flushed quit must not wait for unrelated pending work");
+            Assert.IsFalse(neverCompletes.Task.IsCompleted);
+            scope.Pump(() => exits++, (command, client, time) => Task.CompletedTask);
+            Assert.AreEqual(1, exits, "Consume the exit request exactly once");
+        }
+
+        [Test]
+        public void QuitEditor_StopsDrainingCommandsAfterSuccess()
+        {
+            using var scope = new CommandQueueScope();
+            scope.Commands.Enqueue((new Command { Type = "quit_editor" }, null, DateTime.UtcNow));
+            scope.Commands.Enqueue((new Command { Type = "get_editor_state" }, null, DateTime.UtcNow));
+            var neverCompletes = new TaskCompletionSource<bool>();
+            var processed = 0;
+            var exits = 0;
+            Task Process(Command command, TcpClient client, DateTime time)
+            {
+                processed++;
+                if (command.Type != "quit_editor") return neverCompletes.Task;
+                scope.ExitRequested = 1;
+                return Task.CompletedTask;
+            }
+            scope.Pump(() => exits++, Process);
+            Assert.AreEqual(1, processed, "Do not start another handler after quit succeeds");
+            Assert.AreEqual(1, scope.Commands.Count);
+            scope.Pump(() => exits++, Process);
+            Assert.AreEqual(1, exits);
+            Assert.AreEqual(1, processed);
         }
 
         [Test]
