@@ -1,0 +1,11 @@
+Unity: 7000.0.0a16 architecture: X64 mode: missing
+Backend: {"appliedRevision": null, "backend": "FastScriptReload", "code": "HOT_RELOAD_PACKAGE_MISSING", "reason": "Install optional MIT package com.handzlikchris.fastscriptreload 1.8.0 to preview C# method changes.", "recoveryRequired": false, "requiredRuntime": "Unity Editor 2022.3+ / Mono / x64 or Apple Silicon macOS", "requiredVersion": "1.8.0", "state": "unavailable", "success": true, "supported": false}
+PASS baseline calculation runs in real Play Mode
+PASS Editor update observer records runtime and backend status without a queued request
+PASS unavailable backend never claims an applied revision
+PASS hot_reload rejects: HOT_RELOAD_PACKAGE_MISSING /
+PASS hot_reload rejects: HOT_RELOAD_PACKAGE_MISSING /
+PASS Play continues with expected calculation
+PASS scene/object identity, position, HP, score, static and nonserialized state preserved
+PASS rejected preview leaves disk source unchanged
+RESULT pass=8 fail=0

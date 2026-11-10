@@ -1,0 +1,4 @@
+Reusing Editor (pid 53192)
+23 tests, 0 failed; report: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.6.8f1-9ofsuhin\PrefabWorkflowHandlerTests.xml
+Reusing Editor (pid 53192)
+3 tests, 0 failed; report: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.6.8f1-9ofsuhin\ObjectIdentityTests.xml

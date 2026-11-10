@@ -1,0 +1,32 @@
+   Compiling unity-cli v0.19.0 (E:\unity-cli\work\issue-544)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.63s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-3bb5a93075149277.exe)
+
+running 2 tests
+test unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request ... FAILED
+test unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request ... FAILED
+
+failures:
+
+---- unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request stdout ----
+
+thread 'unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request' (18552) panicked at src\unity\transport.rs:328:66:
+called `Result::unwrap()` on an `Err` value: Unable to read Editor authentication file
+
+Caused by:
+    指定されたファイルが見つかりません。 (os error 2)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request stdout ----
+
+thread 'unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request' (49528) panicked at src\unity\transport.rs:351:13:
+assertion failed: started.elapsed() >= config.timeout
+
+
+failures:
+    unity::transport::tests::connect_waits_for_the_same_private_token_file_before_sending_a_request
+    unity::transport::tests::missing_private_token_file_is_bounded_and_never_sends_an_unauthenticated_request
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 577 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `--bin unity-cli`

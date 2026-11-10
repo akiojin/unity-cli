@@ -1,0 +1,25 @@
+   Compiling unity-cli v0.19.0 (E:\unity-cli\work\issue-544)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.45s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-3bb5a93075149277.exe)
+
+running 1 test
+test lsp::daemon::tests::listener_survives_a_bad_client_and_answers_the_next_ping ... FAILED
+
+failures:
+
+---- lsp::daemon::tests::listener_survives_a_bad_client_and_answers_the_next_ping stdout ----
+
+thread 'lsp::daemon::tests::listener_survives_a_bad_client_and_answers_the_next_ping' (19056) panicked at src\lsp\daemon.rs:886:9:
+Err(Failed to connect to lspd TCP endpoint
+
+Caused by:
+    connection timed out)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    lsp::daemon::tests::listener_survives_a_bad_client_and_answers_the_next_ping
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 576 filtered out; finished in 0.43s
+
+error: test failed, to rerun pass `--bin unity-cli`

@@ -16,7 +16,7 @@ pub(crate) fn warn_unauthenticated() {
     }
 }
 
-fn read_token(path: &Path) -> Result<Option<String>> {
+pub(crate) fn read_token(path: &Path) -> Result<Option<String>> {
     // Do not attach the file contents to any error or diagnostic.
     let bytes = std::fs::read(path).context("Unable to read Editor authentication file")?;
     let value: serde_json::Value =

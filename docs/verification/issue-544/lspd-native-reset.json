@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "port": 54278,
+  "pid": 47280,
+  "connection_error": "lspd: client connection failed: Failed to read daemon request line: 既存の接続はリモート ホストに強制的に切断されました。 (os error 10054)",
+  "subsequent_ping": {
+    "ok": true,
+    "result": {
+      "pong": true
+    }
+  },
+  "stop": {
+    "ok": true,
+    "result": {
+      "stopping": true
+    }
+  },
+  "exit_code": 0
+}

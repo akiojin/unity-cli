@@ -9,6 +9,16 @@ fn invoke(args: &[&str]) -> Output {
 
 fn invoke_route(args: &[&str], direct: bool) -> Output {
     let root = tempfile::tempdir().unwrap();
+    // Offline cases must stay offline even on a machine with a live Editor.
+    // Windows daemon endpoints also need isolation beyond the tools directory.
+    let reservations: Vec<_> = (0..3)
+        .map(|_| TcpListener::bind("127.0.0.1:0").unwrap())
+        .collect();
+    let ports: Vec<_> = reservations
+        .iter()
+        .map(|listener| listener.local_addr().unwrap().port().to_string())
+        .collect();
+    drop(reservations);
     let tools = if direct {
         let path = root.path().join("disable-daemon");
         std::fs::write(&path, "not a directory").unwrap();
@@ -20,6 +30,11 @@ fn invoke_route(args: &[&str], direct: bool) -> Output {
         .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
         .env("UNITY_CLI_TOOLS_ROOT", &tools)
         .env("UNITY_CLI_EDITORS_DIR", root.path().join("editors"))
+        .env("UNITY_CLI_HOST", "127.0.0.1")
+        .env("UNITY_CLI_PORT", &ports[0])
+        .env("UNITY_CLI_UNITYD_PORT", &ports[1])
+        .env("UNITY_CLI_LSPD_PORT", &ports[2])
+        .env_remove("UNITY_CLI_AUTH_TOKEN_FILE")
         .args(args)
         .output()
         .unwrap();
@@ -27,6 +42,7 @@ fn invoke_route(args: &[&str], direct: bool) -> Output {
         let _ = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
             .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
             .env("UNITY_CLI_TOOLS_ROOT", &tools)
+            .env("UNITY_CLI_UNITYD_PORT", &ports[1])
             .args(["unityd", "stop"])
             .output();
     }
@@ -37,7 +53,8 @@ fn check(output: Output, exit: i32, code: Option<&str>) -> Value {
     assert_eq!(
         output.status.code(),
         Some(exit),
-        "stderr={}",
+        "stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
     let result: Value = serde_json::from_slice(&output.stdout).expect("one JSON envelope");

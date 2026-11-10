@@ -1,0 +1,57 @@
+Input Simulation E2E
+  Run ID: 20261110-201228
+  Host: 127.0.0.1
+  Port: 6548
+  CLI: E:\unity-cli\work\issue-544\target\debug\unity-cli.exe
+  UNITY_PROJECT_ROOT: E:\unity-cli\work\issue-544\.cache\issue-544\matrix-v11-direct\6000.3.28f1-n4q14h_0\project
+  Log: /tmp/unity-cli-e2e-input-20261110-201228.log
+
+--- Preparing input scene ---
+  execute_menu_item              ... PASS
+  load_scene                     ... PASS
+--- Entering Play Mode ---
+  play_game                      ... PASS
+--- Keyboard ---
+  input_keyboard                 ... PASS
+  input_keyboard                 ... PASS
+  input_keyboard                 ... PASS
+--- Mouse ---
+  input_mouse                    ... PASS
+  input_mouse                    ... PASS
+  input_mouse                    ... PASS
+  input_mouse                    ... PASS
+--- Gamepad ---
+  input_gamepad                  ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  get_current_input_state        ... PASS
+  input_gamepad                  ... PASS
+  input_gamepad                  ... PASS
+--- Touch ---
+  input_touch                    ... PASS
+  input_touch                    ... PASS
+  input_touch                    ... PASS
+  input_touch                    ... PASS
+--- Input sequence ---
+  create_input_sequence          ... PASS
+--- Leaving Play Mode ---
+  stop_game                      ... PASS
+
+Input simulation E2E passed.

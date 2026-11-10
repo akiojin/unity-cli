@@ -89,7 +89,11 @@ namespace UnityCliBridge.TestScenes
             {
                 bakedGI = true,
                 realtimeGI = false,
+#if UNITY_7000_0_OR_NEWER
+                lightmapper = LightingSettings.Lightmapper.ProgressiveGPU,
+#else
                 lightmapper = LightingSettings.Lightmapper.ProgressiveCPU,
+#endif
                 lightmapResolution = 2,
                 lightmapMaxSize = 128,
                 directSampleCount = 8,
