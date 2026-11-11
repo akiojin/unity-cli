@@ -1,0 +1,36 @@
+Expected failure: actual CI regression command rejects an isolated legacy-call fixture.
+test_bridge_sources_use_the_compatibility_helper (test_bridge_object_identity.BridgeObjectIdentityTests.test_bridge_sources_use_the_compatibility_helper) ... FAIL
+test_compatible_calls_and_generated_sources_are_allowed (test_bridge_object_identity.BridgeObjectIdentityTests.test_compatible_calls_and_generated_sources_are_allowed) ... ok
+test_inactive_legacy_branches_are_still_rejected (test_bridge_object_identity.BridgeObjectIdentityTests.test_inactive_legacy_branches_are_still_rejected) ... ok
+test_only_the_canonical_helper_is_exempt (test_bridge_object_identity.BridgeObjectIdentityTests.test_only_the_canonical_helper_is_exempt) ... ok
+test_reintroduced_calls_fail_in_editor_tests_and_assets (test_bridge_object_identity.BridgeObjectIdentityTests.test_reintroduced_calls_fail_in_editor_tests_and_assets) ... ok
+
+======================================================================
+FAIL: test_bridge_sources_use_the_compatibility_helper (test_bridge_object_identity.BridgeObjectIdentityTests.test_bridge_sources_use_the_compatibility_helper)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<isolated-fixture>\tests\scripts\test_bridge_object_identity.py", line 45, in test_bridge_sources_use_the_compatibility_helper
+    self.assertEqual([], violations, "\n".join([
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "Use ObjectIdentity.GetInstanceId / ObjectIdentity.FindObject:",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        *violations,
+        ^^^^^^^^^^^^
+    ]))
+    ^^^
+AssertionError: Lists differ: [] != ['Assets/Issue546Regression.cs:1: GetInsta[56 chars]ect']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'Assets/Issue546Regression.cs:1: GetInstanceID'
+
+- []
++ ['Assets/Issue546Regression.cs:1: GetInstanceID',
++  'Assets/Issue546Regression.cs:2: InstanceIDToObject'] : Use ObjectIdentity.GetInstanceId / ObjectIdentity.FindObject:
+Assets/Issue546Regression.cs:1: GetInstanceID
+Assets/Issue546Regression.cs:2: InstanceIDToObject
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.071s
+
+FAILED (failures=1)
