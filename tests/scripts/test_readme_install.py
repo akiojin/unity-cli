@@ -21,7 +21,6 @@ UPDATE_STEPS = [
     'UNITY_CLI_VERSION',
     'unity-cli cli install',
     'brew upgrade akiojin/tap/unity-cli',
-    'winget upgrade akiojin.unity-cli',
 ]
 
 BRIDGE_STEPS = [
@@ -46,7 +45,6 @@ MANUAL_CONTENT = [
     'UNITY_CLI_VERSION',
     'UNITY_CLI_NO_AUTO_UPDATE',
     'brew install akiojin/tap/unity-cli',
-    'winget install akiojin.unity-cli',
     'ORT_DYLIB_PATH',
     'releases',
     'cargo install --path .',
@@ -117,7 +115,7 @@ class ReadmeInstallStructureTest(unittest.TestCase):
                 # CLI update happens before setup; pinned versions are checked first
                 self.assertLess(prompt.find('UNITY_CLI_NO_AUTO_UPDATE'),
                                 prompt.find('unity-cli cli install'))
-                self.assertLess(prompt.find('winget upgrade'), setup)
+                self.assertLess(prompt.find('brew upgrade'), setup)
                 # bridge alignment runs between setup and the final ping
                 status = prompt.find('unity-cli --output json bridge status')
                 upgrade = prompt.find('unity-cli bridge upgrade')
@@ -133,6 +131,17 @@ class ReadmeInstallStructureTest(unittest.TestCase):
                 manual = subsections(getting_started((ROOT / name).read_text()))[2][1]
                 for needle in MANUAL_CONTENT:
                     self.assertIn(needle, manual, needle)
+
+    def test_unpublished_winget_points_to_powershell_in_every_language(self):
+        for name in READMES:
+            with self.subTest(readme=name):
+                text = (ROOT / name).read_text(encoding='utf-8')
+                self.assertNotIn('winget install akiojin.unity-cli', text)
+                self.assertNotIn('winget upgrade akiojin.unity-cli', text)
+                manual = subsections(getting_started(text))[2][1]
+                self.assertIn('#537', manual)
+                self.assertIn('PowerShell', manual)
+                self.assertRegex(manual, r'winget[^\n]*#537')
 
 
 if __name__ == '__main__':

@@ -83,7 +83,8 @@ Use it to try a new method body (for example a changed formula) while Play Mode 
 
 Prerequisites, reported by `unity-cli raw hot_reload_status --json '{}'`:
 
-- `supported: true`. `HOT_RELOAD_PACKAGE_MISSING` means the optional FastScriptReload 1.8.0 package is not installed in the project; `HOT_RELOAD_PLATFORM_UNSUPPORTED` means the Editor is neither x64 nor Apple Silicon macOS. Installing the package is the user's decision; without it, edit the file and re-enter Play Mode.
+- `supported: true`. `HOT_RELOAD_PACKAGE_MISSING` means the optional FastScriptReload 1.8.0 package is not installed. Its package ID is `com.handzlikchris.fastscriptreload`, supported range `[1.8.0,1.8.1)`. Use `unity-package-management` to install `https://github.com/handzlikchris/FastScriptReload.git?path=Assets#51140b71d9e5df1de231b33ec20ee089b18bebec` as the `package_manager` install `packageId`, then wait for reload/idle compilation and verify the resolved package. Without the optional package, edit the file and re-enter Play Mode.
+- Supported hosts are Mono Editors, Unity 2022.3 or later, on x64 (Windows / macOS / Linux) or Apple Silicon macOS; other hosts return `HOT_RELOAD_PLATFORM_UNSUPPORTED`. macOS ARM64/x64 and Windows x64 have real replacement evidence; Linux hardware verification remains pending (see `docs/hot-reload.md` in the unity-cli source).
 - Fast Script Reload's own auto reload and on-demand reload are disabled.
 - The target is one `Assets/*.cs` file with a single non-generic, non-partial class; only bodies of existing synchronous methods change (no new fields, methods, properties or signatures).
 

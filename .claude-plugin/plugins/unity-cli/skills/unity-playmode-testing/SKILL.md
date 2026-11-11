@@ -72,6 +72,29 @@ unity-cli raw stop_game --json '{}'
 
 ## Examples
 
+### CI test command
+
+Use typed `unity-cli test` for a bounded CI run. It connects to the project's
+existing Editor or automatically starts a headless Editor when none is running,
+waits for readiness, polls to completion, writes a report, and closes only the
+Editor it started. The project needs the Bridge and Unity Test Framework
+(`com.unity.test-framework`); use `unity-package-management` to install an
+Editor-compatible Test Framework and wait for compilation before running tests.
+The Unity version must be installed/licensed (`UNITY_EDITOR_PATH` can select it).
+
+```bash
+unity-cli --project-path /path/to/project test --mode editmode --report junit --output artifacts/editmode.xml --output-format github
+unity-cli --project-path /path/to/project test --mode playmode --report nunit --output artifacts/playmode.xml --timeout 600
+```
+
+`--report junit` (default) writes JUnit XML; `--report nunit` writes NUnit XML.
+`--output-format github` additionally emits GitHub Actions failure annotations.
+For `test`, `--output` names the report file; `--output json` is not the report
+selector. `--filter` narrows tests, and `--disable-domain-reload` is optional for
+PlayMode. Exit 0 means passed; exit 8 (`TEST_FAILED`) means completed with failed
+tests. Other nonzero exits mean setup, compilation, timeout or execution failed.
+This is a Bridge-managed host, not Unity's native `-runTests` process.
+
 ### Input simulation and InputAction notifications
 
 Requires Input System enabled and a running Play session. Replace the asset path
@@ -97,7 +120,19 @@ individual processed axes; a diagonally processed Vector2 can differ.
 
 ### Video and PNG sequences
 
-Requires a graphics-enabled Editor with Recorder installed and a visible Game View.
+Requires a graphics-enabled Editor, a visible Game View, and Unity Recorder
+(`com.unity.recorder` >= 4.0). On `RECORDER_PACKAGE_MISSING`, use
+`unity-package-management` to install an Editor-compatible Recorder >= 4.0,
+then wait for reload/idle compilation and verify the resolved version:
+
+```bash
+unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity.recorder","version":"4.0.0"}'
+unity-cli raw package_manager --json '{"action":"list"}'
+unity-cli raw get_compilation_state --json '{}'
+```
+
+The example pins the minimum; select a newer compatible version when required
+by the project's Editor. Headless `-nographics` cannot capture Game View video.
 Start one session, allow frames to render, inspect status, then stop before starting
 another. `format` accepts `mp4`, `webm`, or `png_sequence` (run the same flow for each).
 
@@ -125,8 +160,21 @@ unity-cli raw get_test_status --json '{"includeTestResults":true}'
 
 ### Method hot reload preview
 
-Requires optional FastScriptReload 1.8.0, a supported macOS Editor, a compiled
-baseline and Play Mode. Replace the path with an existing eligible script.
+Requires optional FastScriptReload 1.8.0 (`com.handzlikchris.fastscriptreload`,
+supported package range `[1.8.0,1.8.1)`). Use `unity-package-management` to install
+this pinned Git URL as `packageId`, then verify the resolved package and idle compilation:
+
+```bash
+unity-cli raw package_manager --json '{"action":"install","packageId":"https://github.com/handzlikchris/FastScriptReload.git?path=Assets#51140b71d9e5df1de231b33ec20ee089b18bebec"}'
+```
+
+Supported hosts are Mono Editors, Unity 2022.3 or later, on x64 (Windows / macOS /
+Linux) or Apple Silicon macOS. macOS ARM64/x64 and Windows x64 have real replacement
+evidence; Linux hardware verification remains pending (see `docs/hot-reload.md`
+in the unity-cli source). Other hosts return `HOT_RELOAD_PLATFORM_UNSUPPORTED`;
+Missing packages return `HOT_RELOAD_PACKAGE_MISSING`; an installed backend with an
+unavailable adapter (e.g. an unsupported version) returns `HOT_RELOAD_ADAPTER_UNAVAILABLE`.
+Also requires a compiled baseline and Play Mode. Replace the path with an existing eligible script.
 Disable Fast Script Reload's automatic and on-demand reload in its settings first;
 the bridge rejects concurrent patchers rather than changing those preferences.
 Inspect `supported` before beginning; do not report an unsupported preview as a pass.

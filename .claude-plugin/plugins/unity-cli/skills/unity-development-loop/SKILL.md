@@ -49,6 +49,23 @@ This skill chooses the smallest next change, the narrowest runtime check, and th
 7. Record the iteration with scenario, acceptance criteria, change made, execution, evidence, observations, result, and next action.
 8. Stop when the current evidence satisfies every acceptance check; otherwise continue with one concrete next hypothesis.
 
+## Optional hot reload setup
+
+FastScriptReload 1.8.0 is optional (`com.handzlikchris.fastscriptreload`, supported
+range `[1.8.0,1.8.1)`). Use `unity-package-management` to install the pinned Git URL,
+then wait for reload/idle compilation and verify the resolved package:
+
+```bash
+unity-cli raw package_manager --json '{"action":"install","packageId":"https://github.com/handzlikchris/FastScriptReload.git?path=Assets#51140b71d9e5df1de231b33ec20ee089b18bebec"}'
+```
+
+Supported hosts are Mono Editors, Unity 2022.3 or later, on x64 (Windows / macOS /
+Linux) or Apple Silicon macOS. macOS ARM64/x64 and Windows x64 have real replacement
+evidence; Linux hardware verification remains pending in `docs/hot-reload.md`.
+Check `hot_reload_status` before previewing; missing packages and unsupported hosts
+leave ordinary edit/compile/Play workflows available. Follow the playbook for
+session ownership, preview verification and clean recovery.
+
 ## Latency regression checks
 
 For performance work in a `unity-cli` source checkout, build the release CLI and run
