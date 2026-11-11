@@ -14,6 +14,9 @@
 | `list_cached` | none | List downloaded Asset Store packages; optional `cachePath` |
 | `import_cached` | `nameOrId` | Import exactly one cached package; optional `cachePath` |
 | `import_status` | `requestId` | Read the saved import and compilation state |
+| `open_asset_store` | none | Open My Assets; optional `nameOrId` requests selection; Download stays manual |
+| `wait_download` | `nameOrId` | Wait for one complete cached package; optional `cachePath`, `downloadTimeoutMs` |
+| `acquire` | `nameOrId` | Open → manual Download wait → existing import; separate `timeoutMs` for import |
 
 The typed `package import`, `cache-list`, `cache-import` and `import-status`
 commands use these same actions. Imports return exact `importedAssets` paths
@@ -21,6 +24,19 @@ after stable idle compilation and domain reload. Use the returned cache `id`
 when names collide (`PACKAGE_AMBIGUOUS`). Asset Store gzip metadata provides
 product ID, title, publisher and version when present; otherwise the filename,
 publisher folder and a stable relative-path hash ID are used, with `version:null`.
+
+Typed `asset-store-open`, `asset-store-wait`, and `asset-store-import` use the
+three acquisition actions. Opening uses public display APIs only, requires a
+headed Editor, and returns `ASSET_STORE_UI_UNAVAILABLE` otherwise. Selection is
+`requested` or `unresolved`, never confirmed: the public API cannot read whether
+the target is actually selected. Select it manually if needed, then press
+Download. No internal API, reflection, synthetic input or account token is used.
+The download deadline defaults to 600000 ms; expiry is
+`ASSET_STORE_DOWNLOAD_TIMEOUT` with `status:waiting_download` and no submitted
+import. Incomplete archives keep waiting, duplicate matches fail, and existing
+complete packages can be reused. Independent wait returns `ready`/`path` without
+importing. The one-command flow returns `importedAssets` and `assetStore` display
+details through the existing import/reload pipeline.
 
 `PACKAGE_NOT_FOUND`, `INVALID_UNITYPACKAGE`, `PACKAGE_IMPORT_BUSY` and
 `PACKAGE_IMPORT_FAILED` are explicit failures. Invalid/truncated archives and

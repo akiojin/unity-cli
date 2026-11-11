@@ -154,11 +154,29 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
                 PackageCommand::ImportStatus { request_id } => {
                     json!({"action":"import_status", "requestId":request_id})
                 }
+                PackageCommand::AssetStoreOpen {
+                    name_or_id,
+                    cache_path,
+                } => {
+                    json!({"action":"open_asset_store", "nameOrId":name_or_id, "cachePath":cache_path})
+                }
+                PackageCommand::AssetStoreWait(args) | PackageCommand::AssetStoreImport(args) => {
+                    let action = if matches!(command, PackageCommand::AssetStoreImport(_)) {
+                        "acquire"
+                    } else {
+                        "wait_download"
+                    };
+                    json!({"action":action, "nameOrId":args.name_or_id,
+                        "cachePath":args.cache_path, "downloadTimeoutMs":args.download_timeout_ms})
+                }
             };
             if params["cachePath"].is_null() {
                 params.as_object_mut().unwrap().remove("cachePath");
             }
-            if super::package::is_import(&params) {
+            if params["nameOrId"].is_null() {
+                params.as_object_mut().unwrap().remove("nameOrId");
+            }
+            if super::package::is_import(&params) || super::package::is_download_flow(&params) {
                 params["timeoutMs"] = json!(cli.timeout_ms.unwrap_or(180_000));
             }
             let value = execute_tool(&cli, "package_manager", params).await?;
@@ -943,6 +961,9 @@ pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) 
     }
 
     let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    if tool_name == "package_manager" && super::package::is_download_flow(&params) {
+        return super::package::download_and_wait(&config, params).await;
+    }
     if tool_name == "package_manager" && super::package::is_import(&params) {
         return super::package::import_and_wait(&config, params).await;
     }
@@ -1133,7 +1154,9 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
         && !has_custom
         && !commands.iter().any(|item| {
             item.tool == "eval_csharp"
-                || (item.tool == "package_manager" && super::package::is_import(&item.params))
+                || (item.tool == "package_manager"
+                    && (super::package::is_import(&item.params)
+                        || super::package::is_download_flow(&item.params)))
         })
     {
         let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;

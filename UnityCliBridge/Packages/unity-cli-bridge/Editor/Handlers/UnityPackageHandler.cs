@@ -44,6 +44,8 @@ namespace UnityCliBridge.Handlers
             {
                 switch (action)
                 {
+                    case "open_asset_store": return OpenAssetStore(parameters);
+                    case "wait_download": return ProbeDownload(parameters);
                     case "list_cached": return ListCached(parameters);
                     case "import_cached":
                         var listing = ListCached(parameters);
@@ -70,6 +72,73 @@ namespace UnityCliBridge.Handlers
             {
                 return Error("PACKAGE_IO_ERROR", exception.Message);
             }
+        }
+
+        private static JObject OpenAssetStore(JObject parameters)
+        {
+            if (Application.isBatchMode) return Error("ASSET_STORE_UI_UNAVAILABLE", "Open My Assets in a headed Editor; Download remains manual");
+            // Public display APIs only. This invokes the display menu directly;
+            // no synthetic input, internal type or download API is used.
+            if (!EditorApplication.ExecuteMenuItem("Window/Package Management/My Assets"))
+                return Error("ASSET_STORE_UI_UNAVAILABLE", "This Editor does not expose the My Assets menu");
+            var selector = parameters.Value<string>("nameOrId");
+            var productId = IsProductId(selector) ? selector : null;
+            if (productId == null && !string.IsNullOrWhiteSpace(selector))
+            {
+                var matches = ListCached(parameters)["packages"].OfType<JObject>().Where(item =>
+                    string.Equals(item.Value<string>("id"), selector, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(item.Value<string>("name"), selector, StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (matches.Length == 1 && IsProductId(matches[0].Value<string>("id")))
+                    productId = matches[0].Value<string>("id");
+            }
+            var selection = productId == null ? "unresolved" : "requested";
+            // Passing an arbitrary name can select a UPM package instead. An
+            // unresolved name must leave My Assets open, with no guessed ID.
+            UnityEditor.PackageManager.UI.Window.Open(productId);
+            // Window.Open returns void and exposes no selected-product query.
+            // Do not claim ownership, login or successful selection from it.
+            return new JObject
+            {
+                ["success"] = true, ["status"] = "awaiting_manual_download", ["myAssetsOpened"] = true,
+                ["nameOrId"] = selector, ["selection"] = selection, ["selectionConfirmed"] = false,
+                ["requestedProductId"] = productId,
+                ["manualDownloadRequired"] = true,
+                ["message"] = "My Assets opened. If the requested asset is not selected, select it manually, then press Download. No download was started."
+            };
+        }
+
+        private static bool IsProductId(string value) => value != null && Regex.IsMatch(value, "^[1-9][0-9]*$");
+
+        private static JObject ProbeDownload(JObject parameters)
+        {
+            var selector = parameters.Value<string>("nameOrId");
+            if (string.IsNullOrWhiteSpace(selector)) return Error("INVALID_ARGUMENT", "nameOrId is required");
+            var listing = ListCached(parameters);
+            var matches = listing["packages"].OfType<JObject>().Where(item =>
+                string.Equals(item.Value<string>("id"), selector, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(item.Value<string>("name"), selector, StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (matches.Length > 1) return Error("PACKAGE_AMBIGUOUS", "Multiple packages match; select a listed ID", new JArray(matches));
+            var result = new JObject
+            {
+                ["success"] = true, ["status"] = "waiting_download", ["nameOrId"] = selector,
+                ["cachePath"] = listing["cachePath"], ["manualDownloadRequired"] = true
+            };
+            if (matches.Length == 0) { result["reason"] = "not_cached"; return result; }
+            var path = matches[0].Value<string>("path");
+            try
+            {
+                // A .unitypackage extension alone does not establish completion.
+                // The same validator used by import rejects truncated gzip/tar.
+                ReadAssetPaths(path);
+            }
+            catch (IOException) { result["reason"] = "incomplete_archive"; return result; }
+            catch (InvalidDataException) { result["reason"] = "incomplete_archive"; return result; }
+            catch (FormatException) { result["reason"] = "incomplete_archive"; return result; }
+            result["status"] = "ready";
+            result["manualDownloadRequired"] = false;
+            result["path"] = path;
+            result["package"] = matches[0];
+            return result;
         }
 
         private static JObject Error(string code, string message, JToken matches = null)

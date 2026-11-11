@@ -56,7 +56,7 @@ using a result. Do not treat the absence of stderr text as success.
 | `system`    | `ping`                                                  |
 | `editor`    | `eval`, `eval-status`, `eval-stats`                     |
 | `scene`     | `create`                                                |
-| `package`   | `import`, `cache-list`, `cache-import`, `import-status` |
+| `package`   | `import`, `cache-*`, `import-status`, `asset-store-*`   |
 | `instances` | `list`, `set-active`                                    |
 | `cli`       | `install`, `doctor`                                     |
 | `lsp`       | `install`, `doctor`                                     |
@@ -668,8 +668,9 @@ root plus `Asset Store-5.x`, then the OS defaults:
 For a location changed in Editor Preferences, pass the actual cache directory
 explicitly. The standard environment override follows Unity's
 [asset-cache configuration](https://docs.unity.com/en-us/engine/7000.0/manual/packages-list/package-manager-caches/upm-config-cache-as).
-These commands operate on downloaded files only; purchasing, authentication and
-new Asset Store downloads are outside their scope.
+The cache/import commands operate on downloaded files only. The semi-automatic
+workflow below waits for a manual Download; purchasing and authentication remain
+outside the CLI.
 
 Errors include `PACKAGE_NOT_FOUND`, `INVALID_UNITYPACKAGE`,
 `PACKAGE_IMPORT_BUSY` (another import, Play Mode or compilation),
@@ -677,6 +678,56 @@ Errors include `PACKAGE_NOT_FOUND`, `INVALID_UNITYPACKAGE`,
 Corrupt/truncated tar archives, unsupported entries and asset paths outside
 `Assets` are rejected before Unity imports anything. Expanded archives are
 limited to 16 GiB. Importing a package does not provide rollback.
+
+### Semi-automatic Asset Store acquisition
+
+```bash
+# One command: open My Assets, press Download manually in Unity, await import.
+unity-cli package asset-store-import 12345 --download-timeout-ms 600000 --timeout-ms 180000 --output json
+# Or execute each stage separately:
+unity-cli package asset-store-open 12345 --output json
+unity-cli package asset-store-wait 12345 --cache-path /downloaded/Asset\ Store-5.x --output json
+unity-cli package cache-import 12345 --output json
+```
+
+`asset-store-open [name-or-id]` invokes the public
+`EditorApplication.ExecuteMenuItem("Window/Package Management/My Assets")` display
+menu and `UnityEditor.PackageManager.UI.Window.Open(string)`. It requires a
+headed Editor; batch mode or an unavailable menu returns
+`ASSET_STORE_UI_UNAVAILABLE`. It never sends input events or presses Download.
+The JSON contains `myAssetsOpened:true`, `manualDownloadRequired:true`,
+`selection:"requested"` (a numeric product ID supplied or resolved from cache
+metadata) or `"unresolved"` (no unique product ID), and
+`selectionConfirmed:false`. The public API returns no selection result. If a
+target is unknown, not loaded, not owned or not selected, select it in My Assets;
+the response does not assert login, ownership or successful selection.
+Unresolved names leave My Assets open without guessing a registry package.
+
+`asset-store-wait <name-or-id>` polls the cache on the Editor's machine by exact
+case-insensitive metadata product ID/title, or the cache-list fallback ID/name.
+An absent cache, unrelated file or incomplete archive keeps
+`status:"waiting_download"`; multiple matches fail with `PACKAGE_AMBIGUOUS`.
+Only a complete validated `.unitypackage` produces `status:"ready"` and `path`.
+An existing complete match is reusable immediately; this is not a forced update.
+The command does not open a window or import assets. `--cache-path` and the cache
+environment overrides above apply to all three commands.
+
+`--download-timeout-ms` bounds the manual-download wait (default 600000 ms,
+range 1–86400000). Expiry returns nonzero with code
+`ASSET_STORE_DOWNLOAD_TIMEOUT`, `status:"waiting_download"`, the selector and
+last cache state. No import was submitted; retry the wait after completing
+Download. `asset-store-import` first opens My Assets, then waits, then submits
+the detected path to the existing noninteractive import pipeline exactly once.
+Its separate import deadline uses `--timeout-ms` (default 180000 ms), with
+`PACKAGE_IMPORT_TIMEOUT`/`requestId` recovery as above. Success returns
+`importedAssets` plus the display-stage result under `assetStore`.
+
+Raw/tool/MCP `package_manager` actions are `open_asset_store` (optional
+`nameOrId`), `wait_download` and `acquire` (required `nameOrId`); optional
+`cachePath`, `downloadTimeoutMs` and `timeoutMs` correspond to the typed flags.
+The CLI orchestrates polling/import; the Bridge's `wait_download` is one
+read-only cache probe. Download remains manual. No internal API, reflection,
+synthetic UI input or Unity account credential access is used.
 
 ## Extending with project-local tools
 

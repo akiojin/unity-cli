@@ -1,0 +1,197 @@
+{
+  "started_at": "2026-11-11T16:45:49.037914+00:00",
+  "platform": "nt",
+  "unity": "6000.3.28f1",
+  "artifact_directory": "E:\\unity-cli\\work\\issue-565\\.unity\\issue-565\\run-b_yocb9x",
+  "checks": [
+    {
+      "name": "EditMode process",
+      "passed": true
+    },
+    {
+      "name": "EditMode package tests",
+      "passed": true
+    },
+    {
+      "name": "real Unity-exported unitypackage",
+      "passed": true
+    },
+    {
+      "name": "cache metadata",
+      "passed": true
+    },
+    {
+      "name": "cache environment override",
+      "passed": true
+    },
+    {
+      "name": "My Assets opened with unresolved selection",
+      "passed": true
+    },
+    {
+      "name": "wait-timeout: error code ASSET_STORE_DOWNLOAD_TIMEOUT",
+      "passed": true
+    },
+    {
+      "name": "download timeout state",
+      "passed": true
+    },
+    {
+      "name": "partial-timeout: error code ASSET_STORE_DOWNLOAD_TIMEOUT",
+      "passed": true
+    },
+    {
+      "name": "partial archive was not imported",
+      "passed": true
+    },
+    {
+      "name": "open wait import flow returns imported paths",
+      "passed": true
+    },
+    {
+      "name": "flow imported content",
+      "passed": true
+    },
+    {
+      "name": "standalone wait has no import side effect",
+      "passed": true
+    },
+    {
+      "name": "missing: error code PACKAGE_NOT_FOUND",
+      "passed": true
+    },
+    {
+      "name": "corrupt: error code INVALID_UNITYPACKAGE",
+      "passed": true
+    },
+    {
+      "name": "local: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "local: imported content",
+      "passed": true
+    },
+    {
+      "name": "cached-name: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "cached-name: imported content",
+      "passed": true
+    },
+    {
+      "name": "cached-id: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "cached-id: imported content",
+      "passed": true
+    },
+    {
+      "name": "real Unity-exported script package",
+      "passed": true
+    },
+    {
+      "name": "export preparation settled",
+      "passed": true
+    },
+    {
+      "name": "domain reload survived",
+      "passed": true
+    },
+    {
+      "name": "imported script executed",
+      "passed": true
+    },
+    {
+      "name": "timeout: error code PACKAGE_IMPORT_TIMEOUT",
+      "passed": true
+    },
+    {
+      "name": "timeout snapshot",
+      "passed": true
+    },
+    {
+      "name": "timed out import completed without resubmission",
+      "passed": true
+    }
+  ],
+  "User Verification Result": "n/a (autonomous)",
+  "Agent Visual Check": "n/a (no UI surface)",
+  "status": "PASS",
+  "editmode_tests": [
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.CacheImportRejectsAmbiguousAndUnknownNames",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.CacheListReadsAssetStoreHeaderMetadata",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.CacheListReturnsPublisherStableIdPathAndSize",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.DownloadProbeAcceptsOnlyCompleteUnityExportAndDoesNotImport",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.DownloadProbeRejectsAmbiguousNames",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.DownloadProbeWaitsForAbsentIncompleteOrUnrelatedPackage",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportCorruptArchiveReturnsStableError",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportMissingFileReturnsStableError",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportRealExportedPackageReportsImportedPathsAndIdleState",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportRejectsInteractiveAndMissingPath",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportRejectsUnsafeArchivePaths(\"Assets/../outside.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportRejectsUnsafeArchivePaths(\"Packages/unsafe.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.ImportRejectsUnsafeArchivePaths(\"Assets/sub/../../outside.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.OpenMyAssetsRequiresHeadedEditorAndNeverClaimsSelectionConfirmed",
+      "result": "Passed"
+    },
+    {
+      "name": "UnityCliBridge.Tests.UnityPackageHandlerTests.UnknownStatusAndUnsafeRequestIdFailClearly",
+      "result": "Passed"
+    }
+  ],
+  "asset_store_download_source": "synthetic cache arrival; no Asset Store download or human interaction",
+  "source_sha256": {
+    "src/cli.rs": "85edf69d6e9780484e6837e0a1144d5b5a34177bc9e6516a094ce49cb12561af",
+    "src/app/package.rs": "4a7d60baf3a9d53aaf1fbd4c381b43feda49773eaf8346f1985d654bfc8bd8ed",
+    "src/app/runner.rs": "9b09e62ef7b935adeb3d5e55c7504591bdfde4bde30238345396c56ac40e8bf0",
+    "src/tooling/tool_catalog.rs": "d1afb768411681ee1cc56095cf2ffc999d94b8355c1e1aa26d6c8d9a7a2b46ef",
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/PackageManagerHandler.cs": "26c51a313bd639046ccf42ff847911f89c507c039d438b38f1ec5010d9e07d29",
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Handlers/UnityPackageHandler.cs": "9d62615418c90052d544bf844f33e590e225be90593d14d037ce9fe00fbefb55",
+    "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/Handlers/UnityPackageHandlerTests.cs": "48d79cb7db8a041f6b0451508da44cafaab09568ee0832c3e262846b86afaa5b",
+    "scripts/e2e-package-import.py": "a9cd495c435a5e7692f5b5884c199b0c96dd16600047463fb49f0af435e7984c"
+  },
+  "evidence_note": "Synthetic cache arrival only; AC-6 manual Asset Store Download remains unproven."
+}

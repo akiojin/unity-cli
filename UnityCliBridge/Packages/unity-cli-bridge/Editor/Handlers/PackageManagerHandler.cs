@@ -35,6 +35,8 @@ namespace UnityCliBridge.Handlers
                     case "list_cached":
                     case "import_cached":
                     case "import_status":
+                    case "open_asset_store":
+                    case "wait_download":
                         return UnityPackageHandler.HandleCommand(action.ToLowerInvariant(), parameters);
                     case "search":
                         return SearchPackages(parameters);

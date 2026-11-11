@@ -1,6 +1,6 @@
 ---
 name: unity-package-management
-description: Manage Unity UPM packages, local .unitypackage imports, downloaded Asset Store packages and scoped registries with unity-cli. Use when the user asks to list, search, install, import, update or remove packages, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
+description: Manage Unity UPM packages, local .unitypackage imports, semi-automatic Asset Store acquisition with manual Download, and scoped registries with unity-cli. Use when the user asks to list, search, install, import, update or remove packages, acquire Asset Store assets, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -30,6 +30,7 @@ resolved package state and compilation in the same project.
 - List installed UPM packages, search the registry or inspect versions/dependencies.
 - Install, update or remove a package and verify the resulting compilation.
 - Import a local `.unitypackage` or select a downloaded Asset Store package by name or ID.
+- Open My Assets, wait for a user's manual Download, then import automatically.
 - Add or inspect supported scoped registries and their package scopes.
 
 ## Do Not Use When
@@ -87,8 +88,17 @@ reload, and return `importedAssets`. `--timeout-ms` sets the total wait (default
 180000 ms). On `PACKAGE_IMPORT_TIMEOUT`, retain `data.requestId` and read
 `package import-status <requestId>` on the same Editor; never resend the import
 automatically. Package state survives domain reload but ends when that Editor
-session closes. This workflow only reads downloaded caches; it cannot purchase,
-authenticate or download new Asset Store packages. See
+session closes. For a new Asset Store asset, use
+`package asset-store-import <product-id> --download-timeout-ms 600000` in a headed
+Editor: the CLI opens My Assets, the user presses **Download manually**, and the
+CLI waits for a complete cache entry and imports it. The independent stages are
+`asset-store-open [name-or-id]`, `asset-store-wait <name-or-id>` and `cache-import`.
+The display result's `selection:requested` is not confirmed selection; if needed,
+select the asset in My Assets. An existing complete cache is reusable. On
+`ASSET_STORE_DOWNLOAD_TIMEOUT`/`status:waiting_download`, no import was started;
+finish Download and retry the wait. `--timeout-ms` separately controls import.
+Never automate the Download button, login, purchase or Unity account-token access.
+See
 [package operations](references/package-operations.md) for error codes.
 
 Keep the selected endpoint while the domain reloads. Retry only read-only

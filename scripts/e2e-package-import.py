@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 import xml.etree.ElementTree as ET
 
@@ -33,6 +34,11 @@ def prepare(editor, destination):
     shutil.copy2(ROOT / "UnityCliBridge/Assets/Editor/UnityCliInputBatchHost.cs", project / "Assets/Editor")
     (project / "ProjectSettings").mkdir()
     (project / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: " + version + "\n", encoding="utf-8")
+    # Headed Editors otherwise show an Input System restart confirmation that
+    # suspends Editor.update (and therefore the Bridge command queue).
+    (project / "ProjectSettings/ProjectSettings.asset").write_text(
+        "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!129 &1\nPlayerSettings:\n  activeInputHandler: 1\n",
+        encoding="utf-8")
     (project / "Packages").mkdir()
     shutil.copytree(ROOT / "UnityCliBridge/Packages/unity-cli-bridge", project / "Packages/unity-cli-bridge")
     (project / "Packages/manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -45,6 +51,8 @@ def main():
     parser.add_argument("--cli", type=Path, default=ROOT / "target/debug/unity-cli")
     parser.add_argument("--output", type=Path, default=ROOT / ".unity/package-import")
     parser.add_argument("--port", type=int, default=6591)
+    parser.add_argument("--asset-store", action="store_true",
+                        help="Use a headed Editor and test manual-download orchestration with a synthetic cache arrival (not AC-6)")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     out = Path(tempfile.mkdtemp(prefix="run-", dir=args.output.resolve()))
@@ -114,7 +122,7 @@ def main():
         summary["editmode_tests"] = [case.attrib for case in report.findall(".//test-case")]
         check("EditMode package tests", int(report.get("failed", "1")) == 0 and int(report.get("passed", "0")) >= 7)
         log = out / "editor.log"
-        host = subprocess.Popen([str(args.editor.resolve()), "-batchmode", "-nographics", "-projectPath", str(project),
+        host = subprocess.Popen([str(args.editor.resolve())] + ([] if args.asset_store else ["-batchmode", "-nographics"]) + ["-projectPath", str(project),
                                  "-executeMethod", "UnityCliBridge.TestScenes.UnityCliInputBatchHost.Run",
                                  "-logFile", str(log)], env=env, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.STDOUT)
@@ -150,6 +158,40 @@ def main():
         override = call("cache-environment", ["package", "cache-list"],
                         extra_env={"UNITY_CLI_ASSET_STORE_CACHE_PATH": cache_root})
         check("cache environment override", override["packages"] == listing["packages"])
+        if args.asset_store:
+            summary["asset_store_download_source"] = "synthetic cache arrival; no Asset Store download or human interaction"
+            opened = call("open-my-assets", ["package", "asset-store-open"])
+            check("My Assets opened with unresolved selection", opened["myAssetsOpened"]
+                  and opened["selection"] == "unresolved" and not opened["selectionConfirmed"]
+                  and opened["manualDownloadRequired"])
+            waiting = call("wait-timeout", ["package", "asset-store-wait", "Missing", "--cache-path", cache_root,
+                           "--download-timeout-ms", "2000"], error="ASSET_STORE_DOWNLOAD_TIMEOUT")
+            check("download timeout state", waiting["status"] == "waiting_download")
+            complete = package.read_bytes()
+            package.write_bytes(complete[:20])
+            waiting = call("partial-timeout", ["package", "asset-store-wait", item["name"], "--cache-path", cache_root,
+                           "--download-timeout-ms", "2000"], error="ASSET_STORE_DOWNLOAD_TIMEOUT")
+            check("partial archive was not imported", waiting["reason"] == "incomplete_archive" and not (project / asset).exists())
+
+            def finish_download():
+                time.sleep(2)
+                partial = package.with_suffix(".tmp")
+                partial.write_bytes(complete)
+                partial.replace(package)
+
+            arrival = threading.Thread(target=finish_download)
+            arrival.start()
+            try:
+                result = call("asset-store-import", ["package", "asset-store-import", item["name"],
+                              "--cache-path", cache_root, "--download-timeout-ms", "30000"])
+            finally:
+                arrival.join()
+            check("open wait import flow returns imported paths", result["status"] == "completed"
+                  and asset in result["importedAssets"] and result["assetStore"]["manualDownloadRequired"])
+            check("flow imported content", (project / asset).read_text() == "real Unity export")
+            evaluate("flow-delete", f'UnityEditor.AssetDatabase.DeleteAsset({json.dumps(asset)});')
+            ready = call("wait-existing", ["package", "asset-store-wait", item["name"], "--cache-path", cache_root])
+            check("standalone wait has no import side effect", ready["status"] == "ready" and not (project / asset).exists())
         call("missing", ["package", "import", str(out / "missing.unitypackage")], error="PACKAGE_NOT_FOUND")
         broken = out / "broken.unitypackage"
         broken.write_text("broken archive")
