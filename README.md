@@ -321,6 +321,7 @@ defaults. Pass the same values to the daemon and its CLI clients.
 - MCP thin adapter and client configuration: [docs/mcp.md](docs/mcp.md)
 - Comparison with the official Unity CLI (features, latency benchmark, using both together): [docs/comparison.md](docs/comparison.md)
 - Development workflow and CI: [docs/development.md](docs/development.md)
+- Asset Store download feasibility and constraints: [research](docs/asset-store-download-research.md)
 - Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Release process: [RELEASE.md](RELEASE.md)
 - Attribution templates: [ATTRIBUTION.md](ATTRIBUTION.md)

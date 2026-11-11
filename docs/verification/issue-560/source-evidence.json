@@ -1,0 +1,251 @@
+{
+  "repository": "https://github.com/Unity-Technologies/UnityCsReference",
+  "versions": [
+    {
+      "version": "6000.3.28f1",
+      "commit": "efa8fffa1235e83ebc71a52b49887135e2aa5602",
+      "files": [
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadManager.cs",
+          "sha256": "5d2880fae7903c5012591f07a64e5497e009104a8e3e77c290f4f149604cfc65",
+          "claim_lines": {
+            "internal_manager": 38,
+            "entry_point": 167,
+            "terms_check": 321
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadOperation.cs",
+          "sha256": "28747b7246343586e8e51caa64715b5d5e0173fd68065cc17f578451fca19359",
+          "claim_lines": {
+            "internal_operation": 15,
+            "download_metadata": 263,
+            "native_download": 316
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreRestAPI.cs",
+          "sha256": "bb8ec3f224503958536ff0d11a7f0b6f8e3de333c188412d04e82bc482620e32",
+          "claim_lines": {
+            "internal_rest_client": 25,
+            "metadata_endpoint": 31,
+            "terms_endpoint": 32,
+            "configured_host": 77,
+            "token_provider": 185,
+            "bearer": 197
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadInfo.cs",
+          "sha256": "a03ce7ae226a4221690c07cd9c30cba69b92cbb3c64ca2ce4c566d3900694c4e",
+          "claim_lines": {
+            "download_url": 19,
+            "download_key": 18,
+            "upload_version": 20
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreUtils.cs",
+          "sha256": "61427175288d52e8a1974aaf6dfc319f63a9ebfd2099a22a04a526b2c0ecf1c7",
+          "claim_lines": {
+            "internal_wrapper": 24,
+            "native_forwarding": 38
+          }
+        },
+        {
+          "path": "Editor/Mono/AssetStoreUtils.bindings.cs",
+          "sha256": "1f32633404db63c2aa653e8e1b93c14af77de77164cb3f81b1fd2ba1a4181f8a",
+          "claim_lines": {
+            "internal_native_binding": 13,
+            "native_download": 22
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/UI/PackageManagerWindow.cs",
+          "sha256": "45cb11baef8b90229adcfcc3cdf3d31be4608a01f1c466f3c1e41d356634fb01",
+          "claim_lines": {
+            "public_window_helper": 18,
+            "public_open": 38,
+            "selection_only": 40
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreOAuth.cs",
+          "sha256": "59eb1edd56bb09e582a148ef7c15e0c9b5e8c70764e9a3b62b549d72ecec1888",
+          "claim_lines": {
+            "internal_oauth": 45,
+            "authorization_code": 133,
+            "token_endpoint": 47,
+            "refresh_grant": 152,
+            "expiry_buffer": 15,
+            "editor_configuration": 161,
+            "clear_on_login_change": 91
+          }
+        }
+      ]
+    },
+    {
+      "version": "6000.6.8f1",
+      "commit": "b66d07c652a67a46f8ca9a24ea4143940b106c84",
+      "files": [
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadManager.cs",
+          "sha256": "50fa7364b362d5bf6cb58461dbfb22a12d30410cad375d5b15e07058051e8a42",
+          "claim_lines": {
+            "internal_manager": 37,
+            "entry_point": 166,
+            "terms_check": 320
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadOperation.cs",
+          "sha256": "259e378a17a88b8957251f22c6dcf2a02150f9deb1bec3bb14b499a2e10cd393",
+          "claim_lines": {
+            "internal_operation": 15,
+            "download_metadata": 266,
+            "native_download": 319
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreRestAPI.cs",
+          "sha256": "5d6749fe40ce89c454a6b2dd56250836fd83899d29ccb22382a402a48ec7fbce",
+          "claim_lines": {
+            "internal_rest_client": 22,
+            "metadata_endpoint": 28,
+            "terms_endpoint": 29,
+            "configured_host": 61,
+            "token_provider": 166,
+            "bearer": 177
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadInfo.cs",
+          "sha256": "ceff35fdb13facd25a55037066e3090e7f9bbcee1972c040029f032f4a83c99b",
+          "claim_lines": {
+            "download_url": 18,
+            "download_key": 17,
+            "upload_version": 19
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreUtils.cs",
+          "sha256": "61427175288d52e8a1974aaf6dfc319f63a9ebfd2099a22a04a526b2c0ecf1c7",
+          "claim_lines": {
+            "internal_wrapper": 24,
+            "native_forwarding": 38
+          }
+        },
+        {
+          "path": "Editor/Mono/AssetStoreUtils.bindings.cs",
+          "sha256": "d4c45a27506d57042fe16d430ee2ececb01e21dd21caa9e4702924f5aacb0b8c",
+          "claim_lines": {
+            "internal_native_binding": 13,
+            "native_download": 22
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/UI/MainWindow/PackageManagerWindow.cs",
+          "sha256": "8878fb460db09ada5054d54a1d62d8610c0aba2bed893cf17674dca39e2c7a8a",
+          "claim_lines": {
+            "public_window_helper": 18,
+            "public_open": 38,
+            "selection_only": 40
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreOAuth.cs",
+          "sha256": "59eb1edd56bb09e582a148ef7c15e0c9b5e8c70764e9a3b62b549d72ecec1888",
+          "claim_lines": {
+            "internal_oauth": 45,
+            "authorization_code": 133,
+            "token_endpoint": 47,
+            "refresh_grant": 152,
+            "expiry_buffer": 15,
+            "editor_configuration": 161,
+            "clear_on_login_change": 91
+          }
+        }
+      ]
+    },
+    {
+      "version": "7000.0.0a16",
+      "commit": "cf583fbe6da6b9fb11e3a1ac03f23df4eb120e9b",
+      "files": [
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadManager.cs",
+          "sha256": "0a860a026421c8e1e3c8e9505e1c7e64ce85e19d4a2f2d957bbedb755246e9ab",
+          "claim_lines": {
+            "internal_manager": 37,
+            "entry_point": 166,
+            "terms_check": 320
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadOperation.cs",
+          "sha256": "239618addd4cb9a954e826b94939c428d02a0a8ebbb8e797c1b54a784c3c6f03",
+          "claim_lines": {
+            "internal_operation": 15,
+            "download_metadata": 266,
+            "native_download": 319
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreRestAPI.cs",
+          "sha256": "7789cd7e79c44e186f21d4e142c68627286aff69d122fea573cb3532de36e945",
+          "claim_lines": {
+            "internal_rest_client": 23,
+            "metadata_endpoint": 29,
+            "terms_endpoint": 30,
+            "configured_host": 63,
+            "token_provider": 158,
+            "bearer": 169
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreDownloadInfo.cs",
+          "sha256": "ceff35fdb13facd25a55037066e3090e7f9bbcee1972c040029f032f4a83c99b",
+          "claim_lines": {
+            "download_url": 18,
+            "download_key": 17,
+            "upload_version": 19
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/AssetStore/AssetStoreUtils.cs",
+          "sha256": "61427175288d52e8a1974aaf6dfc319f63a9ebfd2099a22a04a526b2c0ecf1c7",
+          "claim_lines": {
+            "internal_wrapper": 24,
+            "native_forwarding": 38
+          }
+        },
+        {
+          "path": "Editor/Mono/AssetStoreUtils.bindings.cs",
+          "sha256": "d4c45a27506d57042fe16d430ee2ececb01e21dd21caa9e4702924f5aacb0b8c",
+          "claim_lines": {
+            "internal_native_binding": 13,
+            "native_download": 22
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/UI/MainWindow/PackageManagerWindow.cs",
+          "sha256": "9e38ac1d86d5e1e63952e83d819f61518e0a7e65c4311b69737c0418192fed3e",
+          "claim_lines": {
+            "public_window_helper": 19,
+            "public_open": 39,
+            "selection_only": 41
+          }
+        },
+        {
+          "path": "Modules/PackageManagerUI/Editor/Services/Proxies/UnityConnectProxy.cs",
+          "sha256": "666fb621f0c59a5571a69e06d255e5f8fed3af2ed1ee267278ddd2bf1e5b0b16",
+          "claim_lines": {
+            "internal_proxy": 32,
+            "editor_token": 132,
+            "callback_api": 157,
+            "no_token_error": 162
+          }
+        }
+      ]
+    }
+  ]
+}
