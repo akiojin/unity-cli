@@ -34,6 +34,10 @@ namespace UnityCliBridge.Core
         private static Task listenerTask;
         private static bool isProcessingCommand;
         private static Task pendingCommand;
+        private static int exitRequested;
+        private static readonly Action ExitEditorOnMainThread = () => EditorApplication.Exit(0);
+        private static readonly Func<Command, TcpClient, DateTime, Task> ProcessQueuedCommand =
+            ProcessCommandInternal;
         private static int activeClientCount;
         
         
@@ -654,7 +658,20 @@ namespace UnityCliBridge.Core
         /// </summary>
         private static void ProcessCommandQueue()
         {
+            ProcessCommandQueueCore(ExitEditorOnMainThread, ProcessQueuedCommand);
+        }
+
+        private static void ProcessCommandQueueCore(Action exitEditor,
+            Func<Command, TcpClient, DateTime, Task> processCommand)
+        {
             if (isProcessingCommand) return;
+            // The quit response is already flushed. Unrelated pending work must
+            // not delay exit, including when inspector delayCall is not pumped.
+            if (Interlocked.Exchange(ref exitRequested, 0) != 0)
+            {
+                exitEditor();
+                return;
+            }
             // Unity 2022 does not pump UnitySynchronizationContext while paused.
             // Poll completion from Editor.update so the next handler still starts
             // on the main thread without depending on that context resuming.
@@ -676,11 +693,12 @@ namespace UnityCliBridge.Core
                         if (commandQueue.Count == 0) break;
                         item = commandQueue.Dequeue();
                     }
-                    pendingCommand = ProcessCommandInternal(item.command, item.client, item.enqueuedAtUtc);
+                    pendingCommand = processCommand(item.command, item.client, item.enqueuedAtUtc);
                     if (!pendingCommand.IsCompleted) break;
                     if (pendingCommand.IsFaulted)
                         BridgeLogger.LogError($"Command failed: {pendingCommand.Exception}");
                     pendingCommand = null;
+                    if (Volatile.Read(ref exitRequested) != 0) break;
                 }
             }
             finally
@@ -748,9 +766,10 @@ namespace UnityCliBridge.Core
                 if (responseSent && !responseIsError &&
                     string.Equals(command.Type, "quit_editor", StringComparison.OrdinalIgnoreCase))
                 {
-                    // delayCall can run while an asynchronous write is suspended.
-                    // Register only after the complete success frame has been flushed.
-                    EditorApplication.delayCall += () => EditorApplication.Exit(0);
+                    // A suspended write may resume on a worker thread. Request
+                    // exit only after the complete frame has been flushed; the
+                    // Editor update loop performs it on the main thread.
+                    Interlocked.Exchange(ref exitRequested, 1);
                 }
             }
             catch (Exception ex)

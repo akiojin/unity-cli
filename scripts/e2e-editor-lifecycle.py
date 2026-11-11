@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Verify #443 with isolated GUI and batch Editors; retain command/process evidence."""
+"""Verify Editor lifecycle with isolated GUI/batch Editors and PID evidence (#443/#545)."""
 import argparse
 from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import shutil
+import socket
+import struct
 import subprocess
 import tempfile
 import time
 
-from bridge_auth import process_alive
+from bridge_auth import auth_fields, process_alive
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +29,22 @@ def data(value):
 
 def fixture_pids(project):
     """Only PIDs for this script's disposable project, including a failed startup."""
+    if os.name == "nt":
+        result = subprocess.check_output([
+            "powershell", "-NoProfile", "-Command",
+            "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); "
+            "Get-CimInstance Win32_Process -Filter \"Name='Unity.exe'\" | "
+            "Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress"], encoding="utf-8")
+        processes = json.loads(result) if result.strip() else []
+        if isinstance(processes, dict):
+            processes = [processes]
+        pids = []
+        for process in processes:
+            match = re.search(r'-projectPath\s+(?:"([^"]+)"|(\S+))',
+                              process.get("CommandLine") or "", re.IGNORECASE)
+            if match and Path(match[1] or match[2]).resolve() == project.resolve():
+                pids.append(int(process["ProcessId"]))
+        return pids
     processes = subprocess.check_output(["ps", "-axo", "pid=,command="], text=True)
     marker = " -projectPath " + str(project) + " "
     return [int(line.strip().split(None, 1)[0]) for line in processes.splitlines()
@@ -40,7 +59,7 @@ def prepare(editor, folder, version):
         (project / name).mkdir(parents=True)
     shutil.copytree(ROOT / "UnityCliBridge/Packages/unity-cli-bridge",
                     project / "Packages/unity-cli-bridge")
-    resources = editor.parent.parent / "Resources/PackageManager"
+    resources = (editor.parent / "Data" if os.name == "nt" else editor.parent.parent) / "Resources/PackageManager"
     catalog = json.loads((resources / "Editor/manifest.json").read_text())["packages"]
     dependencies = {"com.akiojin.unity-cli-bridge": "file:unity-cli-bridge"}
     for name in ("com.unity.ugui", "com.unity.test-framework"):
@@ -57,8 +76,12 @@ def prepare(editor, folder, version):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--unity-cli", type=Path, default=ROOT / "target/debug/unity-cli")
+    parser.add_argument("--unity-cli", type=Path,
+                        default=ROOT / ("target/debug/unity-cli.exe" if os.name == "nt" else "target/debug/unity-cli"))
     parser.add_argument("--versions", default="6000.3.25f1,2022.3.62f3")
+    parser.add_argument("--editor-root", type=Path,
+                        default=Path("C:/Program Files/Unity/Hub/Editor" if os.name == "nt"
+                                     else "/Applications/Unity/Hub/Editor"))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--reuse-fixtures", action="store_true")
     parser.add_argument("--editmode", action="store_true")
@@ -70,7 +93,8 @@ def main():
                UNITY_CLI_EDITORS_DIR=str(destination / "editors"),
                UNITY_CLI_TOOLS_ROOT=str(destination / "tools"))
     for key in ("UNITY_PROJECT_ROOT", "UNITY_EDITOR_PATH", "UNITY_CLI_PORT", "UNITY_CLI_HOST",
-                "UNITY_CLI_PORT_OVERRIDE", "UNITY_CLI_ALLOW_BATCH_HOST"):
+                "UNITY_CLI_PORT_OVERRIDE", "UNITY_CLI_ALLOW_BATCH_HOST",
+                "UNITY_CLI_AUTH_TOKEN_FILE", "UNITY_CLI_ALLOW_UNAUTHENTICATED"):
         env.pop(key, None)
     report = {"started_at": datetime.now(timezone.utc).isoformat(), "editors": []}
     print("Evidence:", destination, flush=True)
@@ -79,7 +103,8 @@ def main():
         for version in args.versions.split(","):
             folder = destination / version
             folder.mkdir(exist_ok=args.reuse_fixtures)
-            editor = Path(f"/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity")
+            executable = "Editor/Unity.exe" if os.name == "nt" else "Unity.app/Contents/MacOS/Unity"
+            editor = args.editor_root / version / executable
             if args.reuse_fixtures and (folder / "project").is_dir():
                 project = folder / "project"
                 shutil.copytree(ROOT / "UnityCliBridge/Packages/unity-cli-bridge",
@@ -89,12 +114,19 @@ def main():
             row = {"version": version, "checks": [], "status": "FAIL"}
             report["editors"].append(row)
             pid = None
+            # Pin every command to this fixture rather than another Editor's
+            # default port; editor open passes the override to the Bridge.
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", 0))
+                port = listener.getsockname()[1]
+            row["port"] = port
 
             def call(arguments, success=True):
                 command = [str(args.unity_cli.resolve()), "--output", "json", "--project-path",
-                           str(project), "--timeout-ms", "30000", *arguments]
+                           str(project), "--port", str(port), "--timeout-ms", "30000", *arguments]
                 result = subprocess.run(command, env=env, cwd=project, capture_output=True,
-                                        text=True, timeout=330)
+                                        text=True, encoding="utf-8", timeout=330,
+                                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
                 with (folder / "calls.jsonl").open("a") as stream:
                     stream.write(json.dumps({"finished_at": datetime.now(timezone.utc).isoformat(),
                                              "command": command, "exit": result.returncode,
@@ -103,6 +135,34 @@ def main():
                 value = json.loads(result.stdout) if result.stdout.strip() else {"stderr": result.stderr}
                 # Keep failure envelopes intact so assertions can inspect errors[].code.
                 return data(value) if success else value
+
+            def remote(tool, params=None):
+                params = params or {}
+                if os.name != "nt":
+                    return call(["raw", tool, "--json", json.dumps(params)])
+                # Windows unityd has a shared TCP endpoint and can inherit
+                # another fixture's registry. Only supplementary Bridge probes
+                # use this wire helper; lifecycle commands always use the CLI.
+                request = {"id": "lifecycle", "type": tool, "params": params,
+                           **auth_fields(port, env["UNITY_CLI_EDITORS_DIR"], pid)}
+                with socket.create_connection(("127.0.0.1", port), timeout=30) as connection:
+                    def read_exact(size):
+                        result = b""
+                        while len(result) < size:
+                            chunk = connection.recv(size - len(result))
+                            if not chunk:
+                                raise RuntimeError("Bridge closed before the full response")
+                            result += chunk
+                        return result
+                    payload = json.dumps(request).encode("utf-8")
+                    connection.sendall(struct.pack(">I", len(payload)) + payload)
+                    size = struct.unpack(">I", read_exact(4))[0]
+                    assert 0 < size <= 10 * 1024 * 1024, size
+                    response = json.loads(read_exact(size))
+                with (folder / "bridge-calls.jsonl").open("a") as stream:
+                    stream.write(json.dumps({"tool": tool, "params": params, "response": response}) + "\n")
+                assert response.get("status") != "error", response
+                return response.get("result", response.get("data", response))
 
             def check(condition, name):
                 assert condition, name
@@ -117,23 +177,24 @@ def main():
                                     (["--headless"] if headless else []))
                     pid = launched["pid"]
                     check(launched["ready"] and alive(pid), label + " launched and ready")
-                    check(Path(call(["system", "ping"])["projectPath"]).resolve() == project.resolve(),
+                    check(Path(remote("ping")["projectPath"]).resolve() == project.resolve(),
                           label + " ping targets project")
-                    check(call(["editor", "status"])["state"] == "ready", label + " status ready")
+                    status = call(["editor", "status"])
+                    check(status["state"] == "ready" and status["pid"] == pid,
+                          label + " status ready with matching PID")
                     result = call(["raw", "eval_csharp", "--json", json.dumps({
                         "code": "UnityEngine.Application.isBatchMode"})])
                     check(result["value"] == headless, label + " actual batch mode")
-                    call(["raw", "get_hierarchy", "--json", "{}"])
+                    remote("get_hierarchy")
                     check(alive(pid), label + " hierarchy and resident process")
                     if headless and args.editmode:
-                        started = call(["raw", "run_tests", "--json", json.dumps({
+                        started = remote("run_tests", {
                             "testMode": "EditMode", "includeDetails": True,
-                            "filter": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests"})])
+                            "filter": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests"})
                         assert started.get("status") == "running" and started.get("runId"), started
                         deadline = time.monotonic() + 300
                         while True:
-                            tests = call(["raw", "get_test_status", "--json",
-                                          '{"includeTestResults":true}'])
+                            tests = remote("get_test_status", {"includeTestResults": True})
                             if tests.get("status") == "completed":
                                 (folder / "editmode.json").write_text(json.dumps(tests, indent=2) + "\n")
                                 check(tests.get("runId") == started["runId"] and tests.get("failedTests") == 0
@@ -156,7 +217,8 @@ def main():
                         closed = call(["editor", "close", "--force"])
                     else:
                         closed = call(["editor", "close"])
-                    check(closed["closed"] and not alive(pid), label + " process absent after close")
+                    check(closed["closed"] and closed["pid"] == pid and not alive(pid),
+                          label + " process absent after close with matching PID")
                     pid = None
                     check(call(["editor", "status"])["state"] == "stopped", label + " status stopped")
                 row["status"] = "PASS"
@@ -165,7 +227,8 @@ def main():
                 if owned:
                     # This PID belongs to the disposable project launched by this suite.
                     subprocess.run([str(args.unity_cli.resolve()), "--project-path", str(project),
-                                    "editor", "close", "--force"], env=env, capture_output=True, timeout=40)
+                                    "--port", str(port), "editor", "close", "--force"],
+                                   env=env, capture_output=True, timeout=40)
                     for owned_pid in owned:
                         if alive(owned_pid):
                             os.kill(owned_pid, 15)

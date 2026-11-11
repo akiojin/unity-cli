@@ -446,15 +446,17 @@ fn argument_value(command_line: &str, flag: &str) -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
+const WINDOWS_EDITOR_PROCESS_QUERY: &str =
+    // PowerShell otherwise uses the inherited console code page, while the
+    // reader below decodes UTF-8. A lossy decode destroys non-ASCII paths.
+    "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); \
+     Get-CimInstance Win32_Process -Filter \"Name='Unity.exe'\" | \
+     ForEach-Object { \"$($_.ProcessId) $($_.CommandLine)\" }";
+
 fn process_command_lines() -> Vec<(u32, String)> {
     let output = if cfg!(windows) {
         Command::new("powershell")
-            .args([
-                "-NoProfile",
-                "-Command",
-                "Get-CimInstance Win32_Process -Filter \"Name='Unity.exe'\" | \
-                 ForEach-Object { \"$($_.ProcessId) $($_.CommandLine)\" }",
-            ])
+            .args(["-NoProfile", "-Command", WINDOWS_EDITOR_PROCESS_QUERY])
             .output()
     } else {
         Command::new("ps")
@@ -723,6 +725,73 @@ Safe Mode: Only loading a subset of assemblies\n";
     fn editor_import_workers_are_not_reusable_editors() {
         assert!(parse_editor_command_line(123,
             "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -adb2 -batchMode -name AssetImportWorker0 -projectPath /tmp/test-project -parentPid 12").is_none());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_editor_query_preserves_unicode_on_legacy_console() {
+        // Windows PowerShell may inherit a legacy code page. Its output is
+        // consumed as UTF-8 by process_command_lines, even for Japanese paths.
+        let command_line = r#"123 Unity.exe -batchmode -projectPath "C:/Users/秦泉寺章夫/My Game""#;
+        let output = Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-Command",
+                &format!(
+                    "[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding(932); \
+                     {WINDOWS_EDITOR_PROCESS_QUERY}; Write-Output '{command_line}'"
+                ),
+            ])
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).unwrap_or_else(|error| {
+            panic!("process query must emit UTF-8: {}", error.utf8_error())
+        });
+        assert!(text.lines().any(|line| line == command_line));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_editor_project_matching_handles_path_spellings() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("秦泉寺章夫").join("My Game");
+        std::fs::create_dir_all(&root).unwrap();
+        let canonical = root.canonicalize().unwrap();
+        for spelling in [
+            root.to_string_lossy().to_string(),
+            root.to_string_lossy().replace('\\', "/").to_uppercase(),
+            format!("{}\\", root.display()),
+            canonical.to_string_lossy().to_string(),
+        ] {
+            let editor =
+                parse_editor_command_line(123, &format!(r#"Unity.exe -projectPath "{spelling}""#))
+                    .unwrap();
+            assert!(editor_matches_project(&editor, &canonical), "{spelling}");
+            assert!(!editor_matches_project(&editor, &temp.path().join("other")));
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn unix_editor_project_matching_preserves_platform_behavior() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("My Game");
+        std::fs::create_dir_all(&root).unwrap();
+        let alias = temp.path().join("alias");
+        std::os::unix::fs::symlink(&root, &alias).unwrap();
+        let editor = EditorProcess {
+            pid: 123,
+            project_path: Some(alias.to_string_lossy().into_owned()),
+            log_file: None,
+        };
+        assert!(editor_matches_project(&editor, &root));
+        assert!(!editor_matches_project(&editor, &temp.path().join("other")));
+        #[cfg(target_os = "linux")]
+        assert!(!editor_matches_project(
+            &editor,
+            &temp.path().join("my game")
+        ));
     }
 
     #[test]
