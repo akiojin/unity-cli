@@ -2,6 +2,14 @@
 
 Run these checks before the first `reference fetch` in a new environment or worktree.
 
+## Binary Selection
+
+- Prefer an installed `unity-cli` binary on `PATH`; verify it with `unity-cli --version`.
+- If it is missing, install the release binary first:
+  - macOS / Linux: `curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh`; use `~/.local/bin/unity-cli` if needed.
+  - Windows (PowerShell): `irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex`. The installer adds `%USERPROFILE%\.unity\tools\unity-cli\win-x64` to the user `PATH`; open a new shell to pick it up, or invoke `unity-cli.exe` in that directory.
+- Only inside a unity-cli source checkout (its `Cargo.toml` declares the `unity-cli` package), `cargo run -- <args>` is a development alternative. A consuming Unity project is not that checkout; use the installer there.
+
 ## Prerequisites
 
 - Prefer `git` on `PATH` (`git --version`). When Git is absent, the official repository uses paginated GitHub API discovery and commit-pinned ZIP downloads.

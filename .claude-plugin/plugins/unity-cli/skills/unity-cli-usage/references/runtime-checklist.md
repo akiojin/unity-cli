@@ -1,5 +1,16 @@
 # Runtime Checklist
 
+## Table of Contents
+
+- Structured Results
+- Binary Selection
+- Project Setup
+- Instance Selection
+- Command Routing
+- Connection Recovery
+- CI Notes
+- Daemon Troubleshooting (Windows)
+
 ## Structured Results
 
 Use `--output json` for automation. Stdout is one envelope on success and failure:
@@ -19,9 +30,11 @@ completion and inspect that call's exit code.
 
 ## Binary Selection
 
-- Prefer an installed `unity-cli` binary when it exists on `PATH` (the installer links it to `~/.local/bin/unity-cli`).
-- If no binary is installed, run `scripts/install.sh` (macOS / Linux) or `scripts/install.ps1` (Windows, when published) instead of asking the user.
-- Only inside a unity-cli source checkout, `cargo run -- <args>` is a development alternative.
+- Prefer an installed `unity-cli` binary on `PATH`; verify it with `unity-cli --version`.
+- If it is missing, install the release binary first:
+  - macOS / Linux: `curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh`; use `~/.local/bin/unity-cli` if needed.
+  - Windows (PowerShell): `irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex`. The installer adds `%USERPROFILE%\.unity\tools\unity-cli\win-x64` to the user `PATH`; open a new shell to pick it up, or invoke `unity-cli.exe` in that directory.
+- Only inside a unity-cli source checkout (its `Cargo.toml` declares the `unity-cli` package), `cargo run -- <args>` is a development alternative. A consuming Unity project is not that checkout; use the installer there.
 
 ## Project Setup
 
@@ -65,6 +78,42 @@ completion and inspect that call's exit code.
 
 ## CI Notes
 
-- Set `UNITY_CLI_HOST` and `UNITY_CLI_PORT` explicitly in CI.
+- Local CI can discover Editor lockfiles automatically. Set `UNITY_CLI_HOST` and
+  `UNITY_CLI_PORT` explicitly when discovery cannot read them (Docker / WSL2 or remote).
+- `editor open --headless` enables the Bridge automatically. For other batchmode / CI
+  launches, set `UNITY_CLI_ALLOW_BATCH_HOST=1` in the Editor environment before startup.
+  It does not override `-runTests` or AssetImportWorker exclusion; those processes
+  never open TCP. Keep a persistent host without `-quit`, or use `unity-cli test`.
 - Keep JSON payloads quoted as a single shell argument.
 - If connectivity fails in CI, report the resolved host and port before retrying.
+
+## Daemon Troubleshooting (Windows)
+
+Windows uses separate fixed loopback TCP ports for local daemons: **lspd 6421**
+(C# LSP) and **unityd 6422** (Bridge connection reuse). These are not the Unity
+Editor's 6400 listener and cannot be fixed by changing the Editor's `--port`.
+Inspect each daemon before restarting it:
+
+```bash
+unity-cli lspd status
+unity-cli unityd status
+unity-cli lspd stop
+unity-cli unityd stop
+```
+
+The next LSP/Bridge call starts its daemon again; explicit `lspd start` /
+`unityd start` are also available. A missing daemon or bind failure can mean another
+process owns the port. In PowerShell, inspect the listener and its exact owner:
+
+```powershell
+Get-NetTCPConnection -State Listen -LocalPort 6421,6422 |
+  Select-Object LocalAddress,LocalPort,OwningProcess
+# Replace <PID> with the OwningProcess above; inspect it before taking action.
+Get-Process -Id <PID>
+```
+
+If it is the matching unity-cli daemon, stop it through its `stop` command and retry.
+If it belongs to another program, preserve that process and resolve the port conflict
+before starting the daemon; do not terminate processes by name or repeatedly restart
+the Editor. Recheck daemon status, then `system ping` or the intended LSP operation.
+On macOS / Linux these daemons use local Unix sockets instead of those TCP ports.

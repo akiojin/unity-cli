@@ -20,6 +20,11 @@ Semantic な近傍検索で UnityCsReference キャッシュからシンボル�
 
 2. ONNX model `BAAI/bge-small-en-v1.5` (~130MB) を取得するためのネットワーク接続。初回のみ自動 download される (`fastembed-rs` がプラットフォーム標準のキャッシュ位置 (`~/.cache/fastembed` 等) に保存)。
 
+3. Intel macOS では ONNX Runtime の共有ライブラリが必要。`brew install onnxruntime`
+   で導入するか、互換ライブラリ `libonnxruntime.dylib` のパスを `ORT_DYLIB_PATH`
+   に設定してから `embed-build` / `embed-search` を実行する。unity-cli の Homebrew
+   formula は依存として導入し、Apple Silicon リリース版は runtime を同梱する。
+
 ## Build
 
 ```bash

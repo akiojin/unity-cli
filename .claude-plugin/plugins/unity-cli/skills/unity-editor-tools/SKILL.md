@@ -78,6 +78,12 @@ Use `status` (`stopped`, `starting`, `compiling`, `safe_mode`, `ready`) and
 `Logs/unity-cli-editor.log` to diagnose startup.
 
 `--headless` runs `-batchmode -nographics` with the Bridge enabled and no `-quit`.
+When launching Unity directly in batchmode / CI instead, set
+`UNITY_CLI_ALLOW_BATCH_HOST=1` in the Editor process environment before startup
+or the Bridge skips its TCP listener. `editor open --headless` sets this automatically.
+The opt-in never enables TCP for `-runTests` or AssetImportWorker processes;
+use `unity-cli test` for CLI-managed tests, or a persistent batch host without
+`-runTests` / `-quit` for Bridge operations.
 `close` waits for process exit and refuses dirty scenes with `UNSAVED_SCENES`.
 Save the scenes first; use `close --force` only when discarding unsaved changes
 is intended. Legacy `raw quit_editor` without `force` does not provide this guard.
