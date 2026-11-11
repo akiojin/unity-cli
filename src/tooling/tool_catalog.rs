@@ -2368,6 +2368,9 @@ fn tool_params_schema(name: &str) -> Value {
                             "list_cached",
                             "import_cached",
                             "import_status",
+                            "open_asset_store",
+                            "wait_download",
+                            "acquire",
                         ]),
                     ),
                     ("keyword", string_schema()),
@@ -2383,11 +2386,25 @@ fn tool_params_schema(name: &str) -> Value {
                     ("requestId", string_schema()),
                     ("interactive", boolean_schema()),
                     ("timeoutMs", integer_schema()),
+                    ("downloadTimeoutMs", integer_schema()),
                 ],
                 &["action"],
                 false,
             ),
             vec![
+                object_schema(
+                    &[("action", enum_string_schema(&["open_asset_store"]))],
+                    &["action"],
+                    true,
+                ),
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["wait_download", "acquire"])),
+                        ("nameOrId", string_schema()),
+                    ],
+                    &["action", "nameOrId"],
+                    true,
+                ),
                 object_schema(
                     &[
                         ("action", enum_string_schema(&["import"])),
@@ -3745,7 +3762,7 @@ mod tests {
         assert_eq!(spec.params_schema["additionalProperties"], false);
         assert_eq!(
             spec.params_schema["oneOf"].as_array().map(|v| v.len()),
-            Some(12)
+            Some(14)
         );
     }
 

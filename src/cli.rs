@@ -19,8 +19,39 @@ mod test_command_tests {
                 "C:/cache",
             ],
             vec!["package", "import-status", "request-123"],
+            vec!["package", "asset-store-open"],
+            vec!["package", "asset-store-open", "12345"],
+            vec![
+                "package",
+                "asset-store-wait",
+                "Small",
+                "--download-timeout-ms",
+                "1000",
+            ],
+            vec![
+                "package",
+                "asset-store-import",
+                "12345",
+                "--cache-path",
+                "C:/cache",
+            ],
         ] {
             assert!(Cli::try_parse_from(std::iter::once("unity-cli").chain(args)).is_ok());
+        }
+    }
+
+    #[test]
+    fn asset_store_download_timeout_is_bounded() {
+        for timeout in ["0", "-1", "86400001", "invalid"] {
+            assert!(Cli::try_parse_from([
+                "unity-cli",
+                "package",
+                "asset-store-wait",
+                "Small",
+                "--download-timeout-ms",
+                timeout
+            ])
+            .is_err());
         }
     }
 
@@ -192,6 +223,27 @@ pub enum PackageCommand {
     },
     /// Read an import's saved state without restarting it.
     ImportStatus { request_id: String },
+    /// Open My Assets and request a selection. Download remains manual.
+    AssetStoreOpen {
+        name_or_id: Option<String>,
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+    },
+    /// Wait for a complete downloaded package without opening or importing it.
+    AssetStoreWait(AssetStoreDownloadArgs),
+    /// Open My Assets, wait for manual Download, then import automatically.
+    AssetStoreImport(AssetStoreDownloadArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct AssetStoreDownloadArgs {
+    /// Exact Asset Store product ID or cached title/filename (without extension).
+    pub name_or_id: String,
+    #[arg(long)]
+    pub cache_path: Option<PathBuf>,
+    /// Maximum manual-download wait, separate from --timeout-ms for import.
+    #[arg(long, default_value_t = 600_000, value_parser = clap::value_parser!(u64).range(1..=86_400_000))]
+    pub download_timeout_ms: u64,
 }
 
 #[derive(Debug, Subcommand)]

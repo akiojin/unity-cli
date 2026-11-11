@@ -255,12 +255,16 @@ dialog, waiting for compilation and domain reload:
 unity-cli package import /absolute/path/Small.unitypackage --output json
 unity-cli package cache-list --output json
 unity-cli package cache-import "Small Package" --output json
+# Open My Assets, press Download manually, then import automatically:
+unity-cli package asset-store-import 12345 --download-timeout-ms 600000 --output json
 ```
 
 Use `--cache-path` or `UNITY_CLI_ASSET_STORE_CACHE_PATH` for a custom cache.
 See [package import commands](docs/tools.md#unitypackage-and-asset-store-cache)
-for selection IDs, timeouts and recovery. New Asset Store downloads are outside
-these commands' scope.
+for selection IDs, timeouts and recovery. `package asset-store-open [name-or-id]`
+and `package asset-store-wait <name-or-id>` run the display and wait stages
+separately. Download, login and ownership checks remain manual in Unity; the CLI
+never presses Download or reads Unity account tokens.
 
 ```bash
 # Connectivity

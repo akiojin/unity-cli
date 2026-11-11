@@ -31,10 +31,76 @@ namespace UnityCliBridge.Tests
             JObject.FromObject(PackageManagerHandler.HandleCommand(action, parameters));
 
         [Test]
+        public void OpenMyAssetsRequiresHeadedEditorAndNeverClaimsSelectionConfirmed()
+        {
+            var result = Call("open_asset_store", new JObject());
+            if (UnityEngine.Application.isBatchMode)
+            {
+                Assert.AreEqual("ASSET_STORE_UI_UNAVAILABLE", result.Value<string>("code"));
+                return;
+            }
+            Assert.IsTrue(result.Value<bool>("success"), result.ToString());
+            Assert.IsTrue(result.Value<bool>("manualDownloadRequired"));
+            Assert.AreEqual("unresolved", result.Value<string>("selection"));
+            Assert.IsFalse(result.Value<bool>("selectionConfirmed"));
+        }
+
+        [Test]
         public void ImportMissingFileReturnsStableError()
         {
             var result = Call("import", new JObject { ["path"] = Path.Combine(temporary, "missing.unitypackage") });
             Assert.AreEqual("PACKAGE_NOT_FOUND", result.Value<string>("code"));
+        }
+
+        [Test]
+        public void DownloadProbeWaitsForAbsentIncompleteOrUnrelatedPackage()
+        {
+            var request = new JObject { ["cachePath"] = temporary, ["nameOrId"] = "Small" };
+            Assert.AreEqual("waiting_download", Call("wait_download", request).Value<string>("status"));
+            File.WriteAllText(Path.Combine(temporary, "Other.unitypackage"), "unrelated");
+            Assert.AreEqual("waiting_download", Call("wait_download", request).Value<string>("status"));
+            File.WriteAllText(Path.Combine(temporary, "Small.unitypackage"), "partial download");
+            var result = Call("wait_download", request);
+            Assert.AreEqual("waiting_download", result.Value<string>("status"));
+            Assert.AreEqual("incomplete_archive", result.Value<string>("reason"));
+            Assert.AreEqual("INVALID_ARGUMENT", Call("wait_download", new JObject()).Value<string>("code"));
+        }
+
+        [Test]
+        public void DownloadProbeRejectsAmbiguousNames()
+        {
+            foreach (var folder in new[] { "First", "Second" })
+            {
+                Directory.CreateDirectory(Path.Combine(temporary, folder));
+                File.WriteAllText(Path.Combine(temporary, folder, "Small.unitypackage"), "partial");
+            }
+            Assert.AreEqual("PACKAGE_AMBIGUOUS", Call("wait_download", new JObject
+            {
+                ["cachePath"] = temporary, ["nameOrId"] = "Small"
+            }).Value<string>("code"));
+        }
+
+        [Test]
+        public void DownloadProbeAcceptsOnlyCompleteUnityExportAndDoesNotImport()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(AssetPath));
+            File.WriteAllText(AssetPath, "download probe");
+            AssetDatabase.ImportAsset(AssetPath);
+            var path = Path.Combine(temporary, "Small.unitypackage");
+            AssetDatabase.ExportPackage(AssetPath, path);
+            AssetDatabase.DeleteAsset(AssetPath);
+            var complete = File.ReadAllBytes(path);
+            File.WriteAllBytes(path, complete.Take(20).ToArray());
+            Assert.AreEqual("incomplete_archive", Call("wait_download", new JObject
+            {
+                ["cachePath"] = temporary, ["nameOrId"] = "Small"
+            }).Value<string>("reason"));
+            Assert.AreEqual("INVALID_UNITYPACKAGE", Call("import", new JObject { ["path"] = path }).Value<string>("code"));
+            File.WriteAllBytes(path, complete);
+            var result = Call("wait_download", new JObject { ["cachePath"] = temporary, ["nameOrId"] = "Small" });
+            Assert.AreEqual("ready", result.Value<string>("status"), result.ToString());
+            Assert.AreEqual(Path.GetFullPath(path).Replace('\\', '/'), result.Value<string>("path"));
+            Assert.IsFalse(File.Exists(AssetPath));
         }
 
         [Test]
