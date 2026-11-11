@@ -83,6 +83,10 @@ PR #557 の最終 head `e798d3815dd6440640b071918ddffe5ba5f74a41` は base の�
 修正後の判定と混同しない。Issue の AC-1 更新と完了確定には、新しい独立判定と
 `origin/develop` への提供を確認する。
 
+修正後の PR #557 / `e798d38` は、[PM 手配の独立受け入れレビュー](https://github.com/akiojin/unity-cli/issues/549#issuecomment-6795332427)
+で AC-1 PASS となった。実 RST 回帰、旧挙動の RED、必須 CI と Windows Tests の実行を
+確認し、PR #556 / `fac0f70` に対する以前の fail を更新している。
+
 User Verification Result: n/a (autonomous)
 
 Agent Visual Check: n/a (no UI surface)
