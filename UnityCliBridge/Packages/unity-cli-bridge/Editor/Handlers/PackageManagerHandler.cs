@@ -31,6 +31,11 @@ namespace UnityCliBridge.Handlers
             {
                 switch (action.ToLower())
                 {
+                    case "import":
+                    case "list_cached":
+                    case "import_cached":
+                    case "import_status":
+                        return UnityPackageHandler.HandleCommand(action.ToLowerInvariant(), parameters);
                     case "search":
                         return SearchPackages(parameters);
                     case "list":

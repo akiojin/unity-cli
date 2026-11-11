@@ -8,8 +8,8 @@ use tracing_subscriber::EnvFilter;
 use super::output::{self, FailureKind};
 use crate::cli::{
     BridgeCommand, Cli, CliCommand, Command, DoctorArgs, EditorCommand, EvalMode, InstancesCommand,
-    LspCommand, LspdCommand, OutputFormat, RawArgs, ReferenceCommand, SceneCommand, SkillFormat,
-    SkillSeverity, SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
+    LspCommand, LspdCommand, OutputFormat, PackageCommand, RawArgs, ReferenceCommand, SceneCommand,
+    SkillFormat, SkillSeverity, SkillsCommand, SystemCommand, ToolCommand, UnitydCommand,
 };
 use crate::config::{RuntimeConfig, RuntimeOverrides};
 use crate::core::command_stats::{self, CliCommandTiming};
@@ -139,6 +139,31 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
     match &cli.command {
         Command::Mcp { .. } => unreachable!("MCP handled before self-update"),
         Command::Test(args) => return super::test_runner::run(&cli, args).await,
+        Command::Package { command } => {
+            let mut params = match command {
+                PackageCommand::Import { path } => json!({"action":"import", "path":path}),
+                PackageCommand::CacheList { cache_path } => {
+                    json!({"action":"list_cached", "cachePath":cache_path})
+                }
+                PackageCommand::CacheImport {
+                    name_or_id,
+                    cache_path,
+                } => {
+                    json!({"action":"import_cached", "nameOrId":name_or_id, "cachePath":cache_path})
+                }
+                PackageCommand::ImportStatus { request_id } => {
+                    json!({"action":"import_status", "requestId":request_id})
+                }
+            };
+            if params["cachePath"].is_null() {
+                params.as_object_mut().unwrap().remove("cachePath");
+            }
+            if super::package::is_import(&params) {
+                params["timeoutMs"] = json!(cli.timeout_ms.unwrap_or(180_000));
+            }
+            let value = execute_tool(&cli, "package_manager", params).await?;
+            print_value(&value, cli.output)?;
+        }
         Command::Editor { command } => {
             let (tool, params) = match command {
                 EditorCommand::Eval {
@@ -893,6 +918,9 @@ pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) 
     if !is_known_tool(tool_name) {
         return execute_custom_tool(cli, tool_name, params).await;
     }
+    if tool_name == "package_manager" {
+        super::package::apply_cache_override(&mut params);
+    }
     validate_tool_params(tool_name, &params).context(FailureKind::Usage)?;
 
     if should_skip_for_dry_run(cli, tool_name) {
@@ -915,6 +943,9 @@ pub(crate) async fn execute_tool(cli: &Cli, tool_name: &str, mut params: Value) 
     }
 
     let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
+    if tool_name == "package_manager" && super::package::is_import(&params) {
+        return super::package::import_and_wait(&config, params).await;
+    }
     let eval_id = if tool_name == "eval_csharp" {
         if params.get("requestId").is_none() {
             static NEXT_EVAL_ID: std::sync::atomic::AtomicU64 =
@@ -1098,7 +1129,13 @@ async fn execute_batch(cli: &Cli, json_str: Option<&str>, use_stdin: bool) -> Re
             .context(FailureKind::Usage)?;
     }
 
-    if !cli.dry_run && !has_custom && !commands.iter().any(|item| item.tool == "eval_csharp") {
+    if !cli.dry_run
+        && !has_custom
+        && !commands.iter().any(|item| {
+            item.tool == "eval_csharp"
+                || (item.tool == "package_manager" && super::package::is_import(&item.params))
+        })
+    {
         let config = RuntimeConfig::from_overrides(&runtime_overrides_from_cli(cli))?;
         match unityd::try_batch(commands, &config).await {
             Ok(value) => return Ok(value),

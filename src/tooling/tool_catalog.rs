@@ -2364,6 +2364,10 @@ fn tool_params_schema(name: &str) -> Value {
                             "uninstall",
                             "info",
                             "recommend",
+                            "import",
+                            "list_cached",
+                            "import_cached",
+                            "import_status",
                         ]),
                     ),
                     ("keyword", string_schema()),
@@ -2373,11 +2377,46 @@ fn tool_params_schema(name: &str) -> Value {
                     ("version", string_schema()),
                     ("packageName", string_schema()),
                     ("category", string_schema()),
+                    ("path", string_schema()),
+                    ("cachePath", string_schema()),
+                    ("nameOrId", string_schema()),
+                    ("requestId", string_schema()),
+                    ("interactive", boolean_schema()),
+                    ("timeoutMs", integer_schema()),
                 ],
                 &["action"],
                 false,
             ),
             vec![
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["import"])),
+                        ("path", string_schema()),
+                    ],
+                    &["action", "path"],
+                    true,
+                ),
+                object_schema(
+                    &[("action", enum_string_schema(&["list_cached"]))],
+                    &["action"],
+                    true,
+                ),
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["import_cached"])),
+                        ("nameOrId", string_schema()),
+                    ],
+                    &["action", "nameOrId"],
+                    true,
+                ),
+                object_schema(
+                    &[
+                        ("action", enum_string_schema(&["import_status"])),
+                        ("requestId", string_schema()),
+                    ],
+                    &["action", "requestId"],
+                    true,
+                ),
                 object_schema(
                     &[
                         ("action", enum_string_schema(&["search"])),
@@ -3706,7 +3745,7 @@ mod tests {
         assert_eq!(spec.params_schema["additionalProperties"], false);
         assert_eq!(
             spec.params_schema["oneOf"].as_array().map(|v| v.len()),
-            Some(8)
+            Some(12)
         );
     }
 

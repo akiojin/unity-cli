@@ -133,7 +133,7 @@ const TOOL_INDEX: &[(&str, &str, &str)] = &[
     ("eval_csharp", "Editor", "Evaluate synchronous C#"),
     ("get_eval_status", "Editor", "Query evaluation result"),
     ("get_eval_stats", "Editor", "Query eval domain counters"),
-    ("package_manager", "Editor", "Manage packages"),
+    ("package_manager", "Editor", "Manage UPM / asset packages"),
     ("registry_config", "Editor", "Configure scoped registries"),
     ("get_editor_info", "Editor", "Get editor version info"),
     ("get_editor_state", "Editor", "Get editor state"),
