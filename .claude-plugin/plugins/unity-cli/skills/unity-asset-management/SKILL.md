@@ -84,7 +84,17 @@ For numeric curves, replace `12345` with the actual animation root GameObject in
 
 ### Timeline assets, tracks, clips and bindings
 
-Requires Timeline installed, Edit Mode, and an existing writable parent folder.
+Requires `com.unity.timeline`, Edit Mode, and an existing writable parent folder.
+On `TIMELINE_PACKAGE_MISSING`, use `unity-package-management` to install an
+Editor-compatible version, then wait for reload/idle compilation and verify it
+with `package_manager` list before retrying:
+
+```bash
+unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity.timeline"}'
+unity-cli raw package_manager --json '{"action":"list"}'
+unity-cli raw get_compilation_state --json '{}'
+```
+
 Use a new asset path for creation, then inspect before subsequent edits.
 
 ```bash

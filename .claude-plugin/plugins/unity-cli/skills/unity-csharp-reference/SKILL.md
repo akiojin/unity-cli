@@ -66,6 +66,12 @@ Use `reference resolve-symbol-at <project-rel-path> --line <n> --column <m>` whe
 
 Use `reference embed-build` + `reference embed-search --query "..."` for semantic / natural-language lookup when the user has a concept (`"animator state callback"`) instead of an exact symbol name. The first call downloads the BGE-Small-EN ONNX model (~130MB, cached under the platform-default fastembed cache) and writes a per-version `.unity-cli-index/embeddings.bin`. Subsequent `embed-search` calls only run a single query embedding and a linear cosine scan over that file, so they stay fast. The result is sorted by `score` (cosine similarity, higher is closer); `find-symbol` and `grep` remain the right tools when the exact symbol name is already known.
 
+On Intel macOS, embeddings additionally require a compatible ONNX Runtime dynamic
+library. Install it with `brew install onnxruntime` (the unity-cli Homebrew formula
+already depends on it), or set `ORT_DYLIB_PATH` to the installed `libonnxruntime.dylib`
+before `embed-build` / `embed-search`. Exact-symbol and text searches do not need
+ONNX Runtime. Apple Silicon release binaries bundle their runtime.
+
 ## Examples
 
 - "Show me how Unity implements `Animator.Play` so I can predict whether it allocates."

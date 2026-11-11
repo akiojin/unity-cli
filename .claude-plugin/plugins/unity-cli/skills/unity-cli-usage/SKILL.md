@@ -46,8 +46,8 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 1. **Bootstrap once per project** (a successful ping only confirms the bridge; also check the C# LSP):
    1. If `command -v unity-cli` fails, install the release binary without asking for a manual step:
       - macOS / Linux: `curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh`, then use `~/.local/bin/unity-cli` if `~/.local/bin` is not on `PATH`.
-      - Windows: run `scripts/install.ps1` the same way when it is published; otherwise download the release asset from GitHub Releases.
-      - Only inside a unity-cli source checkout, `cargo run -- <args>` is an alternative for development.
+      - Windows (PowerShell): `irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1 | iex`. The installer adds `%USERPROFILE%\.unity\tools\unity-cli\win-x64` to the user `PATH`; open a new shell to pick it up, or invoke `unity-cli.exe` in that directory.
+      - Only inside a unity-cli source checkout (its `Cargo.toml` declares the `unity-cli` package), `cargo run -- <args>` is an alternative for development. Use the installer in consuming Unity projects.
    2. Tell the user that setup edits `Packages/manifest.json` (adds the OpenUPM scoped registry and `com.akiojin.unity-cli-bridge` pinned to the CLI version) and, for legacy-input-only projects, sets `activeInputHandler` to Both in `ProjectSettings/ProjectSettings.asset`; then run `unity-cli --output json setup --launch-editor` from the Unity project root (or pass `--project-path`).
    3. Read the JSON: `ok: true` means the Editor answered `ping` for this project. On `ok: false`, act on `editor.hint` (first import can take several minutes; rerun `setup` to keep waiting). Report any `warnings` — a `versionCheck.status` of `mismatch` means run `unity-cli bridge upgrade`.
    4. Install the C# LSP with `unity-cli lsp install`, then run `unity-cli lsp doctor` and confirm `binaryExists: true`. This is required setup alongside CLI installation, bridge setup, and ping; C# write tools need the LSP. On failure, inspect the reported reason, recover and retry installation before proceeding with C# edits. On later runs, doctor showing an installed LSP lets you skip reinstallation.
@@ -90,6 +90,64 @@ unity-cli tool list --names-only --output json # name array in data
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
 unity-cli raw analyze_scene_contents --json '{"includeInactive":true}'
 ```
+
+## Updates
+
+For a managed installer installation under `~/.unity/tools/unity-cli/`, run
+`unity-cli cli install`, then `unity-cli --version`. For a Homebrew installation,
+use `brew upgrade akiojin/tap/unity-cli`. Check the installation source before
+changing a manually downloaded or `cargo install` binary.
+
+After updating the binary, run `unity-cli skills refresh` to sync skills previously
+installed by `skills install` for all installed clients in the global scope.
+Use `unity-cli skills refresh claude-code --local` for a project-local Claude Code
+install; supported targets are `claude-code`, `cursor`, `windsurf`, and `vscode`.
+Use the same client/scope as the original install. Codex / Claude marketplace
+plugins update through their client. Finish with `unity-cli bridge status`;
+on a registry bridge version mismatch, use `unity-cli bridge upgrade` and let Unity
+reimport before pinging again.
+
+## CI Notes
+
+For a persistent host, prefer `unity-cli editor open --headless --project-path <project>`;
+it enables the Bridge automatically. When launching Unity directly in batchmode / CI,
+set `UNITY_CLI_ALLOW_BATCH_HOST=1` in the **Editor process environment** before startup
+to enable its TCP listener. Keep the host running without `-quit`.
+The opt-in is ineffective for `-runTests` and AssetImportWorker processes: they
+never open the listener. Use `unity-cli test` from `unity-playmode-testing` for
+the CLI-managed CI path instead of combining Bridge calls with Unity's `-runTests`.
+See the runtime checklist for endpoint and daemon diagnostics.
+
+## Remote and container connections (Docker / WSL2)
+
+Local commands discover the target through Editor lockfiles, so normally leave
+`UNITY_CLI_HOST` / `UNITY_CLI_PORT` unset. When lockfiles cannot be used for discovery
+(Docker / WSL2 or a remote host), explicitly set both to the reachable Editor host
+and its actual listener port. A container's `127.0.0.1` is the container itself:
+use `host.docker.internal` (Linux Docker may need
+`--add-host=host.docker.internal:host-gateway`), or the Windows host IP for WSL2
+when that DNS name is unavailable. Read the selected port on the host with
+`unity-cli instances list`; it can differ from 6400. Explicit endpoints take
+precedence over project discovery. For IPv6-only listeners, use `UNITY_CLI_HOST=::1`.
+
+- Set `UNITY_CLI_AUTH_TOKEN_FILE` to the target Editor's lockfile JSON containing
+  `authToken`, e.g. `/run/unity-editors/<EDITOR_PID>.json` in Docker or
+  `/mnt/c/Users/<USER>/.unity-cli/editors/<EDITOR_PID>.json` in WSL2.
+- Mount the **directory** read-only, e.g.
+  `-v "$HOME/.unity-cli/editors:/run/unity-editors:ro"`, because heartbeat replaces
+  the file atomically. On POSIX the file is mode `0600`; run as a user who can read
+  it. Keep credentials out of logs and source control.
+- `UNITY_CLI_EDITORS_DIR` overrides `~/.unity-cli/editors` (Windows:
+  `%USERPROFILE%\.unity-cli\editors`); set it consistently for the Editor and CLI
+  for local discovery, or expose that directory through the remote mount.
+- After changing credential paths or environment, run `unity-cli unityd stop`;
+  the next invocation starts a daemon with the new environment. Tokens rotate on
+  domain reload; keep reading the live lockfile rather than copying its token.
+
+If the host listener binds only to loopback, external containers need a trusted
+tunnel or an allowed LAN/non-loopback bind in Project Settings > Unity CLI Bridge
+followed by Apply & Restart. TCP tokens are plaintext; use a trusted network or
+secure tunnel. These settings match `docs/configuration.md` in the unity-cli source.
 
 ## MCP client setup
 

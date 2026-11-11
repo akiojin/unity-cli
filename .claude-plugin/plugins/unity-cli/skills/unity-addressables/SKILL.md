@@ -35,6 +35,17 @@ Manage Addressable asset groups, build content, and analyse bundles. This skill 
 
 ## Preferred Flow
 
+Requires `com.unity.addressables` in the target project. On
+`ADDRESSABLES_NOT_INSTALLED`, use `unity-package-management` to install an
+Editor-compatible version, then wait for reload/idle compilation and verify the
+resolved package before retrying Addressables operations:
+
+```bash
+unity-cli raw package_manager --json '{"action":"install","packageId":"com.unity.addressables"}'
+unity-cli raw package_manager --json '{"action":"list"}'
+unity-cli raw get_compilation_state --json '{}'
+```
+
 1. Inspect existing groups before creating or moving entries.
 2. Apply group or entry changes with `addressables_manage`.
 3. Run `addressables_analyze` before a build, and use `fix_issues` only when the reported changes are acceptable.

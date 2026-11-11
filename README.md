@@ -71,7 +71,6 @@ package on the same version as the CLI, and connect it to the Unity Editor.
    way it was installed:
    - Quick Install (managed copy under ~/.unity/tools): unity-cli cli install
    - Homebrew: brew upgrade akiojin/tap/unity-cli
-   - winget: winget upgrade akiojin.unity-cli
    - Anything else (cargo install, manual download): tell me how it was
      installed and ask before changing it.
 4. Check that `unity-cli --version` works from PATH. On macOS / Linux, if it is
@@ -162,10 +161,11 @@ availability checks.
 
 ```bash
 brew install akiojin/tap/unity-cli     # macOS / Linux (Homebrew)
-winget install akiojin.unity-cli       # Windows (winget)
 ```
 
-Package-manager installs are updated by `brew upgrade` / `winget upgrade`.
+Homebrew installs are updated by `brew upgrade`.
+The Windows winget package is not yet published (tracked in #537); use the
+PowerShell Quick Install command above until publication is complete.
 On Intel macOS, reference embeddings (`unity-cli reference embed-build` / `embed-search`) load ONNX Runtime
 dynamically; the Homebrew formula installs `onnxruntime`, otherwise run
 `brew install onnxruntime` or set `ORT_DYLIB_PATH`.
