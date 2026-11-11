@@ -154,11 +154,11 @@ namespace UnityCliBridge.Tests
             var path = Path.Combine(temporary, "Small.unitypackage");
             AssetDatabase.ExportPackage(AssetPath, path);
             AssetDatabase.DeleteAsset(AssetPath);
-            var request = new JObject { ["path"] = path, ["requestId"] = Guid.NewGuid().ToString("N") };
+            var request = new JObject { ["path"] = path, ["requestId"] = "Active" };
             var start = Call("import", request);
             Assert.IsTrue(start.Value<bool>("success"), start.ToString());
             // An explicit request ID makes a repeated dispatch idempotent.
-            Assert.AreEqual(start["requestId"], Call("import", request)["requestId"]);
+            Assert.AreEqual(start.Value<string>("requestId"), Call("import", request).Value<string>("requestId"));
             Assert.AreEqual("PACKAGE_IMPORT_BUSY", Call("import", new JObject { ["path"] = path }).Value<string>("code"));
             var deadline = DateTime.UtcNow.AddSeconds(30);
             JObject result;

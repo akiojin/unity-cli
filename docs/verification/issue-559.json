@@ -2,7 +2,7 @@
   "issue": 559,
   "platform": "Windows",
   "unity_version": "6000.3.28f1",
-  "started_at": "2026-11-11T12:34:08.102307+00:00",
+  "started_at": "2026-11-11T13:30:18.631152+00:00",
   "status": "PASS",
   "checks": [
     {
@@ -132,10 +132,15 @@
       "result": "Passed"
     }
   ],
+  "explicit_request_id_regression": {
+    "requestId": "Active",
+    "test": "ImportRealExportedPackageReportsImportedPathsAndIdleState",
+    "result": "Passed"
+  },
   "fixture": {
     "path": "tests/fixtures/package-import/small.unitypackage",
     "bytes": 350,
-    "sha256": "ff44ccff4b689cce7339f186d49a61f710b570888012dfd04e85e8bee4d3e5ef"
+    "sha256": "faf03975b8ffcc56dd0ea11726146b62e54569489e89dd9a93f22525152a11e3"
   },
   "results": {
     "local": {
@@ -146,7 +151,7 @@
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "lastCompilationTime": "2026-11-11T13:30:52.2384711Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -158,7 +163,7 @@
       "importedAssets": [
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
-      "requestId": "package-47924-18e6fdc54cfdd284-0",
+      "requestId": "package-41628-18e700d2f4328f1c-0",
       "status": "completed",
       "success": true
     },
@@ -170,7 +175,7 @@
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "lastCompilationTime": "2026-11-11T13:30:52.2384711Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -182,7 +187,7 @@
       "importedAssets": [
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
-      "requestId": "package-15404-18e6fdc5f189fe68-0",
+      "requestId": "package-8348-18e700d3777e4334-0",
       "status": "completed",
       "success": true
     },
@@ -194,7 +199,7 @@
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "lastCompilationTime": "2026-11-11T13:30:52.2384711Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -206,7 +211,7 @@
       "importedAssets": [
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
-      "requestId": "package-31492-18e6fdc64b3dc4f8-0",
+      "requestId": "package-24272-18e700d3e26b8af8-0",
       "status": "completed",
       "success": true
     },
@@ -218,7 +223,7 @@
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "lastCompilationTime": "2026-11-11T13:31:37.2883813Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -232,7 +237,7 @@
         "Assets/Scenes/Generated/E2E/PackageE2E/PackageImportReloadProbe.cs",
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
-      "requestId": "package-19332-18e6fdc827533d00-0",
+      "requestId": "package-50068-18e700d55d082630-0",
       "status": "completed",
       "success": true
     },
@@ -245,7 +250,7 @@
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "lastCompilationTime": "2026-11-11T13:31:37.2883813Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -255,19 +260,19 @@
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
       "importedAssets": [],
-      "requestId": "package-25872-18e6fdca6fa84b70-0",
-      "status": "queued",
+      "requestId": "package-51084-18e700d74947adf8-0",
+      "status": "imported",
       "success": false
     },
     "timeout-status": {
       "compileState": {
         "consoleErrorCount": 0,
-        "consoleWarningCount": 9,
+        "consoleWarningCount": 8,
         "errorCount": 0,
         "isCompiling": false,
         "isMonitoring": false,
         "isUpdating": false,
-        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "lastCompilationTime": "2026-11-11T13:31:37.2883813Z",
         "messageCount": 0,
         "success": true,
         "warningCount": 0
@@ -279,7 +284,7 @@
       "importedAssets": [
         "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
       ],
-      "requestId": "package-25872-18e6fdca6fa84b70-0",
+      "requestId": "package-51084-18e700d74947adf8-0",
       "status": "completed",
       "success": true
     }

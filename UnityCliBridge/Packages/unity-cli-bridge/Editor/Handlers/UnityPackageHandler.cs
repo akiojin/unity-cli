@@ -18,7 +18,7 @@ namespace UnityCliBridge.Handlers
     internal static class UnityPackageHandler
     {
         private const string ActiveKey = "UnityCliBridge.PackageImport.Active";
-        private const string StateKey = "UnityCliBridge.PackageImport.";
+        private const string StateKey = "UnityCliBridge.PackageImport.Request.";
         private static double idleSince;
         private static double nextUpdate;
 

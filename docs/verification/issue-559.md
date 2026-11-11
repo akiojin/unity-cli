@@ -25,7 +25,12 @@ compilation state. Read-only status polling recovered that same request as
 also cover a lost initial response, temporary authentication rotation during
 status reads, and rejection of an unauthorized initial mutation.
 
-The [350-byte text fixture](../../tests/fixtures/package-import/small.unitypackage)
+The real-import EditMode test also uses the explicit request ID `Active` and
+verifies idempotent dispatch and final status. Request records use a separate
+key namespace from the active-job pointer, so caller IDs cannot collide with
+that internal metadata.
+
+The [small text fixture](../../tests/fixtures/package-import/small.unitypackage)
 is the real Unity-exported package from this run. The runner exports fresh
 fixtures on each execution. Raw Editor logs, NUnit XML and CLI response files
 are retained under the printed `.unity/issue-559-verify/run-*` directory by
