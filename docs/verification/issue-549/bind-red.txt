@@ -1,0 +1,21 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 54s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-7436af2c5647860e.exe)
+
+running 1 test
+test lsp::daemon::tests::bind_failure_is_diagnosable_and_cleared_after_successful_restart ... FAILED
+
+failures:
+
+---- lsp::daemon::tests::bind_failure_is_diagnosable_and_cleared_after_successful_restart stdout ----
+
+thread 'lsp::daemon::tests::bind_failure_is_diagnosable_and_cleared_after_successful_restart' (6772) panicked at src\lsp\daemon.rs:667:9:
+assertion failed: format!("{error:#}").contains(&format!("127.0.0.1:{port}"))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    lsp::daemon::tests::bind_failure_is_diagnosable_and_cleared_after_successful_restart
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 579 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--bin unity-cli`

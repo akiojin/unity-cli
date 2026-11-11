@@ -1,0 +1,7 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.22s
+     Running tests\lspd_bind_diagnostics.rs (target\debug\deps\lspd_bind_diagnostics-0852239f51ae2a30.exe)
+
+running 1 test
+test status_and_doctor_explain_bind_failure_and_clear_it_after_restart ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.35s
