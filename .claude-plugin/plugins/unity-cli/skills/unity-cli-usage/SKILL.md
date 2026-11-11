@@ -43,13 +43,14 @@ Bootstrap the unity-cli toolchain so other Unity skills can run reliably. This i
 
 ## Preferred Flow
 
-1. **Bootstrap once per project** (skip when `unity-cli system ping` already succeeds):
+1. **Bootstrap once per project** (a successful ping only confirms the bridge; also check the C# LSP):
    1. If `command -v unity-cli` fails, install the release binary without asking for a manual step:
       - macOS / Linux: `curl -fsSL https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.sh | sh`, then use `~/.local/bin/unity-cli` if `~/.local/bin` is not on `PATH`.
       - Windows: run `scripts/install.ps1` the same way when it is published; otherwise download the release asset from GitHub Releases.
       - Only inside a unity-cli source checkout, `cargo run -- <args>` is an alternative for development.
    2. Tell the user that setup edits `Packages/manifest.json` (adds the OpenUPM scoped registry and `com.akiojin.unity-cli-bridge` pinned to the CLI version) and, for legacy-input-only projects, sets `activeInputHandler` to Both in `ProjectSettings/ProjectSettings.asset`; then run `unity-cli --output json setup --launch-editor` from the Unity project root (or pass `--project-path`).
    3. Read the JSON: `ok: true` means the Editor answered `ping` for this project. On `ok: false`, act on `editor.hint` (first import can take several minutes; rerun `setup` to keep waiting). Report any `warnings` — a `versionCheck.status` of `mismatch` means run `unity-cli bridge upgrade`.
+   4. Install the C# LSP with `unity-cli lsp install`, then run `unity-cli lsp doctor` and confirm `binaryExists: true`. This is required setup alongside CLI installation, bridge setup, and ping; C# write tools need the LSP. On failure, inspect the reported reason, recover and retry installation before proceeding with C# edits. On later runs, doctor showing an installed LSP lets you skip reinstallation.
 2. Verify reachability with `unity-cli system ping`; its `versionCheck` reports CLI ↔ bridge version drift. If it fails, run `unity-cli doctor --output json` and follow the `diagnosis` code (`SAFE_MODE`, `BRIDGE_NOT_INSTALLED`, `PORT_IN_USE`, `EDITOR_NOT_RUNNING`, `SANDBOX_BLOCKED`) before retrying; see the Connection Recovery section of the runtime checklist. On `BRIDGE_NOT_INSTALLED`, run `unity-cli setup`.
 3. When multiple editors may run, call `unity-cli instances list` (lists every Editor with its project path) and target one with `--project-path <project>` or by running inside that project directory. On `AMBIGUOUS_EDITOR` (exit 6), pick a `projectPath` from `data.candidates` and retry with `--project-path`. `unity-cli instances set-active <host:port>` still works but persists and takes precedence over the current directory.
 4. Pick the right entry point for the operation:
@@ -82,6 +83,8 @@ unity-cli --version
 unity-cli --output json setup --launch-editor   # bridge install + Editor connection check
 unity-cli bridge status                        # declared / resolved bridge version
 unity-cli system ping
+unity-cli lsp install                          # required C# editing support
+unity-cli lsp doctor                           # confirm binaryExists: true
 unity-cli tool list --query scene --compact    # discover tools by keyword
 unity-cli tool list --names-only --output json # name array in data
 unity-cli tool schema analyze_scene_contents   # inspect a tool's payload shape
