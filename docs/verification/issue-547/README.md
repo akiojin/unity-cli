@@ -66,3 +66,8 @@ offline. No browser or Unity Editor UI is changed by this patch.
 On Windows the canonical run selects the absolute `node.exe` path because
 the runner cannot resolve the shell's `npx` shim. The initial run passed the
 other six commands; its lint spawn failure is retained as FAIL evidence.
+
+A subsequent full run exposed an existing environment-dependent failure in
+`unknown_category_is_rejected`: it contacted a live Editor and returned TIMEOUT.
+Its offline fixture now uses a closed ephemeral endpoint and isolated runtime
+paths. The focused test passes in 0.17 seconds; no catalog behavior was changed.
