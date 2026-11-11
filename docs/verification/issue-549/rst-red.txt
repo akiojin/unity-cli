@@ -1,0 +1,25 @@
+Legacy-behavior mutation for RED only: propagate the connection handler error from the listener.
+Mutation removed before GREEN and commit.
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.27s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-7436af2c5647860e.exe)
+
+running 1 test
+test lsp::daemon::tests::listener_survives_a_real_tcp_reset_and_answers_the_next_ping ... observed I/O error after TCP RST: Some((ConnectionReset, Some(10054)))
+
+thread 'lsp::daemon::tests::listener_survives_a_real_tcp_reset_and_answers_the_next_ping' (30032) panicked at src\lsp\daemon.rs:1058:9:
+Err(Failed to connect to lspd TCP endpoint
+
+Caused by:
+    connection timed out)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    lsp::daemon::tests::listener_survives_a_real_tcp_reset_and_answers_the_next_ping
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 583 filtered out; finished in 0.42s
+
+error: test failed, to rerun pass `--bin unity-cli`
