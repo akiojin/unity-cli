@@ -49,20 +49,21 @@ using a result. Do not treat the absence of stderr text as success.
 
 ## Command Groups (Typed Subcommands)
 
-| Group       | Subcommands                           |
-| ----------- | ------------------------------------- |
-| `raw`       | (direct tool invocation)              |
-| `tool`      | `list`, `schema`, `call`              |
-| `system`    | `ping`                                |
-| `editor`    | `eval`, `eval-status`, `eval-stats`   |
-| `scene`     | `create`                              |
-| `instances` | `list`, `set-active`                  |
-| `cli`       | `install`, `doctor`                   |
-| `lsp`       | `install`, `doctor`                   |
-| `lspd`      | `start`, `stop`, `status`             |
-| `unityd`    | `start`, `stop`, `status`             |
-| `doctor`    | (connection diagnosis)                |
-| `batch`     | (batch command execution)             |
+| Group       | Subcommands                                             |
+| ----------- | ------------------------------------------------------- |
+| `raw`       | (direct tool invocation)                                |
+| `tool`      | `list`, `schema`, `call`                                |
+| `system`    | `ping`                                                  |
+| `editor`    | `eval`, `eval-status`, `eval-stats`                     |
+| `scene`     | `create`                                                |
+| `package`   | `import`, `cache-list`, `cache-import`, `import-status` |
+| `instances` | `list`, `set-active`                                    |
+| `cli`       | `install`, `doctor`                                     |
+| `lsp`       | `install`, `doctor`                                     |
+| `lspd`      | `start`, `stop`, `status`                               |
+| `unityd`    | `start`, `stop`, `status`                               |
+| `doctor`    | (connection diagnosis)                                  |
+| `batch`     | (batch command execution)                               |
 
 Use `raw` for full command coverage when no typed subcommand exists.
 
@@ -539,7 +540,7 @@ its previous unconditional quit behavior; prefer `editor close` for scene protec
 | `eval_csharp`             | Evaluate synchronous C#     |
 | `get_eval_status`         | Query evaluation result     |
 | `get_eval_stats`          | Query eval domain counters  |
-| `package_manager`         | Manage packages             |
+| `package_manager`         | Manage UPM / asset packages |
 | `registry_config`         | Configure scoped registries |
 | `get_editor_info`         | Get editor version info     |
 | `get_editor_state`        | Get editor state            |
@@ -618,6 +619,64 @@ unity-cli raw capture_screenshot --json '{"captureMode":"game","osFallback":fals
 | `ping`              | Check Unity Editor connectivity                                                     |
 | `list_packages`     | List installed packages                                                             |
 | `list_tools`        | Discover custom tools and argument schemas in the connected Editor                  |
+
+## Unitypackage and Asset Store cache
+
+```bash
+unity-cli package import /absolute/path/Small.unitypackage --output json
+unity-cli package cache-list --cache-path /downloaded/Asset\ Store-5.x --output json
+unity-cli package cache-import "Small Package" --output json
+unity-cli package cache-import 12345 --cache-path /downloaded/Asset\ Store-5.x --output json
+unity-cli package import-status <requestId> --output json
+```
+
+These commands call `package_manager` actions `import`, `list_cached`,
+`import_cached` and `import_status`. `path` and `cachePath` refer to the machine
+running the selected Editor; absolute paths are recommended. Imports are always
+noninteractive (`interactive:false`) and can overwrite existing assets. They
+return `requestId`, `path`, `status`, `importedAssets` (project-relative paths),
+`domainReloads` and `compileState` after import and stable idle compilation.
+The existing compilation-state handler supplies diagnostics; compile errors
+produce `PACKAGE_IMPORT_FAILED` with that state retained.
+
+The total import wait defaults to 180000 ms; `--timeout-ms` overrides it (1 ms
+to 24 hours). Raw/tool/MCP calls can set `timeoutMs` on the import action. A
+`PACKAGE_IMPORT_TIMEOUT` failure retains the latest state and `requestId`.
+Poll `package import-status <requestId>` on the same Editor to recover. Only
+status reads are retried across TCP disconnects; the import is never replayed.
+Saved state and explicit request-ID idempotency survive domain reload within
+that Editor session. Closing the Editor ends this state.
+
+Cache entries include `id`, `publisher`, `name`, `version`, `path` and byte
+`size`. Asset Store gzip-header metadata supplies product IDs, titles and
+versions when available. Other packages use a stable hash of their relative
+cache path as ID, the publisher folder and filename as names, and
+`version:null`. Names match exactly, ignoring case. Duplicate names or IDs fail
+with `PACKAGE_AMBIGUOUS` and candidate entries; use an unambiguous listed ID
+or import a specific path. A missing cache is an empty list.
+
+Cache precedence is `--cache-path` / `cachePath`, then
+`UNITY_CLI_ASSET_STORE_CACHE_PATH`, then the Editor's `ASSETSTORE_CACHE_PATH`
+root plus `Asset Store-5.x`, then the OS defaults:
+
+| Editor OS | Default cache directory |
+| --- | --- |
+| Windows | `%APPDATA%/Unity/Asset Store-5.x` |
+| macOS | `~/Library/Unity/Asset Store-5.x` |
+| Linux | `~/.local/share/unity3d/Asset Store-5.x` |
+
+For a location changed in Editor Preferences, pass the actual cache directory
+explicitly. The standard environment override follows Unity's
+[asset-cache configuration](https://docs.unity.com/en-us/engine/7000.0/manual/packages-list/package-manager-caches/upm-config-cache-as).
+These commands operate on downloaded files only; purchasing, authentication and
+new Asset Store downloads are outside their scope.
+
+Errors include `PACKAGE_NOT_FOUND`, `INVALID_UNITYPACKAGE`,
+`PACKAGE_IMPORT_BUSY` (another import, Play Mode or compilation),
+`PACKAGE_IMPORT_FAILED` and `PACKAGE_IMPORT_NOT_FOUND` for an unknown saved ID.
+Corrupt/truncated tar archives, unsupported entries and asset paths outside
+`Assets` are rejected before Unity imports anything. Expanded archives are
+limited to 16 GiB. Importing a package does not provide rollback.
 
 ## Extending with project-local tools
 

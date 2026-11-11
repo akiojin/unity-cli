@@ -248,6 +248,20 @@ These skills are written as workflow guides, not just command catalogs. They are
 
 ## Quick Examples
 
+Import local `.unitypackage` files or downloaded Asset Store packages without a
+dialog, waiting for compilation and domain reload:
+
+```bash
+unity-cli package import /absolute/path/Small.unitypackage --output json
+unity-cli package cache-list --output json
+unity-cli package cache-import "Small Package" --output json
+```
+
+Use `--cache-path` or `UNITY_CLI_ASSET_STORE_CACHE_PATH` for a custom cache.
+See [package import commands](docs/tools.md#unitypackage-and-asset-store-cache)
+for selection IDs, timeouts and recovery. New Asset Store downloads are outside
+these commands' scope.
+
 ```bash
 # Connectivity
 unity-cli system ping

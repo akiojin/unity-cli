@@ -1,0 +1,289 @@
+{
+  "issue": 559,
+  "platform": "Windows",
+  "unity_version": "6000.3.28f1",
+  "started_at": "2026-11-11T12:34:08.102307+00:00",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "EditMode process",
+      "passed": true
+    },
+    {
+      "name": "EditMode package tests",
+      "passed": true
+    },
+    {
+      "name": "real Unity-exported unitypackage",
+      "passed": true
+    },
+    {
+      "name": "cache metadata",
+      "passed": true
+    },
+    {
+      "name": "cache environment override",
+      "passed": true
+    },
+    {
+      "name": "missing: error code PACKAGE_NOT_FOUND",
+      "passed": true
+    },
+    {
+      "name": "corrupt: error code INVALID_UNITYPACKAGE",
+      "passed": true
+    },
+    {
+      "name": "local: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "local: imported content",
+      "passed": true
+    },
+    {
+      "name": "cached-name: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "cached-name: imported content",
+      "passed": true
+    },
+    {
+      "name": "cached-id: imported paths and settled compilation",
+      "passed": true
+    },
+    {
+      "name": "cached-id: imported content",
+      "passed": true
+    },
+    {
+      "name": "real Unity-exported script package",
+      "passed": true
+    },
+    {
+      "name": "export preparation settled",
+      "passed": true
+    },
+    {
+      "name": "domain reload survived",
+      "passed": true
+    },
+    {
+      "name": "imported script executed",
+      "passed": true
+    },
+    {
+      "name": "timeout: error code PACKAGE_IMPORT_TIMEOUT",
+      "passed": true
+    },
+    {
+      "name": "timeout snapshot",
+      "passed": true
+    },
+    {
+      "name": "timed out import completed without resubmission",
+      "passed": true
+    }
+  ],
+  "editmode_tests": [
+    {
+      "name": "CacheImportRejectsAmbiguousAndUnknownNames",
+      "result": "Passed"
+    },
+    {
+      "name": "CacheListReadsAssetStoreHeaderMetadata",
+      "result": "Passed"
+    },
+    {
+      "name": "CacheListReturnsPublisherStableIdPathAndSize",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportCorruptArchiveReturnsStableError",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportMissingFileReturnsStableError",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportRealExportedPackageReportsImportedPathsAndIdleState",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportRejectsInteractiveAndMissingPath",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportRejectsUnsafeArchivePaths(\"Assets/../outside.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportRejectsUnsafeArchivePaths(\"Packages/unsafe.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "ImportRejectsUnsafeArchivePaths(\"Assets/sub/../../outside.txt\")",
+      "result": "Passed"
+    },
+    {
+      "name": "UnknownStatusAndUnsafeRequestIdFailClearly",
+      "result": "Passed"
+    }
+  ],
+  "fixture": {
+    "path": "tests/fixtures/package-import/small.unitypackage",
+    "bytes": 350,
+    "sha256": "ff44ccff4b689cce7339f186d49a61f710b570888012dfd04e85e8bee4d3e5ef"
+  },
+  "results": {
+    "local": {
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 8,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 0,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "requestId": "package-47924-18e6fdc54cfdd284-0",
+      "status": "completed",
+      "success": true
+    },
+    "cached-name": {
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 8,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 0,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "requestId": "package-15404-18e6fdc5f189fe68-0",
+      "status": "completed",
+      "success": true
+    },
+    "cached-id": {
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 8,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:34:51.3453372Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 0,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "requestId": "package-31492-18e6fdc64b3dc4f8-0",
+      "status": "completed",
+      "success": true
+    },
+    "script-reload": {
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 8,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 1,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/PackageImportReloadProbe.cs",
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/PackageImportReloadProbe.cs",
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "requestId": "package-19332-18e6fdc827533d00-0",
+      "status": "completed",
+      "success": true
+    },
+    "timeout": {
+      "code": "PACKAGE_IMPORT_TIMEOUT",
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 8,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 0,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [],
+      "requestId": "package-25872-18e6fdca6fa84b70-0",
+      "status": "queued",
+      "success": false
+    },
+    "timeout-status": {
+      "compileState": {
+        "consoleErrorCount": 0,
+        "consoleWarningCount": 9,
+        "errorCount": 0,
+        "isCompiling": false,
+        "isMonitoring": false,
+        "isUpdating": false,
+        "lastCompilationTime": "2026-11-11T12:35:43.1454494Z",
+        "messageCount": 0,
+        "success": true,
+        "warningCount": 0
+      },
+      "domainReloads": 0,
+      "expectedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "importedAssets": [
+        "Assets/Scenes/Generated/E2E/PackageE2E/actual.txt"
+      ],
+      "requestId": "package-25872-18e6fdca6fa84b70-0",
+      "status": "completed",
+      "success": true
+    }
+  },
+  "User Verification Result": "n/a (autonomous)",
+  "Agent Visual Check": "n/a (no UI surface)"
+}

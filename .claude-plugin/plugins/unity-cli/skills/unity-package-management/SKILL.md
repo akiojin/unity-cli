@@ -1,6 +1,6 @@
 ---
 name: unity-package-management
-description: Manage Unity UPM packages and scoped registries with unity-cli. Use when the user asks to list installed packages, search, install, update or remove a package, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
+description: Manage Unity UPM packages, local .unitypackage imports, downloaded Asset Store packages and scoped registries with unity-cli. Use when the user asks to list, search, install, import, update or remove packages, configure OpenUPM or NuGet scopes, or verify compilation after a package change. Do not use for console-only diagnostics or Player builds; use `unity-editor-tools`. For C# package-source navigation use `unity-csharp-navigate`; for new project creation use `unity-project-bootstrap`.
 allowed-tools: Bash(unity-cli:*), Read, Grep, Glob
 metadata:
   author: akiojin
@@ -29,6 +29,7 @@ resolved package state and compilation in the same project.
 
 - List installed UPM packages, search the registry or inspect versions/dependencies.
 - Install, update or remove a package and verify the resulting compilation.
+- Import a local `.unitypackage` or select a downloaded Asset Store package by name or ID.
 - Add or inspect supported scoped registries and their package scopes.
 
 ## Do Not Use When
@@ -77,6 +78,18 @@ resolved package state and compilation in the same project.
    claim; retain and distinguish them from errors introduced by this change.
 
 ### Reload and compilation completion
+
+For `.unitypackage` imports, use `unity-cli package import <path> --output json`,
+or `package cache-list` followed by `package cache-import <name-or-id>`. Use
+`--cache-path` (Editor machine path) or `UNITY_CLI_ASSET_STORE_CACHE_PATH` for a
+custom cache. Imports always use `interactive:false`, wait for compilation and
+reload, and return `importedAssets`. `--timeout-ms` sets the total wait (default
+180000 ms). On `PACKAGE_IMPORT_TIMEOUT`, retain `data.requestId` and read
+`package import-status <requestId>` on the same Editor; never resend the import
+automatically. Package state survives domain reload but ends when that Editor
+session closes. This workflow only reads downloaded caches; it cannot purchase,
+authenticate or download new Asset Store packages. See
+[package operations](references/package-operations.md) for error codes.
 
 Keep the selected endpoint while the domain reloads. Retry only read-only
 `system ping` and `get_editor_state` with a bounded deadline (for example,

@@ -7,6 +7,24 @@ mod test_command_tests {
     use super::*;
 
     #[test]
+    fn package_commands_accept_local_and_cached_imports() {
+        for args in [
+            vec!["package", "import", "C:/packages/small.unitypackage"],
+            vec!["package", "cache-list", "--cache-path", "C:/cache"],
+            vec![
+                "package",
+                "cache-import",
+                "Small",
+                "--cache-path",
+                "C:/cache",
+            ],
+            vec!["package", "import-status", "request-123"],
+        ] {
+            assert!(Cli::try_parse_from(std::iter::once("unity-cli").chain(args)).is_ok());
+        }
+    }
+
+    #[test]
     fn test_command_accepts_report_output_without_changing_global_output() {
         use clap::{CommandFactory, FromArgMatches};
         let matches = Cli::command()
@@ -94,6 +112,11 @@ pub enum Command {
         #[command(subcommand)]
         command: SceneCommand,
     },
+    /// Import local .unitypackage files or downloaded Asset Store packages.
+    Package {
+        #[command(subcommand)]
+        command: PackageCommand,
+    },
     Instances {
         #[command(subcommand)]
         command: InstancesCommand,
@@ -150,6 +173,25 @@ pub enum Command {
         #[arg(long)]
         stdin: bool,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PackageCommand {
+    /// Import a .unitypackage without a dialog and wait for compilation/reload.
+    Import { path: PathBuf },
+    /// List downloaded .unitypackage files on the Editor's machine.
+    CacheList {
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+    },
+    /// Import one cached package by exact name or the ID returned by cache-list.
+    CacheImport {
+        name_or_id: String,
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+    },
+    /// Read an import's saved state without restarting it.
+    ImportStatus { request_id: String },
 }
 
 #[derive(Debug, Subcommand)]

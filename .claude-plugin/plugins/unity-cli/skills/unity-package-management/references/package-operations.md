@@ -10,6 +10,25 @@
 | `install` / `add` | `packageId` | Install or change version; optional `version` |
 | `remove` / `uninstall` | `packageName` | Remove the manifest dependency |
 | `recommend` | none | Built-in suggestions, not a live compatibility guarantee |
+| `import` | `path` | Import a local `.unitypackage`, always noninteractive |
+| `list_cached` | none | List downloaded Asset Store packages; optional `cachePath` |
+| `import_cached` | `nameOrId` | Import exactly one cached package; optional `cachePath` |
+| `import_status` | `requestId` | Read the saved import and compilation state |
+
+The typed `package import`, `cache-list`, `cache-import` and `import-status`
+commands use these same actions. Imports return exact `importedAssets` paths
+after stable idle compilation and domain reload. Use the returned cache `id`
+when names collide (`PACKAGE_AMBIGUOUS`). Asset Store gzip metadata provides
+product ID, title, publisher and version when present; otherwise the filename,
+publisher folder and a stable relative-path hash ID are used, with `version:null`.
+
+`PACKAGE_NOT_FOUND`, `INVALID_UNITYPACKAGE`, `PACKAGE_IMPORT_BUSY` and
+`PACKAGE_IMPORT_FAILED` are explicit failures. Invalid/truncated archives and
+paths outside `Assets` are rejected before import. On `PACKAGE_IMPORT_TIMEOUT`,
+read `import_status` with the returned `requestId`; the import can still be
+running. Request IDs are idempotent within the same Editor session and bound to
+one package path. This is an asset import, so it can overwrite existing assets;
+UPM manifest and lock files are not used to select these packages.
 
 There is no `update` action. To update, call `install` with the same unversioned
 `packageId` and the requested `version`, then check the returned and resolved
