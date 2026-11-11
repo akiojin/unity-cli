@@ -1,0 +1,145 @@
+{
+  "issue": 545,
+  "platform": "Windows-11-10.0.26300-SP0",
+  "cli_launch": "CREATE_NO_WINDOW",
+  "project_path_case": "non-ASCII parent and spaces",
+  "source_sha256": {
+    "src/core/doctor.rs": "7139fe9ecf10b58557c03cdb2dfff9308b087a96e0c050aab9eed328d3412d31",
+    "UnityCliBridge/Packages/unity-cli-bridge/Editor/Core/UnityCliBridgeHost.cs": "7feff5df251f667d37523629e6c82b3732fa9a0480fee0bfba1b59743788ae76",
+    "UnityCliBridge/Packages/unity-cli-bridge/Tests/Editor/UnityCliBridgeHostConnectionTests.cs": "843e9fd137abc9223e15ef35e86838e23ecfda77a18caef26dd8633c2931305c",
+    "scripts/e2e-editor-lifecycle.py": "b3ce1f36884d9ab7ea4511f7f304976eda2d0641eac6dafcbf082768810b5fd8"
+  },
+  "before": {
+    "legacy_console_regression": "invalid UTF-8 from CP932",
+    "no_console_gui": "ping succeeds; editor status PID does not match",
+    "post_pid_fix_gui": "quit response succeeds but inspector delayCall remains pending; close times out",
+    "editmode_red": "QuitEditor_QueuesMainThreadExitOnlyAfterResponseIsSent: main-thread exit queue missing",
+    "review_regression": {
+      "QuitEditor_ExitsBeforeAnUnrelatedPendingCommandCompletes": "RED: expected one exit while pending remains incomplete, actual zero",
+      "QuitEditor_StopsDrainingCommandsAfterSuccess": "RED: expected one processed handler, actual two"
+    }
+  },
+  "lifecycle": {
+    "started_at": "2026-11-10T11:42:41.772807+00:00",
+    "editors": [
+      {
+        "version": "6000.3.28f1",
+        "checks": [
+          "initially stopped",
+          "GUI launched and ready",
+          "GUI ping targets project",
+          "GUI status ready with matching PID",
+          "GUI actual batch mode",
+          "GUI hierarchy and resident process",
+          "dirty scene fixture created",
+          "dirty scene refuses close and preserves process",
+          "GUI process absent after close with matching PID",
+          "GUI status stopped",
+          "headless launched and ready",
+          "headless ping targets project",
+          "headless status ready with matching PID",
+          "headless actual batch mode",
+          "headless hierarchy and resident process",
+          "focused EditMode tests",
+          "headless process absent after close with matching PID",
+          "headless status stopped"
+        ],
+        "status": "PASS",
+        "port": 51139
+      }
+    ],
+    "finished_at": "2026-11-10T11:43:27.362893+00:00"
+  },
+  "editmode": {
+    "totalTests": 16,
+    "passedTests": 16,
+    "failedTests": 0,
+    "skippedTests": 0
+  },
+  "test_inventory": [
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.CommandResponse_CompletesWithoutPumpingPausedUnityContext",
+      "status": "Passed",
+      "duration": 0.0348955
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.IsExpectedDisconnect_ShouldReturnFalse_ForUnexpectedException",
+      "status": "Passed",
+      "duration": 0.0009675
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.IsExpectedDisconnect_ShouldReturnTrue_ForConnectionResetSocketException",
+      "status": "Passed",
+      "duration": 0.0004468
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.IsExpectedDisconnect_ShouldReturnTrue_ForIOExceptionWithConnectionResetInner",
+      "status": "Passed",
+      "duration": 0.0004024
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.QuitEditor_DoesNotScheduleExitBeforeResponseIsSent",
+      "status": "Passed",
+      "duration": 0.0030303
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.QuitEditor_ExitsBeforeAnUnrelatedPendingCommandCompletes",
+      "status": "Passed",
+      "duration": 0.0016103
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.QuitEditor_QueuesMainThreadExitOnlyAfterResponseIsSent",
+      "status": "Passed",
+      "duration": 0.0054887
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.QuitEditor_RefusesDirtySceneUnlessForceIsExplicit",
+      "status": "Passed",
+      "duration": 0.0833176
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.QuitEditor_StopsDrainingCommandsAfterSuccess",
+      "status": "Passed",
+      "duration": 0.0013625
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.RemoveQueuedCommandsForClient_ShouldRemoveOnlyMatchingClientEntries",
+      "status": "Passed",
+      "duration": 0.0019148
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.ResolveHostAndPortForTesting_ShouldFallbackToConfiguredValuesWhenEnvInvalid",
+      "status": "Passed",
+      "duration": 0.0004758
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.ResolveHostAndPortForTesting_ShouldPreferEnvironmentValues",
+      "status": "Passed",
+      "duration": 0.0003
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.ShouldSkipStartupForProcessForTesting_ShouldAllowBatchWithOverride",
+      "status": "Passed",
+      "duration": 0.0002464
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.ShouldSkipStartupForProcessForTesting_ShouldSkipBatchWithoutOverride",
+      "status": "Passed",
+      "duration": 0.0002216
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.ShouldSkipStartupForProcessForTesting_ShouldStillSkipRunTestsEvenWithOverride",
+      "status": "Passed",
+      "duration": 0.0002161
+    },
+    {
+      "fullName": "UnityCliBridge.Tests.Editor.UnityCliBridgeHostConnectionTests.TryGetWritableStream_ShouldReturnFalse_ForDisposedClient",
+      "status": "Passed",
+      "duration": 0.0008021
+    }
+  ],
+  "User Verification Result": "n/a (autonomous)",
+  "Agent Visual Check": "n/a (no UI surface)",
+  "review_repair": "Consume accepted quit before the pending-task guard; stop draining immediately after quit requests exit.",
+  "e2e_retry_note": "The first cold-fixture result poll timed out during post-test asset imports after all 16 tests passed in Unity logs. The identical source passed the complete 18-check E2E and all 16 tests on the prepared fixture."
+}

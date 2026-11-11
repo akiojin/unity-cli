@@ -27,6 +27,16 @@ impl Fixture {
         let server = install.join("server");
         fs::write(&server, include_str!("fixtures/csharp-write-server.py")).unwrap();
         fs::set_permissions(server, fs::Permissions::from_mode(0o755)).unwrap();
+        // Daemon modes need a managed CLI as well as the mock LSP. Exercise
+        // this build instead of downloading a published CLI into the fixture.
+        let cli_install = root.path().join("tools/unity-cli").join(rid);
+        fs::create_dir_all(&cli_install).unwrap();
+        fs::copy(
+            env!("CARGO_BIN_EXE_unity-cli"),
+            cli_install.join("unity-cli"),
+        )
+        .unwrap();
+        fs::write(cli_install.join("VERSION"), env!("CARGO_PKG_VERSION")).unwrap();
         fs::create_dir_all(root.path().join("project/Assets")).unwrap();
         fs::write(
             root.path().join("project/Assets/Test.cs"),
@@ -95,6 +105,17 @@ impl Fixture {
             .unwrap()
             .matches("class Test {}")
             .count()
+    }
+}
+
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        let _ = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
+            .args(["lspd", "stop"])
+            .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+            .env("UNITY_CLI_TOOLS_ROOT", self.root.path().join("tools"))
+            .env("UNITY_CLI_CACHE_ROOT", self.root.path().join("cache"))
+            .output();
     }
 }
 
