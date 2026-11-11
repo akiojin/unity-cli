@@ -58,8 +58,11 @@ cargo test --all-targets -- --test-threads=1
 cargo run -- skills lint --severity error
 dotnet test lsp/Server.Tests.csproj
 cargo test --test lsp_auto_install release_background_install -- --ignored --test-threads=1 --nocapture
-npx --yes markdownlint-cli .claude-plugin/plugins/unity-cli/skills/unity-cli-usage/SKILL.md .claude-plugin/plugins/unity-cli/skills/unity-csharp-edit/SKILL.md docs/verification/issue-547/README.md --config .markdownlint.json --ignore-path .markdownlintignore
+node node_modules/markdownlint-cli/markdownlint.js .claude-plugin/plugins/unity-cli/skills/unity-cli-usage/SKILL.md .claude-plugin/plugins/unity-cli/skills/unity-csharp-edit/SKILL.md docs/verification/issue-547/README.md --config .markdownlint.json --ignore-path .markdownlintignore
 ```
 
 The real-release test is explicitly selected because normal tests stay
 offline. No browser or Unity Editor UI is changed by this patch.
+On Windows the canonical run selects the absolute `node.exe` path because
+the runner cannot resolve the shell's `npx` shim. The initial run passed the
+other six commands; its lint spawn failure is retained as FAIL evidence.
