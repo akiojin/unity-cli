@@ -1,0 +1,23 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.35s
+     Running unittests src\main.rs (target\debug\deps\unity_cli-7436af2c5647860e.exe)
+
+running 17 tests
+test lsp::daemon::tests::bind_failure_is_diagnosable_and_cleared_after_successful_restart ... ok
+test lsp::daemon::tests::daemon_idle_timeout_uses_env_override ... ok
+test lsp::daemon::tests::daemon_log_lives_in_the_lspd_runtime_dir ... ok
+test lsp::daemon::tests::daemon_start_timeout_uses_env_override ... ok
+test lsp::daemon::tests::handle_request_handles_ping_status_and_stop ... ok
+test lsp::daemon::tests::is_would_block_checks_error_kind ... ok
+test lsp::daemon::tests::listener_survives_a_bad_client_and_answers_the_next_ping ... ok
+test lsp::daemon::tests::startup_diagnostics_ignore_corrupt_files_and_other_ports ... ok
+test lsp::daemon::tests::tcp_connect_to_a_running_daemon_preserves_io_timeouts_and_responses ... ok
+test lsp::daemon::tests::tcp_connect_without_a_daemon_returns_promptly ... ok
+test lsp::daemon::tests::wait_until_ready_accepts_a_daemon_started_by_a_concurrent_caller ... ok
+test lsp::daemon::tests::wait_until_ready_fails_immediately_when_startup_process_exits ... ok
+test lsp::daemon::tests::wait_until_ready_keeps_polling_while_the_daemon_is_alive ... ok
+test lsp::daemon::tests::wait_until_ready_reports_waited_time_and_log_on_timeout ... ok
+test lsp::daemon::tests::write_all_with_retry_handles_would_block_and_partial_writes ... ok
+test lsp::daemon::tests::write_all_with_retry_rejects_zero_byte_progress ... ok
+test lsp::daemon::tests::write_pid_file_and_cleanup_manage_files_under_tools_root ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 564 filtered out; finished in 2.96s

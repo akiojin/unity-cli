@@ -598,6 +598,14 @@ Windows verification is tracked separately in Issue #308.
 | LSP required but unavailable             | Use `UNITY_CLI_LSP_MODE=auto` during setup                                                  |
 | Symbol search returns `backend: "index"` | Read `fallbackReason`; run `unity-cli lsp install` or raise `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` |
 
+On Windows, a failed lspd TCP bind is recorded as `startupError` in
+`unity-cli lspd status` and `unity-cli lsp doctor`. It includes the endpoint,
+native error and recovery steps. For error 10048, wait for TIME_WAIT sockets
+to expire and retry `unity-cli lspd start`, or identify the port owner with
+`Get-NetTCPConnection -LocalPort <port>`. An unused `UNITY_CLI_LSPD_PORT` must
+be shared by the daemon and every client. A successful bind clears the
+diagnostic for that port; diagnostics for other ports are kept separate.
+
 ### WSL2/Docker -> Windows Unity
 
 ```bash
@@ -1255,6 +1263,13 @@ batch / sequence の応答もジェスチャー終了待ちではなく受付結
 | LSPタイムアウト                          | `UNITY_CLI_TIMEOUT_MS` を延長                                                                          |
 | 必須LSPモードで失敗                      | セットアップ中は `UNITY_CLI_LSP_MODE=auto` を利用                                                      |
 | シンボル検索が `backend: "index"` を返す | `fallbackReason` を確認し、`unity-cli lsp install` を実行するか `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` を延長 |
+
+Windows の lspd が TCP bind に失敗した場合、`unity-cli lspd status` と
+`unity-cli lsp doctor` の `startupError` に対象 endpoint、OS エラー、復旧手順を表示します。
+10048 の場合は TIME_WAIT の解消を待って `unity-cli lspd start` を再実行するか、
+`Get-NetTCPConnection -LocalPort <port>` で使用者を確認します。
+未使用の `UNITY_CLI_LSPD_PORT` に変更する場合は、daemon と全 client に同じ値を設定します。
+成功した bind で当該ポートの診断を消去し、他ポートの診断とは分離します。
 
 ### WSL2/Docker -> Windows Unity
 

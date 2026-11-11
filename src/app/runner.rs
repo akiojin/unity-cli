@@ -353,6 +353,8 @@ async fn run_command_named(cli: Cli, command: &str) -> Result<()> {
             }
             LspCommand::Doctor => {
                 let value = lsp_manager::doctor()?;
+                #[cfg(not(unix))]
+                let value = lspd::with_startup_diagnostic(value);
                 print_value(&value, cli.output)?;
             }
         },

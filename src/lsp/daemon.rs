@@ -254,8 +254,35 @@ pub fn status() -> Result<Value> {
             "running": false
         }),
     };
+    #[cfg(not(unix))]
+    {
+        if value["running"] == false {
+            value = with_startup_diagnostic(value);
+        }
+    }
     append_managed_status(&mut value);
     Ok(value)
+}
+
+#[cfg(not(unix))]
+fn bind_error_path() -> Result<PathBuf> {
+    Ok(DaemonRuntimePaths::new("lspd")?
+        .dir()?
+        .join(format!("bind-error-{}.json", daemon_port()?)))
+}
+
+/// Include the last bind failure for the selected Windows endpoint. A successful
+/// bind removes it, so old failures do not outlive a recovered daemon.
+#[cfg(not(unix))]
+pub fn with_startup_diagnostic(mut value: Value) -> Value {
+    let diagnostic = bind_error_path()
+        .ok()
+        .and_then(|path| fs::read(path).ok())
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok());
+    if let (Some(map), Some(diagnostic)) = (value.as_object_mut(), diagnostic) {
+        map.insert("startupError".to_string(), diagnostic);
+    }
+    value
 }
 
 pub fn call_tool(tool_name: &str, params: &Value, project_root: &Path) -> Result<Value> {
@@ -522,11 +549,33 @@ fn bind_listener() -> Result<ServerListener> {
 
     #[cfg(not(unix))]
     {
-        let listener = std::net::TcpListener::bind(("127.0.0.1", daemon_port()?))
-            .context("Failed to bind lspd TCP listener")?;
+        let port = daemon_port()?;
+        let endpoint = format!("127.0.0.1:{port}");
+        let listener = std::net::TcpListener::bind(&endpoint).map_err(|error| {
+            let recovery = format!(
+                "Wait for TIME_WAIT sockets to expire and retry `unity-cli lspd start`. \
+                 If the port remains occupied, identify its owner with \
+                 `Get-NetTCPConnection -LocalPort {port}`. Stop only a daemon you own, \
+                 or set UNITY_CLI_LSPD_PORT to an unused port for every client and daemon."
+            );
+            let diagnostic = json!({
+                "endpoint": endpoint,
+                "kind": format!("{:?}", error.kind()),
+                "osError": error.raw_os_error(),
+                "error": error.to_string(),
+                "recovery": recovery,
+            });
+            if let Ok(path) = bind_error_path() {
+                let _ = fs::write(path, diagnostic.to_string());
+            }
+            anyhow!("Failed to bind lspd TCP listener at {endpoint}: {error}. {recovery}")
+        })?;
         listener
             .set_nonblocking(true)
             .context("Failed to configure nonblocking daemon listener")?;
+        if let Ok(path) = bind_error_path() {
+            let _ = fs::remove_file(path);
+        }
         Ok(listener)
     }
 }
@@ -653,6 +702,60 @@ mod tests {
     #[cfg(unix)]
     use std::io::{BufRead, BufReader};
     use tempfile::tempdir;
+
+    #[cfg(not(unix))]
+    #[test]
+    fn bind_failure_is_diagnosable_and_cleared_after_successful_restart() {
+        let _lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        let occupied = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = occupied.local_addr().unwrap().port();
+        let _port = EnvVarGuard::set("UNITY_CLI_LSPD_PORT", &port.to_string());
+
+        let error = bind_listener().expect_err("an occupied port must remain exclusive");
+        assert!(format!("{error:#}").contains(&format!("127.0.0.1:{port}")));
+        drop(occupied);
+
+        let value = status().unwrap();
+        assert_eq!(value["running"], false);
+        assert_eq!(
+            value["startupError"]["endpoint"],
+            format!("127.0.0.1:{port}")
+        );
+        assert_eq!(value["startupError"]["kind"], "AddrInUse");
+        assert!(value["startupError"]["error"]
+            .as_str()
+            .unwrap()
+            .contains("10048"));
+        let recovery = value["startupError"]["recovery"].as_str().unwrap();
+        assert!(recovery.contains("TIME_WAIT"));
+        assert!(recovery.contains("UNITY_CLI_LSPD_PORT"));
+        assert!(recovery.contains("unity-cli lspd start"));
+
+        let restarted = bind_listener().expect("the released port should bind again");
+        drop(restarted);
+        assert!(status().unwrap().get("startupError").is_none());
+    }
+
+    #[cfg(not(unix))]
+    #[test]
+    fn startup_diagnostics_ignore_corrupt_files_and_other_ports() {
+        let _lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        let _port = EnvVarGuard::set("UNITY_CLI_LSPD_PORT", "54321");
+        let path = bind_error_path().unwrap();
+        let payload = json!({"binaryExists": true});
+        assert_eq!(with_startup_diagnostic(payload.clone()), payload);
+        fs::write(&path, b"{incomplete").unwrap();
+        assert_eq!(with_startup_diagnostic(payload.clone()), payload);
+        fs::write(&path, r#"{"endpoint":"127.0.0.1:54321"}"#).unwrap();
+        assert_eq!(
+            with_startup_diagnostic(payload.clone())["startupError"]["endpoint"],
+            "127.0.0.1:54321"
+        );
+        let _other_port = EnvVarGuard::set("UNITY_CLI_LSPD_PORT", "54322");
+        assert_eq!(with_startup_diagnostic(payload.clone()), payload);
+    }
 
     #[cfg(not(unix))]
     #[test]
