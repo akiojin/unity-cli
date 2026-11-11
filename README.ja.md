@@ -53,7 +53,6 @@ CLI と同じバージョンに揃えて、Unity Editor と接続してくださ
    バイナリの実体の場所を（シンボリックリンクをたどって）確認し、導入方法に合わせて更新してください:
    - クイックインストール（~/.unity/tools 配下の managed コピー）: unity-cli cli install
    - Homebrew: brew upgrade akiojin/tap/unity-cli
-   - winget: winget upgrade akiojin.unity-cli
    - それ以外（cargo install や手動ダウンロード）: 導入方法を私に伝え、変更前に確認を取ってください。
 4. PATH から `unity-cli --version` が実行できることを確認してください。macOS / Linux で
    見つからない場合は、このシェルの PATH に ~/.local/bin を追加し、シェルプロファイルに
@@ -141,10 +140,11 @@ Xcode toolchain からリンクします。
 
 ```bash
 brew install akiojin/tap/unity-cli     # macOS / Linux（Homebrew）
-winget install akiojin.unity-cli       # Windows（winget）
 ```
 
-パッケージマネージャで導入した場合は `brew upgrade` / `winget upgrade` で更新します。
+Homebrew で導入した場合は `brew upgrade` で更新します。
+Windows の winget パッケージは未公開です（#537）。公開完了までは、上記の
+PowerShell クイックインストールを使ってください。
 Intel Mac の reference 埋め込み（`unity-cli reference embed-build` / `embed-search`）は ONNX Runtime を動的に読み込みます。
 Homebrew formula は `onnxruntime` を依存として導入します。それ以外の導入方法では
 `brew install onnxruntime` を実行するか、`ORT_DYLIB_PATH` を設定してください。

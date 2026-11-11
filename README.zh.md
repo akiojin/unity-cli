@@ -51,7 +51,6 @@ Unity 6000.7 的 Editor 运行在 Mono 上，CoreCLR Player 构建不在此矩�
    并按照安装方式进行更新:
    - Quick Install（~/.unity/tools 下的 managed 副本）: unity-cli cli install
    - Homebrew: brew upgrade akiojin/tap/unity-cli
-   - winget: winget upgrade akiojin.unity-cli
    - 其他方式（cargo install、手动下载）: 告诉我安装方式，并在修改前征得我的确认。
 4. 确认可以从 PATH 运行 `unity-cli --version`。在 macOS / Linux 上如果找不到，
    请把 ~/.local/bin 加入当前 shell 的 PATH，并告诉我需要写入 shell 配置文件的那一行。
@@ -126,10 +125,10 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ```bash
 brew install akiojin/tap/unity-cli     # macOS / Linux（Homebrew）
-winget install akiojin.unity-cli       # Windows（winget）
 ```
 
-通过包管理器安装时，使用 `brew upgrade` / `winget upgrade` 更新。
+通过 Homebrew 安装时，使用 `brew upgrade` 更新。
+Windows winget 包尚未发布（#537）；发布前请使用上方的 PowerShell 快速安装命令。
 在 Intel macOS 上，reference 嵌入（`unity-cli reference embed-build` / `embed-search`）会动态加载 ONNX Runtime；
 Homebrew formula 会安装 `onnxruntime`，其他安装方式请运行
 `brew install onnxruntime` 或设置 `ORT_DYLIB_PATH`。
