@@ -244,7 +244,9 @@ pub(crate) fn read_local_version_for(managed_binary: ManagedBinary) -> Option<St
 }
 
 pub fn ensure_local(force_download: bool) -> Result<PathBuf> {
-    ensure_local_for(ManagedBinary::CSharpLsp, force_download)
+    ensure_local_for(ManagedBinary::CSharpLsp, force_download).map_err(|error| {
+        anyhow!("C# LSP installation failed: {error:#}. Run `unity-cli lsp doctor`, then `unity-cli lsp install` and retry the original tool")
+    })
 }
 
 fn ensure_local_for(managed_binary: ManagedBinary, force_download: bool) -> Result<PathBuf> {
@@ -258,11 +260,72 @@ fn ensure_local_for(managed_binary: ManagedBinary, force_download: bool) -> Resu
 }
 
 pub fn install_latest() -> Result<Value> {
-    Ok(lsp_install_latest(true)?.to_json())
+    let result = lsp_install_latest(true);
+    match result {
+        Ok(status) => {
+            finish_lsp_install(None)?;
+            Ok(status.to_json())
+        }
+        Err(error) => {
+            let _ = finish_lsp_install(Some(&error));
+            Err(error)
+        }
+    }
 }
 
 pub fn doctor() -> Result<Value> {
-    Ok(doctor_for(ManagedBinary::CSharpLsp)?.to_json())
+    let mut value = doctor_for(ManagedBinary::CSharpLsp)?.to_json();
+    value["autoInstall"] = auto_install_diagnostic()?;
+    Ok(value)
+}
+
+pub(crate) const AUTO_INSTALL_MARKER_TTL: Duration = Duration::from_secs(600);
+
+pub(crate) fn auto_install_marker() -> Result<PathBuf> {
+    Ok(install_dir()?.join(".auto-install-requested"))
+}
+
+/// Persist the child installer result before releasing its request marker. The
+/// detached process has no terminal, so doctor must retain the actual failure.
+pub(crate) fn finish_lsp_install(error: Option<&anyhow::Error>) -> Result<()> {
+    let dir = install_dir()?;
+    let error_path = dir.join(".auto-install-error");
+    if let Some(error) = error {
+        fs::create_dir_all(&dir)?;
+        fs::write(&error_path, format!("{error:#}"))?;
+    } else if error_path.exists() {
+        fs::remove_file(error_path)?;
+    }
+    let marker = auto_install_marker()?;
+    if marker.exists() {
+        fs::remove_file(marker)?;
+    }
+    Ok(())
+}
+
+pub(crate) fn auto_install_diagnostic() -> Result<Value> {
+    let error = fs::read_to_string(install_dir()?.join(".auto-install-error")).ok();
+    let marker = auto_install_marker()?;
+    let age = fs::metadata(&marker)
+        .and_then(|metadata| metadata.modified())
+        .ok()
+        .and_then(|modified| modified.elapsed().ok());
+    let state = if binary_path()?.exists() {
+        "installed"
+    } else if age.is_some_and(|age| age < AUTO_INSTALL_MARKER_TTL) {
+        "installing"
+    } else if error.is_some() {
+        "failed"
+    } else if marker.exists() {
+        "stale"
+    } else {
+        "not_requested"
+    };
+    Ok(json!({
+        "state": state,
+        "error": error,
+        "recovery": "Run `unity-cli lsp doctor`, then `unity-cli lsp install` and retry the original tool"
+    }))
 }
 
 fn inspect_for(managed_binary: ManagedBinary) -> Result<ManagedBinaryStatus> {
@@ -890,6 +953,41 @@ mod tests {
             rid,
             "win-x64" | "win-arm64" | "osx-x64" | "osx-arm64" | "linux-x64" | "linux-arm64"
         ));
+    }
+
+    #[test]
+    fn background_install_diagnostic_tracks_failure_staleness_and_recovery() {
+        let lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = crate::test_env::TestEnvironment::new(&lock);
+        assert_eq!(auto_install_diagnostic().unwrap()["state"], "not_requested");
+        let dir = install_dir().unwrap();
+        fs::create_dir_all(&dir).unwrap();
+        let marker = auto_install_marker().unwrap();
+        fs::write(&marker, "pending").unwrap();
+        assert_eq!(auto_install_diagnostic().unwrap()["state"], "installing");
+        fs::File::options()
+            .write(true)
+            .open(&marker)
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(UNIX_EPOCH))
+            .unwrap();
+        assert_eq!(auto_install_diagnostic().unwrap()["state"], "stale");
+        finish_lsp_install(Some(&anyhow!("download failed: connection refused"))).unwrap();
+        assert!(!marker.exists());
+        let diagnostic = auto_install_diagnostic().unwrap();
+        assert_eq!(diagnostic["state"], "failed");
+        assert_eq!(diagnostic["error"], "download failed: connection refused");
+        assert!(diagnostic["recovery"]
+            .as_str()
+            .unwrap()
+            .contains("unity-cli lsp install"));
+
+        fs::write(binary_path().unwrap(), "installed").unwrap();
+        finish_lsp_install(None).unwrap();
+        let recovered = auto_install_diagnostic().unwrap();
+        assert_eq!(recovered["state"], "installed");
+        assert!(recovered["error"].is_null());
+        assert!(!marker.exists());
     }
 
     #[test]

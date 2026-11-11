@@ -17,7 +17,6 @@ use crate::lspd;
 const MAX_HEADER_BYTES: usize = 16 * 1024;
 const DEFAULT_TIMEOUT_MS: u64 = 60_000;
 const DEFAULT_AUTO_TIMEOUT_MS: u64 = 10_000;
-const AUTO_INSTALL_MARKER_TTL: Duration = Duration::from_secs(600);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LspMode {
@@ -147,7 +146,7 @@ fn execute_auto(
                 format!("C# LSP is not installed and the background install failed: {error:#}")
             }
         };
-        return Err(LspFallback::new("lsp_not_installed", detail));
+        return Err(LspFallback::new("lsp_not_installed", format!("{detail}. Run `unity-cli lsp doctor` to check progress or failures; run `unity-cli lsp install` and retry the original tool")));
     }
 
     let tool_name = tool_name.to_string();
@@ -193,15 +192,20 @@ fn auto_timeout() -> Duration {
 }
 
 fn auto_install_marker() -> Result<PathBuf> {
-    Ok(lsp_manager::install_dir()?.join(".auto-install-requested"))
+    lsp_manager::auto_install_marker()
 }
 
 /// Starts `unity-cli lsp install` detached so the download survives this
 /// short-lived CLI process. A marker keeps concurrent calls from racing on the
 /// same download file.
 fn request_background_install() -> Result<()> {
+    request_background_install_with(spawn_background_install)
+}
+
+fn request_background_install_with(spawn: impl FnOnce() -> Result<()>) -> Result<()> {
     let marker = auto_install_marker()?;
-    let fresh = fs_modified_age(&marker).is_some_and(|age| age < AUTO_INSTALL_MARKER_TTL);
+    let marker_age = fs_modified_age(&marker);
+    let fresh = marker_age.is_some_and(|age| age < lsp_manager::AUTO_INSTALL_MARKER_TTL);
     if fresh {
         return Ok(());
     }
@@ -209,9 +213,27 @@ fn request_background_install() -> Result<()> {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("Failed to create {}", parent.display()))?;
     }
-    std::fs::write(&marker, now_epoch_ms().to_string())
-        .with_context(|| format!("Failed to write {}", marker.display()))?;
-    spawn_background_install()
+    if marker_age.is_some() {
+        let _ = std::fs::remove_file(&marker);
+    }
+    // Atomically claim this download: simultaneous first calls must not write
+    // the same temporary binary. A stale request can be retried after the TTL.
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&marker)
+    {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => return Ok(()),
+        Err(error) => {
+            return Err(error).with_context(|| format!("Failed to write {}", marker.display()))
+        }
+    }
+    if let Err(error) = spawn() {
+        let _ = lsp_manager::finish_lsp_install(Some(&error));
+        return Err(error);
+    }
+    Ok(())
 }
 
 fn fs_modified_age(path: &Path) -> Option<Duration> {
@@ -222,12 +244,19 @@ fn fs_modified_age(path: &Path) -> Option<Duration> {
 #[cfg(not(test))]
 fn spawn_background_install() -> Result<()> {
     let exe = env::current_exe().context("Failed to resolve unity-cli executable")?;
-    Command::new(exe)
+    let mut command = Command::new(exe);
+    command
         .args(["lsp", "install"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // No new console window; keep Unicode paths as native OS strings.
+        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    crate::daemon::spawn::spawn_detached(&mut command)
         .context("Failed to spawn background C# LSP install")?;
     Ok(())
 }
@@ -1577,6 +1606,53 @@ mod tests {
     use anyhow::anyhow;
     use serde_json::{json, Value};
     use tempfile::tempdir;
+
+    #[test]
+    fn background_install_claim_is_atomic_and_spawn_failures_allow_retry() {
+        use crate::test_env::{env_lock, TestEnvironment};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let _environment = TestEnvironment::new(&lock);
+        let marker = super::auto_install_marker().unwrap();
+        let error = super::request_background_install_with(|| Err(anyhow!("spawn denied")))
+            .expect_err("a spawn failure must be reported");
+        assert!(error.to_string().contains("spawn denied"));
+        assert!(!marker.exists(), "failed spawn must release the request");
+        let diagnostic = crate::lsp_manager::auto_install_diagnostic().unwrap();
+        assert_eq!(diagnostic["state"], "failed");
+        assert_eq!(diagnostic["error"], "spawn denied");
+
+        let calls = AtomicUsize::new(0);
+        std::thread::scope(|scope| {
+            for _ in 0..8 {
+                scope.spawn(|| {
+                    super::request_background_install_with(|| {
+                        calls.fetch_add(1, Ordering::SeqCst);
+                        Ok(())
+                    })
+                    .unwrap()
+                });
+            }
+        });
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            crate::lsp_manager::auto_install_diagnostic().unwrap()["state"],
+            "installing"
+        );
+
+        std::fs::File::options()
+            .write(true)
+            .open(&marker)
+            .unwrap()
+            .set_times(std::fs::FileTimes::new().set_modified(std::time::SystemTime::UNIX_EPOCH))
+            .unwrap();
+        super::request_background_install_with(|| {
+            calls.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(calls.load(Ordering::SeqCst), 2, "stale requests must retry");
+    }
 
     #[cfg(unix)]
     use std::fs;

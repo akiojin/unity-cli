@@ -66,16 +66,18 @@ unity-cli raw get_compilation_state --json '{}'
 
 ## LSP Write Failure Fallback
 
-Use this only when an LSP write tool fails: the LSP server fails to start, the call times out, or the tool returns an unsupported-edit error. Retry once if the failure looks transient; do not stop the task.
+Use this only when an LSP write tool fails: the LSP is missing, the server fails to start, the call times out, or the tool returns an unsupported-edit error. Recover the LSP before bypassing validation; do not stop the task.
 
-1. Make the same change with your own `Edit` (existing file) or `Write` (new file). Keep it identical in scope to the intended LSP write.
-2. Refresh and confirm compilation with `unity-cli`:
+1. Run `unity-cli lsp doctor` and inspect `binaryExists`, `autoInstall`, and the failure reason. If a background install is running, let it finish. For a missing binary or startup failure, run `unity-cli lsp install`, then check doctor again for `binaryExists: true`.
+2. After recovery, retry the original LSP write. Retry once if the failure looks transient.
+3. Only as a last resort, if installation/recovery fails or the retry still reports an unsupported edit, make the same change with your own `Edit` (existing file) or `Write` (new file). Keep it identical in scope to the intended LSP write.
+4. Refresh and confirm compilation with `unity-cli`:
    ```bash
    unity-cli raw refresh_assets --json '{}'
    unity-cli raw get_compilation_state --json '{}'
    ```
    Fix any reported errors before continuing; if the Editor is unreachable, say so and leave compilation unconfirmed.
-3. In your work report, state that the LSP path was not used, which tool failed, and why (error code or message).
+5. In your work report, state that the LSP path was not used, which tool failed, and why (error code or message). Include the doctor/install results and why recovery failed before direct editing.
 
 ## Examples
 

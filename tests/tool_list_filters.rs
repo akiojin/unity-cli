@@ -162,8 +162,32 @@ fn limit_and_offset_page_the_filtered_list() {
 
 #[test]
 fn unknown_category_is_rejected() {
+    let root = tempfile::tempdir().unwrap();
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port().to_string();
+    drop(listener);
+    // This checks the offline catalog, even when a real Editor/daemon is running.
+    // A file as tools root disables daemon startup, as in json_envelope tests.
+    let tools = root.path().join("disable-daemon");
+    std::fs::write(&tools, "not a directory").unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_unity-cli"))
         .args(["tool", "list", "--category", "nope", "--output", "json"])
+        .args([
+            "--host",
+            "127.0.0.1",
+            "--port",
+            &port,
+            "--timeout-ms",
+            "100",
+        ])
+        .env("UNITY_CLI_NO_AUTO_UPDATE", "1")
+        .env("UNITY_CLI_TOOLS_ROOT", tools)
+        .env("UNITY_CLI_EDITORS_DIR", root.path().join("editors"))
+        .env(
+            "UNITY_CLI_REGISTRY_PATH",
+            root.path().join("instances.json"),
+        )
+        .env_remove("UNITY_CLI_AUTH_TOKEN_FILE")
         .output()
         .expect("unity-cli should run");
     assert!(!output.status.success());
