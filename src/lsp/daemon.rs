@@ -323,6 +323,14 @@ pub fn serve_forever() -> Result<()> {
 }
 
 fn serve_listener(listener: ServerListener, idle_timeout: Duration) -> Result<()> {
+    serve_listener_with_handler(listener, idle_timeout, handle_stream)
+}
+
+fn serve_listener_with_handler(
+    listener: ServerListener,
+    idle_timeout: Duration,
+    mut handle_connection: impl FnMut(&mut ServerStream) -> Result<ConnectionAction>,
+) -> Result<()> {
     let mut last_activity = Instant::now();
 
     loop {
@@ -332,7 +340,7 @@ fn serve_listener(listener: ServerListener, idle_timeout: Duration) -> Result<()
                     .set_nonblocking(false)
                     .context("Failed to configure blocking daemon stream")?;
                 last_activity = Instant::now();
-                match handle_stream(&mut stream) {
+                match handle_connection(&mut stream) {
                     Ok(ConnectionAction::Stop) => break,
                     Ok(ConnectionAction::Continue) => {}
                     // A timed-out/disconnected client must not terminate the
@@ -993,6 +1001,61 @@ mod tests {
         let outcome = server.join().unwrap();
         assert!(next_ping.is_ok(), "{next_ping:?}");
         assert!(stop.is_ok());
+        assert!(outcome.is_ok(), "{outcome:?}");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn listener_survives_a_real_tcp_reset_and_answers_the_next_ping() {
+        let _lock = env_lock().lock().unwrap_or_else(|p| p.into_inner());
+        let (_tools_root, _env) = prepare_tools_root();
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let _port = EnvVarGuard::set(
+            "UNITY_CLI_LSPD_PORT",
+            &listener.local_addr().unwrap().port().to_string(),
+        );
+        listener.set_nonblocking(true).unwrap();
+        let (accepted_tx, accepted_rx) = std::sync::mpsc::sync_channel(1);
+        let (error_tx, error_rx) = std::sync::mpsc::sync_channel(1);
+        let server = thread::spawn(move || {
+            let mut first_connection = true;
+            serve_listener_with_handler(listener, Duration::from_secs(10), move |stream| {
+                let is_reset_connection = first_connection;
+                first_connection = false;
+                if is_reset_connection {
+                    accepted_tx.send(()).unwrap();
+                }
+                let result = handle_stream(stream);
+                if is_reset_connection {
+                    let observed = result
+                        .as_ref()
+                        .err()
+                        .and_then(|error| error.downcast_ref::<io::Error>())
+                        .map(|error| (error.kind(), error.raw_os_error()));
+                    error_tx.send(observed).unwrap();
+                }
+                result
+            })
+        });
+
+        let client = connect_client().unwrap();
+        // Wait for accept so the reset reaches a stream handled by this listener.
+        accepted_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        let socket = socket2::Socket::from(client);
+        socket.set_linger(Some(Duration::ZERO)).unwrap();
+        drop(socket);
+        let observed = error_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        let next_ping = ping();
+        let stop = request(DaemonRequest::Stop);
+        let outcome = server.join().unwrap();
+
+        eprintln!("observed I/O error after TCP RST: {observed:?}");
+        assert_eq!(
+            observed,
+            Some((io::ErrorKind::ConnectionReset, Some(10054)))
+        );
+        assert!(next_ping.is_ok(), "{next_ping:?}");
+        assert!(stop.is_ok(), "{stop:?}");
         assert!(outcome.is_ok(), "{outcome:?}");
     }
 
