@@ -130,6 +130,13 @@ export PATH="$HOME/.local/bin:$PATH"
 
 自動更新を止めるには `UNITY_CLI_NO_AUTO_UPDATE=1` を設定してください。
 
+Apple silicon 向け CLI は、同梱する ONNX Runtime に合わせて macOS 13.4 以降を
+必要とします。Intel 向け CLI のビルド対象は macOS 10.13 以降です。reference 埋め込みには
+対応する ONNX Runtime の導入も必要です。Apple silicon でソースからビルドする場合は
+Xcode Command Line Tools を導入し、`MACOSX_DEPLOYMENT_TARGET=13.4`（またはそれ以降）を
+設定してください。CoreML の OS バージョン判定に必要な compiler-rt は、選択中の
+Xcode toolchain からリンクします。
+
 #### パッケージマネージャ
 
 ```bash

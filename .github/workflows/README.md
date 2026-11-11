@@ -10,6 +10,11 @@
   - markdownlint + commitlint
 - `test.yml`
   - `cargo test`
+  - macOS: links release binaries for both `aarch64-apple-darwin` (deployment
+    target 13.4, matching the bundled ONNX Runtime) and `x86_64-apple-darwin`
+    (10.13, dynamic ONNX Runtime) on every PR to `develop`; `Rust Tests (required)`
+    rejects failed, cancelled, or skipped macOS builds. Re-run failed builds through
+    GitHub Actions after fixing the linker or toolchain configuration.
   - Windows (`windows-latest`): `cargo test`, then the built binary runs
     `tests/scripts/platform-checks.py` (lockfile Editor discovery,
     `setup --dry-run`, OS screenshot fallback) and is installed through
