@@ -62,25 +62,28 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
         return false;
     }
 
-    private const string ActiveSymbol = "_";
-    private const string ActiveDirective = "#if " + ActiveSymbol;
-    private static readonly CSharpParseOptions ActiveBranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols(ActiveSymbol);
+    // Rewrites a branch directive in place to one of these; every #if/#elif/#else directive is at least as long.
+    private const string ActiveDirective = "#if _";
+    private const string InactiveDirective = "#if F";
+    private static readonly CSharpParseOptions BranchOptions = CSharpParseOptions.Default.WithPreprocessorSymbols("_");
 
     private static HashSet<int> FindLoneCrsInStringLiterals(string text)
     {
-        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>());
+        var scan = new LiteralCrScan(text, new HashSet<int>(), new HashSet<int>(), new HashSet<int>());
         scan.Collect(0, CSharpSyntaxTree.ParseText(text).GetRoot(), new TextSpan(0, text.Length));
         return scan.Positions;
     }
 
-    // Inspects every preprocessor branch, independent of the current project's symbols. Each branch a
-    // parse skipped is parsed again on its own with that branch active, so the parser decides where the
-    // branch really ends (a directive-looking line inside its strings is string content) and no other
-    // branch's lexical state (an unterminated comment or string) reaches it. A lone CR is kept when any
-    // of these parses reads it inside a well-formed string; an unterminated string token is not valid C#
-    // in that configuration and keeps nothing. Positions are
-    // offsets into Text; Activated holds the branch directives already parsed, so each is parsed once.
-    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated)
+    // Inspects every preprocessor configuration a branch directive can select, independent of the current
+    // project's symbols. Whether a line is a directive at all depends on the lexical state the branches
+    // before it leave (an unterminated comment or string hides later directives), so each branch directive
+    // that a parse sees is flipped in turn: the text from that directive onward is parsed again with it
+    // rewritten in place to an always-true or always-false "#if", the directives it reveals are flipped the
+    // same way, and nothing before it can reach it. A lone CR is kept when any of these parses reads it
+    // inside a well-formed string; an unterminated string token is not valid C# in that configuration and
+    // keeps nothing. Positions are offsets into Text; Activated and Deactivated hold the directives already
+    // parsed each way, so each directive is parsed at most twice.
+    private readonly record struct LiteralCrScan(string Text, HashSet<int> Positions, HashSet<int> Activated, HashSet<int> Deactivated)
     {
         public void Collect(int offset, SyntaxNode root, TextSpan scope)
         {
@@ -95,15 +98,9 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                 }
             }
 
-            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>())
+            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<BranchingDirectiveTriviaSyntax>())
             {
-                if (!scope.Contains(directive.Span)) continue;
-                var group = directive.GetRelatedDirectives();
-                for (var b = 0; b < group.Count; b++)
-                {
-                    var end = b + 1 < group.Count ? group[b + 1].FullSpan.Start : scope.End;
-                    if (group[b] is BranchingDirectiveTriviaSyntax { BranchTaken: false }) Activate(offset, group[b], offset + end);
-                }
+                if (directive.IsActive && scope.Contains(directive.Span)) Flip(offset + directive.Span.Start, directive.Span.Length, !directive.BranchTaken);
             }
         }
 
@@ -117,61 +114,16 @@ public readonly record struct LspSourceFileFormat(Encoding Encoding, string? New
                 literal is InterpolatedStringExpressionSyntax interpolated && interpolated.StringEndToken.IsMissing;
         }
 
-        // Parses the text from a skipped branch's directive onward, with that directive rewritten in place
-        // to an always-true "#if" (every #if/#elif/#else directive is at least as long). The window doubles
-        // until the branch's next directive is fully inside it, so the cost follows the branch size. That
-        // next #elif/#else is followed too: a directive inside a string can hide it from the outer parse.
-        // A branch that never closes once active is not valid C# that way; it keeps the outer extent.
-        private void Activate(int offset, DirectiveTriviaSyntax directive, int outerEnd)
+        // Parses the text from a branch directive to the end with that branch taken or skipped. Its sibling
+        // #elif/#else and #endif directives keep their meaning, so the rest of the group, and the code after
+        // it, is read the way that configuration reads it.
+        private void Flip(int start, int length, bool taken)
         {
             // A malformed directive (a bare "#if") is too short to rewrite; it is not valid C# anyway.
-            var start = offset + directive.Span.Start;
-            if (directive.Span.Length < ActiveDirective.Length || !Activated.Add(start)) return;
-            // The window always holds the whole directive, however long its condition or comment is.
-            for (var length = directive.Span.Length + 256; ; length *= 2)
-            {
-                var end = (int)Math.Min(Text.Length, (long)start + length);
-                var window = ActiveDirective + new string(' ', directive.Span.Length - ActiveDirective.Length) + Text[(start + directive.Span.Length)..end];
-                var root = CSharpSyntaxTree.ParseText(window, ActiveBranchOptions).GetRoot();
-                var opening = root.DescendantNodes(descendIntoTrivia: true).OfType<IfDirectiveTriviaSyntax>().First();
-                var group = BranchDirectives(root, opening);
-                var complete = end == Text.Length;
-                if (group.Count > 1 && (complete || group[1].FullSpan.End < window.Length))
-                {
-                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, group[1].FullSpan.Start));
-                    var next = group.Count > 2 ? group[2].FullSpan.Start : window.Length;
-                    if (group[1] is BranchingDirectiveTriviaSyntax) Activate(start, group[1], start + next);
-                    return;
-                }
-                if (complete)
-                {
-                    Collect(start, root, TextSpan.FromBounds(opening.FullSpan.End, Math.Max(opening.FullSpan.End, outerEnd - start)));
-                    return;
-                }
-            }
-        }
-
-        // A fragment can be parsed as a field outside its containing class. Roslyn can then
-        // attach its directives to separate skipped-token trivia and omit related directives.
-        // Their lexical kinds still identify the opening's siblings and closing directive.
-        private static List<DirectiveTriviaSyntax> BranchDirectives(SyntaxNode root, IfDirectiveTriviaSyntax opening)
-        {
-            var related = opening.GetRelatedDirectives();
-            if (related.Count > 1) return related;
-            var group = new List<DirectiveTriviaSyntax> { opening };
-            var depth = 0;
-            foreach (var directive in root.DescendantNodes(descendIntoTrivia: true).OfType<DirectiveTriviaSyntax>())
-            {
-                if (directive.SpanStart <= opening.SpanStart) continue;
-                if (directive is IfDirectiveTriviaSyntax) depth++;
-                else if (directive is EndIfDirectiveTriviaSyntax)
-                {
-                    if (depth == 0) { group.Add(directive); break; }
-                    depth--;
-                }
-                else if (depth == 0 && directive is ElifDirectiveTriviaSyntax or ElseDirectiveTriviaSyntax) group.Add(directive);
-            }
-            return group;
+            if (length < ActiveDirective.Length || !(taken ? Activated : Deactivated).Add(start)) return;
+            var directive = taken ? ActiveDirective : InactiveDirective;
+            var root = CSharpSyntaxTree.ParseText(directive + new string(' ', length - directive.Length) + Text[(start + length)..], BranchOptions).GetRoot();
+            Collect(start, root, TextSpan.FromBounds(length, Text.Length - start));
         }
     }
 
