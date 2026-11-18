@@ -8,7 +8,7 @@ It is the successor to [`unity-mcp-server`](https://github.com/akiojin/unity-mcp
 ## Why unity-cli
 
 - Operate Unity from Claude Code with focused skills and typed commands.
-- Access `101` Unity Tool APIs across scene, asset, code, test, UI, and editor domains.
+- Access 143 runtime Unity Tool APIs and 11 Reference Cache tools across scene, asset, code, test, UI, and editor domains.
 - Run as a single binary with fast startup and low overhead.
 
 ## Features added since v0.13
@@ -137,7 +137,7 @@ Both installers download the release binary into the managed layout
 `SHA256SUMS` before installing; a checksum mismatch aborts the install and
 leaves the existing binary untouched. `install.sh` symlinks it to
 `~/.local/bin/unity-cli`; `install.ps1` adds the managed directory to the user
-`PATH`. Set `UNITY_CLI_VERSION=v0.16.0` to pin a release. After the initial
+`PATH`. Set `UNITY_CLI_VERSION=v0.19.1` to pin a release. After the initial
 install the CLI checks for updates automatically in the background, and every
 update is verified against the same checksums.
 
@@ -172,7 +172,14 @@ dynamically; the Homebrew formula installs `onnxruntime`, otherwise run
 
 #### Releases or cargo install
 
-Download the latest binary from [GitHub
+Install the published crate from crates.io. The release workflow publishes it
+with `cargo publish`:
+
+```bash
+cargo install unity-cli
+```
+
+You can also download the latest binary from [GitHub
 Releases](https://github.com/akiojin/unity-cli/releases), or install from a
 local checkout:
 
@@ -232,19 +239,20 @@ unity-cli cli install
 `unityd` and `lspd` automatically refresh their managed `unity-cli` / C# LSP binaries on daemon startup.
 The managed copies live under `UNITY_CLI_TOOLS_ROOT` (or the OS default tools directory) and are updated without an interactive confirmation prompt.
 
-## Skills (14)
+## Skills (23)
 
-These skills are written as workflow guides, not just command catalogs. They are designed to trigger from natural Unity requests such as "create a test scene", "trace references to this MonoBehaviour", or "run PlayMode tests and capture a screenshot".
+These skills are written as workflow guides, not just command catalogs. They are designed to trigger from natural Unity requests such as "create a test scene", "trace references to this MonoBehaviour", or "run PlayMode tests and capture a screenshot". The list matches [docs/skills.md](docs/skills.md) and the plugin directories under `.claude-plugin/plugins/unity-cli/skills/`.
 
 | Category | Skills |
 | --- | --- |
-| Getting Started | `unity-cli-usage` |
+| Getting Started | `unity-project-bootstrap`, `unity-cli-usage` |
 | Scenes & Objects | `unity-scene-create`, `unity-scene-inspect`, `unity-gameobject-edit`, `unity-prefab-workflow` |
-| Assets | `unity-asset-management`, `unity-addressables` |
-| Code | `unity-csharp-navigate`, `unity-csharp-edit` |
-| Runtime & Testing | `unity-playmode-testing`, `unity-input-system`, `unity-ui-automation` |
-| Editor | `unity-editor-tools` |
-| Maintenance | `gh-skills-sync` |
+| Assets | `unity-2d-sprite-tilemap`, `unity-asset-management`, `unity-audio-setup`, `unity-addressables` |
+| Code | `unity-csharp-navigate`, `unity-csharp-edit`, `unity-csharp-reference` |
+| Runtime & Testing | `unity-playmode-testing`, `unity-input-system`, `unity-ui-toolkit-build`, `unity-localization`, `unity-ui-automation`, `unity-development-loop`, `unity-vfx-graph` |
+| Editor | `unity-editor-tools`, `unity-package-management`, `unity-urp-setup` |
+
+`gh-skills-sync` lives in `dev-skills/` and is a development-only helper. It is not part of the plugin.
 
 ## Quick Examples
 
@@ -307,6 +315,8 @@ policy, required CI, and skill documentation changes.
 | `UNITY_PROJECT_ROOT` | Directory containing `Assets/` and `Packages/` | auto-detect |
 | `UNITY_CLI_HOST` | Unity Editor host | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor port | `6400` |
+| `UNITY_CLI_AUTH_TOKEN_FILE` | Editor lockfile JSON containing `authToken` for remote or mounted credentials | *(unset)* |
+| `UNITY_CLI_ALLOW_UNAUTHENTICATED` | Temporary migration opt-out. Only `1` enables it | *(unset)* |
 | `UNITY_CLI_TIMEOUT_MS` | Command timeout (ms) | `30000` |
 | `UNITY_CLI_LSP_MODE` | LSP mode (`off` / `auto` / `required`). `auto` prefers the C# LSP for symbol search and falls back to the local index (`backend: "index"`, `fallbackReason`). With `off`, `create_class` writes files directly; other C# write tools still require the LSP. | `auto` |
 | `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | Upper bound (ms) for an `auto` symbol search to wait for the LSP before falling back to the local index | `10000` |
@@ -318,10 +328,16 @@ policy, required CI, and skill documentation changes.
 Legacy MCP-prefixed variables are not supported. Use `UNITY_CLI_*` only.
 Windows daemon ports accept integers from 1 to 65535; unset them to restore the
 defaults. Pass the same values to the daemon and its CLI clients.
+Authentication, Docker, and WSL2 are covered in the [configuration guide](docs/configuration.md).
 
 ## Documentation
 
 - Full command and tool catalog: [docs/tools.md](docs/tools.md)
+- Skill contract and inventory: [docs/skills.md](docs/skills.md)
+- Configuration guide: [docs/configuration.md](docs/configuration.md)
+- Architecture: [docs/architecture.md](docs/architecture.md)
+- Hot reload: [docs/hot-reload.md](docs/hot-reload.md)
+- Migration notes: [docs/migration-notes.md](docs/migration-notes.md)
 - MCP thin adapter and client configuration: [docs/mcp.md](docs/mcp.md)
 - Comparison with the official Unity CLI (features, latency benchmark, using both together): [docs/comparison.md](docs/comparison.md)
 - Development workflow and CI: [docs/development.md](docs/development.md)
