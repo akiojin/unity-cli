@@ -8,9 +8,19 @@
 ## 特徴
 
 - Claude Code から、用途別スキルと typed コマンドで Unity を操作できます。
-- シーン、アセット、コード、テスト、UI、Editor を含む `101` 個の Unity Tool API を利用できます。
+- シーン、アセット、コード、テスト、UI、Editor を含む 143 個の runtime Unity Tool API と 11 個の Reference Cache ツールを利用できます。
 - Unity 公式 C# リファレンス（[UnityCsReference](https://github.com/Unity-Technologies/UnityCsReference)）を `unity-cli reference fetch` でローカルキャッシュし、`unity-csharp-reference` スキルから読み取り専用で参照できます。
 - 単一バイナリで高速起動、低オーバーヘッドです。
+
+## v0.13 以降の機能
+
+[実行可能なツール例](docs/tools.md#v013v015-executable-examples) には次が含まれます。
+
+- Domain Reload をまたぐ PlayMode テスト結果。キーボード / ゲームパッドのホールド、マウス / タッチのシミュレーション、入力シーケンス、InputAction 通知の確認。
+- MP4、WebM、PNG フレームシーケンスの録画と、メソッドのホットリロードプレビュー。
+- Timeline のアセット / トラック / クリップ編集、Lighting / NavMesh / NavMeshSurface / Occlusion のベイクジョブ、ステータスをポーリングするスタンドアロン Player ビルド。
+
+実行時の入力、キャプチャ、ホットリロードは `unity-playmode-testing`、Timeline は `unity-asset-management`、ビルドとベイクは `unity-editor-tools` から始めてください。パッケージとシーンの前提は各例に記載しています。
 
 ## 仕組み
 
@@ -32,6 +42,8 @@ Bridge の最小バージョンは Unity 2022.3 です。macOS 検証対象は
 6000.6.3f1、6000.7.0a2、6000.7.0b2 です（2026-09-30 受け入れ E2E: 全版 PASS）。
 [対応表の検証日・結果](docs/editor-compatibility.md)を確認してください。
 6000.7 の Editor は Mono で動作し、CoreCLR Player ビルドはこの検証の対象外です。
+Windows では 6000.3.28f1、6000.6.8f1、Unity 7.0 Alpha 7000.0.0a16 で、2026-11-10 時点の更新ソースに対するベースラインと全ツール確認が通っています。
+7000.0.0a16 の Editor は CoreCLR で動作します。正確なアルファビルド、パッケージ、検証範囲はリンク先の Windows 結果を参照してください。
 
 ### LLM エージェントでインストール・更新
 
@@ -116,7 +128,7 @@ irm https://raw.githubusercontent.com/akiojin/unity-cli/main/scripts/install.ps1
 `~/.unity/tools/unity-cli/{rid}/` に取得し、導入前にリリースの `SHA256SUMS` で検証します。
 ハッシュが一致しない場合は導入を中止し、既存のバイナリには触れません。
 `install.sh` は `~/.local/bin/unity-cli` にシンボリックリンクを作り、`install.ps1` は
-managed ディレクトリをユーザーの `PATH` に追加します。`UNITY_CLI_VERSION=v0.16.0` で
+managed ディレクトリをユーザーの `PATH` に追加します。`UNITY_CLI_VERSION=v0.19.1` で
 リリースを固定できます。導入後は CLI がバックグラウンドで自動更新を確認し、
 更新も同じチェックサムで検証されます。
 
@@ -151,9 +163,15 @@ Homebrew formula は `onnxruntime` を依存として導入します。それ以
 
 #### Releases / cargo install
 
+crates.io に公開された crate をインストールできます。リリースワークフローが `cargo publish` で公開します。
+
+```bash
+cargo install unity-cli
+```
+
 最新バイナリは [GitHub
 Releases](https://github.com/akiojin/unity-cli/releases) から取得できます。
-Cargo を使う場合は、ローカル clone からインストールしてください:
+ローカル clone からインストールする場合:
 
 ```bash
 git clone https://github.com/akiojin/unity-cli.git
@@ -210,18 +228,35 @@ unity-cli cli install
 `unityd` と `lspd` は daemon 起動時に managed `unity-cli` / C# LSP バイナリを自動更新します。
 managed copy は `UNITY_CLI_TOOLS_ROOT`（未指定時は OS 既定の tools ディレクトリ）配下に配置され、確認プロンプトなしで更新されます。
 
-## スキル (13)
+## スキル (23)
+
+ワークフローガイドとして書いたスキルです。一覧は [docs/skills.md](docs/skills.md) と、プラグイン同梱ディレクトリ `.claude-plugin/plugins/unity-cli/skills/` に一致します。
 
 | カテゴリ | スキル |
 | --- | --- |
-| 導入 | `unity-cli-usage` |
+| 導入 | `unity-project-bootstrap`, `unity-cli-usage` |
 | シーンとオブジェクト | `unity-scene-create`, `unity-scene-inspect`, `unity-gameobject-edit`, `unity-prefab-workflow` |
-| アセット | `unity-asset-management`, `unity-addressables` |
-| コード | `unity-csharp-navigate`, `unity-csharp-edit` |
-| 実行時とテスト | `unity-playmode-testing`, `unity-input-system`, `unity-ui-automation` |
-| エディター | `unity-editor-tools` |
+| アセット | `unity-2d-sprite-tilemap`, `unity-asset-management`, `unity-audio-setup`, `unity-addressables` |
+| コード | `unity-csharp-navigate`, `unity-csharp-edit`, `unity-csharp-reference` |
+| 実行時とテスト | `unity-playmode-testing`, `unity-input-system`, `unity-ui-toolkit-build`, `unity-localization`, `unity-ui-automation`, `unity-development-loop`, `unity-vfx-graph` |
+| エディター | `unity-editor-tools`, `unity-package-management`, `unity-urp-setup` |
+
+`gh-skills-sync` は `dev-skills/` にある開発専用ヘルパーです。プラグインには同梱しません。
 
 ## クイック例
+
+ダイアログなしで、ローカルの `.unitypackage` またはダウンロード済みの Asset Store パッケージをインポートし、コンパイルと Domain Reload を待ちます。
+
+```bash
+unity-cli package import /absolute/path/Small.unitypackage --output json
+unity-cli package cache-list --output json
+unity-cli package cache-import "Small Package" --output json
+# My Assets を開き、Download は手動で押し、その後のインポートだけ自動化する:
+unity-cli package asset-store-import 12345 --download-timeout-ms 600000 --output json
+```
+
+キャッシュの場所は `--cache-path` または `UNITY_CLI_ASSET_STORE_CACHE_PATH` で指定します。
+選択 ID、タイムアウト、復旧は [package import commands](docs/tools.md#unitypackage-and-asset-store-cache) を参照してください。`package asset-store-open [name-or-id]` と `package asset-store-wait <name-or-id>` は表示と待機を分けて実行します。ダウンロード、ログイン、所有確認は Unity 上の手動操作のままで、CLI は Download を押したり Unity アカウントトークンを読んだりしません。
 
 ```bash
 # 接続確認
@@ -236,9 +271,25 @@ unity-cli raw create_gameobject --json '{"name":"Player"}'
 # C# コード検索（ローカルツール）
 unity-cli tool call search --json '{"pattern":"PlayerController"}'
 
+# ツールスキーマの確認
+unity-cli tool schema create_scene --output json
+
+# 変更系ツール呼び出しのドライラン（副作用なし）
+unity-cli --dry-run tool call create_scene --json '{"sceneName":"PreviewScene"}'
+
 # EditMode テスト実行
 unity-cli tool call run_tests --json '{"mode":"editmode"}'
 ```
+
+## GWT Spec ワークフロー
+
+機能仕様は `gwt-spec` ラベルの付いた GitHub Issue で管理します。
+`Spec`、`Plan`、`Tasks`、`TDD` の正本は Issue 本文です。
+
+## 貢献
+
+外部からの貢献は `develop` ブランチを対象にしてください。PR を開く前に
+[CONTRIBUTING.md](CONTRIBUTING.md) を読み、ブランチ方針、必須 CI、スキル文書の変更を確認してください。
 
 ## 設定
 
@@ -247,18 +298,32 @@ unity-cli tool call run_tests --json '{"mode":"editmode"}'
 | `UNITY_PROJECT_ROOT` | `Assets/` と `Packages/` を含むディレクトリ | 自動検出 |
 | `UNITY_CLI_HOST` | Unity Editor ホスト | `127.0.0.1` |
 | `UNITY_CLI_PORT` | Unity Editor ポート | `6400` |
+| `UNITY_CLI_AUTH_TOKEN_FILE` | リモート接続やマウントした資格情報向けの、`authToken` を含む Editor lockfile JSON | *(未設定)* |
+| `UNITY_CLI_ALLOW_UNAUTHENTICATED` | 一時的な移行用 opt-out。`1` のみ有効 | *(未設定)* |
 | `UNITY_CLI_TIMEOUT_MS` | コマンドタイムアウト (ms) | `30000` |
 | `UNITY_CLI_LSP_MODE` | LSP モード (`off` / `auto` / `required`)。`auto` はシンボル検索で C# LSP を優先し、使えないときはローカルインデックスに戻る（`backend: "index"`, `fallbackReason`） | `auto` |
 | `UNITY_CLI_LSP_AUTO_TIMEOUT_MS` | `auto` のシンボル検索が LSP を待つ上限 (ms)。超えるとローカルインデックスに戻る | `10000` |
 | `UNITY_CLI_TOOLS_ROOT` | ダウンロード済みツールのルートディレクトリ | OS 既定 |
+| `UNITY_CLI_UNITYD_PORT` | Windows の unityd ループバック TCP ポート（クライアントと daemon） | `6422` |
+| `UNITY_CLI_LSPD_PORT` | Windows の LSP daemon ループバック TCP ポート（クライアントと daemon） | `6421` |
+| `UNITY_CLI_NO_AUTO_UPDATE` | バックグラウンド自動更新を無効にする（`1` で無効） | *(未設定)* |
 
 旧 MCP 接頭辞の環境変数は非対応です。`UNITY_CLI_*` のみ使用してください。
+Windows の daemon ポートは 1 から 65535 の整数です。未設定に戻すと既定値になります。daemon と CLI クライアントに同じ値を渡してください。
+認証、Docker、WSL2 は [設定ガイド](docs/configuration.md) を参照してください。
 
 ## ドキュメント
 
 - コマンドとツールの一覧: [docs/tools.md](docs/tools.md)
+- スキル契約と一覧: [docs/skills.md](docs/skills.md)
+- 設定ガイド: [docs/configuration.md](docs/configuration.md)
+- アーキテクチャ: [docs/architecture.md](docs/architecture.md)
+- ホットリロード: [docs/hot-reload.md](docs/hot-reload.md)
+- 移行メモ: [docs/migration-notes.md](docs/migration-notes.md)
+- MCP 薄いアダプタとクライアント設定: [docs/mcp.md](docs/mcp.md)
 - 公式 Unity CLI との比較（機能・レイテンシ計測・併用方法）: [docs/comparison.md](docs/comparison.md)
 - 開発フローと CI: [docs/development.md](docs/development.md)
+- Asset Store ダウンロードの実現性と制約: [調査](docs/asset-store-download-research.md)
 - 貢献ガイド: [CONTRIBUTING.md](CONTRIBUTING.md)
 - リリース手順: [RELEASE.md](RELEASE.md)
 - 帰属表示テンプレート: [ATTRIBUTION.md](ATTRIBUTION.md)
